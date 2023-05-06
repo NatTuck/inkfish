@@ -21,7 +21,7 @@
     "date-fns": "^2.16.1",
     "filesize": "^6.1.0",
     "icepick": "^2.4.0",
-    "luxon": "^1.25.0",
+    "luxon": "^1.28.1",
     "phoenix": "file:../deps/phoenix",
     "phoenix_html": "file:../deps/phoenix_html",
     "promise-file-reader": "^1.0.3",
