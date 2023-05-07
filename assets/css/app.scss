@@ -1,8 +1,10 @@
 /* This file is for your main application css. */
 
-@import "~bootstrap-scss/bootstrap";
-@import "~bootswatch/dist/spacelab/bootswatch";
-@import "~codemirror/lib/codemirror";
+@import "bootstrap-scss/bootstrap";
+@import "bootswatch/dist/spacelab/bootswatch";
+@import "codemirror/lib/codemirror";
+@import "react-datepicker/dist/react-datepicker";
+
 /*
 @import "./dropzone";
 @import "./console";
