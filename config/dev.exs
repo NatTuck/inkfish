@@ -34,6 +34,9 @@ config :inkfish, InkfishWeb.Endpoint,
   code_reloader: true,
   check_origin: false,
   watchers: [
+    asset_copy: {
+      Phoenix.Copy, :watch, [:default]
+    },
     esbuild: {
       Esbuild,
       :install_and_run,

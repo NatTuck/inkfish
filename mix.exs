@@ -56,6 +56,7 @@ defmodule Inkfish.MixProject do
       {:html_sanitize_ex, "~> 1.4"},
       {:inflex, "~> 2.0" },
       {:singleton, "~> 1.3"},
+      {:phoenix_copy, "~> 0.1.3", runtime: Mix.env() == :dev},
       {:esbuild, "~> 0.2", runtime: Mix.env() == :dev},
       {:dart_sass, "~> 0.6", runtime: Mix.env() == :dev},
       {:ex_machina, "~> 2.4", only: :test},
@@ -77,6 +78,7 @@ defmodule Inkfish.MixProject do
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
       "assets.deploy": [
+        "phx.copy default",
         "esbuild default --minify",
         "sass default --no-source-map --style=compressed",
         "phx.digest"

@@ -4,9 +4,11 @@
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title><%= page_title(@conn) %> · Inkfish</title>
-    <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/app.css") %>"/>
+    <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/assets/app.css") %>"/>
     <link rel="icon" type="image/png"
           href="<%= Routes.static_path(@conn,"/images/inkfish.png") %>"/>
+    <script type="text/javascript" defer
+            src="<%= Routes.static_path(@conn, "/assets/app.js") %>"></script>
     <script>
      window.user_token = "<%= @current_user_token %>";
      window.current_page = "<%= current_page(@conn) %>";
@@ -73,13 +75,11 @@
         <% end %>
       </div>
       <div class="inkfish-footer">
-        <p>Inkfish copyright &copy; 2018-2020 Nat Tuck. Licensed under the GNU AGPLv3. No
-          warranty, this code will probably eat your dog. Source code at
+        <p>Inkfish copyright &copy; 2018-2020 Nat Tuck. Licensed under the GNU AGPLv3. There is no
+          warranty. This code may cause leprosy. Source code at
           <a href="https://github.com/NatTuck/inkfish">http://github.com/NatTuck/inkfish</a>.
         </p>
       </div>
     </div>
-    <script type="text/javascript"
-            src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>
   </body>
 </html>

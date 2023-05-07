@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 import RDP from 'react-datepicker';
-import "react-datepicker/dist/react-datepicker.css";
 import $ from 'cash-dom';
 import { setHours, setMinutes, setSeconds, parse } from 'date-fns';
 

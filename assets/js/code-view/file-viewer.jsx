@@ -4,7 +4,7 @@ import { Card } from 'react-bootstrap';
 import _ from 'lodash';
 
 import CodeMirror from 'codemirror';
-import registerElixirMode from 'codemirror-mode-elixir';
+import 'codemirror-mode-elixir';
 import 'codemirror/mode/markdown/markdown';
 import 'codemirror/mode/clike/clike';
 import 'codemirror/mode/gas/gas';
