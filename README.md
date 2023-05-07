@@ -1,5 +1,16 @@
 # Inkfish
 
+
+
+## Future dep upgrades
+
+Upgrade to Phx 1.6: https://gist.github.com/chrismccord/2ab350f154235ad4a4d0f4de6decba7b
+
+ - Transition from .html.eex to .html.heex templates
+ - Move from webpack to esbuild
+
+## Phoenix README
+
 To start your Phoenix server:
 
   * Install dependencies with `mix deps.get`

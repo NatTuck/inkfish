@@ -1,6 +1,6 @@
 
 import $ from 'cash-dom';
-import uuid from 'uuid/dist/v4';
+import { v4 as uuid } from 'uuid';
 
 import socket from './socket';
 
