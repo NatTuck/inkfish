@@ -32,6 +32,7 @@ defmodule Inkfish.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:argon2_elixir, "~> 3.0"},
       {:phoenix, "~> 1.7.0"},
       {:phoenix_ecto, "~> 4.1"},
       {:ecto_sql, "~> 3.4"},
@@ -49,13 +50,14 @@ defmodule Inkfish.MixProject do
       {:decimal, "~> 1.8"},
       {:temp, "~> 0.4"},
       {:erlexec, "~> 1.17"},
-      {:paddle, "~> 0.1"},
+      # {:paddle, "~> 0.1"},
       {:gmex, "~> 0.1"},
       {:tzdata, "~> 1.0"},
       {:earmark, "~> 1.4"},
       {:html_sanitize_ex, "~> 1.4"},
       {:inflex, "~> 2.0" },
       {:singleton, "~> 1.3"},
+      {:swoosh, "~> 1.10"},
       {:phoenix_copy, "~> 0.1.3", runtime: Mix.env() == :dev},
       {:esbuild, "~> 0.2", runtime: Mix.env() == :dev},
       {:dart_sass, "~> 0.6", runtime: Mix.env() == :dev},

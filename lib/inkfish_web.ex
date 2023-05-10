@@ -17,6 +17,10 @@ defmodule InkfishWeb do
   and import those modules here.
   """
 
+  def static_paths do
+    ~w(assets fonts images favicon.ico robots.txt)
+  end
+
   def controller do
     quote do
       use Phoenix.Controller, namespace: InkfishWeb
@@ -25,10 +29,42 @@ defmodule InkfishWeb do
       import InkfishWeb.Gettext
       import InkfishWeb.ViewHelpers
       alias InkfishWeb.Router.Helpers, as: Routes
+
+      unquote(verified_routes())
+    end
+  end
+
+  def html do
+    quote do
+      use Phoenix.Component
+
+      # Import convenience functions from controllers
+      import Phoenix.Controller,
+        only: [get_csrf_token: 0, view_module: 1, view_template: 1]
+
+      unquote(html_helpers())
+    end
+  end
+
+  defp html_helpers do
+    quote do
+      # HTML escaping functionality
+      import Phoenix.HTML
+      # Core UI components and translation
+      import InkfishWeb.CoreComponents
+      import InkfishWeb.Gettext
+
+      # Shortcut for generating JS commands
+      alias Phoenix.LiveView.JS
+
+      # Routes generation with the ~p sigil
+      unquote(verified_routes())
     end
   end
 
   def view do
+    # FIXME: This should be migrated to be named "html" everywhere
+
     quote do
       use Phoenix.View,
         root: "lib/inkfish_web/templates",
@@ -71,6 +107,17 @@ defmodule InkfishWeb do
       import InkfishWeb.Gettext
       import InkfishWeb.ViewHelpers
       alias InkfishWeb.Router.Helpers, as: Routes
+
+      unquote(verified_routes())
+    end
+  end
+
+  def verified_routes do
+    quote do
+      use Phoenix.VerifiedRoutes,
+        endpoint: InkfishWeb.Endpoint,
+        router: InkfishWeb.Router,
+        statics: InkfishWeb.static_paths()
     end
   end
 

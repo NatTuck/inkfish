@@ -14,13 +14,13 @@ config :inkfish, Inkfish.Repo,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
 
-config :paddle, Paddle,
-  host: "localhost",
-  base: "dc=example,dc=com",
-  account_subdn: "ou=people",
-  ssl: false,
-  port: 3389,
-  timeout: 5000
+#config :paddle, Paddle,
+#  host: "localhost",
+#  base: "dc=example,dc=com",
+#  account_subdn: "ou=people",
+#  ssl: false,
+#  port: 3389,
+#  timeout: 5000
 
 # For development, we disable any cache and enable
 # debugging and code reloading.
