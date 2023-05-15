@@ -65,11 +65,11 @@ defmodule Inkfish.Users do
     Repo.get_by!(User, login: login)
   end
 
-  @doc """
-  Authenticate a user by email and password.
-
-  Returns the User on success, or nil on failure.
-  """
+#  @doc """
+#  Authenticate a user by email and password.
+#
+#  Returns the User on success, or nil on failure.
+#  """
 #  def auth_and_get_user(login, pass) do
 #    case Paddle.authenticate(login, pass) do
 #      :ok ->
@@ -284,7 +284,7 @@ defmodule Inkfish.Users do
   end
 
   def get_reg_for_grading_tasks!(reg_id) do
-    reg = Repo.one from reg in Reg,
+    Repo.one from reg in Reg,
       where: reg.id == ^reg_id,
       left_join: subs in assoc(reg, :grading_subs),
       left_join: asg in assoc(subs, :assignment),

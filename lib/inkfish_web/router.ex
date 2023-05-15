@@ -13,7 +13,7 @@ defmodule InkfishWeb.Router do
     plug :fetch_flash
     plug :protect_from_forgery
     plug :put_secure_browser_headers
-    plug :fetch_current_user
+    #plug :fetch_current_user
     plug Plugs.Breadcrumb, {"Home", :page, :index}
   end
 
@@ -56,7 +56,7 @@ defmodule InkfishWeb.Router do
     end
     resources "/subs", SubController, only: [:show]
     get "/subs/:id/files", SubController, :files
-    resources "/grade_columns", GradeColumnController, only: [:show]
+    #resources "/grade_columns", GradeColumnController, only: [:show]
     resources "/grades", GradeController, only: [:show]
   end
 

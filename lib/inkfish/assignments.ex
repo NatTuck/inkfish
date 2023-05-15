@@ -283,7 +283,7 @@ defmodule Inkfish.Assignments do
   end
 
   def assign_grading_tasks(as_id) do
-    as = get_assignment_path!(as_id)
+    _as = get_assignment_path!(as_id)
     raise "Actually do thing"
 
     # FIXME: Actually do thing
