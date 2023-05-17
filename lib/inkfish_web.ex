@@ -21,6 +21,19 @@ defmodule InkfishWeb do
     ~w(assets fonts images favicon.ico robots.txt)
   end
 
+  def controller1 do
+    quote do
+      use Phoenix.Controller,
+        formats: [:html, :json]
+#        layouts: [html: InkfishWeb.Layouts]
+
+      import Plug.Conn
+      import InkfishWeb.Gettext
+
+      unquote(verified_routes())
+    end
+  end
+  
   def controller do
     quote do
       use Phoenix.Controller, namespace: InkfishWeb

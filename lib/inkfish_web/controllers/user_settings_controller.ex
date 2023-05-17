@@ -1,5 +1,5 @@
 defmodule InkfishWeb.UserSettingsController do
-  use InkfishWeb, :controller
+  use InkfishWeb, :controller1
 
   alias Inkfish.Users
   alias InkfishWeb.UserAuth

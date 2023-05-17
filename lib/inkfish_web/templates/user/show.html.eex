@@ -2,7 +2,8 @@
 
 <%= if @current_user.is_admin || @current_user.id == @user.id do %>
   <p>
-    <%= link "Edit Profile", to: Routes.user_path(@conn, :edit, @user) %>
+    <%= link "Edit Profile", to: Routes.user_path(@conn, :edit, @user) %> |
+    <%= link "Edit Settings", to: ~p"/users/settings" %>
   </p>
 <% end %>
 
