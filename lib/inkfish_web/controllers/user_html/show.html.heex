@@ -2,8 +2,7 @@
 
 <%= if @current_user.is_admin || @current_user.id == @user.id do %>
   <p>
-    <%= link "Edit Profile", to: Routes.user_path(@conn, :edit, @user) %> |
-    <%= link "Edit Settings", to: ~p"/users/settings" %>
+    <%= link "Edit Profile", to: Routes.user_path(@conn, :edit, @user) %>
   </p>
 <% end %>
 
@@ -11,6 +10,11 @@
   <li>
     <strong>Name:</strong>
     <%= @user.given_name %> <%= @user.surname %>
+  </li>
+
+  <li>
+    <strong>Nickname:</strong>
+    <%= @user.nickname %>
   </li>
 
   <li>
