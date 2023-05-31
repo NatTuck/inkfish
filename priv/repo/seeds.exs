@@ -26,12 +26,13 @@ alias Inkfish.Repo
 defmodule Make do
   def user(name, admin \\ false) do
     name = String.downcase(name)
+    pass = Argon2.hash_pwd_salt("#{name}#{name}")
     user = %User{
-      login: name,
       given_name: String.capitalize(name),
       surname: "Anderson",
       email: "#{name}@example.com",
       is_admin: admin,
+      hashed_password: pass,
     }
 
     Repo.insert!(user)

@@ -18,6 +18,9 @@ config :inkfish, InkfishWeb.Endpoint,
   pubsub_server: Inkfish.PubSub,
   live_view: [signing_salt: "37rUe00e"]
 
+config :inkfish, Inkfish.Mailer,
+   adapter: Swoosh.Adapters.Local
+
 # Configures Elixir's Logger
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",

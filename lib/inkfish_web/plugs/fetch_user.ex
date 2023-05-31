@@ -11,7 +11,7 @@ defmodule InkfishWeb.Plugs.FetchUser do
     user = Users.get_user(user_id)
     token = make_token(conn, user)
     ruid = get_session(conn, :real_uid)
-    
+
     conn
     |> assign(:current_user_id, user_id)
     |> assign(:current_user, user)

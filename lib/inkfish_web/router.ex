@@ -1,5 +1,7 @@
 defmodule InkfishWeb.Router do
   use InkfishWeb, :router
+
+  import InkfishWeb.UserAuth
   
   alias InkfishWeb.Plugs
 
@@ -11,6 +13,7 @@ defmodule InkfishWeb.Router do
     plug :fetch_flash
     plug :protect_from_forgery
     plug :put_secure_browser_headers
+    #plug :fetch_current_user
     plug Plugs.Breadcrumb, {"Home", :page, :index}
   end
 
@@ -35,8 +38,22 @@ defmodule InkfishWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :index
-    get "/dashboard", PageController, :dashboard
     resources "/session", SessionController, only: [:create, :delete], singleton: true
+
+    get "/users/confirm", UserConfirmationController, :new
+    post "/users/confirm", UserConfirmationController, :create
+    get "/users/confirm/:token", UserConfirmationController, :edit
+    post "/users/confirm/:token", UserConfirmationController, :update
+  end
+
+  scope "/", InkfishWeb do
+    pipe_through [:browser, :require_authenticated_user]
+
+    get "/users/settings", UserSettingsController, :edit
+    put "/users/settings", UserSettingsController, :update
+    get "/users/settings/confirm_email/:token", UserSettingsController, :confirm_email
+
+    get "/dashboard", PageController, :dashboard
     post "/session/resume", SessionController, :resume
     resources "/users", UserController, only: [:show, :edit, :update]
     resources "/uploads", UploadController, only: [:create, :show]
@@ -53,8 +70,19 @@ defmodule InkfishWeb.Router do
     end
     resources "/subs", SubController, only: [:show]
     get "/subs/:id/files", SubController, :files
-    resources "/grade_columns", GradeColumnController, only: [:show]
+    #resources "/grade_columns", GradeColumnController, only: [:show]
     resources "/grades", GradeController, only: [:show]
+  end
+
+  scope "/", InkfishWeb do
+    pipe_through [:browser, :redirect_if_user_is_authenticated]
+
+    get "/users/register", UserRegistrationController, :new
+    post "/users/register", UserRegistrationController, :create
+    get "/users/reset_password", UserResetPasswordController, :new
+    post "/users/reset_password", UserResetPasswordController, :create
+    get "/users/reset_password/:token", UserResetPasswordController, :edit
+    put "/users/reset_password/:token", UserResetPasswordController, :update
   end
 
   scope "/staff", InkfishWeb.Staff, as: :staff do

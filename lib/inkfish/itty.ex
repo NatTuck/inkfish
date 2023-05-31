@@ -61,7 +61,7 @@ defmodule Inkfish.Itty do
     if info[:exit] do
       IO.inspect(info)
     else
-      monitor_wait
+      monitor_wait()
     end
   end
 
@@ -69,9 +69,9 @@ defmodule Inkfish.Itty do
     receive do
       {:exit, status} ->
         IO.inspect({:exit, status})
-      other ->
+      _other ->
         #IO.inspect(other)
-        monitor_wait
+        monitor_wait()
     end
   end
 end

@@ -1,5 +1,5 @@
 defmodule InkfishWeb.UserController do
-  use InkfishWeb, :controller
+  use InkfishWeb, :controller1
   
   alias Inkfish.Users
 
@@ -7,7 +7,8 @@ defmodule InkfishWeb.UserController do
   plug :user_check_permission
 
   def user_check_permission(conn, _foo) do
-    id = conn.params["id"]
+    id = conn.params["id"] || conn.assigns["current_user_id"]
+    IO.inspect({:user_id, id})
     {id, _} = Integer.parse(id)
     user = conn.assigns[:current_user]
     if !user.is_admin && user.id != id do
@@ -22,13 +23,37 @@ defmodule InkfishWeb.UserController do
 
   def show(conn, %{"id" => id}) do
     user = Users.get_user!(id)
-    render(conn, "show.html", user: user)
+    render(conn, :show, user: user)
   end
 
   def edit(conn, %{"id" => id}) do
     user = Users.get_user!(id)
     changeset = Users.change_user(user)
-    render(conn, "edit.html", user: user, changeset: changeset)
+
+    conn
+    |> assign(:password_changeset, Users.change_user_password(user))
+    |> render(:edit, user: user, changeset: changeset)
+  end
+
+  def update(conn, %{"action" => "update_password"} = params) do
+    %{"current_password" => password, "user" => user_params} = params
+    user = conn.assigns.current_user
+
+    case Users.update_user_password(user, password, user_params) do
+      {:ok, user} ->
+        conn
+        |> put_flash(:info, "Password updated successfully.")
+        |> put_session(:user_return_to, ~p"/users/#{user.id}")
+        |> redirect(to: Routes.user_path(conn, :show, user))
+
+      {:error, pw_changeset} ->
+	IO.inspect {:pwchfail, pw_changeset}
+	conn
+        |> put_flash(:error, "Changing password failed")
+	|> assign(:changeset, Users.change_user(user))
+	|> assign(:password_changeset, pw_changeset)
+	|> render(:edit, user: user)
+    end
   end
 
   def update(conn, %{"id" => id, "user" => user_params}) do
@@ -41,7 +66,9 @@ defmodule InkfishWeb.UserController do
         |> redirect(to: Routes.user_path(conn, :show, user))
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        render(conn, "edit.html", user: user, changeset: changeset)
+	conn
+	|> assign(:password_changeset, Users.change_user_password(user))
+	|> render(:edit, user: user, changeset: changeset)
     end
   end
 end

@@ -111,9 +111,11 @@ defmodule InkfishWeb.UploadController do
   end
 
   def unpacked(conn, %{"id" => id, "path" => parts}) do
+    {:ok, cwd} = :file.get_cwd()
+
     rel_path = parts
     |> Enum.join("/")
-    |> :filename.safe_relative_path()
+    |> :filelib.safe_relative_path(cwd)
 
     if rel_path == :unsafe do
       conn

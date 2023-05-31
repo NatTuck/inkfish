@@ -3,8 +3,8 @@
     <h1>Log In</h1>
     <%= form_for @conn, Routes.session_path(@conn, :create), fn f -> %>
       <div class="form-group">
-        <%= label f, :login %>
-        <%= text_input f, :login, class: "form-control" %>
+        <%= label f, :email %>
+        <%= text_input f, :email, class: "form-control" %>
       </div>
       
       <div class="form-group">
