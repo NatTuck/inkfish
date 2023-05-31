@@ -50,7 +50,6 @@ defmodule Inkfish.MixProject do
       {:decimal, "~> 1.8"},
       {:temp, "~> 0.4"},
       {:erlexec, "~> 1.17"},
-      # {:paddle, "~> 0.1"},
       {:gmex, "~> 0.1"},
       {:tzdata, "~> 1.0"},
       {:earmark, "~> 1.4"},

@@ -65,42 +65,6 @@ defmodule Inkfish.Users do
     Repo.get_by!(User, login: login)
   end
 
-#  @doc """
-#  Authenticate a user by email and password.
-#
-#  Returns the User on success, or nil on failure.
-#  """
-#  def auth_and_get_user(login, pass) do
-#    case Paddle.authenticate(login, pass) do
-#      :ok ->
-#        {:ok, data} = Paddle.get(filter: [uid: login])
-#        {:ok, user} = create_or_update_from_ldap_data(login, hd(data))
-#        user
-#      {:error, :invalidCredentials} ->
-#        nil
-#      {:error, _} ->
-#        {:ok, :connected} = Paddle.reconnect()
-#        nil
-#    end
-#  end
-#
-#  def create_or_update_from_ldap_data(login, data) do
-#    attrs = %{
-#      login: login,
-#      email: hd(data["mail"]),
-#      given_name: hd(data["givenName"]),
-#      surname: hd(data["sn"]),
-#    }
-#
-#    # FIXME: Overwrites changes to name.
-#    %User{}
-#    |> User.changeset(attrs)
-#    |> Repo.insert(
-#      conflict_target: :login,
-#      on_conflict: {:replace, [:email, :given_name, :surname]}
-#    )
-#  end
-#
   @doc """
   Creates a user.
 

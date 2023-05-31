@@ -19,13 +19,6 @@ config :inkfish, Inkfish.Repo,
   hostname: "localhost",
   pool: Ecto.Adapters.SQL.Sandbox
 
-#config :paddle, Paddle,
-#  host: "localhost",
-#  base: "dc=example,dc=com",
-#  account_subdn: "ou=people",
-#  ssl: false,
-#  port: 13389
-
 config :phoenix_integration,
   endpoint: InkfishWeb.Endpoint
 
