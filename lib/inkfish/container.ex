@@ -4,11 +4,9 @@ defmodule Inkfish.Container do
   alias Inkfish.Container.Job
 
   alias Inkfish.Subs
-  alias Inkfish.Subs.Sub
   alias Inkfish.Grades
   alias Inkfish.Grades.Grade
   alias Inkfish.Uploads.Upload
-  alias Inkfish.Itty
 
   @doc """
   Start the autograding process given a grade_id.
@@ -31,7 +29,7 @@ defmodule Inkfish.Container do
       key: key,
       uuid: grade.log_uuid,
       container: %{
-        base: "debian:buster",
+        base: "debian:bullseye",
         packages: [
           "clang", "clang-tools", "valgrind", "libarchive-zip-perl",
           "fuse", "libfuse-dev", "pkg-config", "libexpect-perl",  

@@ -4,11 +4,8 @@ defmodule Inkfish.Assignments.GradingTasks do
 
   alias Inkfish.Courses
   alias Inkfish.Assignments
-  alias Inkfish.Assignments.Assignment
   alias Inkfish.Grades
   alias Inkfish.Grades.Grade
-  alias Inkfish.Users.Reg
-  alias Inkfish.Subs.Sub
 
   def unassign_inactive_subs(as) do
     qq = from grade in Grade,

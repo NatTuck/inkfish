@@ -2,7 +2,6 @@ defmodule InkfishWeb.Staff.JoinReqController do
   use InkfishWeb, :controller
 
   alias Inkfish.JoinReqs
-  alias Inkfish.Users
 
   alias InkfishWeb.Plugs
   plug Plugs.FetchItem, [course: "course_id"]
@@ -39,6 +38,9 @@ defmodule InkfishWeb.Staff.JoinReqController do
 
   def accept_all(conn, %{"course_id" => course_id}) do
     course = conn.assigns[:course]
+    if to_string(course_id) != to_string(course.id) do
+      raise "Course ID mismatch"
+    end
 
     join_reqs = JoinReqs.list_for_course(course)
     |> Enum.filter(&(!&1.staff_req))

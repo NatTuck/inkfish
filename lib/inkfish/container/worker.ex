@@ -3,7 +3,6 @@ defmodule Inkfish.Container.Worker do
 
   alias Inkfish.Container
   alias Inkfish.Container.Queue
-  alias Inkfish.Job
 
   def start_link(arg) do
     GenServer.start_link(__MODULE__, arg)
