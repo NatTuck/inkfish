@@ -2,7 +2,7 @@ defmodule InkfishWeb.SearchChannelTest do
   use InkfishWeb.ChannelCase
 
   setup do
-    user = Inkfish.Users.get_user_by_login!("alice")
+    user = Inkfish.Users.get_user_by_email!("alice@example.com")
 
     {:ok, _, socket} =
       socket(InkfishWeb.UserSocket, nil, %{user_id: user.id})
@@ -13,7 +13,7 @@ defmodule InkfishWeb.SearchChannelTest do
 
   test "query returns carol", %{socket: socket} do
     ref = push socket, "q", "carol"
-    assert_reply ref, :ok, %{matches: ["carol (Carol Anderson)"]}
+    assert_reply ref, :ok, %{matches: ["Carol Anderson [carol@example.com]"]}
   end
 
   test "broadcasts are pushed to the client", %{socket: socket} do

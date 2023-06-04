@@ -44,9 +44,14 @@ defmodule InkfishWeb.ConnCase do
   end
 
   import Plug.Test
+  alias Inkfish.Users.User
 
-  def login(conn, login) do
-    user = Inkfish.Users.get_user_by_login!(login)
+  def login(conn, %User{} = user) do
+    login(conn, user.email)
+  end
+
+  def login(conn, email) do
+    user = Inkfish.Users.get_user_by_email!(email)
     conn
     |> init_test_session(%{user_id: user.id})
     #|> assign(:current_user, user)
@@ -72,10 +77,7 @@ defmodule InkfishWeb.ConnCase do
   It returns an updated `conn`.
   """
   def log_in_user(conn, user) do
-    token = Inkfish.Users.generate_user_session_token(user)
-
-    conn
-    |> Phoenix.ConnTest.init_test_session(%{})
-    |> Plug.Conn.put_session(:user_token, token)
+    IO.inspect {:warn, :log_in_user}
+    login(conn, user)
   end
 end

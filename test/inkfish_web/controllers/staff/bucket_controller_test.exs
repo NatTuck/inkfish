@@ -7,7 +7,7 @@ defmodule InkfishWeb.Staff.BucketControllerTest do
     staff = insert(:user)
     _sr = insert(:reg, course: course, user: staff, is_staff: true)
     bucket = insert(:bucket, course: course)
-    conn = login(conn, staff.login)
+    conn = login(conn, staff)
     {:ok, conn: conn, course: course, bucket: bucket, staff: staff}
   end
 

@@ -1,11 +1,13 @@
 defmodule InkfishWeb.PageController do
-  use InkfishWeb, :controller
+  use InkfishWeb, :controller1
 
   def index(conn, _params) do
     if conn.assigns[:current_user] do
       redirect(conn, to: Routes.page_path(conn, :dashboard))
     else
-      render(conn, "index.html")
+      conn
+      |> assign(:page_title, "Welcome")
+      |> render(:index)
     end
   end
   
@@ -18,7 +20,7 @@ defmodule InkfishWeb.PageController do
         next = Inkfish.Users.next_due(reg)
         Map.put(acc, reg.course_id, next)
       end
-      render(conn, "dashboard.html", regs: regs, dues: dues)
+      render(conn, :dashboard, regs: regs, dues: dues)
     else
       redirect(conn, to: Routes.page_path(conn, :index))
     end

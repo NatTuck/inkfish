@@ -9,7 +9,6 @@ defmodule InkfishWeb.JoinReqController do
     when action in [:index, :new, :create]
   plug Plugs.FetchItem, [join_req: "id"]
     when action not in [:index, :new, :create]
-  plug Plugs.RequireUser
 
   def new(conn, _params) do
     changeset = JoinReqs.change_join_req(%JoinReq{})

@@ -3,8 +3,6 @@ defmodule InkfishWeb.Admin.UserController do
 
   alias Inkfish.Users
 
-  plug InkfishWeb.Plugs.RequireUser, admin: true
-
   plug InkfishWeb.Plugs.Breadcrumb, {"Admin Users", :admin_user, :index}
     
   def index(conn, _params) do
@@ -54,7 +52,7 @@ defmodule InkfishWeb.Admin.UserController do
   def impersonate(conn, %{"id" => id}) do
     user = Users.get_user!(id)
     conn
-    |> put_flash(:info, "Impersonating #{user.login}")
+    |> put_flash(:info, "Impersonating #{user.email}")
     |> put_session(:real_uid, conn.assigns[:current_user].id)
     |> put_session(:user_id, user.id)
     |> redirect(to: Routes.page_path(conn, :index))

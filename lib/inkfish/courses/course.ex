@@ -34,7 +34,7 @@ defmodule Inkfish.Courses.Course do
 
   def instructor_login(course) do
     if instructor = get_field(course, :instructor) do
-      User.normalize_login(instructor)
+      User.normalize_email(instructor)
     else
       nil
     end

@@ -4,7 +4,7 @@ defmodule InkfishWeb.Staff.GradeControllerTest do
 
   setup %{conn: conn} do
     %{staff: staff, sub: sub, grade: grade} = stock_course()
-    conn = login(conn, staff.login)
+    conn = login(conn, staff)
     {:ok, conn: conn, staff: staff, sub: sub, grade: grade}
   end
 

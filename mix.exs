@@ -56,7 +56,7 @@ defmodule Inkfish.MixProject do
       {:html_sanitize_ex, "~> 1.4"},
       {:inflex, "~> 2.0" },
       {:singleton, "~> 1.3"},
-      {:swoosh, "~> 1.10"},
+      {:swoosh, "~> 1.11"},
       {:phoenix_copy, "~> 0.1.3", runtime: Mix.env() == :dev},
       {:esbuild, "~> 0.2", runtime: Mix.env() == :dev},
       {:dart_sass, "~> 0.6", runtime: Mix.env() == :dev},

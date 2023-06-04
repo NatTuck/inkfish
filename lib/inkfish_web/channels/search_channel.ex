@@ -22,7 +22,7 @@ defmodule InkfishWeb.SearchChannel do
 
   def search("users", query) do
     Enum.map Users.search_users(query), fn user ->
-      "#{user.login} (#{user.given_name} #{user.surname})"
+      "#{user.given_name} #{user.surname} [#{user.email}]"
     end
   end
 

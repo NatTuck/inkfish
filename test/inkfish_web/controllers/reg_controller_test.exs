@@ -13,7 +13,7 @@ defmodule InkfishWeb.RegControllerTest do
 
     test "shows reg", %{conn: conn, reg: reg, user: user} do
       conn = conn
-      |> login(user.login)
+      |> login(user.email)
       |> get(Routes.reg_path(conn, :show, reg.id))
       assert html_response(conn, 200) =~ "Show Reg"
     end

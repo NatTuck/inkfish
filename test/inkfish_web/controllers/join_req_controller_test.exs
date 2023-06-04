@@ -16,7 +16,7 @@ defmodule InkfishWeb.JoinReqControllerTest do
 
     test "renders form", %{conn: conn, course: course} do
       conn = conn
-      |> login("erin")
+      |> login("erin@example.com")
       |> get(Routes.course_join_req_path(conn, :new, course))
       assert html_response(conn, 200) =~ "New Joinreq"
     end
@@ -28,7 +28,7 @@ defmodule InkfishWeb.JoinReqControllerTest do
     test "redirects to root when data is valid", %{conn: conn, course: course} do
       params = params_for(:join_req)
       conn = conn
-      |> login("erin")
+      |> login("erin@example.com")
       |> post(Routes.course_join_req_path(conn, :create, course), join_req: params)
       assert redirected_to(conn) == Routes.course_path(conn, :index)
     end

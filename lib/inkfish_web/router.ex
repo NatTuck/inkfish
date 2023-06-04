@@ -1,9 +1,8 @@
 defmodule InkfishWeb.Router do
   use InkfishWeb, :router
 
-  import InkfishWeb.UserAuth
-  
   alias InkfishWeb.Plugs
+  import Plugs.UserSession
 
   pipeline :browser do
     plug :accepts, ["html"]
@@ -13,7 +12,6 @@ defmodule InkfishWeb.Router do
     plug :fetch_flash
     plug :protect_from_forgery
     plug :put_secure_browser_headers
-    #plug :fetch_current_user
     plug Plugs.Breadcrumb, {"Home", :page, :index}
   end
 
@@ -25,10 +23,6 @@ defmodule InkfishWeb.Router do
     plug :protect_from_forgery
     plug :put_secure_browser_headers
   end
-  
-  pipeline :admin do
-    plug Plugs.RequireUser, is_admin: true
-  end
 
   pipeline :api do
     plug :accepts, ["json"]
@@ -39,15 +33,19 @@ defmodule InkfishWeb.Router do
 
     get "/", PageController, :index
     resources "/session", SessionController, only: [:create, :delete], singleton: true
-
-    get "/users/confirm", UserConfirmationController, :new
-    post "/users/confirm", UserConfirmationController, :create
-    get "/users/confirm/:token", UserConfirmationController, :edit
-    post "/users/confirm/:token", UserConfirmationController, :update
   end
 
   scope "/", InkfishWeb do
-    pipe_through [:browser, :require_authenticated_user]
+    pipe_through [:browser, :require_no_session]
+
+    post "/users/send_auth_email", UserAuthEmailController, :create
+    get "/users/auth/:token", UserAuthEmailController, :show
+    get "/users/new/:token", UserController, :new
+    post "/users", UserController, :create
+  end
+
+  scope "/", InkfishWeb do
+    pipe_through [:browser, :require_user_session]
 
     get "/dashboard", PageController, :dashboard
     post "/session/resume", SessionController, :resume
@@ -70,19 +68,8 @@ defmodule InkfishWeb.Router do
     resources "/grades", GradeController, only: [:show]
   end
 
-  scope "/", InkfishWeb do
-    pipe_through [:browser, :redirect_if_user_is_authenticated]
-
-    get "/users/register", UserRegistrationController, :new
-    post "/users/register", UserRegistrationController, :create
-    get "/users/reset_password", UserResetPasswordController, :new
-    post "/users/reset_password", UserResetPasswordController, :create
-    get "/users/reset_password/:token", UserResetPasswordController, :edit
-    put "/users/reset_password/:token", UserResetPasswordController, :update
-  end
-
   scope "/staff", InkfishWeb.Staff, as: :staff do
-    pipe_through :browser
+    pipe_through [:browser, :require_user_session]
 
     resources "/courses", CourseController, only: [:index, :show, :edit, :update] do
       resources "/regs", RegController, only: [:index, :new, :create]
@@ -115,7 +102,7 @@ defmodule InkfishWeb.Router do
   end
 
   scope "/admin", InkfishWeb.Admin, as: :admin do
-    pipe_through [:browser, :admin]
+    pipe_through [:browser, :require_admin_session]
     
     resources "/users", UserController, except: [:new, :create]
     post "/users/:id/impersonate", UserController, :impersonate
@@ -124,13 +111,13 @@ defmodule InkfishWeb.Router do
   end
 
   scope "/ajax", InkfishWeb, as: :ajax do
-    pipe_through :ajax
+    pipe_through [:ajax, :require_user_session]
 
     post "/uploads", UploadController, :create
   end
 
   scope "/ajax/staff", InkfishWeb.Staff, as: :ajax_staff do
-    pipe_through :ajax
+    pipe_through [:ajax, :require_user_session]
 
     resources "/subs", SubController, only: [:update] do
       resources "/grades", GradeController, only: [:create]
@@ -145,12 +132,17 @@ defmodule InkfishWeb.Router do
     resources "/teams", TeamController, only: [:show, :update, :delete]
   end
 
-  if Mix.env() in [:dev, :test] do
+  if Mix.env() == :dev do
     import Phoenix.LiveDashboard.Router
 
     scope "/" do
       pipe_through :browser
       live_dashboard "/live_dashboard", metrics: InkfishWeb.Telemetry
+    end
+    
+    scope "/dev" do
+      pipe_through :browser
+      forward "/mailbox", Plug.Swoosh.MailboxPreview
     end
   end
 end

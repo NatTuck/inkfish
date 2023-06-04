@@ -4,7 +4,7 @@ defmodule InkfishWeb.SubControllerTest do
 
   setup %{conn: conn} do
     %{student: student, assignment: assignment, grade: grade} = stock_course()
-    conn = login(conn, student.login)
+    conn = login(conn, student)
     {:ok, conn: conn, grade: grade, assignment: assignment}
   end
 

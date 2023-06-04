@@ -4,7 +4,7 @@ defmodule InkfishWeb.TeamControllerTest do
 
   setup %{conn: conn} do
     %{course: course, student: student, team: team} = stock_course()
-    conn = login(conn, student.login)
+    conn = login(conn, student)
     {:ok, conn: conn, team: team, course: course}
   end
 

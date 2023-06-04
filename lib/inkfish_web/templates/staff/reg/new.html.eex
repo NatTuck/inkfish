@@ -12,10 +12,10 @@
   </div>
 
   <div class="form-group">
-    <%= label f, :user_login %>
-    <%= text_input(f, :user_login, class: "form-control autosearch",
+    <%= label f, :user_email %>
+    <%= text_input(f, :user_email, class: "form-control autosearch",
                    data: [topic: "users"]) %>
-    <%= error_tag f, :user_login %>
+    <%= error_tag f, :user_email %>
     <div class="text-muted">
       Username; start typing to search
     </div>

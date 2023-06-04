@@ -16,3 +16,19 @@
     <% end %>
   </div>
 </div>
+
+<div class="row py-4">
+  <div class="col">
+    <h1>Get a Password</h1>
+    <p>Enter your email to create a new account or reset your password.</p>
+
+    <%= form_for @conn, ~p"/users/send_auth_email", fn f -> %>
+       <div class="form-group">
+        <%= label f, :email %>
+        <%= text_input f, :email, class: "form-control" %>
+      </div>
+
+      <%= submit "Request", class: "btn btn-primary" %>
+    <% end %>
+  </div>
+</div>

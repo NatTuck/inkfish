@@ -6,7 +6,7 @@ defmodule InkfishWeb.RequestRegTest do
     get(conn, "/")
     |> follow_form(
       %{
-        login: "gail",
+        email: "gail@example.com",
         password: "test",
       }
     )
@@ -26,7 +26,7 @@ defmodule InkfishWeb.RequestRegTest do
     |> follow_link("Logout", method: :delete)
     |> follow_form(
       %{
-        login: "bob",
+        email: "bob@example.com",
         password: "test"
       }
     )
@@ -39,7 +39,7 @@ defmodule InkfishWeb.RequestRegTest do
     |> follow_link("Logout", method: :delete)
     |> follow_form(
       %{
-        login: "gail",
+        email: "gail@example.com",
         password: "test",
       }
     )

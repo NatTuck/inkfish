@@ -14,7 +14,7 @@
   <li>
     <strong>Submitter:</strong>
     <%= user_display_name(@sub.reg.user) %>
-    (<%= @sub.reg.user.login %>)
+    (<%= @sub.reg.user.email %>)
   </li>
 
   <li>

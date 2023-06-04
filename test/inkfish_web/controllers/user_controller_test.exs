@@ -7,7 +7,7 @@ defmodule InkfishWeb.UserControllerTest do
 
     test "renders form for editing chosen user", %{conn: conn, user: user} do
       conn = conn
-      |> login("alice")
+      |> login("alice@example.com")
       |> get(Routes.user_path(conn, :edit, user))
       assert html_response(conn, 200) =~ "Edit User"
     end
@@ -18,7 +18,7 @@ defmodule InkfishWeb.UserControllerTest do
 
     test "redirects when data is valid", %{conn: conn, user: user} do
       conn = conn
-      |> login("alice")
+      |> login("alice@example.com")
       |> put(Routes.user_path(conn, :update, user), user: %{given_name: "Rob"})
       assert redirected_to(conn) == Routes.user_path(conn, :show, user)
 
@@ -28,7 +28,7 @@ defmodule InkfishWeb.UserControllerTest do
 
     test "renders errors when data is invalid", %{conn: conn, user: user} do
       conn = conn
-      |> login("alice")
+      |> login("alice@example.com")
       |> put(Routes.user_path(conn, :update, user), user: %{email: "+++"})
       assert html_response(conn, 200) =~ "Edit User"
     end

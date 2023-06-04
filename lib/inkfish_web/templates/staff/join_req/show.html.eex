@@ -3,8 +3,8 @@
 <ul>
 
   <li>
-    <strong>Login:</strong>
-    <%= @join_req.login %>
+    <strong>Email:</strong>
+    <%= @join_req.email %>
   </li>
 
   <li>

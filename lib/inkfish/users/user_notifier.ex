@@ -8,7 +8,7 @@ defmodule Inkfish.Users.UserNotifier do
     email =
       new()
       |> to(recipient)
-      |> from({"Inkfish", "contact@example.com"})
+      |> from({"Inkfish", "inkfish@example.com"})
       |> subject(subject)
       |> text_body(body)
 
@@ -18,60 +18,41 @@ defmodule Inkfish.Users.UserNotifier do
   end
 
   @doc """
-  Deliver instructions to confirm account.
+  Deliver link to register account.
   """
-  def deliver_confirmation_instructions(user, url) do
-    deliver(user.email, "Confirmation instructions", """
+  def deliver_reg_email(email, url) do
+    deliver(email, "Inkfish registration link", """
 
     ==============================
 
-    Hi #{user.email},
+    Hi #{email},
 
-    You can confirm your account by visiting the URL below:
+    You can create your account by visiting the URL below:
 
     #{url}
 
-    If you didn't create an account with us, please ignore this.
+    If you didn't request this email, please ignore this.
 
     ==============================
     """)
   end
 
   @doc """
-  Deliver instructions to reset a user password.
+  Deliver instructions to reset password.
   """
-  def deliver_reset_password_instructions(user, url) do
-    deliver(user.email, "Reset password instructions", """
+  def deliver_user_auth_email(user, url) do
+    deliver(user.email, "Inkfish authentication link", """
 
     ==============================
 
     Hi #{user.email},
 
-    You can reset your password by visiting the URL below:
+    You can log in to Inkfish with the following link:
 
     #{url}
 
-    If you didn't request this change, please ignore this.
-
-    ==============================
-    """)
-  end
-
-  @doc """
-  Deliver instructions to update a user email.
-  """
-  def deliver_update_email_instructions(user, url) do
-    deliver(user.email, "Update email instructions", """
-
-    ==============================
-
-    Hi #{user.email},
-
-    You can change your email by visiting the URL below:
-
-    #{url}
-
-    If you didn't request this change, please ignore this.
+    Sharing this link is equivent to sharing your password, which
+    is generally a bad idea.
 
     ==============================
     """)

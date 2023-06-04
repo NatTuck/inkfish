@@ -22,7 +22,6 @@ defmodule Make do
   def user(name, admin \\ false) do
     name = String.downcase(name)
     user = %User{
-      login: name,
       given_name: String.capitalize(name),
       surname: "Anderson", 
       email: "#{name}@example.com",

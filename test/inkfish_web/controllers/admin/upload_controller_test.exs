@@ -4,7 +4,7 @@ defmodule InkfishWeb.Admin.UploadControllerTest do
   describe "index" do
     test "lists all uploads", %{conn: conn} do
       conn = conn
-      |> login("alice")
+      |> login("alice@example.com")
       |> get(Routes.admin_upload_path(conn, :index))
       assert html_response(conn, 200) =~ "Listing Uploads"
     end

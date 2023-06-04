@@ -200,7 +200,7 @@ defmodule Inkfish.Courses do
   def course_add_instructor(tx, nil), do: tx
 
   def course_add_instructor(tx, instructor) do
-    user = Users.get_user_by_login!(instructor)
+    user = Users.get_user_by_email!(instructor)
 
     op = fn %{course: course} ->
       Reg.changeset(%Reg{}, %{user_id: user.id, course_id: course.id, is_prof: true})

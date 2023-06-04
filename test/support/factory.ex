@@ -17,7 +17,9 @@ defmodule Inkfish.Factory do
   alias Inkfish.LineComments.LineComment
 
   def stock_course do
-    course_params = %{params_for(:course) | instructor: "bob", name: "Stock Course"}
+    course_params = %{
+      params_for(:course) | instructor: "bob@example.com",
+			    name: "Stock Course"}
     {:ok, course} = Inkfish.Courses.create_course(course_params)
     bucket = insert(:bucket, course: course)
     asgn = insert(
@@ -26,9 +28,9 @@ defmodule Inkfish.Factory do
       teamset_id: course.solo_teamset_id,
       bucket: bucket)
     grade_column = insert(:grade_column, assignment: asgn)
-    staff = Inkfish.Users.get_user_by_login!("carol")
+    staff = Inkfish.Users.get_user_by_email!("carol@example.com")
     staff_reg = insert(:reg, course: course, user: staff, is_staff: true, is_grader: true)
-    student = Inkfish.Users.get_user_by_login!("dave")
+    student = Inkfish.Users.get_user_by_email!("dave@example.com")
     student_reg = insert(:reg, course: course, user: student, is_student: true)
     team = Inkfish.Teams.get_active_team(asgn, student_reg)
     sub = insert(:sub, assignment: asgn, reg: student_reg, team: team)
@@ -51,14 +53,18 @@ defmodule Inkfish.Factory do
 
   def user_factory do
     login = sequence(:login, &"sam#{&1}")
+    pass = "#{login}#{login}abc123"
+    hashed_pass = Argon2.hash_pwd_salt(pass)
     
     %User{
-      login: login,
       email: "#{login}@example.com",
       given_name: String.capitalize(login),
       surname: "Smith",
       is_admin: false,
       nickname: "",
+      password: pass,
+      password_confirmation: pass,
+      hashed_password: hashed_pass,
     }
   end
   
@@ -67,7 +73,7 @@ defmodule Inkfish.Factory do
       footer: "",
       name: sequence(:user_name, &"CS #{&1}"),
       start_date: Date.utc_today(),
-      instructor: "bob",
+      instructor: "bob@example.com",
     }
   end
   

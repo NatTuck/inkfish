@@ -9,7 +9,7 @@ defmodule InkfishWeb.Admin.UserControllerTest do
   describe "index" do
     test "lists all users", %{conn: conn} do
       conn = conn
-      |> login("alice")
+      |> login("alice@example.com")
       |> get(Routes.admin_user_path(conn, :index))
       assert html_response(conn, 200) =~ "Listing Users"
     end
@@ -20,7 +20,7 @@ defmodule InkfishWeb.Admin.UserControllerTest do
 
     test "renders form for editing chosen user", %{conn: conn, user: user} do
       conn = conn
-      |> login("alice")
+      |> login("alice@example.com")
       |> get(Routes.admin_user_path(conn, :edit, user))
       assert html_response(conn, 200) =~ "Edit User"
     end
@@ -31,7 +31,7 @@ defmodule InkfishWeb.Admin.UserControllerTest do
 
     test "redirects when data is valid", %{conn: conn, user: user} do
       conn = conn
-      |> login("alice")
+      |> login("alice@example.com")
       |> put(Routes.admin_user_path(conn, :update, user), user: %{"nickname" => "Zach"})
       assert redirected_to(conn) == Routes.admin_user_path(conn, :show, user)
 
@@ -41,7 +41,7 @@ defmodule InkfishWeb.Admin.UserControllerTest do
 
     test "renders errors when data is invalid", %{conn: conn, user: user} do
       conn = conn
-      |> login("alice")
+      |> login("alice@example.com")
       |> put(Routes.admin_user_path(conn, :update, user), user: %{"email" => "bob"})
       assert html_response(conn, 200) =~ "Edit User"
     end
@@ -52,7 +52,7 @@ defmodule InkfishWeb.Admin.UserControllerTest do
 
     test "deletes chosen user", %{conn: conn, user: user} do
       conn = conn
-      |> login("alice")
+      |> login("alice@example.com")
       |> delete(Routes.admin_user_path(conn, :delete, user))
       assert redirected_to(conn) == Routes.admin_user_path(conn, :index)
       assert_error_sent 404, fn ->
