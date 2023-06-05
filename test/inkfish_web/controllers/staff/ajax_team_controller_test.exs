@@ -44,7 +44,7 @@ defmodule InkfishWeb.Ajax.TeamControllerTest do
       conn = get(conn, Routes.ajax_staff_team_path(conn, :show, id))
 
       assert %{
-               "id" => id,
+               "id" => _id,
                "active" => true
              } = json_response(conn, 200)["data"]
     end
@@ -71,7 +71,7 @@ defmodule InkfishWeb.Ajax.TeamControllerTest do
       conn = get(conn, Routes.ajax_staff_team_path(conn, :show, id))
 
       assert %{
-               "id" => id,
+               "id" => ^id,
                "active" => false
              } = json_response(conn, 200)["data"]
     end

@@ -28,7 +28,7 @@ defmodule InkfishWeb.LineCommentControllerTest do
       conn = get(conn, Routes.ajax_staff_line_comment_path(conn, :show, id))
 
       assert %{
-               "id" => id,
+               "id" => ^id,
                "line" => 10,
                "path" => "hw03/main.c",
                "points" => "-5.0",
