@@ -29,6 +29,8 @@ defmodule InkfishWeb.UserAuthEmailController do
       )
     end
 
-    render(conn, :create)
+    conn
+    |> assign(:page_title, "Auth Email Sent")
+    |> render(:create)
   end
 end

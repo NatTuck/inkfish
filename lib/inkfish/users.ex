@@ -380,19 +380,6 @@ defmodule Inkfish.Users do
     if User.valid_password?(user, password), do: user
   end
 
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking user changes.
-
-  ## Examples
-
-      iex> change_user_registration(user)
-      %Ecto.Changeset{data: %User{}}
-
-  """
-  def change_user_registration(%User{} = user, attrs \\ %{}) do
-    User.registration_changeset(user, attrs, hash_password: false, validate_email: false)
-  end
-
   ## Settings
 
   def change_user_password(user, attrs \\ %{}) do

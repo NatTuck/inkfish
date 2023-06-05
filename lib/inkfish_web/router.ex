@@ -132,7 +132,7 @@ defmodule InkfishWeb.Router do
     resources "/teams", TeamController, only: [:show, :update, :delete]
   end
 
-  if Mix.env() == :dev do
+  if Mix.env() in [:dev, :test] do
     import Phoenix.LiveDashboard.Router
 
     scope "/" do

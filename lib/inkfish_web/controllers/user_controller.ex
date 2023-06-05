@@ -24,7 +24,7 @@ defmodule InkfishWeb.UserController do
   def new(conn, %{"token" => token}) do
     case Phoenix.Token.verify(conn, "reg_email", token, max_age: 86400) do
       {:ok, %{email: email}} ->
-	changeset = Users.change_user_registration(%User{email: email})
+	changeset = Users.change_user(%User{email: email})
 	render(conn, :new, changeset: changeset, token: token)
       :error ->
         conn
@@ -72,8 +72,7 @@ defmodule InkfishWeb.UserController do
     |> render(:edit, user: user, changeset: changeset)
   end
 
-  def update(conn, %{"action" => "update_password"} = params) do
-    %{"current_password" => password, "user" => user_params} = params
+  def update(conn, %{"action" => "update_password", "user" => user_params}) do
     user = conn.assigns.current_user
 
     case Users.update_user_password(user, user_params) do

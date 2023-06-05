@@ -40,7 +40,7 @@ defmodule Inkfish.Users.UserNotifier do
   @doc """
   Deliver instructions to reset password.
   """
-  def deliver_user_auth_email(user, url) do
+  def deliver_auth_email(user, url) do
     deliver(user.email, "Inkfish authentication link", """
 
     ==============================
