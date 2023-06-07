@@ -197,10 +197,18 @@ defmodule Inkfish.Courses do
     end
   end
 
+  defp extract_email(text) do
+    case Regex.run(~r/\[(\S+@\S+)\]/, text) do
+      xs when is_list(xs) -> Enum.at(xs, 1)
+      _other -> nil
+    end
+  end
+
   def course_add_instructor(tx, nil), do: tx
 
   def course_add_instructor(tx, instructor) do
-    user = Users.get_user_by_email!(instructor)
+    email = extract_email(instructor)
+    user = Users.get_user_by_email!(email)
 
     op = fn %{course: course} ->
       Reg.changeset(%Reg{}, %{user_id: user.id, course_id: course.id, is_prof: true})

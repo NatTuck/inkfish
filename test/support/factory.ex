@@ -18,7 +18,7 @@ defmodule Inkfish.Factory do
 
   def stock_course do
     course_params = %{
-      params_for(:course) | instructor: "bob@example.com",
+      params_for(:course) | instructor: "Bob Anderson [bob@example.com]",
 			    name: "Stock Course"}
     {:ok, course} = Inkfish.Courses.create_course(course_params)
     bucket = insert(:bucket, course: course)
@@ -73,7 +73,7 @@ defmodule Inkfish.Factory do
       footer: "",
       name: sequence(:user_name, &"CS #{&1}"),
       start_date: Date.utc_today(),
-      instructor: "bob@example.com",
+      instructor: "Bob Anderson [bob@example.com]",
     }
   end
   

@@ -43,7 +43,7 @@
       data: [topic: "users"]) %>
     <%= error_tag f, :instructor %>
     <div class="text-muted">
-      Username; start typing to search
+      start typing to search
     </div>
   </div>
 

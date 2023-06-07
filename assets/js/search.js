@@ -1,5 +1,6 @@
 
 import $ from "cash-dom";
+import _ from "lodash";
 
 import socket from "./socket";
 

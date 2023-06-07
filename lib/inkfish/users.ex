@@ -68,6 +68,9 @@ defmodule Inkfish.Users do
   Returns nil if User doesn't exist or if given a nil
   user id.
   """
+  def get_user_by_email!(nil) do
+    raise "Nil email"
+  end
   def get_user_by_email!(email) do
     Repo.get_by!(User, email: email)
   end

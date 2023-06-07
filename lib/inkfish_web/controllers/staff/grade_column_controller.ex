@@ -28,7 +28,9 @@ defmodule InkfishWeb.Staff.GradeColumnController do
       base: Decimal.new("50"),
     }
     changeset = Grades.change_grade_column(defaults)
-    render(conn, "new.html", changeset: changeset)
+    conn
+    |> assign(:page_title, "New Grade Column")
+    |> render("new.html", changeset: changeset)
   end
 
   def create(conn, %{"grade_column" => grade_column_params}) do
