@@ -1,0 +1,11 @@
+<h1>Docker Tag: <%= @docker_tag.name %></h1>
+<p>
+  <.link href={~p"/admin/docker_tags"}>Back to docker_tags</.link> |
+  <.link href={~p"/admin/docker_tags/#{@docker_tag}/edit"}>
+    Edit docker_tag
+  </.link>
+</p>
+
+<h2>Dockerfile</h2>
+<pre><%= @docker_tag.dockerfile %></pre>
+

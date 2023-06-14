@@ -26,6 +26,24 @@ defmodule Inkfish.Text do
   end
 
   def gen_uuid() do
-    :crypto.strong_rand_bytes(16) |> Base.encode16
+    :crypto.strong_rand_bytes(16)
+    |> Base.encode16
+  end
+
+  def lines([]), do: []
+  def lines(text) when is_binary(text) do
+    text
+    |> String.graphemes()
+    |> lines()
+  end
+  def lines(xs) when is_list(xs) do
+    ii = Enum.find_index(xs, &(&1 == "\n"))
+    if ii do
+      first = Enum.take(xs, ii + 1)
+      rest = Enum.drop(xs, ii + 1)
+      [Enum.join(first, "") | lines(rest)]
+    else
+      [Enum.join(xs, "")]
+    end
   end
 end

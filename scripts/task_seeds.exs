@@ -85,12 +85,12 @@ defmodule Make do
       a1 = hd(hd(course.buckets).assignments)
       {course, a1}
     else
-      _uA = Users.get_user_by_login!("alice")
-      uB = Users.get_user_by_login!("bob")
-      uC = Users.get_user_by_login!("carol")
-      uD = Users.get_user_by_login!("dave")
-      uE = Users.get_user_by_login!("erin")
-      uF = Users.get_user_by_login!("frank")
+      _uA = Users.get_user_by_email!("alice@example.com")
+      uB = Users.get_user_by_email!("bob@example.com")
+      uC = Users.get_user_by_email!("carol@example.com")
+      uD = Users.get_user_by_email!("dave@example.com")
+      uE = Users.get_user_by_email!("erin@example.com")
+      uF = Users.get_user_by_email!("frank@example.com")
 
       course = Make.course(course_name)
 

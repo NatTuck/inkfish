@@ -108,6 +108,8 @@ defmodule InkfishWeb.Router do
     post "/users/:id/impersonate", UserController, :impersonate
     resources "/courses", CourseController
     resources "/uploads", UploadController, only: [:index]
+    resources "/docker_tags", DockerTagController
+    resources "/terms", TermController
   end
 
   scope "/ajax", InkfishWeb, as: :ajax do

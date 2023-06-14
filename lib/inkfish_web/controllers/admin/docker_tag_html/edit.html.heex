@@ -1,0 +1,6 @@
+<h1>Edit Docker tag <%= @docker_tag.id %></h1>
+<p><.link navigate={~p"/admin/docker_tags/#{@docker_tag.id}"}>Show</.link></p>
+
+<.docker_tag_form changeset={@changeset} action={~p"/admin/docker_tags/#{@docker_tag}"} />
+
+<.back navigate={~p"/admin/docker_tags"}>Back to docker_tags</.back>

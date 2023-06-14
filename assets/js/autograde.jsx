@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 
+import $ from 'cash-dom';
+
 import Console from './console/console';
 import * as history from './console/history';
 
@@ -17,3 +19,5 @@ function AutogradeLog({topic}) {
     <Console topic={topic} className="autograde-console" />
   );
 }
+
+$(init_autograde_logs);

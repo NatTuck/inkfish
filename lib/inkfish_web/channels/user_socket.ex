@@ -5,6 +5,7 @@ defmodule InkfishWeb.UserSocket do
   channel "search:*", InkfishWeb.SearchChannel
   channel "clone:*", InkfishWeb.CloneChannel
   channel "autograde:*", InkfishWeb.AutogradeChannel
+  channel "itty:*", InkfishWeb.IttyChannel
 
   # Socket params are passed from the client and can
   # be used to verify and authenticate a user. After

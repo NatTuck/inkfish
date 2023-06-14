@@ -19,6 +19,7 @@ defmodule Inkfish.Application do
       InkfishWeb.Endpoint,
       # Live console output
       Inkfish.Itty.Sup,
+      Inkfish.Terms.Sup,
       # Container jobs
       Inkfish.Container.Worker,
       Inkfish.Container.Sup,

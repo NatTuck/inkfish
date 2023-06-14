@@ -32,7 +32,7 @@ defmodule InkfishWeb.Plugs.UserSession do
   def require_admin_session(conn, _args) do
     user = conn.assigns[:current_user]
 
-    if user.is_admin do
+    if user && user.is_admin do
       conn
     else
       conn

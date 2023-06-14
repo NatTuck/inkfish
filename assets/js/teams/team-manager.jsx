@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import { freeze } from 'icepick';
 import _ from 'lodash';
+import $ from 'cash-dom';
 
 import * as ajax from './ajax';
 
@@ -254,3 +255,5 @@ function TeamControls({root, team}) {
 
   return <div>{btns}</div>;
 }
+
+$(init);
