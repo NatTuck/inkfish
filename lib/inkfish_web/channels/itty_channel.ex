@@ -34,7 +34,7 @@ defmodule InkfishWeb.IttyChannel do
 
   def handle_info({:done, uuid}, socket) do
     IO.inspect {:done, uuid}
-    push(socket, "done", {uuid})
+    push(socket, "done", %{uuid: uuid})
     {:noreply, socket}
   end
 end
