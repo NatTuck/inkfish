@@ -48,7 +48,7 @@ defmodule InkfishWeb.AutogradeChannel do
         if exit do
           send(self(), {:exit, exit})
         end
-      :error ->
+      {:error, _} ->
         send_output({1_000, "stderr", "itty missing"}, socket)
     end
 

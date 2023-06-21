@@ -1,5 +1,5 @@
 defmodule InkfishWeb.Staff.SubController do
-  use InkfishWeb, :controller
+  use InkfishWeb, :controller1
 
   alias InkfishWeb.Plugs
   plug Plugs.FetchItem, [sub: "id"]
@@ -34,8 +34,7 @@ defmodule InkfishWeb.Staff.SubController do
       {grade, token, log}
     end)
 
-    queue = Inkfish.Container.Queue.list()
-    |> Enum.filter(&(&1.idx != nil))
+    queue = Inkfish.Autobots.list_queue()
 
     render(conn, "show.html", sub: sub, sub_data: sub_data,
       autogrades: autogrades, queue: queue)

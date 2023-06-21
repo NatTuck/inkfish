@@ -58,6 +58,8 @@ defmodule Inkfish.MixProject do
       {:singleton, "~> 1.3"},
       {:swoosh, "~> 1.11"},
       {:httpoison, "~> 2.0"},
+      {:ok, "~> 2.3"},
+      {:e_q, "~> 1.0"},
       {:phoenix_copy, "~> 0.1.3", runtime: Mix.env() == :dev},
       {:esbuild, "~> 0.2", runtime: Mix.env() == :dev},
       {:dart_sass, "~> 0.6", runtime: Mix.env() == :dev},
@@ -81,6 +83,7 @@ defmodule Inkfish.MixProject do
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
       "assets.deploy": [
         "phx.copy default",
+        "phx.copy bs_icons",
         "esbuild default --minify",
         "sass default --no-source-map --style=compressed",
         "phx.digest"

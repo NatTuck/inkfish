@@ -6,6 +6,29 @@
   </.link>
 </p>
 
+<h2>Image</h2>
+
+<div class="row">
+  <div class="col">
+    <%= form_for @conn.params, ~p"/admin/docker_tags/#{@docker_tag}/build", fn _f -> %>
+    <button class="btn btn-warning">Build</button>
+    <% end %>
+  </div>
+  <div class="col">
+    <%= form_for @conn.params, ~p"/admin/docker_tags/#{@docker_tag}/clean", fn _f -> %>
+    <button class="btn btn-danger">Clean</button>
+    <% end %>
+  </div>
+</div>
+
+<pre><%= inspect(@image, pretty: true) %></pre>
+
+<%= if @fresh do %>
+<p>Image is up to date!</p>
+<% else %>
+<p>Image is stale.</p>
+<% end %>
+
 <h2>Dockerfile</h2>
 <pre><%= @docker_tag.dockerfile %></pre>
 

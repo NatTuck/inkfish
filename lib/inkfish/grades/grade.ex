@@ -47,4 +47,11 @@ defmodule Inkfish.Grades.Grade do
       nil
     end
   end
+
+  def delete_log(grade) do
+    if grade.log_uuid do
+      path = log_path(grade)
+      File.rm(path)
+    end
+  end
 end

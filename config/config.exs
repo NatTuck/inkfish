@@ -18,6 +18,9 @@ config :inkfish, InkfishWeb.Endpoint,
   pubsub_server: Inkfish.PubSub,
   live_view: [signing_salt: "37rUe00e"]
 
+config :inkfish, Inkfish.Autobots,
+  workers: 2
+
 config :inkfish, Inkfish.Mailer,
    adapter: Swoosh.Adapters.Local
 
@@ -52,6 +55,11 @@ config :phoenix_copy,
   default: [
     source: Path.expand("../assets/static/", __DIR__),
     destination: Path.expand("../priv/static/", __DIR__),
+    debounce: 100
+  ],
+  bs_icons: [
+    source: Path.expand("../assets/node_modules/bootstrap-icons/icons/", __DIR__),
+    destination: Path.expand("../priv/static/images/icons/", __DIR__),
     debounce: 100
   ]
 

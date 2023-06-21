@@ -109,7 +109,10 @@ defmodule InkfishWeb.Router do
     resources "/courses", CourseController
     resources "/uploads", UploadController, only: [:index]
     resources "/docker_tags", DockerTagController
+    post "/docker_tags/:id/build", DockerTagController, :build
+    post "/docker_tags/:id/clean", DockerTagController, :clean
     resources "/terms", TermController
+    resources "/queue_tasks", QueueTaskController, only: [:index, :show]
   end
 
   scope "/ajax", InkfishWeb, as: :ajax do

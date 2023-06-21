@@ -1,13 +1,16 @@
 {
   "dependencies": {
+    "ansi_up": "^5.2.1",
     "axios": "^1.4.0",
-    "bootstrap-scss": "^4",
-    "bootswatch": "^4",
+    "bootstrap-icons": "^1.10.5",
+    "bootstrap-scss": "^5",
+    "bootswatch": "^5",
     "cash-dom": "^8.1.5",
     "codemirror": "^5",
     "codemirror-mode-elixir": "^1",
     "date-fns": "^2.30.0",
     "filesize": "^6.1",
+    "html-react-parser": "^4.0.0",
     "icepick": "^2.4.0",
     "lodash": "^4.17.21",
     "promise-file-reader": "^1",

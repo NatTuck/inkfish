@@ -7,7 +7,8 @@ defmodule InkfishWeb.Admin.TermController do
 
   def create(conn, _params) do
     cmd = "echo 1; sleep 2; echo 2; sleep 2; echo 3; sleep 2; echo 4"
-    {:ok, uuid} = Inkfish.Terms.run(cmd)
+    #cmd = "(cd ~/Code/inkfish/notes/docker/default && docker build .)"
+    {:ok, uuid} = Inkfish.Itty.run(cmd)
     redirect(conn, to: ~p"/admin/terms/#{uuid}")
   end
 

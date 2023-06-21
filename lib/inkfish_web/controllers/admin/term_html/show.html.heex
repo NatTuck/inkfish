@@ -1,8 +1,9 @@
 
-<h1>Show</h1>
+<h1>Show <%= @id %></h1>
 
-<%= @id %>
+<p><%= link "Index", to: ~p"/admin/terms" %></p>
 
 <div id="itty-root" data-uuid={@id}>
+  <!-- React component in js/itty.jsx -->
   Loading...
 </div>

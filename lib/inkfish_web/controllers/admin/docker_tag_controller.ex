@@ -1,6 +1,7 @@
 defmodule InkfishWeb.Admin.DockerTagController do
   use InkfishWeb, :controller1
 
+  alias Inkfish.Docker
   alias Inkfish.DockerTags
   alias Inkfish.DockerTags.DockerTag
 
@@ -29,7 +30,9 @@ defmodule InkfishWeb.Admin.DockerTagController do
 
   def show(conn, %{"id" => id}) do
     docker_tag = DockerTags.get_docker_tag!(id)
-    render(conn, :show, docker_tag: docker_tag)
+    image = Docker.get_image_by_tag(docker_tag.name)
+    fresh = DockerTags.fresh_image?(docker_tag, image)
+    render(conn, :show, docker_tag: docker_tag, image: image, fresh: fresh)
   end
 
   def edit(conn, %{"id" => id}) do
@@ -59,5 +62,17 @@ defmodule InkfishWeb.Admin.DockerTagController do
     conn
     |> put_flash(:info, "Docker tag deleted successfully.")
     |> redirect(to: ~p"/admin/docker_tags")
+  end
+
+  def build(conn, %{"id" => id}) do
+    tag = DockerTags.get_docker_tag!(id)
+    {:ok, uuid} = DockerTags.start_build(tag)
+    render(conn, :build, id: id, docker_tag: tag, uuid: uuid)
+  end
+
+  def clean(conn, %{"id" => id}) do
+    tag = DockerTags.get_docker_tag!(id)
+    {:ok, uuid} = DockerTags.start_clean(tag)
+    render(conn, :build, id: id, docker_tag: tag, uuid: uuid)
   end
 end

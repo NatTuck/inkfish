@@ -6,6 +6,7 @@ pre.console {
     min-height: 12em;
     overflow-y: scroll;
     padding: 1ex;
+    font-family: mono;
 }
 
 pre.clone-console {
@@ -13,5 +14,5 @@ pre.clone-console {
 }
 
 pre.autograde-console {
-    max-height: 80em;
+    max-height: 60em;
 }

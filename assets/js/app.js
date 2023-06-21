@@ -12,6 +12,5 @@ import "./dates/init";
 import "./uploads/init";
 import "./tasks/init";
 import "./teams/team-manager";
-import "./autograde";
 import "./gcol";
 import "./itty";

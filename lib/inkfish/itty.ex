@@ -1,77 +1,22 @@
 defmodule Inkfish.Itty do
   alias Inkfish.Itty.Server
 
-  @doc """
-  Returns ???
-  """
-  def start() do
+  def run(uuid, script) do
+    {:ok, _pid} = Server.start(uuid, script, %{}, &(&1))
+    {:ok, uuid}
+  end
+
+  def run(script) do
     uuid = Inkfish.Text.gen_uuid()
-    start(uuid)
+    run(uuid, script)
   end
-
-  def start(uuid) do
-    Server.start(uuid, &null_fn/1)
-  end
-
-  def start(uuid, on_exit) do
-    Server.start(uuid, on_exit)
-  end
-
-  def null_fn(_) do
-    :ok
-  end
-
-  def run(uuid, cmd, env) do
-    Server.run(uuid, cmd, env)
-  end
-
-  def echo(uuid, msg) do
-    Server.echo(uuid, msg)
-  end
-
-  @doc """
-  Subscribes the current process to event messages.
-
-  Returns {:ok, prev_data}
-  """
+  
   def open(uuid) do
-    open(uuid, self())
+    :ok = Phoenix.PubSub.subscribe(Inkfish.PubSub, "ittys:" <> uuid)
+    Server.peek(uuid)
   end
 
-  def open(uuid, rpid) do
-    Server.open(uuid, rpid)
-  end
-
-  @doc """
-  Returns {:ok, output_text}
-  """
   def close(uuid) do
-    close(uuid, self())
-  end
-
-  def close(uuid, rpid) do
-    Server.close(uuid, rpid)
-  end
-
-  @doc """
-  Interactively monitors an itty.
-  """
-  def monitor(uuid) do
-    {:ok, info} = open(uuid)
-    if info[:exit] do
-      IO.inspect(info)
-    else
-      monitor_wait()
-    end
-  end
-
-  def monitor_wait do
-    receive do
-      {:exit, status} ->
-        IO.inspect({:exit, status})
-      _other ->
-        #IO.inspect(other)
-        monitor_wait()
-    end
+    Phoenix.PubSub.unsubscribe(Inkfish.PubSub, "ittys:" <> uuid)
   end
 end

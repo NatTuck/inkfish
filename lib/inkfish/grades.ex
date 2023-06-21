@@ -7,7 +7,7 @@ defmodule Inkfish.Grades do
   alias Inkfish.Repo
 
   alias Inkfish.Grades.GradeColumn
-  alias Inkfish.Container
+  alias Inkfish.Autobots
 
   @doc """
   Returns the list of grade_columns.
@@ -254,7 +254,7 @@ defmodule Inkfish.Grades do
 
     grade = get_grade_for_autograding!(grade.id)
 
-    :ok = Container.enqueue(grade)
+    :ok = Autobots.enqueue(grade)
     {:ok, uuid}
   end
 
@@ -290,6 +290,7 @@ defmodule Inkfish.Grades do
 
   """
   def delete_grade(%Grade{} = grade) do
+    Grade.delete_log(grade)
     Repo.delete(grade)
   end
 

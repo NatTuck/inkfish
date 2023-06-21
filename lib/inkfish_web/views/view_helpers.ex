@@ -254,4 +254,8 @@ defmodule InkfishWeb.ViewHelpers do
       "No"
     end
   end
+
+  def bs_icon(name) do
+    raw(~s(<img src="/images/icons/#{name}.svg" />))
+  end
 end

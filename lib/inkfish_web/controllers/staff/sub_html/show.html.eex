@@ -127,6 +127,12 @@
       <pre><%= render_autograde_log(log["log"]) %></pre>
     <% else %>
       <p>Queue Size: <%= length(@queue) %></p>
+
+      <div id="itty-root" data-uuid={@id}>
+        <!-- React component in js/itty.jsx -->
+        Loading...
+      </div>
+  
       <div class="autograde-log"
            data-topic="<%= "autograde:" <> grade.log_uuid %>"
            data-token="<%= token %>">
