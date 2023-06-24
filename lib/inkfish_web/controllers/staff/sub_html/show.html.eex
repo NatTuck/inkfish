@@ -128,16 +128,12 @@
     <% else %>
       <p>Queue Size: <%= length(@queue) %></p>
 
-      <div id="itty-root" data-uuid={@id}>
+      <div id="itty-root"
+	data-token="<%= token %>"
+	data-chan="autograde"
+	data-uuid="<%= grade.log_uuid %>">
         <!-- React component in js/itty.jsx -->
         Loading...
-      </div>
-  
-      <div class="autograde-log"
-           data-topic="<%= "autograde:" <> grade.log_uuid %>"
-           data-token="<%= token %>">
-        <!-- React component in js/autograde.jsx -->
-        [react]
       </div>
     <% end %>
   <% end %>

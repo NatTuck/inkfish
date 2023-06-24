@@ -14,3 +14,18 @@ From Docker API:
  - Images
  - Containers
 
+
+
+# Testing sequence
+
+Before:
+
+ - Image includes all packages / software installs.
+ 
+At execute time:
+
+ - Create container from image with driver command set.
+ - Unpack driver tarball.
+ - Unpack student tarball.
+ - Unpack grading tarball.
+ - Run driver.

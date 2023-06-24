@@ -11,13 +11,13 @@ import socket from "./socket";
 
 let channel;
 
-function Itty({uuid}) {
+function Itty({chan, uuid, token}) {
   const dispatch = useDispatch();
   const {blocks, done} = useSelector(({blocks, done}) => ({blocks, done}));
   console.log("blocks,done", blocks, done);
 
   useEffect(() => {
-    channel = socket.channel("itty:" + uuid);
+    channel = socket.channel(chan + ":" + uuid, {token});
     channel.join()
       .receive("ok", (msg) => {
         console.log("Joined", uuid, msg);
@@ -90,13 +90,13 @@ function init() {
     return;
   }
 
-  let {uuid, chan} = root_div.dataset;
+  let {uuid, chan, token} = root_div.dataset;
   chan ||= "itty";
 
   let root = ReactDOM.createRoot(root_div);
   root.render(
     <Provider store={store}>
-      <Itty chan={chan} uuid={uuid} />
+      <Itty chan={chan} uuid={uuid} token={token} />
     </Provider>
   );
 }

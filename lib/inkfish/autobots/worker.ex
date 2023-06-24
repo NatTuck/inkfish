@@ -24,6 +24,10 @@ defmodule Inkfish.Autobots.Worker do
   end
 
   def work(%{id: id}, job) do
+    IO.inspect({:work, id, job})
+  end
+
+  def autograde(job) do
     
   end
 end

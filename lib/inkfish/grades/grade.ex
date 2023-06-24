@@ -37,6 +37,11 @@ defmodule Inkfish.Grades.Grade do
     |> Path.join("#{grade.log_uuid}.json")
   end
 
+  def put_log(grade, log) do
+    log_path(grade)
+    |> File.write!(Jason.encode!(log))
+  end
+
   def get_log(grade) do
     if grade.log_uuid do
       case File.read(log_path(grade)) do

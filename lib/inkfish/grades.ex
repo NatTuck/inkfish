@@ -214,6 +214,10 @@ defmodule Inkfish.Grades do
       preload: [grade_column: gc]
   end
 
+  def preload_sub_and_upload(grade) do
+    Repo.preload(grade, [sub: :upload])
+  end
+
   @doc """
   Creates a grade.
 
@@ -290,6 +294,7 @@ defmodule Inkfish.Grades do
 
   """
   def delete_grade(%Grade{} = grade) do
+    grade = preload_sub_and_upload(grade)
     Grade.delete_log(grade)
     Repo.delete(grade)
   end
