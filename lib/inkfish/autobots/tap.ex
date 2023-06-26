@@ -1,4 +1,4 @@
-defmodule Inkfish.Container.Tap do
+defmodule Inkfish.Autobots.Tap do
   @doc """
   Parses TAP as output by Perl's Test::Simple.
 

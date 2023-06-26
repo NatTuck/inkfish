@@ -10,13 +10,14 @@ use File::Temp qw(tempdir);
 my $SCR = $ENV{'SCR'} or die "Need $ENV{'SCR'}";
 my $SUB = $ENV{'SUB'} or die "Need $ENV{'SUB'}";
 my $GRA = $ENV{'GRA'} or die "Need $ENV{'SUB'}";
+my $COOKIE = $ENV{'COOKIE'} or die "Need $ENV{'COOKIE'}";
 
 sub tar_up($tarball, $path) {
     system(qq{(cd "$path" && tar czf "$tarball" .)});
 }
 
 sub create($image) {
-    my $opts = qq{--label "autobot=1" --cpus 1 --rm};
+    my $opts = qq{--label "autobot=1" --env "COOKIE=$COOKIE" --cpus 1 --rm};
     my $id = qx{docker create $opts "$image" perl /var/tmp/driver.pl};
     chomp $id;
     say "Created container: $image => $id";

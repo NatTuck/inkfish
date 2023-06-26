@@ -25,8 +25,11 @@ defmodule Inkfish.Autobots.Autograde do
       "GRA" => unpacked_gra,
     }
     
-    Itty.run grade.log_uuid, :autobots, grade_script, env, fn result ->
-      IO.inspect {:itty_done, result}
+    Itty.run grade.log_uuid, :autobots, grade_script, env, fn rv ->
+      {:ok, {passed, tests}} = Inkfish.Autobots.Tap.score(rv.result)
+
+      Grades.set_grade_log!(rv.uuid, rv)
+      Grades.set_grade_score(grade, passed, tests)
     end
   end
 end

@@ -232,9 +232,8 @@ defmodule InkfishWeb.ViewHelpers do
 
   def render_autograde_log(items) do
     items
-    |> Enum.map(fn item ->
-      item["text"]
-    end)
+    |> Enum.sort_by(&(&1["seq"]))
+    |> Enum.map(&(&1["text"]))
     |> Enum.join("")
   end
 

@@ -1,6 +1,5 @@
 defmodule Inkfish.Autobots do
   alias Inkfish.Autobots.Autograde
-  alias Inkfish.Autobots.Queue
 
   alias Inkfish.Grades
   alias Inkfish.Grades.Grade

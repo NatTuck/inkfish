@@ -106,17 +106,20 @@ defmodule Inkfish.Itty.Server do
   end
 
   def handle_info({:DOWN, _, _, _, status}, state) do
-    %{uuid: uuid, on_exit: on_exit, qname: qname, ticket: ticket} = state
+    %{uuid: uuid, on_exit: on_exit, qname: qname,
+      ticket: ticket, blocks: blocks} = state
 
     Phoenix.PubSub.broadcast!(Inkfish.PubSub, "ittys:" <> uuid, {:done, uuid})
     Tickets.done(qname, ticket)
 
-    IO.inspect {:itty_down, state}
-    
     if on_exit do
-      state
-      |> get_marked_output(state.cookie)
-      |> on_exit.()
+      rv = %{
+	uuid: uuid,
+	status: "ok",
+	result: get_marked_output(state, state.cookie),
+	log: blocks,
+      }
+      on_exit.(rv)
     end
 
     Process.send_after(self(), :shutdown, @linger_seconds * 1000)
@@ -133,12 +136,16 @@ defmodule Inkfish.Itty.Server do
     {:noreply, state0}
   end
 
-  def get_marked_output(state, cookie) do
-    splits = state.blocks
-    |> Enum.filter(fn bb -> bb.stream == :out end)
+  def get_stream_text(state, stream) do
+    state.blocks
+    |> Enum.filter(fn bb -> bb.stream == stream end)
     |> Enum.sort_by(fn bb -> bb.seq end)
     |> Enum.map(fn bb -> bb.text end)
     |> Enum.join("")
+  end
+
+  def get_marked_output(state, cookie) do
+    splits = get_stream_text(state, :out)
     |> String.split("\n#{cookie}\n", trim: true)
 
     if length(splits) > 1 do

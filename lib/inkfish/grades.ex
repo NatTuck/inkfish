@@ -336,4 +336,22 @@ defmodule Inkfish.Grades do
     data = Jason.encode!(log)
     File.write!(path, data)
   end
+
+  def set_grade_score(grade, passed, tests) do
+    grade = get_grade!(grade.id)
+
+    score = passed
+    |> safe_div(tests)
+    |> Decimal.mult(grade.grade_column.points)
+
+    update_grade(grade, %{score: score})
+  end
+
+  def safe_div(nn, dd) do
+    if Decimal.eq?(dd, 0) do
+      Decimal.new(0)
+    else
+      Decimal.div(nn, dd)
+    end
+  end
 end
