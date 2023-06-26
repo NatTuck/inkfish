@@ -1,6 +1,8 @@
 defmodule Inkfish.Itty.Server do
   use GenServer
 
+  alias Inkfish.Itty.Tickets
+
   # How long to stay alive waiting for late
   # subscribers after the process terminates.
   @linger_seconds 120
@@ -13,11 +15,12 @@ defmodule Inkfish.Itty.Server do
     {:via, Registry, {Inkfish.Itty.Reg, uuid}}
   end
 
-  def start(uuid, cmd, env, on_exit) do
+  def start(uuid, qname, cmd, env, on_exit) do
     cookie = Inkfish.Text.gen_uuid()
     env = env
     |> Map.update("COOKIE", cookie, &(&1))
     state0 = %{
+      qname: qname,
       uuid: uuid,
       cmd: cmd,
       cookie: cookie,
@@ -41,7 +44,19 @@ defmodule Inkfish.Itty.Server do
   end
 
   @impl true
-  def init(%{cmd: cmd, uuid: uuid, env: env} = state0) do
+  def init(%{qname: qname} = state0) do
+    ticket = Tickets.ticket(qname)
+    data = %{
+      seq: 0,
+      blocks: [],
+      done: false,
+      started: false,
+      ticket: ticket
+    }
+    {:ok, Map.merge(state0, data)}
+  end
+
+  def start_cmd(%{cmd: cmd, uuid: uuid, env: env} = state0) do
     env = System.get_env()
     |> Map.merge(env)
     |> Enum.into([])
@@ -51,12 +66,7 @@ defmodule Inkfish.Itty.Server do
     opts = [{:stdout, self()}, {:stderr, self()}, {:env, env},
 	    {:kill_timeout, 5}, :monitor]
     {:ok, _pid, _ospid} = :exec.run(cmd, opts, 30)
-    {:ok, Map.merge(state0, %{seq: 0, blocks: [], done: false})}
-  end
-
-  @impl true
-  def handle_call(:peek, _from, state) do
-    {:reply, {:ok, view(state)}, state}
+    :ok
   end
 
   def view(state) do
@@ -64,25 +74,45 @@ defmodule Inkfish.Itty.Server do
   end
 
   @impl true
-  def handle_info({:stdout, _, text}, %{uuid: uuid, seq: seq, blocks: blocks} = state) do
-    block = %{seq: seq, stream: :out, text: text}
+  def handle_call(:peek, _from, state) do
+    {:reply, {:ok, view(state)}, state}
+  end
+
+  def send_block(block, %{uuid: uuid, seq: seq, blocks: blocks} = state) do
     blocks = [block | blocks]
     Phoenix.PubSub.broadcast!(Inkfish.PubSub, "ittys:" <> uuid, {:block, uuid, block})
     {:noreply, %{state | seq: seq + 1, blocks: blocks}}
+  end
+
+  @impl true
+  def handle_info({:now_serving, serving, _}, state) do
+    %{uuid: uuid, seq: seq, blocks: blocks, ticket: ticket} = state
+    text = "Now serving #{serving}. We are #{ticket}.\n"
+    block = %{seq: seq, stream: :adm, text: text}
+    if ticket < serving do
+      start_cmd(state)
+    end
+    send_block(block, state)
+ end
+
+  def handle_info({:stdout, _, text}, %{uuid: uuid, seq: seq, blocks: blocks} = state) do
+    block = %{seq: seq, stream: :out, text: text}
+    send_block(block, state)
   end
 
   def handle_info({:stderr, _, text}, %{uuid: uuid, seq: seq, blocks: blocks} = state) do
     block = %{seq: seq, stream: :err, text: text} 
-    blocks = [block | blocks]
-    Phoenix.PubSub.broadcast!(Inkfish.PubSub, "ittys:" <> uuid, {:block, uuid, block})
-    {:noreply, %{state | seq: seq + 1, blocks: blocks}}
+    send_block(block, state)
   end
 
   def handle_info({:DOWN, _, _, _, status}, state) do
-    %{uuid: uuid, on_exit: on_exit} = state
+    %{uuid: uuid, on_exit: on_exit, qname: qname, ticket: ticket} = state
 
     Phoenix.PubSub.broadcast!(Inkfish.PubSub, "ittys:" <> uuid, {:done, uuid})
+    Tickets.done(qname, ticket)
 
+    IO.inspect {:itty_down, state}
+    
     if on_exit do
       state
       |> get_marked_output(state.cookie)

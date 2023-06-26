@@ -6,6 +6,7 @@ no warnings "experimental::signatures";
 use autodie qw(:all);
 
 sub run($cmd) {
+    #say "Running: $cmd";
     system(qq{su - student -c '$cmd'});
 }
 
@@ -20,9 +21,13 @@ system("cp /var/tmp/unpack.pl /usr/local/bin/unpack.pl");
 system("chmod a+x /usr/local/bin/unpack.pl");
 
 untar("/var/tmp/sub.tar.gz");
-run(qq{[[ -e Makefile ]] && make});
+run(qq{[[ -e Makefile ]] && make || true});
 
-untar("/var/tmp/grading.tar.gz");
+untar("/var/tmp/gra.tar.gz");
+
+#say "\n\n== After unpack ==\n";
+#run(qq{echo -n "wd = " && pwd && ls -F});
+
 say "\n$COOKIE";
 run(qq{perl test.pl});
 say "\n$COOKIE";

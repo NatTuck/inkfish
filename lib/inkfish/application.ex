@@ -6,7 +6,7 @@ defmodule Inkfish.Application do
   use Application
 
   def start(_type, _args) do
-    {:ok, _} = Inkfish.Autobots.Queue.start()
+    {:ok, _} = Inkfish.Itty.Tickets.start()
 
     children = [
       # Start the Ecto repository

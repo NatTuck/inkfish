@@ -150,6 +150,13 @@ defmodule Inkfish.Subs do
     end
   end
 
+  def get_script_grades(sub) do
+    sub = Repo.preload(sub, [grades: :grade_column])
+    Enum.filter sub.grades, fn gr ->
+      gr.grade_column.kind == "script"
+    end
+  end
+
   def autograde!(sub) do
     asg = Inkfish.Assignments.get_assignment!(sub.assignment_id)
 

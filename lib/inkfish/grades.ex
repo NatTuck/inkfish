@@ -258,8 +258,7 @@ defmodule Inkfish.Grades do
 
     grade = get_grade_for_autograding!(grade.id)
 
-    :ok = Autobots.enqueue(grade)
-    {:ok, uuid}
+    Autobots.autograde(grade)
   end
 
 

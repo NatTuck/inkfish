@@ -97,8 +97,8 @@ defmodule InkfishWeb.Router do
     resources "/subs", SubController, only: [:show, :update] do
       resources "/grades", GradeController, only: [:create]
     end
+    post "/subs/:id/rerun_scripts", SubController, :rerun_scripts
     resources "/grades", GradeController, only: [:edit, :show]
-    post "/grades/:id/rerun_script", GradeController, :rerun_script
   end
 
   scope "/admin", InkfishWeb.Admin, as: :admin do

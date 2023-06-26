@@ -21,12 +21,12 @@ defmodule InkfishWeb.AutogradeChannel do
   def handle_info(:open, socket) do
     uuid = socket.assigns[:uuid]
     case Inkfish.Itty.open(uuid) do
-      {:ok, %{blocks: blocks, exit: exit}} ->
+      {:ok, %{blocks: blocks, done: done}} ->
 	Enum.each blocks, fn block ->
 	  push(socket, "block", block)
 	end
 
-        if exit do
+        if done do
           Process.send_after(self(), {:done, uuid}, 1)
         end
       {:error, _} ->
