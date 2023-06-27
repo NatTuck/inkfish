@@ -47,7 +47,6 @@ defmodule Inkfish.Sandbox.Archive do
   end
 
   def unpack(archive, target) do
-    IO.inspect {:unpack, archive, target}
     cond do
       Regex.match?(~r/\.tar\.(gz|xz|bz2)$/, archive) ->
 	untar(archive, target)
