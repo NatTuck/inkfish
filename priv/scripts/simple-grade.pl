@@ -13,6 +13,7 @@ my $GRA = $ENV{'GRA'} or die "Need $ENV{'SUB'}";
 my $COOKIE = $ENV{'COOKIE'} or die "Need $ENV{'COOKIE'}";
 
 sub tar_up($tarball, $path) {
+    say "Tar up $path";
     system(qq{(cd "$path" && tar czf "$tarball" .)});
 }
 

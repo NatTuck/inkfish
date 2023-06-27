@@ -20,14 +20,24 @@ $ENV{'COOKIE'} = "~redacted~";
 system("cp /var/tmp/unpack.pl /usr/local/bin/unpack.pl");
 system("chmod a+x /usr/local/bin/unpack.pl");
 
-untar("/var/tmp/sub.tar.gz");
-run(qq{[[ -e Makefile ]] && make || true});
+say("\nUnpack grading archive:");
+untar("/var/tmp/gra.tar.gz");
 
+say("\nUnpack submission:");
+untar("/var/tmp/sub.tar.gz");
+
+say("\nAttempt build:");
+run(qq{[[ -e Makefile ]] && make || echo No Makefile});
+
+say("\nUnpack grading archive again:");
 untar("/var/tmp/gra.tar.gz");
 
 #say "\n\n== After unpack ==\n";
 #run(qq{echo -n "wd = " && pwd && ls -F});
 
+say("\nRun test script:");
 say "\n$COOKIE";
 run(qq{perl test.pl});
-say "\n$COOKIE";
+say "\n$COOKIE\n";
+
+say "Grading script complete."
