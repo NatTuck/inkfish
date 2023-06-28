@@ -38,7 +38,9 @@ export default function GitUploader({setUploadId, token, nonce}) {
   function handle_enter(ev) {
     if (ev.which == 13) {
       ev.preventDefault();
-      startClone();
+      if (!started) {
+	startClone();
+      }
     }
   }
 

@@ -96,13 +96,4 @@ defmodule InkfishWeb.Staff.GradeController do
     Inkfish.Subs.save_sub_dump!(sub_id)
   end
 
-  def rerun_script(conn, %{"id" => _id}) do
-    grade = conn.assigns[:grade]
-
-    Inkfish.Subs.autograde!(grade.sub)
-
-    conn
-    |> put_flash(:info, "Rerunning all grading scripts for sub")
-    |> redirect(to: Routes.staff_sub_path(conn, :show, grade.sub_id))
-  end
 end
