@@ -12,7 +12,6 @@ defmodule InkfishWeb.Staff.CourseController do
     when action not in [:index, :new, :create]
 
   alias Inkfish.Courses
-  alias Inkfish.Courses.Course
   alias Inkfish.Grades.Gradesheet
   alias Inkfish.GradingTasks
 

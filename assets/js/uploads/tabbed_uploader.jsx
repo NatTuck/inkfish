@@ -5,7 +5,6 @@ import classnames from 'classnames';
 
 import FileUploader from './file_uploader';
 import GitUploader from './git_uploader';
-import * as history from '../console/history';
 
 export default function TabbedUploader({allowGit, allowFile, setUploadId, token, nonce}) {
   allowFile = (allowFile == "true");

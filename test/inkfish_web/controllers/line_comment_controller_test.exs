@@ -21,14 +21,14 @@ defmodule InkfishWeb.LineCommentControllerTest do
       params = params_for(:line_comment, user: staff, grade: grade)
 
       conn = conn
-      |> login(staff.login)
+      |> login(staff)
       |> post(Routes.ajax_staff_grade_line_comment_path(conn, :create, grade), line_comment: params)
       assert %{"id" => id} = json_response(conn, 201)["data"]
 
       conn = get(conn, Routes.ajax_staff_line_comment_path(conn, :show, id))
 
       assert %{
-               "id" => id,
+               "id" => ^id,
                "line" => 10,
                "path" => "hw03/main.c",
                "points" => "-5.0",
@@ -38,7 +38,7 @@ defmodule InkfishWeb.LineCommentControllerTest do
     test "renders errors when data is invalid", %{conn: conn, staff: staff, grade: grade} do
       params = %{points: nil}
       conn = conn
-      |> login(staff.login)
+      |> login(staff)
       |> post(Routes.ajax_staff_grade_line_comment_path(conn, :create, grade), line_comment: params)
       assert json_response(conn, 422)["errors"] != %{}
     end
@@ -49,7 +49,7 @@ defmodule InkfishWeb.LineCommentControllerTest do
       params = %{points: "7.3"}
 
       conn = conn
-      |> login(staff.login)
+      |> login(staff)
       |> put(Routes.ajax_staff_line_comment_path(conn, :update, line_comment), line_comment: params)
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
 
@@ -62,7 +62,7 @@ defmodule InkfishWeb.LineCommentControllerTest do
       params = %{points: nil}
 
       conn = conn
-      |> login(staff.login)
+      |> login(staff)
       |> put(Routes.ajax_staff_line_comment_path(conn, :update, line_comment), line_comment: params)
       assert json_response(conn, 422)["errors"] != %{}
     end
@@ -71,7 +71,7 @@ defmodule InkfishWeb.LineCommentControllerTest do
   describe "delete line_comment" do
     test "deletes chosen line_comment", %{conn: conn, line_comment: line_comment, staff: staff} do
       conn = conn
-      |> login(staff.login)
+      |> login(staff)
       |> delete(Routes.ajax_staff_line_comment_path(conn, :delete, line_comment))
       assert response(conn, 200)
 

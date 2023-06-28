@@ -1,5 +1,13 @@
+
 # Inkfish
 
+System package dependencies:
+
+```
+sudo apt install docker.io imagemagick
+```
+
+System user must be added to docker group.
 
 
 ## Future dep upgrades

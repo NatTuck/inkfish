@@ -7,7 +7,7 @@ defmodule Inkfish.Grades do
   alias Inkfish.Repo
 
   alias Inkfish.Grades.GradeColumn
-  alias Inkfish.Container
+  alias Inkfish.Autobots
 
   @doc """
   Returns the list of grade_columns.
@@ -214,6 +214,10 @@ defmodule Inkfish.Grades do
       preload: [grade_column: gc]
   end
 
+  def preload_sub_and_upload(grade) do
+    Repo.preload(grade, [sub: :upload])
+  end
+
   @doc """
   Creates a grade.
 
@@ -254,8 +258,7 @@ defmodule Inkfish.Grades do
 
     grade = get_grade_for_autograding!(grade.id)
 
-    :ok = Container.enqueue(grade)
-    {:ok, uuid}
+    Autobots.autograde(grade)
   end
 
 
@@ -290,6 +293,8 @@ defmodule Inkfish.Grades do
 
   """
   def delete_grade(%Grade{} = grade) do
+    grade = preload_sub_and_upload(grade)
+    Grade.delete_log(grade)
     Repo.delete(grade)
   end
 
@@ -330,5 +335,23 @@ defmodule Inkfish.Grades do
     path = Grade.log_path(grade)
     data = Jason.encode!(log)
     File.write!(path, data)
+  end
+
+  def set_grade_score(grade, passed, tests) do
+    grade = get_grade!(grade.id)
+
+    score = passed
+    |> safe_div(tests)
+    |> Decimal.mult(grade.grade_column.points)
+
+    update_grade(grade, %{score: score})
+  end
+
+  def safe_div(nn, dd) do
+    if Decimal.eq?(dd, 0) do
+      Decimal.new(0)
+    else
+      Decimal.div(nn, dd)
+    end
   end
 end

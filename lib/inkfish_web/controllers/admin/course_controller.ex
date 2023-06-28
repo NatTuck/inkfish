@@ -4,8 +4,6 @@ defmodule InkfishWeb.Admin.CourseController do
   alias Inkfish.Courses
   alias Inkfish.Courses.Course
 
-  plug InkfishWeb.Plugs.RequireUser, admin: true
-
   plug InkfishWeb.Plugs.FetchItem, [course: "id"]
     when action not in [:index, :new, :create]
 
@@ -35,7 +33,7 @@ defmodule InkfishWeb.Admin.CourseController do
         |> redirect(to: Routes.admin_course_path(conn, :show, course))
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        IO.inspect(changeset)
+        #IO.inspect(changeset)
         render(conn, "new.html", changeset: changeset)
     end
   end

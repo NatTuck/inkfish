@@ -7,11 +7,6 @@
 <ul>
 
   <li>
-    <strong>Login:</strong>
-    <%= @user.login %>
-  </li>
-
-  <li>
     <strong>Email:</strong>
     <%= @user.email %>
   </li>

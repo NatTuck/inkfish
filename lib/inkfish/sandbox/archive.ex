@@ -12,7 +12,7 @@ defmodule Inkfish.Sandbox.Archive do
     archive = Path.expand(archive)
     target  = Path.expand(target)
     {:ok, tdir} = TempFs.make_tempfs(max_size)
-    case untar(archive, tdir) do
+    case unpack(archive, tdir) do
       :ok ->
         sanitize_links!(tdir)
         {_, 0} = System.cmd("bash", ["-c", ~s(cp -r "#{tdir}"/* "#{target}")])
@@ -43,6 +43,19 @@ defmodule Inkfish.Sandbox.Archive do
       _readlink_failed ->
         IO.puts("removing invalid link: '#{path}'")
         File.rm!(path)
+    end
+  end
+
+  def unpack(archive, target) do
+    cond do
+      Regex.match?(~r/\.tar\.(gz|xz|bz2)$/, archive) ->
+	untar(archive, target)
+      Regex.match?(~r/\.zip$/, archive) ->
+	raise "TODO: zip archives"
+      true ->
+	name = Path.basename(archive)
+	File.copy!(archive, Path.join(target, name))
+	:ok
     end
   end
 

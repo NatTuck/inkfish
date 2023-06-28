@@ -6,7 +6,7 @@ defmodule InkfishWeb.Staff.JoinReqControllerTest do
     %{staff: staff, course: course} = stock_course()
     user = insert(:user)
     jr = insert(:join_req, course: course, user: user)
-    conn = login(conn, staff.login)
+    conn = login(conn, staff)
     {:ok, conn: conn, course: course, user: user, join_req: jr}
   end
 

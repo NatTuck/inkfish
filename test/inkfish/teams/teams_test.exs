@@ -24,7 +24,7 @@ defmodule Inkfish.TeamsTest do
 
     test "create_team/1 with valid data creates a team" do
       params = params_with_assocs(:team)
-      assert {:ok, %Team{} = team} = Teams.create_team(params)
+      assert {:ok, %Team{} = _team} = Teams.create_team(params)
     end
 
     test "create_team/1 with invalid data returns error changeset" do
@@ -35,7 +35,7 @@ defmodule Inkfish.TeamsTest do
       team = team_fixture()
       ts = insert(:teamset)
       params = %{teamset_id: ts.id}
-      assert {:ok, %Team{} = team} = Teams.update_team(team, params)
+      assert {:ok, %Team{} = _team} = Teams.update_team(team, params)
     end
 
     test "update_team/2 with invalid data returns error changeset" do
@@ -76,7 +76,7 @@ defmodule Inkfish.TeamsTest do
 
     test "create_team_member/1 with valid data creates a team_member" do
       params = params_with_assocs(:team_member)
-      assert {:ok, %TeamMember{} = team_member} = Teams.create_team_member(params)
+      assert {:ok, %TeamMember{} = _team_member} = Teams.create_team_member(params)
     end
 
     test "create_team_member/1 with invalid data returns error changeset" do
@@ -87,7 +87,8 @@ defmodule Inkfish.TeamsTest do
       team_member = team_member_fixture()
       team = insert(:team)
       params = %{team_id: team.id}
-      assert {:ok, %TeamMember{} = team_member} = Teams.update_team_member(team_member, params)
+      assert {:ok, %TeamMember{} = _team_member} = Teams.update_team_member(
+						     team_member, params)
     end
 
     test "update_team_member/2 with invalid data returns error changeset" do

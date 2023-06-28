@@ -1,165 +1,165 @@
 defmodule Inkfish.Itty.Server do
-  import Inkfish.Text, only: [corrupt_invalid_utf8: 1]
   use GenServer
+
+  alias Inkfish.Itty.Tickets
 
   # How long to stay alive waiting for late
   # subscribers after the process terminates.
-  @linger_seconds 60
-
-  def start_link(uuid, on_exit) do
-    GenServer.start_link(__MODULE__, {uuid, on_exit}, name: reg(uuid))
+  @linger_seconds 120
+  
+  def start_link(state0) do
+    GenServer.start_link(__MODULE__, state0, name: reg(state0.uuid))
   end
 
   def reg(uuid) do
     {:via, Registry, {Inkfish.Itty.Reg, uuid}}
   end
 
-  @doc """
-  Create a new imaginary tty executing the provided command.
-
-  Returns a uuid.
-  """
-  def start(uuid, on_exit) do
+  def start(uuid, qname, cmd, env, on_exit) do
+    cookie = Inkfish.Text.gen_uuid()
+    env = env
+    |> Map.update("COOKIE", cookie, &(&1))
+    state0 = %{
+      qname: qname,
+      uuid: uuid,
+      cmd: cmd,
+      cookie: cookie,
+      env: env,
+      on_exit: on_exit,
+    }
     spec = %{
       id: __MODULE__,
-      start: {__MODULE__, :start_link, [uuid, on_exit]},
+      start: {__MODULE__, :start_link, [state0]},
       restart: :temporary,
     }
-    {:ok, _cpid} = DynamicSupervisor.start_child(Inkfish.Itty.DynSup, spec)
+    DynamicSupervisor.start_child(Inkfish.Itty.DynSup, spec)
+  end
+
+  def peek(uuid) do
+    if !Enum.empty?(Registry.lookup(Inkfish.Itty.Reg, uuid)) do
+      GenServer.call(reg(uuid), :peek)
+    else
+      {:error, "unknown"}
+    end 
+  end
+
+  @impl true
+  def init(%{qname: qname} = state0) do
+    ticket = Tickets.ticket(qname)
+    data = %{
+      seq: 0,
+      blocks: [],
+      done: false,
+      started: false,
+      ticket: ticket
+    }
+    {:ok, Map.merge(state0, data)}
+  end
+
+  def start_cmd(%{cmd: cmd, uuid: uuid, env: env} = state0) do
+    env = System.get_env()
+    |> Map.merge(env)
+    |> Enum.into([])
+
+    IO.inspect({:run, cmd, Enum.with_index(env)}, limit: :infinity)
+
+    opts = [{:stdout, self()}, {:stderr, self()}, {:env, env},
+	    {:kill_timeout, 5}, :monitor]
+    {:ok, _pid, _ospid} = :exec.run(cmd, opts, 30)
     :ok
   end
 
+  def view(state) do
+    outputs = [:adm, :out, :err]
+    |> Enum.map(fn stream ->
+      {stream, get_stream_text(state, stream)}
+    end)
+    |> Enum.into(%{})
 
-  def run(uuid, cmd, env) do
-    GenServer.call(reg(uuid), {:run, cmd, env})
-  end
+    view = state
+    |> Map.drop([:on_exit])
+    |> Map.put(:outputs, outputs)
 
-  def echo(uuid, msg) do
-    GenServer.call(reg(uuid), {:echo, msg})
-  end
-
-  @doc """
-  Opens a link to an imaginary tty.
-
-  Returns all previous output.
-
-  Subscribes remote pid to recieve messages on future output.
-  """
-  def open(uuid, rpid) do
-    case Registry.lookup(Inkfish.Itty.Reg, uuid) do
-      [{pid, _}] -> GenServer.call(pid, {:open, rpid})
-      _else -> :error
+    if view.done do
+      Map.put(view, :result, get_marked_output(state, state.cookie))
+    else
+      Map.put(view, :result, nil)
     end
   end
 
-  @doc """
-  Unsubscribes from this tty.
+  @impl true
+  def handle_call(:peek, _from, state) do
+    {:reply, {:ok, view(state)}, state}
+  end
 
-  Returns {:ok, result_text}
-  """
-  def close(uuid, rpid) do
-    GenServer.call(reg(uuid), {:close, rpid})
+  def send_block(block, %{uuid: uuid, seq: seq, blocks: blocks} = state) do
+    blocks = [block | blocks]
+    Phoenix.PubSub.broadcast!(Inkfish.PubSub, "ittys:" <> uuid, {:block, uuid, block})
+    {:noreply, %{state | seq: seq + 1, blocks: blocks}}
   end
 
   @impl true
-  def init({uuid, on_exit}) do
-    state0 = %{
-      cookie: uuid,
-      output: [],
-      serial: 0,
-      exit: nil,
-      subs: MapSet.new(),
-      on_exit: on_exit,
-    }
+  def handle_info({:now_serving, serving, _}, state) do
+    %{uuid: uuid, seq: seq, blocks: blocks, ticket: ticket} = state
+    text = "Now serving #{serving}. We are #{ticket}.\n"
+    block = %{seq: seq, stream: :adm, text: text}
+    if ticket < serving do
+      start_cmd(state)
+    end
+    send_block(block, state)
+ end
 
-    {:ok, state0}
+  def handle_info({:stdout, _, text}, %{uuid: uuid, seq: seq, blocks: blocks} = state) do
+    block = %{seq: seq, stream: :out, text: text}
+    send_block(block, state)
   end
 
-  def handle_call({:run, cmd, env}, _from, state0) do
-    env = env ++ Enum.into(System.get_env(), [])
-    env = [{"COOKIE", state0.cookie} | env]
-    |> Enum.map(fn {kk, vv} ->
-      {to_charlist(to_string(kk)), to_charlist(vv)}
-    end)
-
-    #IO.inspect({:env, env})
-    #IO.inspect({:sys, System.get_env()})
-
-    cmd
-    |> to_charlist()
-    |> :exec.run([{:env, env}, {:stdout, self()}, {:stderr, self()}, :monitor])
-
-    {:reply, :ok, state0}
+  def handle_info({:stderr, _, text}, %{uuid: uuid, seq: seq, blocks: blocks} = state) do
+    block = %{seq: seq, stream: :err, text: text} 
+    send_block(block, state)
   end
 
-  def handle_call({:echo, msg}, _from, state0) do
-    state1 = send_output("stdout", msg, state0)
-    {:reply, :ok, state1}
-  end
+  def handle_info({:DOWN, _, _, _, status}, state) do
+    %{uuid: uuid, on_exit: on_exit, qname: qname,
+      ticket: ticket, blocks: blocks} = state
 
-  @impl true
-  def handle_call({:open, rpid}, _from, state0) do
-    resp = %{
-      output: state0.output,
-      exit: state0.exit,
-    }
-    state1 = Map.update! state0, :subs, &(MapSet.put(&1, rpid))
-    {:reply, {:ok, resp}, state1}
-  end
+    Phoenix.PubSub.broadcast!(Inkfish.PubSub, "ittys:" <> uuid, {:done, uuid})
+    Tickets.done(qname, ticket)
 
-  def handle_call({:close, rpid}, _from, state0) do
-    state1 = Map.update! state0, :subs, &(MapSet.delete(&1, rpid))
-    result = get_output(state1, state1.cookie)
-    {:reply, {:ok, result}, state1}
-  end
-
-  def send_output(stream, text, state0) do
-    item = {state0.serial, stream, corrupt_invalid_utf8(text)}
-    broadcast(state0.subs, {:output, item})
-    state0
-    |> Map.update!(:output, &([item | &1]))
-    |> Map.update!(:serial, &(&1 + 1))
-  end
-
-  @impl true
-  def handle_info({:stdout, _, text}, state0) do
-    state1 = send_output("stdout", text, state0)
-    {:noreply, state1}
-  end
-
-  def handle_info({:stderr, _, text}, state0) do
-    state1 = send_output("stderr", text, state0)
-    {:noreply, state1}
-  end
-
-  def handle_info({:DOWN, _, _, _, status}, state0) do
-    state1 = Map.put state0, :exit, status
-    broadcast(state1.subs, {:exit, status})
-
-    state1
-    |> get_output(state1.cookie)
-    |> state1.on_exit.()
+    if on_exit do
+      rv = %{
+	uuid: uuid,
+	status: "ok",
+	result: get_marked_output(state, state.cookie),
+	log: blocks,
+      }
+      on_exit.(rv)
+    end
 
     Process.send_after(self(), :shutdown, @linger_seconds * 1000)
-    {:noreply, state1}
+
+    {:noreply, %{state | done: true}}
   end
 
   def handle_info(:shutdown, state0) do
     {:stop, :normal, state0}
   end
 
-  def broadcast(pids, msg) do
-    Enum.each pids, fn pid ->
-      send pid, msg
-    end
+  def handle_info(foo, state0) do
+    IO.inspect {:info, foo}
+    {:noreply, state0}
   end
 
-  def get_output(state, cookie) do
-    splits = state.output
-    |> Enum.filter(fn {_, stream, _} -> stream == "stdout" end)
-    |> Enum.sort_by(fn {serial, _, _} -> serial end)
-    |> Enum.map(fn {_, _, text} -> text end)
+  def get_stream_text(state, stream) do
+    state.blocks
+    |> Enum.filter(fn bb -> bb.stream == stream end)
+    |> Enum.sort_by(fn bb -> bb.seq end)
+    |> Enum.map(fn bb -> bb.text end)
     |> Enum.join("")
+  end
+
+  def get_marked_output(state, cookie) do
+    splits = get_stream_text(state, :out)
     |> String.split("\n#{cookie}\n", trim: true)
 
     if length(splits) > 1 do

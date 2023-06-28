@@ -9,7 +9,7 @@ defmodule InkfishWeb.Admin.CourseControllerTest do
   describe "index" do
     test "lists all courses", %{conn: conn} do
       conn = conn
-      |> login("alice")
+      |> login("alice@example.com")
       |> get(Routes.admin_course_path(conn, :index))
       assert html_response(conn, 200) =~ "Listing Courses"
     end
@@ -18,7 +18,7 @@ defmodule InkfishWeb.Admin.CourseControllerTest do
   describe "new course" do
     test "renders form", %{conn: conn} do
       conn = conn
-      |> login("alice")
+      |> login("alice@example.com")
       |> get(Routes.admin_course_path(conn, :new))
       assert html_response(conn, 200) =~ "New Course"
     end
@@ -29,7 +29,7 @@ defmodule InkfishWeb.Admin.CourseControllerTest do
       params = params_for(:course)
 
       conn = conn
-      |> login("alice")
+      |> login("alice@example.com")
       |> post(Routes.admin_course_path(conn, :create), course: params)
 
       assert %{id: id} = redirected_params(conn)
@@ -43,7 +43,7 @@ defmodule InkfishWeb.Admin.CourseControllerTest do
       params = %{name: "", solo_teamset_id: -1}
 
       conn = conn
-      |> login("alice")
+      |> login("alice@example.com")
       |> post( Routes.admin_course_path(conn, :create), course: params)
 
       assert html_response(conn, 200) =~ "New Course"
@@ -55,7 +55,7 @@ defmodule InkfishWeb.Admin.CourseControllerTest do
 
     test "renders form for editing chosen course", %{conn: conn, course: course} do
       conn = conn
-      |> login("alice")
+      |> login("alice@example.com")
       |> get(Routes.admin_course_path(conn, :edit, course))
       assert html_response(conn, 200) =~ "Edit Course"
     end
@@ -68,7 +68,7 @@ defmodule InkfishWeb.Admin.CourseControllerTest do
       params = %{"name" => "Updated course"}
 
       conn = conn
-      |> login("alice")
+      |> login("alice@example.com")
       |> put(Routes.admin_course_path(conn, :update, course), course: params)
       assert redirected_to(conn) == Routes.admin_course_path(conn, :show, course)
 
@@ -80,7 +80,7 @@ defmodule InkfishWeb.Admin.CourseControllerTest do
       params = %{name: "", solo_teamset_id: -1}
 
       conn = conn
-      |> login("alice")
+      |> login("alice@example.com")
       |> put(Routes.admin_course_path(conn, :update, course), course: params)
       assert html_response(conn, 200) =~ "Edit Course"
     end
@@ -91,7 +91,7 @@ defmodule InkfishWeb.Admin.CourseControllerTest do
 
     test "deletes chosen course", %{conn: conn, course: course} do
       conn = conn
-      |> login("alice")
+      |> login("alice@example.com")
       |> delete(Routes.admin_course_path(conn, :delete, course))
       assert redirected_to(conn) == Routes.admin_course_path(conn, :index)
       assert_error_sent 404, fn ->

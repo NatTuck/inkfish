@@ -1,4 +1,4 @@
-use Mix.Config
+import Config
 
 # Only in tests, remove the complexity from the password hashing algorithm
 config :argon2_elixir, t_cost: 1, m_cost: 8
@@ -18,13 +18,6 @@ config :inkfish, Inkfish.Repo,
   database: "inkfish_test#{System.get_env("MIX_TEST_PARTITION")}",
   hostname: "localhost",
   pool: Ecto.Adapters.SQL.Sandbox
-
-#config :paddle, Paddle,
-#  host: "localhost",
-#  base: "dc=example,dc=com",
-#  account_subdn: "ou=people",
-#  ssl: false,
-#  port: 13389
 
 config :phoenix_integration,
   endpoint: InkfishWeb.Endpoint

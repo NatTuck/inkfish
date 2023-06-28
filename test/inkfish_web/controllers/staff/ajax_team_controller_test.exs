@@ -22,7 +22,7 @@ defmodule InkfishWeb.Ajax.TeamControllerTest do
   describe "index" do
     test "lists all teams", %{conn: conn, staff: staff, teamset: teamset} do
       conn = conn
-      |> login(staff.login)
+      |> login(staff)
       |> get(Routes.ajax_staff_teamset_team_path(conn, :index, teamset))
 
       resp = json_response(conn, 200)["data"]
@@ -37,14 +37,14 @@ defmodule InkfishWeb.Ajax.TeamControllerTest do
       attrs = Map.put(attrs, :reg_ids, reg_ids)
 
       conn = conn
-      |> login(staff.login)
+      |> login(staff)
       |> post(Routes.ajax_staff_teamset_team_path(conn, :create, teamset), team: attrs)
       assert %{"id" => id} = json_response(conn, 201)["data"]
 
       conn = get(conn, Routes.ajax_staff_team_path(conn, :show, id))
 
       assert %{
-               "id" => id,
+               "id" => _id,
                "active" => true
              } = json_response(conn, 200)["data"]
     end
@@ -53,7 +53,7 @@ defmodule InkfishWeb.Ajax.TeamControllerTest do
       params = %{teamset_id: -1}
      
       conn = conn
-      |> login(staff.login)
+      |> login(staff)
       |> post(Routes.ajax_staff_teamset_team_path(conn, :create, teamset), team: params)
       assert json_response(conn, 422)["errors"] != %{}
     end
@@ -64,14 +64,14 @@ defmodule InkfishWeb.Ajax.TeamControllerTest do
       params = %{active: false}
 
       conn = conn
-      |> login(staff.login)
+      |> login(staff)
       |> put(Routes.ajax_staff_team_path(conn, :update, team), team: params)
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
 
       conn = get(conn, Routes.ajax_staff_team_path(conn, :show, id))
 
       assert %{
-               "id" => id,
+               "id" => ^id,
                "active" => false
              } = json_response(conn, 200)["data"]
     end
@@ -80,7 +80,7 @@ defmodule InkfishWeb.Ajax.TeamControllerTest do
       params = %{teamset_id: -1}
 
       conn = conn
-      |> login(staff.login)
+      |> login(staff)
       |> put(Routes.ajax_staff_team_path(conn, :update, team), team: params)
       assert json_response(conn, 422)["errors"] != %{}
     end
@@ -89,7 +89,7 @@ defmodule InkfishWeb.Ajax.TeamControllerTest do
   describe "delete team" do
     test "deletes chosen team", %{conn: conn, team: team, staff: staff} do
       conn = conn
-      |> login(staff.login)
+      |> login(staff)
       |> delete(Routes.ajax_staff_team_path(conn, :delete, team))
       assert response(conn, 200)
 

@@ -12,7 +12,6 @@ defmodule InkfishWeb.Staff.GradingTaskController do
 
   alias Inkfish.Assignments
   alias Inkfish.Courses
-  alias Inkfish.GradingTasks
 
   def show(conn, _params) do
     %{course: course, assignment: as, current_reg: reg} = conn.assigns

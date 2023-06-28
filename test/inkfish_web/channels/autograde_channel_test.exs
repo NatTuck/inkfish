@@ -2,7 +2,7 @@ defmodule InkfishWeb.AutogradeChannelTest do
   use InkfishWeb.ChannelCase
 
   setup do
-    user = Inkfish.Users.get_user_by_login!("bob")
+    user = Inkfish.Users.get_user_by_email!("bob@example.com")
     nonce = Base.encode16(:crypto.strong_rand_bytes(32))
     token = Phoenix.Token.sign(InkfishWeb.Endpoint, "autograde", %{uuid: nonce})
 

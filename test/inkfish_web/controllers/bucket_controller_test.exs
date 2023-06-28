@@ -7,7 +7,7 @@ defmodule InkfishWeb.BucketControllerTest do
 
     test "lists all buckets", %{conn: conn, course: course} do
       conn = conn
-      |> login("alice")
+      |> login("alice@example.com")
       |> get(Routes.staff_course_bucket_path(conn, :index, course))
       assert html_response(conn, 200) =~ "Listing Buckets"
     end
@@ -18,7 +18,7 @@ defmodule InkfishWeb.BucketControllerTest do
 
     test "renders form", %{conn: conn, course: course} do
       conn = conn
-      |> login("bob")
+      |> login("bob@example.com")
       |> get(Routes.staff_course_bucket_path(conn, :new, course))
       assert html_response(conn, 200) =~ "New Bucket"
     end
@@ -30,7 +30,7 @@ defmodule InkfishWeb.BucketControllerTest do
     test "redirects to show when data is valid", %{conn: conn, course: course} do
       params = params_with_assocs(:bucket)
       conn = conn
-      |> login("bob")
+      |> login("bob@example.com")
       |> post(Routes.staff_course_bucket_path(conn, :create, course), bucket: params)
 
       assert %{id: id} = redirected_params(conn)
@@ -42,7 +42,7 @@ defmodule InkfishWeb.BucketControllerTest do
 
     test "renders errors when data is invalid", %{conn: conn, course: course} do
       conn = conn
-      |> login("bob")
+      |> login("bob@example.com")
       |> post(Routes.staff_course_bucket_path(conn, :create, course), bucket: %{})
       assert html_response(conn, 200) =~ "New Bucket"
     end
@@ -53,7 +53,7 @@ defmodule InkfishWeb.BucketControllerTest do
 
     test "renders form for editing chosen bucket", %{conn: conn, bucket: bucket} do
       conn = conn
-      |> login("bob")
+      |> login("bob@example.com")
       |> get(Routes.staff_bucket_path(conn, :edit, bucket))
       assert html_response(conn, 200) =~ "Edit Bucket"
     end
@@ -65,7 +65,7 @@ defmodule InkfishWeb.BucketControllerTest do
     test "redirects when data is valid", %{conn: conn, bucket: bucket} do
       params = %{"name" => "some updated name"}
       conn = conn
-      |> login("bob")
+      |> login("bob@example.com")
       |> put(Routes.staff_bucket_path(conn, :update, bucket), bucket: params)
       assert redirected_to(conn) == Routes.staff_bucket_path(conn, :show, bucket)
 
@@ -75,7 +75,7 @@ defmodule InkfishWeb.BucketControllerTest do
 
     test "renders errors when data is invalid", %{conn: conn, bucket: bucket} do
       conn = conn
-      |> login("bob")
+      |> login("bob@example.com")
       |> put(Routes.staff_bucket_path(conn, :update, bucket), bucket: %{"name" => "x"})
       assert html_response(conn, 200) =~ "Edit Bucket"
     end
@@ -86,7 +86,7 @@ defmodule InkfishWeb.BucketControllerTest do
 
     test "deletes chosen bucket", %{conn: conn, bucket: bucket, course: course} do
       conn = conn
-      |> login("bob")
+      |> login("bob@example.com")
       |> delete(Routes.staff_bucket_path(conn, :delete, bucket))
       assert redirected_to(conn) == Routes.staff_course_bucket_path(conn, :index, course)
       assert_error_sent 404, fn ->
@@ -96,8 +96,8 @@ defmodule InkfishWeb.BucketControllerTest do
   end
 
   defp create_cs101(_) do
-    bob = Inkfish.Users.get_user_by_login!("bob")
-    dave = Inkfish.Users.get_user_by_login!("dave")
+    bob = Inkfish.Users.get_user_by_email!("bob@example.com")
+    dave = Inkfish.Users.get_user_by_email!("dave@example.com")
     course = insert(:course, name: "CS101" )
     _bob_reg = insert(:reg, course: course,
       user: bob, is_prof: true)

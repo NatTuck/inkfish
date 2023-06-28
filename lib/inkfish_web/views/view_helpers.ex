@@ -232,9 +232,8 @@ defmodule InkfishWeb.ViewHelpers do
 
   def render_autograde_log(items) do
     items
-    |> Enum.map(fn item ->
-      item["text"]
-    end)
+    |> Enum.sort_by(&(&1["seq"]))
+    |> Enum.map(&(&1["text"]))
     |> Enum.join("")
   end
 
@@ -253,5 +252,9 @@ defmodule InkfishWeb.ViewHelpers do
     else
       "No"
     end
+  end
+
+  def bs_icon(name) do
+    raw(~s(<img src="/images/icons/#{name}.svg" />))
   end
 end

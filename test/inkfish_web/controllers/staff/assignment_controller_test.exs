@@ -21,7 +21,7 @@ defmodule InkfishWeb.Staff.AssignmentControllerTest do
 
     test "renders form", %{conn: conn, staff: staff, bucket: bucket} do
       conn = conn
-      |> login(staff.login)
+      |> login(staff)
       |> get(Routes.staff_bucket_assignment_path(conn, :new, bucket))
       assert html_response(conn, 200) =~ "New Assignment"
     end
@@ -34,7 +34,7 @@ defmodule InkfishWeb.Staff.AssignmentControllerTest do
       params = params_with_assocs(:assignment, bucket: bucket)
 
       conn = conn
-      |> login(staff.login)
+      |> login(staff)
       |> post(Routes.staff_bucket_assignment_path(conn, :create, bucket), assignment: params)
 
       assert %{id: id} = redirected_params(conn)
@@ -48,7 +48,7 @@ defmodule InkfishWeb.Staff.AssignmentControllerTest do
       params = %{bucket_id: -1, name: ""}
 
       conn = conn
-      |> login(staff.login)
+      |> login(staff)
       |> post(Routes.staff_bucket_assignment_path(conn, :create, bucket), assignment: params)
       assert html_response(conn, 200) =~ "New Assignment"
     end
@@ -59,7 +59,7 @@ defmodule InkfishWeb.Staff.AssignmentControllerTest do
 
     test "renders form for editing chosen assignment", %{conn: conn, assignment: assignment} do
       conn = conn
-      |> login("alice")
+      |> login("alice@example.com")
       |> get(Routes.staff_assignment_path(conn, :edit, assignment))
       assert html_response(conn, 200) =~ "Edit Assignment"
     end
@@ -72,7 +72,7 @@ defmodule InkfishWeb.Staff.AssignmentControllerTest do
       params = %{name: "Assignment #z"}
 
       conn = conn
-      |> login("alice")
+      |> login("alice@example.com")
       |> put(Routes.staff_assignment_path(conn, :update, assignment), assignment: params)
       assert redirected_to(conn) == Routes.staff_assignment_path(conn, :show, assignment)
 
@@ -84,7 +84,7 @@ defmodule InkfishWeb.Staff.AssignmentControllerTest do
       params = %{bucket_id: -1, name: ""}
 
       conn = conn
-      |> login("alice")
+      |> login("alice@example.com")
       |> put(Routes.staff_assignment_path(conn, :update, assignment), assignment: params)
       assert html_response(conn, 200) =~ "Edit Assignment"
     end
@@ -95,7 +95,7 @@ defmodule InkfishWeb.Staff.AssignmentControllerTest do
 
     test "deletes chosen assignment", %{conn: conn, assignment: assignment} do
       conn = conn
-      |> login("alice")
+      |> login("alice@example.com")
       |> delete(Routes.staff_assignment_path(conn, :delete, assignment))
       assert redirected_to(conn) == Routes.staff_course_path(conn, :show, conn.assigns[:course])
       assert_error_sent 404, fn ->

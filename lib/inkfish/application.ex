@@ -6,7 +6,7 @@ defmodule Inkfish.Application do
   use Application
 
   def start(_type, _args) do
-    {:ok, _} = Inkfish.Container.Queue.start()
+    {:ok, _} = Inkfish.Itty.Tickets.start()
 
     children = [
       # Start the Ecto repository
@@ -19,9 +19,6 @@ defmodule Inkfish.Application do
       InkfishWeb.Endpoint,
       # Live console output
       Inkfish.Itty.Sup,
-      # Container jobs
-      Inkfish.Container.Worker,
-      Inkfish.Container.Sup,
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

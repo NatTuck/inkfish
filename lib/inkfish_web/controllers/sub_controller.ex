@@ -1,5 +1,5 @@
 defmodule InkfishWeb.SubController do
-  use InkfishWeb, :controller
+  use InkfishWeb, :controller1
 
   alias InkfishWeb.Plugs
   plug Plugs.FetchItem, [sub: "id"]
@@ -78,15 +78,12 @@ defmodule InkfishWeb.SubController do
     |> Enum.map(fn grade ->
       grade = %{grade | sub: sub}
       log = Grade.get_log(grade)
-      IO.inspect({:log, log})
+      #IO.inspect({:log, log})
       token = Phoenix.Token.sign(conn, "autograde", %{uuid: grade.log_uuid})
       {grade, token, log}
     end)
 
-    queue = Inkfish.Container.Queue.list()
-    |> Enum.filter(&(&1.idx != nil))
-
-    render(conn, "show.html", sub: sub, autogrades: autogrades, queue: queue)
+    render(conn, "show.html", sub: sub, autogrades: autogrades)
   end
 
   def files(conn, %{"id" => id}) do

@@ -8,7 +8,7 @@ defmodule InkfishWeb.Staff.CourseControllerTest do
     course = insert(:course)
     staff = insert(:user)
     _sr = insert(:reg, course: course, user: staff, is_staff: true)
-    conn = login(conn, staff.login)
+    conn = login(conn, staff)
     {:ok, conn: conn, course: course, staff: staff}
   end
 

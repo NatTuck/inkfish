@@ -6,13 +6,6 @@
   <% end %>
 
   <div class="form-group">
-    <%= label f, :login %>
-    <%= text_input(f, :login, name: "_login",
-      class: "form-control", readonly: "readonly") %>
-    <%= error_tag f, :login %>
-  </div>
-
-  <div class="form-group">
     <%= label f, :email %>
     <%= text_input(f, :email, name: "_email",
       class: "form-control", readonly: "readonly") %>

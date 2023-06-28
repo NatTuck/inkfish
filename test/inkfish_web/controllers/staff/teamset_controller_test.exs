@@ -7,7 +7,7 @@ defmodule InkfishWeb.Staff.TeamsetControllerTest do
     staff = insert(:user)
     _sr = insert(:reg, course: course, user: staff, is_staff: true)
     teamset = insert(:teamset, course: course)
-    conn = login(conn, staff.login)
+    conn = login(conn, staff.email)
     {:ok, conn: conn, course: course, teamset: teamset, staff: staff}
   end
 

@@ -49,7 +49,8 @@ export function DatePicker(props) {
 }
 
 export function replace_date_time_picker(input) {
-  let date0 = parse(input.value, "yyyy-MM-dd kk:mm:ss", new Date());
+  console.log(input.value);
+  let date0 = parse(input.value, "yyyy-MM-dd'T'kk:mm:ss", new Date());
   let name = input.getAttribute("name");
 
   let elem = (
@@ -59,6 +60,7 @@ export function replace_date_time_picker(input) {
       defaultDate={date0}
     />
   );
+
   ReactDOM.render(elem, $(input).parent()[0])
 }
 

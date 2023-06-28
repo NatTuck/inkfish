@@ -15,7 +15,7 @@ defmodule Inkfish.UsersTest do
     end
 
     test "get_user!/1 returns the user with given id" do
-      user = insert(:user)
+      user = %User{ insert(:user) | password: nil, password_confirmation: nil }
       assert drop_assocs(Users.get_user!(user.id)) == drop_assocs(user)
     end
 
@@ -41,7 +41,7 @@ defmodule Inkfish.UsersTest do
     end
 
     test "update_user/2 with invalid data returns error changeset" do
-      user = insert(:user)
+      user = %User{ insert(:user) | password: nil, password_confirmation: nil }
       bad_attrs = %{given_name: ""}
       assert {:error, %Ecto.Changeset{}} = Users.update_user(user, bad_attrs)
       assert drop_assocs(user) == drop_assocs(Users.get_user!(user.id))
@@ -115,5 +115,172 @@ defmodule Inkfish.UsersTest do
       reg = insert(:reg)
       assert %Ecto.Changeset{} = Users.change_reg(reg)
     end
+  end
+
+  alias Inkfish.Users.User
+
+  describe "get_user_by_email/1" do
+    test "does not return the user if the email does not exist" do
+      refute Users.get_user_by_email("unknown@example.com")
+    end
+
+    test "returns the user if the email exists" do
+      %{id: id} = user = user_fixture()
+      assert %User{id: ^id} = Users.get_user_by_email(user.email)
+    end
+  end
+
+  describe "get_user_by_email_and_password/2" do
+    test "does not return the user if the email does not exist" do
+      refute Users.get_user_by_email_and_password("unknown@example.com", "hello world!")
+    end
+
+    test "does not return the user if the password is not valid" do
+      user = user_fixture()
+      refute Users.get_user_by_email_and_password(user.email, "invalid")
+    end
+
+    test "returns the user if the email and password are valid" do
+      %{id: id} = user = user_fixture()
+
+      assert %User{id: ^id} =
+               Users.get_user_by_email_and_password(user.email, user.password)
+    end
+  end
+
+  describe "get_user!/1" do
+    test "raises if id is invalid" do
+      assert_raise Ecto.NoResultsError, fn ->
+        Users.get_user!(-1)
+      end
+    end
+
+    test "returns the user with the given id" do
+      %{id: id} = user = user_fixture()
+      assert %User{id: ^id} = Users.get_user!(user.id)
+    end
+  end
+
+  describe "create_user/1" do
+    test "requires email and password to be set" do
+      {:error, changeset} = Users.create_user(%{})
+
+      assert %{
+               password: ["can't be blank"],
+               email: ["can't be blank"]
+             } = errors_on(changeset)
+    end
+
+    test "validates email and password when given" do
+      {:error, changeset} = Users.create_user(%{email: "not valid", password: "not valid"})
+
+      assert %{
+               email: ["has invalid format"],
+               password: ["should be at least 12 character(s)"]
+             } = errors_on(changeset)
+    end
+
+    test "validates maximum values for email and password for security" do
+      too_long = String.duplicate("db", 100)
+      {:error, changeset} = Users.create_user(%{email: too_long, password: too_long})
+      assert "should be at most 160 character(s)" in errors_on(changeset).email
+      assert "should be at most 72 character(s)" in errors_on(changeset).password
+    end
+
+    test "validates email uniqueness" do
+      %{email: email} = user_fixture()
+      {:error, changeset} = Users.create_user(%{email: email})
+      assert "has already been taken" in errors_on(changeset).email
+
+      # Now try with the upper cased email too, to check that email case is ignored.
+      {:error, changeset} = Users.create_user(%{email: String.upcase(email)})
+      assert "has already been taken" in errors_on(changeset).email
+    end
+
+    test "registers users with a hashed password" do
+      email = unique_user_email()
+      {:ok, user} = Users.create_user(valid_user_attributes(email: email))
+      assert user.email == email
+      assert is_binary(user.hashed_password)
+      assert !is_nil(user.confirmed_at)
+      assert is_nil(user.password)
+    end
+  end
+
+  describe "change_user_password/2" do
+    test "returns a user changeset" do
+      assert %Ecto.Changeset{} = changeset = Users.change_user_password(%User{})
+      assert changeset.required == [:password]
+    end
+
+    test "allows fields to be set" do
+      changeset =
+        Users.change_user_password(%User{}, %{
+          "password" => "new valid password"
+        })
+
+      assert changeset.valid?
+      assert !is_nil(get_change(changeset, :hashed_password))
+    end
+  end
+
+  describe "update_user_password/3" do
+    setup do
+      %{user: user_fixture()}
+    end
+
+    test "validates password", %{user: user} do
+      {:error, changeset} =
+        Users.update_user_password(user, %{
+          password: "not valid",
+          password_confirmation: "another"
+        })
+
+      assert %{
+               password: ["should be at least 12 character(s)"],
+               password_confirmation: ["does not match password"]
+             } = errors_on(changeset)
+    end
+
+    test "validates maximum values for password for security", %{user: user} do
+      too_long = String.duplicate("db", 100)
+
+      {:error, changeset} =
+        Users.update_user_password(user, %{password: too_long})
+
+      assert "should be at most 72 character(s)" in errors_on(changeset).password
+    end
+
+    test "updates the password", %{user: user} do
+      {:ok, user} = Users.update_user_password(
+		      user, %{password: "new valid password"})
+      # assert is_nil(user.password)
+      assert Users.get_user_by_email_and_password(user.email, "new valid password")
+    end
+  end
+
+  describe "inspect/2 for the User module" do
+    test "does not include password" do
+      refute inspect(%User{password: "123456"}) =~ "password: \"123456\""
+    end
+  end
+
+  def unique_user_email, do: "user#{System.unique_integer()}@example.com"
+  def valid_user_password, do: "hello world!"
+
+  def valid_user_attributes(attrs \\ %{}) do
+    params_for(:user, attrs)
+  end
+
+  def user_fixture(attrs \\ %{}) do
+    attrs = valid_user_attributes(attrs)
+    {:ok, user} = Inkfish.Users.create_user(attrs)
+    %User{ user | password: attrs[:password] }
+  end
+
+  def extract_user_token(fun) do
+    {:ok, captured_email} = fun.(&"[TOKEN]#{&1}[TOKEN]")
+    [_, token | _] = String.split(captured_email.text_body, "[TOKEN]")
+    token
   end
 end

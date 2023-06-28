@@ -5,7 +5,7 @@ defmodule InkfishWeb.Staff.GradeColumnControllerTest do
   setup %{conn: conn} do
     %{staff: staff, assignment: assignment,
       grade_column: grade_column} = stock_course()
-    conn = login(conn, staff.login)
+    conn = login(conn, staff)
     {:ok, conn: conn, staff: staff,
      assignment: assignment, grade_column: grade_column}
   end

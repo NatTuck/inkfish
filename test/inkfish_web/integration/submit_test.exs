@@ -49,7 +49,7 @@ defmodule InkfishWeb.SubmitTest do
     navigate_to("http://localhost:4001/")
     assert page_title() =~ ~r/Inkfish/
 
-    fill_field({:id, "login"}, "carol")
+    fill_field({:id, "email"}, "carol@example.com")
     fill_field({:id, "password"}, "test")
     click({:class, "btn-primary"})
 

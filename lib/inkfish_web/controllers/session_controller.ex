@@ -1,6 +1,6 @@
 defmodule InkfishWeb.SessionController do
   use InkfishWeb, :controller
-  
+
   alias Inkfish.Users
   
   def create(conn, %{"email" => email, "password" => pass }) do

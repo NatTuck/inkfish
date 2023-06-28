@@ -10,7 +10,7 @@ defmodule InkfishWeb.UploadController do
         params
         |> Map.put("kind", kind)
         |> Map.put("nonce", nonce)
-      other ->
+      _other ->
         params
     end
   end

@@ -1,5 +1,5 @@
 defmodule InkfishWeb.Staff.SubController do
-  use InkfishWeb, :controller
+  use InkfishWeb, :controller1
 
   alias InkfishWeb.Plugs
   plug Plugs.FetchItem, [sub: "id"]
@@ -34,11 +34,8 @@ defmodule InkfishWeb.Staff.SubController do
       {grade, token, log}
     end)
 
-    queue = Inkfish.Container.Queue.list()
-    |> Enum.filter(&(&1.idx != nil))
-
     render(conn, "show.html", sub: sub, sub_data: sub_data,
-      autogrades: autogrades, queue: queue)
+      autogrades: autogrades)
   end
 
   def update(conn, %{"id" => _id, "sub" => params}) do
@@ -73,5 +70,15 @@ defmodule InkfishWeb.Staff.SubController do
       |> put_resp_header("content-type", "application/json; charset=UTF-8")
       |> send_resp(200, Jason.encode!(%{assignment: data}))
     end
+  end
+
+  def rerun_scripts(conn, %{"id" => _id}) do
+    sub = conn.assigns[:sub]
+
+    Inkfish.Subs.autograde!(sub)
+
+    conn
+    |> put_flash(:info, "Rerunning all grading scripts for sub")
+    |> redirect(to: Routes.staff_sub_path(conn, :show, sub))
   end
 end

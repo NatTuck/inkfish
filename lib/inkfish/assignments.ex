@@ -10,7 +10,6 @@ defmodule Inkfish.Assignments do
   alias Inkfish.Subs.Sub
   alias Inkfish.Users.Reg
   alias Inkfish.Teams.Team
-  alias Inkfish.Grades.Grade
 
   @doc """
   Returns the list of assignments.

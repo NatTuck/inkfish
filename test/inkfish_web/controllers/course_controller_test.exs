@@ -9,7 +9,7 @@ defmodule InkfishWeb.CourseControllerTest do
   describe "index" do
     test "lists all courses", %{conn: conn} do
       conn = conn
-      |> login("erin")
+      |> login("erin@example.com")
       |> get(Routes.course_path(conn, :index))
       assert html_response(conn, 200) =~ "Listing Courses"
     end
@@ -20,7 +20,7 @@ defmodule InkfishWeb.CourseControllerTest do
 
     test "shows chosen course", %{conn: conn, course: course} do
       conn = conn
-      |> login("alice")
+      |> login("alice@example.com")
       |> get(Routes.course_path(conn, :show, course))
       assert html_response(conn, 200) =~ course.name
     end

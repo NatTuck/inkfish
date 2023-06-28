@@ -4,7 +4,7 @@ defmodule InkfishWeb.Staff.SubControllerTest do
 
   setup %{conn: conn} do
     %{staff: staff, assignment: assignment, sub: sub} = stock_course()
-    conn = login(conn, staff.login)
+    conn = login(conn, staff)
     {:ok, conn: conn, staff: staff, assignment: assignment, sub: sub}
   end
 

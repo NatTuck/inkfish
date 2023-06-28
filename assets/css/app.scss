@@ -5,10 +5,15 @@
 @import "codemirror/lib/codemirror";
 @import "react-datepicker/dist/react-datepicker";
 
+@import "./console";
 /*
 @import "./dropzone";
-@import "./console";
 */
+
+// TODO: Migrate this to bs5 convention.
+.form-group {
+    padding-bottom: 1ex;
+}
 
 .header-logo {
     width: 64px; 

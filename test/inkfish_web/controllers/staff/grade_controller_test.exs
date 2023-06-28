@@ -4,7 +4,7 @@ defmodule InkfishWeb.Staff.GradeControllerTest do
 
   setup %{conn: conn} do
     %{staff: staff, sub: sub, grade: grade} = stock_course()
-    conn = login(conn, staff.login)
+    conn = login(conn, staff)
     {:ok, conn: conn, staff: staff, sub: sub, grade: grade}
   end
 
@@ -30,7 +30,7 @@ defmodule InkfishWeb.Staff.GradeControllerTest do
     test "fails when data is invalid", %{conn: conn, sub: sub} do
       params = %{grade_column_id: nil}
       conn = post(conn, Routes.staff_sub_grade_path(conn, :create, sub), grade: params)
-      assert get_flash(conn, :error) =~ "Failed to create grade"
+      assert Phoenix.Flash.get(conn.assigns[:flash], :error) =~ "Failed to create grade"
     end
   end
 

@@ -5,9 +5,8 @@ defmodule Inkfish.Sandbox.Shell do
   This is *not* sandboxed.
   """
   def run_script(text) do
-    {:ok, script} = Temp.open "unpack", fn fd ->
-      IO.write(fd, text)
-    end
+    {:ok, script} = Briefly.create()
+    File.write!(script, text)
     {text, code} = System.cmd("bash", [script], stderr_to_stdout: true)
     File.rm(script)
     if code == 0 do

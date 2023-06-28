@@ -8,7 +8,7 @@ defmodule InkfishWeb.Staff.TeamControllerTest do
     _sr = insert(:reg, course: course, user: staff, is_staff: true)
     teamset = insert(:teamset, course: course)
     team = insert(:team, teamset: teamset)
-    conn = login(conn, staff.login)
+    conn = login(conn, staff)
 
     {:ok, conn: put_req_header(conn, "accept", "application/json"),
      course: course, teamset: teamset, team: team}

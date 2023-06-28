@@ -1,6 +1,9 @@
 # Specific stuff
 assets/size-stats.json
 
+# Editor nonsense
+.#*
+*~
 
 # The directory Mix will write compiled artifacts to.
 /_build/
