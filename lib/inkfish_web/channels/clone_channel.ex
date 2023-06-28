@@ -1,6 +1,8 @@
 defmodule InkfishWeb.CloneChannel do
   use InkfishWeb, :channel
+
   alias Inkfish.Uploads.Git
+  alias Inkfish.Itty
 
   def join("clone:" <> nonce, %{"token" => token}, socket) do
     case Phoenix.Token.verify(InkfishWeb.Endpoint, "upload", token, max_age: 8640) do
@@ -15,71 +17,65 @@ defmodule InkfishWeb.CloneChannel do
     end
   end
 
-  def send_output({serial, stream, text}, socket) do
-    data = %{
-      serial: serial,
-      stream: stream,
-      text: text,
+  def got_exit(socket) do
+    {:ok, results} = Git.get_results(socket.assigns[:uuid])
+
+    {:ok, upload} = Git.create_upload(
+		      results,
+		      socket.assigns[:kind],
+		      socket.assigns[:user_id])
+    upinfo = %{
+      "id" => upload.id,
+      "name" => upload.name,
+      "size" => upload.size,
     }
-    push(socket, "output", data)
-  end
+    socket = assign(socket, :upload, upinfo)
 
-  def got_exit(status, socket) do
-    if status == :normal do
-      {:ok, results} = Git.get_results(socket.assigns[:uuid])
+    data = %{
+      status: "normal",
+      results: results,
+      upload: socket.assigns[:upload],
+    }
 
-      socket = if is_nil(socket.assigns[:upload_id]) do
-        {:ok, upload} = Git.create_upload(
-          results, socket.assigns[:kind], socket.assigns[:user_id])
-        upinfo = %{
-          "id" => upload.id,
-          "name" => upload.name,
-          "size" => upload.size,
-        }
-        assign(socket, :upload, upinfo)
-      else
-        socket
-      end
+    IO.inspect {:got_exit, results, data, socket.assigns}
 
-      data = %{
-        status: "normal",
-        results: results,
-        upload: socket.assigns[:upload],
-      }
-      push(socket, "done", data)
-    else
-      data = %{
-        status: status,
-        results: "",
-        upload: nil
-      }
-      push(socket, "done", data)
-    end
+    push(socket, "done", data)
   end
 
   def handle_in("clone", %{"url" => url}, socket) do
     {:ok, uuid} = Git.start_clone(url)
-    socket = assign(socket, :uuid, uuid)
-    {:ok, %{output: output, exit: exit}} = Inkfish.Itty.open(uuid)
+    case Itty.open(uuid) do
+      {:ok, state} ->
+	socket = socket
+	|> assign(:uuid, uuid)
+	|> assign(:itty, state)
+	|> assign(:blocks, state.blocks)
+	|> assign(:done, state.done)
 
-    Enum.each output, fn item ->
-      send_output(item, socket)
+	Enum.each state.blocks, fn item ->
+	  push(socket, "block", item)
+	end
+
+	if state.done do
+	  got_exit(socket)
+	end
+
+	{:reply, :ok, socket}
+      _else ->
+	{:reply, {:error, %{reason: "bad itty"}}}
     end
-
-    if exit do
-      got_exit(exit, socket)
-    end
-
-    {:reply, :ok, socket}
   end
 
-  def handle_info({:output, item}, socket) do
-    send_output(item, socket)
+  def handle_info({:block, _uuid, item}, socket) do
+    #IO.inspect {:block, item}
+    push(socket, "block", item)
     {:noreply, socket}
   end
 
-  def handle_info({:exit, status}, socket) do
-    got_exit(status, socket)
+  def handle_info({:done, uuid}, socket) do
+    IO.inspect {:clone_channel, :done, uuid}
+    push(socket, "done", %{uuid: uuid})
+    got_exit(socket)
     {:noreply, socket}
   end
 end

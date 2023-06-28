@@ -1,17 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
-import { createStore } from 'redux';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import AnsiUp from 'ansi_up';
 import parseHTML from 'html-react-parser';
 import $ from 'cash-dom';
 import _ from 'lodash';
 
-import socket from "./socket";
+import socket from './socket';
+import store from './itty/store';
 
-let channel;
+let channel = null;
 
-function Itty({chan, uuid, token}) {
+export function withChannel(op) {
+  if (channel) {
+    op(channel);
+  }
+}
+
+export function Itty({chan, uuid, token}) {
   const dispatch = useDispatch();
   const {blocks, done} = useSelector(({blocks, done}) => ({blocks, done}));
   console.log("blocks,done", blocks, done);
@@ -65,24 +71,6 @@ function Icon({name}) {
     <img src={"/images/icons/" + name + ".svg"} />
   );
 }
-
-function reducer(state = { blocks: [], done: false }, action) {
-  switch (action.type) {
-  case 'blocks/set':
-    return Object.assign({}, state, { blocks: action.data });
-  case 'blocks/add':
-    return Object.assign({}, state, { blocks: state.blocks.concat(action.data) });
-  case 'set':
-    let { blocks, done } = action.data;
-    return Object.assign({}, state, { blocks, done });
-  case 'done/set':
-    return Object.assign({}, state, { done: action.data });
-  default:
-    return state;
-  }
-}
-
-let store = createStore(reducer);
 
 function init() {
   let root_div = document.getElementById('itty-root');

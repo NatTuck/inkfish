@@ -70,7 +70,21 @@ defmodule Inkfish.Itty.Server do
   end
 
   def view(state) do
-    Map.drop(state, [:on_exit])
+    outputs = [:adm, :out, :err]
+    |> Enum.map(fn stream ->
+      {stream, get_stream_text(state, stream)}
+    end)
+    |> Enum.into(%{})
+
+    view = state
+    |> Map.drop([:on_exit])
+    |> Map.put(:outputs, outputs)
+
+    if view.done do
+      Map.put(view, :result, get_marked_output(state, state.cookie))
+    else
+      Map.put(view, :result, nil)
+    end
   end
 
   @impl true
