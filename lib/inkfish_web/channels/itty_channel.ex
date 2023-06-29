@@ -27,6 +27,7 @@ defmodule InkfishWeb.IttyChannel do
     user && user.is_admin
   end
 
+  @impl true
   def handle_info({:block, _uuid, item}, socket) do
     IO.inspect {:block, item}
     push(socket, "block", item)

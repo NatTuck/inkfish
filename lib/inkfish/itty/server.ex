@@ -56,7 +56,7 @@ defmodule Inkfish.Itty.Server do
     {:ok, Map.merge(state0, data)}
   end
 
-  def start_cmd(%{cmd: cmd, uuid: uuid, env: env} = state0) do
+  def start_cmd(%{cmd: cmd, env: env} = _state0) do
     env = System.get_env()
     |> Map.merge(env)
     |> Enum.into([])
@@ -100,7 +100,7 @@ defmodule Inkfish.Itty.Server do
 
   @impl true
   def handle_info({:now_serving, serving, _}, state) do
-    %{uuid: uuid, seq: seq, blocks: blocks, ticket: ticket} = state
+    %{seq: seq, ticket: ticket} = state
     text = "Now serving #{serving}. We are #{ticket}.\n"
     block = %{seq: seq, stream: :adm, text: text}
     if ticket < serving do
@@ -109,12 +109,12 @@ defmodule Inkfish.Itty.Server do
     send_block(block, state)
  end
 
-  def handle_info({:stdout, _, text}, %{uuid: uuid, seq: seq, blocks: blocks} = state) do
+  def handle_info({:stdout, _, text}, %{seq: seq} = state) do
     block = %{seq: seq, stream: :out, text: text}
     send_block(block, state)
   end
 
-  def handle_info({:stderr, _, text}, %{uuid: uuid, seq: seq, blocks: blocks} = state) do
+  def handle_info({:stderr, _, text}, %{seq: seq} = state) do
     block = %{seq: seq, stream: :err, text: text} 
     send_block(block, state)
   end
@@ -129,6 +129,7 @@ defmodule Inkfish.Itty.Server do
     if on_exit do
       rv = %{
 	uuid: uuid,
+	downstat: status,
 	status: "ok",
 	result: get_marked_output(state, state.cookie),
 	log: blocks,

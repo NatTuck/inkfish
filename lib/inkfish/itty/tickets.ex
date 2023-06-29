@@ -34,7 +34,8 @@ defmodule Inkfish.Itty.Tickets do
     {:ok, %{}}
   end
 
-  def handle_call({:ticket, qname}, {pid, _}, state0) do
+  @impl true
+  def handle_call({:ticket, qname}, _from, state0) do
     conc = concurrency(qname)
     {serving, ticket} = Map.get(state0, qname, {conc, 0})
     state1 = Map.put(state0, qname, {serving, ticket + 1})
@@ -43,7 +44,7 @@ defmodule Inkfish.Itty.Tickets do
     {:reply, ticket, state1}
   end
 
-  def handle_call({:done, qname, _done_ticket}, {pid, _}, state0) do
+  def handle_call({:done, qname, _done_ticket}, _from, state0) do
     {serving, ticket} = Map.get(state0, qname, {0, 1})
     serving = serving + 1
     state1 = Map.put(state0, qname, {serving, ticket})

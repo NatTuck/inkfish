@@ -38,6 +38,6 @@ defmodule Inkfish.Itty do
 
   def close(uuid) do
     Phoenix.PubSub.unsubscribe(Inkfish.PubSub, "ittys:" <> uuid)
-    {:ok, state} = peek(uuid)
+    peek(uuid)
   end
 end

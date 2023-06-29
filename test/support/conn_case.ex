@@ -58,6 +58,8 @@ defmodule InkfishWeb.ConnCase do
     #|> assign(:current_user_id, user.id)
   end
 
+  import Inkfish.Factory
+
   @doc """
   Setup helper that registers and logs in users.
 
@@ -67,7 +69,7 @@ defmodule InkfishWeb.ConnCase do
   test context.
   """
   def register_and_log_in_user(%{conn: conn}) do
-    user = Inkfish.UsersFixtures.user_fixture()
+    user = insert(:user)
     %{conn: log_in_user(conn, user), user: user}
   end
 
