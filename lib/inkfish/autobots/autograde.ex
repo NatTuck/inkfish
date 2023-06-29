@@ -1,15 +1,9 @@
 defmodule Inkfish.Autobots.Autograde do
   alias Inkfish.Grades
-  alias Inkfish.Grades.Grade
-  alias Inkfish.Subs
-  alias Inkfish.Subs.Sub
-  alias Inkfish.Uploads
   alias Inkfish.Uploads.Upload
   alias Inkfish.Itty
 
   def autograde(grade) do
-    {:ok, temp} = Briefly.create(directory: true)
-
     unpacked_sub = Upload.unpacked_path(grade.sub.upload)
     unpacked_gra = Upload.unpacked_path(grade.grade_column.upload)
 

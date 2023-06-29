@@ -5,7 +5,7 @@ defmodule Inkfish.Uploads.Git do
   def start_clone(url) do
     script = :code.priv_dir(:inkfish)
     |> Path.join("scripts/upload_git_clone.sh")
-    {:ok, uuid} = Inkfish.Itty.run3(:git, script, REPO: url, SIZE: "5m")
+    {:ok, _uuid} = Inkfish.Itty.run3(:git, script, REPO: url, SIZE: "5m")
   end
 
   def get_results(uuid) do

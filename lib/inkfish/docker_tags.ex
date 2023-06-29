@@ -129,7 +129,7 @@ defmodule Inkfish.DockerTags do
     Itty.run(~s[(docker image rm "#{dt.name}" && docker image prune -f)])
   end
 
-  def fresh_image?(%DockerTag{} = dt, nil), do: false
+  def fresh_image?(%DockerTag{} = _dt, nil), do: false
   def fresh_image?(%DockerTag{} = dt, %{"Created" => image_time}) do
     dt_time = dt.updated_at
     |> Inkfish.LocalTime.from_naive!()
