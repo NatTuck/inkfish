@@ -20,6 +20,21 @@ jobs:
     name: Build and test
     runs-on: ubuntu-20.04
 
+    services:
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_USER: inkfish
+          POSTGRES_PASSWORD: oobeiGait3ie
+        ports:
+          - 5432:5432
+        # Set health checks to wait until postgres has started
+        options:
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
     - uses: actions/checkout@v3
     - name: Set up Elixir
@@ -35,5 +50,7 @@ jobs:
         restore-keys: ${{ runner.os }}-mix-
     - name: Install dependencies
       run: mix deps.get
+    - name: Setup db
+      run: mix ecto.setup
     - name: Run tests
       run: mix test
