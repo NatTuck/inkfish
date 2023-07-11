@@ -37,6 +37,7 @@ jobs:
     
     env:
       SHELL: /usr/bin/bash
+      MIX_ENV: test
     
     steps:
     - uses: actions/checkout@v3
