@@ -34,7 +34,10 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-
+    
+    env:
+      SHELL: /usr/bin/bash
+    
     steps:
     - uses: actions/checkout@v3
     - name: Set up Elixir
