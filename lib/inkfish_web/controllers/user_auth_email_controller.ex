@@ -17,20 +17,30 @@ defmodule InkfishWeb.UserAuthEmailController do
 
     if user = Users.get_user_by_email(email) do
       token = sign_token("auth_email", %{user_id: user.id, email: email})
-      Users.deliver_user_auth_email(
-	user,
-	url(~p"/users/auth/#{token}")
-      )
+      url_text = url(~p"/users/auth/#{token}")
+      case Users.deliver_user_auth_email(user, url_text) do
+	{:ok, _} ->
+	  conn
+	  |> assign(:page_title, "Auth Email Sent")
+	  |> render(:create)
+	{:error, msg} ->
+	  conn
+	  |> put_flash(:error, msg)
+	  |> redirect(to: ~p"/")
+      end
     else
       token = sign_token("reg_email", %{email: email})
-      Users.deliver_user_reg_email(
-	email,
-	url(~p"/users/new/#{token}")
-      )
+      url_text = url(~p"/users/new/#{token}")
+      case Users.deliver_user_reg_email(email, url_text) do
+	{:ok, _} ->
+	  conn
+	  |> assign(:page_title, "Auth Email Sent")
+	  |> render(:create)
+	{:error, msg} ->
+	  conn
+	  |> put_flash(:error, msg)
+	  |> redirect(to: ~p"/")
+      end
     end
-
-    conn
-    |> assign(:page_title, "Auth Email Sent")
-    |> render(:create)
   end
 end

@@ -61,4 +61,11 @@ defmodule Inkfish.Users.UserNotifier do
     ==============================
     """)
   end
+
+  def domain_allowed?(email) do
+    domains = Application.get_env(:inkfish, Inkfish.Users.UserNotifier)[:domains]
+    Enum.any? domains, fn dd ->
+      Regex.match?(~r/\@#{dd}$/, email)
+    end
+  end
 end
