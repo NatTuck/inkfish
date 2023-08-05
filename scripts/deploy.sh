@@ -1,5 +1,12 @@
 #!/bin/bash
 
+if [[ -e ~/.asdf/asdf.sh ]]; then
+    .  ~/.asdf/asdf.sh
+fi
+if [[ -e .cargo/env ]]; then
+    .  ~/.cargo/env
+fi
+
 export MIX_ENV=prod
 export PORT=4080
 export DATABASE_URL=$(cat ~/.config/inkfish/db_url)

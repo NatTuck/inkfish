@@ -2,7 +2,7 @@
 # from environment variables. You can also hardcode secrets,
 # although such is generally not recommended and you have to
 # remember to add this file to your .gitignore.
-use Mix.Config
+import Config
 
 database_url =
   System.get_env("DATABASE_URL") ||
@@ -14,7 +14,6 @@ database_url =
 config :inkfish, Inkfish.Repo,
   # ssl: true,
   timeout: 60_000,
-  pool_timeout: 60_000,
   url: database_url,
   pool_size: String.to_integer(System.get_env("POOL_SIZE") || "20")
 

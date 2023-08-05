@@ -19,7 +19,7 @@ defmodule Inkfish.MixProject do
   def application do
     [
       mod: {Inkfish.Application, []},
-      extra_applications: [:logger, :runtime_tools]
+      extra_applications: [:logger, :runtime_tools, :os_mon]
     ]
   end
 
@@ -56,6 +56,7 @@ defmodule Inkfish.MixProject do
       {:inflex, "~> 2.0" },
       {:singleton, "~> 1.3"},
       {:swoosh, "~> 1.11"},
+      {:gen_smtp, "~> 1.2"},
       {:httpoison, "~> 2.0"},
       {:ok, "~> 2.3"},
       {:briefly, "~> 0.4.0"},

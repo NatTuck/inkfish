@@ -24,7 +24,7 @@ defmodule InkfishWeb.UserAuthEmailController do
     else
       token = sign_token("reg_email", %{email: email})
       Users.deliver_user_reg_email(
-	user,
+	email,
 	url(~p"/users/new/#{token}")
       )
     end

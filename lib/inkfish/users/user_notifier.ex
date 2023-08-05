@@ -5,15 +5,19 @@ defmodule Inkfish.Users.UserNotifier do
 
   # Delivers the email using the application mailer.
   defp deliver(recipient, subject, body) do
-    email =
-      new()
+    if domain_allowed?(recipient) do
+      email = new()
       |> to(recipient)
-      |> from({"Inkfish", "inkfish@example.com"})
+      |> from(Mailer.send_from())
       |> subject(subject)
       |> text_body(body)
 
-    with {:ok, _metadata} <- Mailer.deliver(email) do
-      {:ok, email}
+      with {:ok, _metadata} <- Mailer.deliver(email) do
+	IO.inspect {:email, email}
+	{:ok, email}
+      end
+    else
+      {:error, "Bad domain in '#{recipient}'"}
     end
   end
 

@@ -1,6 +1,8 @@
 defmodule InkfishWeb.Router do
   use InkfishWeb, :router
 
+  import Phoenix.LiveDashboard.Router
+
   alias InkfishWeb.Plugs
   import Plugs.UserSession
 
@@ -111,6 +113,7 @@ defmodule InkfishWeb.Router do
     resources "/docker_tags", DockerTagController
     post "/docker_tags/:id/build", DockerTagController, :build
     post "/docker_tags/:id/clean", DockerTagController, :clean
+    live_dashboard "/live_dashboard", metrics: InkfishWeb.Telemetry
   end
 
   scope "/ajax", InkfishWeb, as: :ajax do
@@ -136,13 +139,6 @@ defmodule InkfishWeb.Router do
   end
 
   if Mix.env() in [:dev, :test] do
-    import Phoenix.LiveDashboard.Router
-
-    scope "/" do
-      pipe_through :browser
-      live_dashboard "/live_dashboard", metrics: InkfishWeb.Telemetry
-    end
-    
     scope "/dev" do
       pipe_through :browser
       forward "/mailbox", Plug.Swoosh.MailboxPreview

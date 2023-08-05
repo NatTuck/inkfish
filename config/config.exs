@@ -7,6 +7,9 @@
 # General application configuration
 import Config
 
+config :inkfish, Inkfish.Users.UserNotifier,
+  domains: ["example.com", "ferrus.net"]
+
 config :inkfish,
   ecto_repos: [Inkfish.Repo]
 

@@ -1,4 +1,4 @@
-use Mix.Config
+import Config
 
 # For production, don't forget to configure the url host
 # to something meaningful, Phoenix uses this information
@@ -10,11 +10,21 @@ use Mix.Config
 # which you should run after static files are built and
 # before starting your production server.
 config :inkfish, InkfishWeb.Endpoint,
-  url: [host: "inkfish.ntuck-neu.site", port: 80],
+  url: [host: "inkfish.homework.quest", port: 80],
   cache_static_manifest: "priv/static/cache_manifest.json"
 
-config :inkfish, download_host: "https://inkfish.ntuck-neu.site"
+config :inkfish, Inkfish.Users.UserNotifier,
+  domains: ["plymouth.edu", "ferrus.net"]
+
+config :inkfish, download_host: "https://inkfish.homework.quest"
 config :inkfish, :env, :prod
+
+config :inkfish, Inkfish.Mailer,
+  adapter: Swoosh.Adapters.Sendmail,
+  cmd_path: "/usr/sbin/sendmail",
+  cmd_args: "",
+  send_from: {"Inkfish", "no-reply@homework.quest"}
+
 
 # Do not print debug messages in production
 config :logger, level: :info
