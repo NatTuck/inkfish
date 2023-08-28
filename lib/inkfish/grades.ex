@@ -333,8 +333,15 @@ defmodule Inkfish.Grades do
       preload: [sub: {sub, upload: up}]
 
     path = Grade.log_path(grade)
-    data = Jason.encode!(log)
-    File.write!(path, data)
+    case Jason.encode!(log) do
+      {:ok, data} ->
+        File.write!(path, data)
+      other ->
+        IO.puts("Jason.encode failed")
+        IO.inspect(other)
+        IO.inspect(log)
+        :ok
+    end
   end
 
   def set_grade_score(grade, passed, tests) do
