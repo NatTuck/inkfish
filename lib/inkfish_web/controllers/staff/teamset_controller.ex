@@ -76,4 +76,28 @@ defmodule InkfishWeb.Staff.TeamsetController do
     |> put_flash(:info, "Teamset deleted successfully.")
     |> redirect(to: Routes.staff_course_teamset_path(conn, :index, teamset.course_id))
   end
+
+  def add_prof_team(conn, %{"id" => id}) do
+    teamset = Teams.get_teamset!(id)
+    reg = conn.assigns[:current_reg]
+    if reg.is_prof do
+      team = Teams.get_active_team(teamset, reg)
+
+      if team do
+        conn
+        |> put_flash(:info, "Prof team exists for ts #{id}")
+        |> redirect(to: Routes.staff_teamset_path(conn, :show, teamset))
+      else
+        team = Teams.create_solo_team(teamset, reg)
+
+        conn
+        |> put_flash(:info, "Added prof team #{team.id} for teamset #{id}")
+        |> redirect(to: Routes.staff_teamset_path(conn, :show, teamset))
+      end
+    else
+      conn
+      |> put_flash(:error, "Must be prof")
+      |> redirect(to: Routes.staff_teamset_path(conn, :show, teamset))
+    end
+  end
 end

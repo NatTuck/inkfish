@@ -22,3 +22,12 @@
   </script>
 
 <% end %>
+
+<%= if @current_reg.is_prof do %>
+<br>
+<%= link(
+  "Add Prof Team",
+  to: Routes.staff_teamset_path(@conn, :add_prof_team, @teamset),
+  method: "post", class: "btn btn-warning") %>
+<% end %>
+

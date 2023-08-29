@@ -283,7 +283,10 @@ defmodule Inkfish.Users do
 
   """
   def create_reg(%{"user_email" => user_email} = attrs) do
-    email = User.normalize_email(user_email)
+    email = user_email
+    |> User.extract_email()
+    |> User.normalize_email()
+
     attrs
     |> Map.put("user_id", get_user_by_email!(email).id)
     |> Map.delete("user_email")

@@ -106,4 +106,13 @@ defmodule Inkfish.Users.User do
     Argon2.no_user_verify()
     false
   end
+
+  def extract_email(text) do
+    case Regex.run(~r/\[(\S+@\S+)\]/, text) do
+      xs when is_list(xs) and length(xs) > 1 ->
+        Enum.at(xs, 1)
+      _other ->
+        text
+    end
+  end
 end

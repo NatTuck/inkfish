@@ -4,7 +4,7 @@
 System package dependencies:
 
 ```
-sudo apt install docker.io imagemagick
+sudo apt install docker.io imagemagick libipc-system-simple-perl
 ```
 
 System user must be added to docker group.

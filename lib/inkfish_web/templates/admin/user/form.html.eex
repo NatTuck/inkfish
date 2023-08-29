@@ -31,8 +31,8 @@
   </div>
 
   <div class="form-group">
-    <%= label f, :is_admin %>
-    <%= checkbox f, :is_admin, class: "form-control toggle" %>
+    <%= label f, :is_admin %><br>
+    <%= checkbox f, :is_admin %>
     <%= error_tag f, :is_admin %>
   </div>
 

@@ -333,7 +333,7 @@ defmodule Inkfish.Grades do
       preload: [sub: {sub, upload: up}]
 
     path = Grade.log_path(grade)
-    case Jason.encode!(log) do
+    case Jason.encode(log) do
       {:ok, data} ->
         File.write!(path, data)
       other ->

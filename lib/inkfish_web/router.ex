@@ -86,6 +86,7 @@ defmodule InkfishWeb.Router do
     resources "/join_reqs", JoinReqController, only: [:show, :delete]
     post "/join_reqs/:id/accept", JoinReqController, :accept
     resources "/teamsets", TeamsetController, except: [:index, :new, :create]
+    post "/teamsets/:id/add_prof_team", TeamsetController, :add_prof_team
     resources "/buckets", BucketController, except: [:index, :new, :create] do
       resources "/assignments", AssignmentController, only: [:new, :create]
     end
