@@ -49,7 +49,7 @@ defmodule InkfishWeb.UserController do
 	    |> redirect(to: ~p"/dashboard")
 
 	  {:error, %Ecto.Changeset{} = changeset} ->
-	    render(conn, :new, changeset: changeset)
+	    render(conn, :new, changeset: changeset, token: token)
 	end
       :error ->
 	conn
