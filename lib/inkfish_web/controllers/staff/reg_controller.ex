@@ -31,6 +31,7 @@ defmodule InkfishWeb.Staff.RegController do
 
   def create(conn, %{"reg" => reg_params}) do
     reg_params = Map.put(reg_params, "course_id", conn.assigns[:course].id)
+
     case Users.create_reg(reg_params) do
       {:ok, reg} ->
         conn

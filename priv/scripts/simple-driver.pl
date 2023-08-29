@@ -37,7 +37,7 @@ untar("/var/tmp/gra.tar.gz");
 
 say("\nRun test script:");
 say "\n$COOKIE";
-run(qq{perl test.pl});
+run(qq{perl test.pl || echo "# test script failed"});
 say "\n$COOKIE\n";
 
 say "Grading script complete."
