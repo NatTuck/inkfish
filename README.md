@@ -9,6 +9,33 @@ sudo apt install docker.io imagemagick libipc-system-simple-perl
 
 System user must be added to docker group.
 
+## Setting up dev environment
+
+Install asdf: https://github.com/asdf-vm/asdf
+
+Use asdf to install latest erlang, elixir, node.
+
+Remember to install build deps for erlang as listed in the asdf plugin.
+
+Install dev deps:
+
+```
+sudo apt install inotify-tools
+```
+
+Install postgresql:
+
+```
+sudo apt install postgresql-all postgresql-client libpq-dev
+```
+
+Create dev user:
+
+```
+user$ sudo su - postgres
+postgres$ createuser -d -P inkfish
+password: oobeiGait3ie
+```
 
 ## Future dep upgrades
 

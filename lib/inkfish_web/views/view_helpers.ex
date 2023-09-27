@@ -143,9 +143,17 @@ defmodule InkfishWeb.ViewHelpers do
 
   def show_score(conn, %Grade{} = grade) do
     asgn = conn.assigns[:assignment]
-    show_score(conn, asgn, grade.score)
+    if grade.grade_column.kind == "script" do
+      show_score(grade.score)
+    else
+      show_score(conn, asgn, grade.score)
+    end
   end
 
+  def show_score(conn, %Grade{} = grade, %GradeColumn{} = gcol) do
+    show_score(conn, %Grade{grade | grade_column: gcol})
+  end
+ 
   def show_score(conn, %Assignment{} = asgn) do
     sub = Enum.find asgn.subs, &(&1.active)
     show_score(conn, asgn, sub && sub.score)
@@ -154,8 +162,12 @@ defmodule InkfishWeb.ViewHelpers do
   def show_score(_conn, %GradeColumn{} = gcol) do
     show_score(gcol.points)
   end
-
+ 
   def show_score(_conn, %Assignment{} = _a, nil) do
+    show_score(nil)
+  end
+
+  def show_score(_conn, nil, _gc) do
     show_score(nil)
   end
 
