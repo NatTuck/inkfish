@@ -44,6 +44,10 @@ defmodule InkfishWeb.Router do
     get "/users/auth/:token", UserAuthEmailController, :show
     get "/users/new/:token", UserController, :new
     post "/users", UserController, :create
+
+    # Downloading an upload by uuid should be OK
+    # because UUIDs are hard to guess.
+    get "/uploads/:id/:name", UploadController, :download
   end
 
   scope "/", InkfishWeb do
@@ -55,7 +59,6 @@ defmodule InkfishWeb.Router do
     resources "/uploads", UploadController, only: [:create, :show]
     get "/uploads/:id/_meta/thumb", UploadController, :thumb
     get "/uploads/:id/_meta/unpacked/*path", UploadController, :unpacked
-    get "/uploads/:id/:name", UploadController, :download
     resources "/courses", CourseController, only: [:index, :show] do
       resources "/join_reqs", JoinReqController, only: [:new, :create]
     end
