@@ -102,19 +102,21 @@ defmodule InkfishWeb.ViewHelpers do
     # FIXME: Global scale. Should be per course.
     # Scale for 5610 Fall 2019 was 2.2%.
     
-    num = num + 410 # systems spring 2021 
+    #num = num + 410 # systems spring 2021 
     #num = num + 350 # web dev spring 2021
 
     cond do
-      num >= 9500 -> "A"
+      num >= 9300 -> "A"
       num >= 9000 -> "A-"
-      num >= 8500 -> "B+"
-      num >= 8000 -> "B"
-      num >= 7500 -> "B-"
-      num >= 7000 -> "C+"
-      num >= 6500 -> "C"
-      num >= 6000 -> "C-"
-      num >= 5000 -> "D"
+      num >= 8700 -> "B+"
+      num >= 8300 -> "B"
+      num >= 8000 -> "B-"
+      num >= 7700 -> "C+"
+      num >= 7300 -> "C"
+      num >= 7000 -> "C-"
+      num >= 6700 -> "D+"
+      num >= 6300 -> "D"
+      num >= 6000 -> "D-"
       true -> "F"
     end
   end
