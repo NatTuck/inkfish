@@ -103,6 +103,7 @@ defmodule Inkfish.Uploads.Upload do
   def save_upload_file!(cset, upload) do
     up = get_field(cset, :upload)
     File.copy!(up.path, upload_path(upload))
+    IO.inspect {:upload_saved, upload_path(upload)}
   end
 
   def save_upload_file!(_cset, upload, :fake) do
