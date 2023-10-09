@@ -35,6 +35,10 @@ defmodule InkfishWeb.Router do
 
     get "/", PageController, :index
     resources "/session", SessionController, only: [:create, :delete], singleton: true
+
+    # Downloading an upload by uuid should be OK
+    # because UUIDs are hard to guess.
+    get "/uploads/:id/:name", UploadController, :download
   end
 
   scope "/", InkfishWeb do
@@ -44,11 +48,7 @@ defmodule InkfishWeb.Router do
     get "/users/auth/:token", UserAuthEmailController, :show
     get "/users/new/:token", UserController, :new
     post "/users", UserController, :create
-
-    # Downloading an upload by uuid should be OK
-    # because UUIDs are hard to guess.
-    get "/uploads/:id/:name", UploadController, :download
-  end
+ end
 
   scope "/", InkfishWeb do
     pipe_through [:browser, :require_user_session]

@@ -17,6 +17,12 @@ Use asdf to install latest erlang, elixir, node.
 
 Remember to install build deps for erlang as listed in the asdf plugin.
 
+Install tmptmptfs:
+
+ - Install rustup
+ - In support/tmptmtpfs do cargo build
+ - Then run sudo ./install.sh
+
 Install dev deps:
 
 ```
