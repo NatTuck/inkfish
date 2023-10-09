@@ -19,7 +19,7 @@ defmodule Inkfish.Uploads.Cleanup do
       preload: [photo_user: photo_user],
       where: up.kind == "user_photo",
       where: is_nil(photo_user.id),
-      where: up.inserted_at < fragment("now()::timestamp - interval '1 hours'")
+      where: up.inserted_at < fragment("now()::timestamp - interval '2 days'")
   end
 
   def garbage_assignment_starters() do
@@ -28,7 +28,7 @@ defmodule Inkfish.Uploads.Cleanup do
       preload: [starter_assignment: as],
       where: up.kind == "assignment_starter",
       where: is_nil(as.id),
-      where: up.inserted_at < fragment("now()::timestamp - interval '1 hours'")
+      where: up.inserted_at < fragment("now()::timestamp - interval '2 days'")
   end
 
   def garbage_assignment_solutions() do
@@ -37,6 +37,6 @@ defmodule Inkfish.Uploads.Cleanup do
       preload: [solution_assignment: as],
       where: up.kind == "assignment_solution",
       where: is_nil(as.id),
-      where: up.inserted_at < fragment("now()::timestamp - interval '1 hours'")
+      where: up.inserted_at < fragment("now()::timestamp - interval '2 days'")
   end
 end
