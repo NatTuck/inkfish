@@ -102,8 +102,13 @@ defmodule Inkfish.Uploads.Upload do
 
   def save_upload_file!(cset, upload) do
     up = get_field(cset, :upload)
-    File.copy!(up.path, upload_path(upload))
-    IO.inspect {:upload_saved, upload_path(upload)}
+    dst = upload_path(upload)
+    bs = File.copy!(up.path, dst)
+    IO.puts "Upload created copied #{bs} bytes to path '#{dst}'"
+    unless File.exists?(dst) do
+      IO.puts "Upload is missing."
+      raise "New upload missing"
+    end
   end
 
   def save_upload_file!(_cset, upload, :fake) do
