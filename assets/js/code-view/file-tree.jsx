@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 import TreeMenu, { defaultChildren } from 'react-simple-tree-menu';
 import { ListGroup, ListGroupItem } from 'react-bootstrap';
@@ -6,6 +6,8 @@ import { freeze } from 'icepick';
 import _ from 'lodash';
 
 export default function FileTree({data, grade, activePath, pickFile}) {
+  let [showDotFiles, setShowDotFiles] = useState(false);
+
   let comment_counts = new Map();
   for (let lc of grade.line_comments) {
     if (comment_counts.has(lc.path)) {
@@ -16,6 +18,8 @@ export default function FileTree({data, grade, activePath, pickFile}) {
       comment_counts.set(lc.path, 1);
     }
   }
+
+  console.log(data.files);
 
   let dirs = list_top_dirs(data.files);
 
