@@ -12,19 +12,19 @@
   <% end %>
 
   <div class="mb-3">
-    <%= label f, :hours_spent %>
+    <%= label f, :hours_spent, class: "form-label" %>
     <%= number_input f, :hours_spent, class: "form-control" %>
     <%= error_tag f, :hours_spent %>
   </div>
 
   <div class="mb-3">
-    <%= label f, :note %>
+    <%= label f, :note, class: "form-label" %>
     <%= textarea f, :note, class: "form-control" %>
     <%= error_tag f, :note %>
   </div>
 
   <div class="mb-3 sub-upload-group">
-    <%= label f, :upload_id %>
+    <%= label f, :upload_id, class: "form-label" %>
     <%= text_input f, :upload_id, class: "form-control", readonly: "readonly" %>
     <%= error_tag f, :upload_id %>
     <p>Max upload size is 5MB, larger uploads will fail.</p>

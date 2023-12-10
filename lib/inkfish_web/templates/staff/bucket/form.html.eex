@@ -8,13 +8,13 @@
   <%= hidden_input f, :course_id %>
 
   <div class="mb-3">
-    <%= label f, :name %>
+    <%= label f, :name, class: "form-label" %>
     <%= text_input f, :name, placeholder: "Homework" %>
     <%= error_tag f, :name %>
   </div>
 
   <div class="mb-3">
-    <%= label f, :weight %>
+    <%= label f, :weight, class: "form-label" %>
     <%= number_input f, :weight, step: "any" %>
     <%= error_tag f, :weight %>
   </div>

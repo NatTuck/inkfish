@@ -6,13 +6,13 @@
   <% end %>
 
   <div class="mb-3">
-    <%= label f, :name %>
+    <%= label f, :name, class: "form-label" %>
     <%= text_input f, :name, class: "form-control" %>
     <%= error_tag f, :name %>
   </div>
 
   <div class="mb-3">
-    <%= label f, :start_date, "Start Date" %>
+    <%= label f, :start_date, "Start Date", class: "form-label" %>
     <div>
       <%= text_input(f, :start_date, class: "form-control date-picker") %>
     </div>
@@ -20,7 +20,7 @@
   </div>
 
   <div class="mb-3">
-    <%= label f, :footer %>
+    <%= label f, :footer, class: "form-label" %>
     <%= textarea f, :footer, class: "form-control" %>
     <%= error_tag f, :footer %>
     <div class="text-muted">

@@ -11,19 +11,19 @@
   </div>
 
   <div class="mb-3">
-    <%= label f, :name %>
+    <%= label f, :name, class: "form-label" %>
     <%= text_input f, :name, class: "form-control" %>
     <%= error_tag f, :name %>
   </div>
 
   <div class="mb-3">
-    <%= label f, :desc %>
+    <%= label f, :desc, class: "form-label" %>
     <%= textarea f, :desc, class: "form-control" %>
     <%= error_tag f, :desc %>
   </div>
 
   <div class="mb-3">
-    <%= label f, :due %>
+    <%= label f, :due, class: "form-label" %>
     <div>
       <%= text_input(f, :due, class: "form-control date-time-picker") %>
     </div>
@@ -31,13 +31,13 @@
   </div>
 
   <div class="mb-3">
-    <%= label f, :weight %>
+    <%= label f, :weight, class: "form-label" %>
     <%= number_input f, :weight, step: "any", class: "form-control" %>
     <%= error_tag f, :weight %>
   </div>
 
   <div class="mb-3">
-    <%= label f, :teamset_id %>
+    <%= label f, :teamset_id, class: "form-label" %>
     <%= select(f, :teamset_id, Enum.map(@teamsets, &({&1.name, &1.id})),
                class: "form-control")%>
     <%= error_tag f, :teamset_id %>
@@ -57,7 +57,7 @@
   </div>
 
   <div class="mb-3">
-    <%= label f, :starter_upload_id %>
+    <%= label f, :starter_upload_id, class: "form-label" %>
     <%= text_input f, :starter_upload_id, class: "form-control", readonly: "readonly" %>
     <%= error_tag f, :starter_upload_id %>
     <div class="file-uploader"
@@ -69,7 +69,7 @@
   </div>
 
   <div class="mb-3">
-    <%= label f, :solution_upload_id %>
+    <%= label f, :solution_upload_id, class: "form-label" %>
     <%= text_input f, :solution_upload_id, class: "form-control", readonly: "readonly" %>
     <%= error_tag f, :solution_upload_id %>
     <div class="file-uploader"

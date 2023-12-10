@@ -17,7 +17,7 @@
   </div>
 
   <div class="mb-3">
-    <%= label f, :note %>
+    <%= label f, :note, class: "form-label" %>
     <%= textarea f, :note, class: "form-control" %>
     <%= error_tag f, :note %>
   </div>
