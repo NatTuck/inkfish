@@ -1,31 +1,32 @@
 {
   "dependencies": {
-    "ansi_up": "^5.2.1",
-    "axios": "^1.6.0",
-    "bootstrap-icons": "^1.10.5",
+    "ansi_up": "^6.0.2",
+    "axios": "^1.6.2",
+    "bootstrap-icons": "^1.11.2",
     "bootstrap-scss": "^5",
     "bootswatch": "^5",
     "cash-dom": "^8.1.5",
     "codemirror": "^5",
     "codemirror-mode-elixir": "^1",
     "date-fns": "^2.30.0",
-    "filesize": "^6.1",
-    "html-react-parser": "^4.0.0",
+    "filesize": "^10.1",
+    "html-react-parser": "^5.0.7",
     "icepick": "^2.4.0",
     "lodash": "^4.17.21",
     "promise-file-reader": "^1",
     "react": "^18",
-    "react-bootstrap": "^2.7.4",
-    "react-datepicker": "^4.13",
+    "react-arborist": "^3.3.0-rc.1",
+    "react-bootstrap": "^2.9.1",
+    "react-datepicker": "^4.24",
     "react-dom": "^18",
-    "react-dropzone": "^11",
+    "react-dropzone": "^14",
     "react-feather": "^2.0.10",
-    "react-redux": "^8.1.0",
+    "react-redux": "^9.0.2",
     "react-simple-tree-menu": "^1.1",
-    "redux": "^4",
-    "uuid": "^9.0.0"
+    "redux": "^5",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
-    "jest": "^29.5.0"
+    "jest": "^29.7.0"
   }
 }

@@ -24,7 +24,7 @@ defmodule InkfishWeb.Admin.UserController do
   def update(conn, %{"id" => id, "user" => user_params}) do
     user = Users.get_user!(id)
 
-    case Users.update_user(user, user_params) do
+    case Users.admin_update_user(user, user_params) do
       {:ok, user} ->
         conn
         |> put_flash(:info, "User updated successfully.")

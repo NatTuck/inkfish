@@ -72,6 +72,7 @@ defmodule InkfishWeb do
 
       # Core UI components and translation
       import InkfishWeb.CoreComponents
+      import InkfishWeb.FormComponents
       import InkfishWeb.Gettext
 
       # Shortcut for generating JS commands

@@ -5,13 +5,13 @@
     </div>
   <% end %>
 
-  <div class="form-group">
+  <div class="mb-3">
     <%= label f, :name %>
     <%= text_input f, :name, class: "form-control" %>
     <%= error_tag f, :name %>
   </div>
 
-  <div class="form-group">
+  <div class="mb-3">
     <%= label f, :start_date %>
     <div>
       <%= text_input(f, :start_date, class: "form-control date-picker") %>
@@ -19,7 +19,7 @@
     <%= error_tag f, :start_date %>
   </div>
 
-  <div class="form-group">
+  <div class="mb-3">
     <%= label f, :footer %>
     <%= textarea f, :footer, class: "form-control" %>
     <%= error_tag f, :footer %>
@@ -28,7 +28,7 @@
     </div>
   </div>
 
-  <div class="form-group">
+  <div class="mb-3">
     <div>Archive?</div>
     <div class="form-check">
       <%= checkbox f, :archived, class: "form-check-input" %>
@@ -37,7 +37,7 @@
     </div>
   </div>
 
-  <div class="form-group">
+  <div class="mb-3">
     <%= label f, :instructor %>
     <%= text_input(f, :instructor, class: "form-control autosearch",
       data: [topic: "users"]) %>
@@ -47,7 +47,7 @@
     </div>
   </div>
 
-  <div>
+  <div class="mb-3">
     <%= submit "Save", class: "btn btn-primary" %>
   </div>
 <% end %>

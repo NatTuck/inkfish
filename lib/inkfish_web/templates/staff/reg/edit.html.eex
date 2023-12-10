@@ -7,15 +7,15 @@
     </div>
   <% end %>
 
-  <div class="form-group">
+  <div class="mb-3">
     <p>Course: <%= @course.name %></p>
   </div>
 
-  <div class="form-group">
+  <div class="mb-3">
     <p>User: <%= user_display_name(@reg.user) %></p>
   </div>
 
-  <div class="form-group">
+  <div class="mb-3">
     <div class="form-check">
       <%= checkbox f, :is_grader, class: "form-check-input" %>
       <%= label f, :is_grader %>
@@ -41,7 +41,7 @@
     </div>
   </div>
 
-  <div>
+  <div class="mb-3">
     <%= submit "Save", class: "btn btn-primary" %>
   </div>
 <% end %>

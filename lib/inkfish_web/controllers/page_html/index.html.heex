@@ -2,12 +2,12 @@
   <div class="col">
     <h1>Log In</h1>
     <%= form_for @conn, Routes.session_path(@conn, :create), fn f -> %>
-      <div class="form-group">
+      <div class="mb-3">
         <%= label f, :email %>
         <%= text_input f, :email, class: "form-control" %>
       </div>
       
-      <div class="form-group">
+      <div class="mb-3">
         <%= label f, :password %>
         <%= password_input f, :password, class: "form-control" %>
       </div>
@@ -23,7 +23,7 @@
     <p>Enter your email to create a new account or reset your password.</p>
 
     <%= form_for @conn, ~p"/users/send_auth_email", fn f -> %>
-       <div class="form-group">
+       <div class="mb-3">
         <%= label f, :email %>
         <%= text_input f, :email, class: "form-control" %>
       </div>

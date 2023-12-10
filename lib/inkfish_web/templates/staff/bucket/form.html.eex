@@ -7,19 +7,19 @@
 
   <%= hidden_input f, :course_id %>
 
-  <div class="form-group">
+  <div class="mb-3">
     <%= label f, :name %>
     <%= text_input f, :name, placeholder: "Homework" %>
     <%= error_tag f, :name %>
   </div>
 
-  <div class="form-group">
+  <div class="mb-3">
     <%= label f, :weight %>
     <%= number_input f, :weight, step: "any" %>
     <%= error_tag f, :weight %>
   </div>
 
-  <div>
+  <div class="mb-3">
     <%= submit "Save", class: "btn btn-primary" %>
   </div>
 <% end %>

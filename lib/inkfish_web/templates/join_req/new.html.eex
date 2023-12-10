@@ -8,21 +8,21 @@
     </div>
   <% end %>
 
-  <div class="form-group">
+  <div class="mb-3">
     <p>Course: <%= @course.name %></p>
   </div>
 
-  <div class="form-group">
+  <div class="mb-3">
     <p>User: <%= user_display_name(@current_user) %></p>
   </div>
 
-  <div class="form-group">
+  <div class="mb-3">
     <%= label f, :note %>
     <%= textarea f, :note, class: "form-control" %>
     <%= error_tag f, :note %>
   </div>
 
-  <div class="form-group">
+  <div class="mb-3">
     Special role?
     <div>
       <%= label f, :staff_req, "Course staff" %> &nbsp;
@@ -31,7 +31,7 @@
     </div>
   </div>
 
-  <div>
+  <div class="mb-3">
     <%= submit "Request to Join Course", class: "btn btn-primary" %>
   </div>
 <% end %>

@@ -4,7 +4,7 @@
 System package dependencies:
 
 ```
-sudo apt install docker.io docker-buildx imagemagick libipc-system-simple-perl
+sudo apt install docker.io docker-buildx graphicsmagick libipc-system-simple-perl
 ```
 
 System user must be added to docker group.

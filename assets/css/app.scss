@@ -6,14 +6,6 @@
 @import "react-datepicker/dist/react-datepicker";
 
 @import "./console";
-/*
-@import "./dropzone";
-*/
-
-// TODO: Migrate this to bs5 convention.
-.form-group {
-    padding-bottom: 1ex;
-}
 
 .header-logo {
     width: 64px; 
@@ -37,7 +29,7 @@
     width: 100%;
 }
 
-.form-group > textarea.form-control {
+textarea.form-control {
     min-height: 12em;
 }
 
@@ -55,6 +47,7 @@
 
 .user-photo-full {
     max-width: 960px;
+    max-height: 50vh;
 }
 
 .number-grade-form {
@@ -68,10 +61,6 @@
 .number-grade-cell {
     width: 10em;
     min-height: 2em;
-}
-
-.form-group label {
-    padding-right: 1em;
 }
 
 .sub-upload-group {

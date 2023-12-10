@@ -19,7 +19,7 @@
     <li><strong>Name:</strong> <%= user_display_name(@user) %></li>
   </ul>
 
-  <div class="form-group">
+  <div class="mb-3">
     <%= label f, :nickname %>
     <%= text_input f, :nickname, class: "form-control" %>
     <%= error_tag f, :nickname %>

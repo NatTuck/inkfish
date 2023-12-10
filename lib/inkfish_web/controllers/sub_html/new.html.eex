@@ -11,19 +11,19 @@
     </div>
   <% end %>
 
-  <div class="form-group">
+  <div class="mb-3">
     <%= label f, :hours_spent %>
     <%= number_input f, :hours_spent, class: "form-control" %>
     <%= error_tag f, :hours_spent %>
   </div>
 
-  <div class="form-group">
+  <div class="mb-3">
     <%= label f, :note %>
     <%= textarea f, :note, class: "form-control" %>
     <%= error_tag f, :note %>
   </div>
 
-  <div class="form-group sub-upload-group">
+  <div class="mb-3 sub-upload-group">
     <%= label f, :upload_id %>
     <%= text_input f, :upload_id, class: "form-control", readonly: "readonly" %>
     <%= error_tag f, :upload_id %>
@@ -39,7 +39,7 @@
     </div>
   </div>
 
-  <div>
+  <div class="mb-3">
     <%= submit "Submit", class: "btn btn-primary" %>
   </div>
 <% end %>

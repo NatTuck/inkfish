@@ -5,19 +5,21 @@
     </div>
   <% end %>
 
-  <div class="form-group">
+  <div class="mb-3">
     <%= label f, :name %>
     <%= text_input f, :name, class: "form-control" %>
     <%= error_tag f, :name %>
   </div>
 
-  <div class="form-group">
-    <%= label f, :start_date %>
-    <%= text_input(f, :start_date, class: "form-control date-picker") %>
+  <div class="mb-3">
+    <%= label f, :start_date, "Start Date" %>
+    <div>
+      <%= text_input(f, :start_date, class: "form-control date-picker") %>
+    </div>
     <%= error_tag f, :start_date %>
   </div>
 
-  <div class="form-group">
+  <div class="mb-3">
     <%= label f, :footer %>
     <%= textarea f, :footer, class: "form-control" %>
     <%= error_tag f, :footer %>
@@ -26,7 +28,7 @@
     </div>
   </div>
 
-  <div>
+  <div class="mb-3">
     <%= submit "Save", class: "btn btn-primary" %>
   </div>
 <% end %>
