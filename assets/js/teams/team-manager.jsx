@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import { freeze } from 'icepick';
 import _ from 'lodash';
 import $ from 'cash-dom';
@@ -7,11 +8,12 @@ import $ from 'cash-dom';
 import * as ajax from './ajax';
 
 export default function init() {
-  let root = document.getElementById('team-manager');
-  if (root) {
+  let root_div = document.getElementById('team-manager');
+  if (root_div) {
+    let root = createRoot(root_div);
     let data = window.teamset_data;
     data.new_team_regs = [];
-    ReactDOM.render(<TeamManager data={data} />, root);
+    root.render(<TeamManager data={data} />);
   }
 }
 

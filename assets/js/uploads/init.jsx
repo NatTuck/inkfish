@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import $ from 'cash-dom';
 
 import FileUploader from './file_uploader';
@@ -21,9 +22,10 @@ function render_uploader(Uploader, item) {
     history.join(topic, data.token, () => {});
   }
 
-  ReactDOM.render(
-    <Uploader setUploadId={gotUUID} {...data} />,
-    item);
+  var root = createRoot(item);
+  root.render(
+    <Uploader setUploadId={gotUUID} {...data} />
+  );
 }
 
 function init() {
