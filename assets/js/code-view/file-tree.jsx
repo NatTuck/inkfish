@@ -101,7 +101,7 @@ function ListItem(props) {
   let badge = "";
   if (props.comment_counts.has(props.path)) {
     badge = (
-      <span className="badge badge-info">
+      <span className="badge bg-info">
         {props.comment_counts.get(props.path)}
       </span>
     );

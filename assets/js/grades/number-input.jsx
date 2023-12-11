@@ -103,7 +103,7 @@ class NumberInput extends React.Component {
       return (
         <div>
           {this.state.score} / {this.state.points}
-          <div className="badge badge-danger ml-1">{this.state.error}</div>
+          <div className="badge bg-danger ml-1">{this.state.error}</div>
         </div>
       );
     }
