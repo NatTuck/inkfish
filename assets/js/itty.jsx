@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import { Provider, useDispatch, useSelector } from 'react-redux';
-import AnsiUp from 'ansi_up';
+import { AnsiUp } from 'ansi_up';
 import parseHTML from 'html-react-parser';
 import $ from 'cash-dom';
 import _ from 'lodash';

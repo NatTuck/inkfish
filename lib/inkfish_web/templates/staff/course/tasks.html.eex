@@ -8,7 +8,7 @@
         <% path = Routes.staff_assignment_grading_task_path(@conn, :show, asg) %>
         <%= link(asg.name, to: path) %>
         <%= if @tasks[asg.id] > 0 do %>
-          <span class="badge badge-warning">
+          <span class="badge bg-warning">
             <%= @tasks[asg.id] %>
           </span>
         <% end %>

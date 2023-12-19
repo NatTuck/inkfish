@@ -6,8 +6,8 @@
     </div>
   <% end %>
 
-  <div class="form-group">
-    <%= label f, :name %>
+  <div class="mb-3">
+    <%= label f, :name, class: "form-label" %>
     <%= text_input f, :name, class: "form-control" %>
     <%= error_tag f, :name %>
   </div>

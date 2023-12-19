@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useMemo } from 'react';
 import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import { Card } from 'react-bootstrap';
 import _ from 'lodash';
 
@@ -62,11 +63,11 @@ export default function FileViewer({path, data, grade, setGrade}) {
 
       let lc_div = document.createElement("div");
       lc_div.setAttribute('id', `line-comment-${lc.id}`);
+      let lc_root = createRoot(lc_div);
       let node = cm.addLineWidget(lc.line, lc_div, {above: true});
-      ReactDOM.render(
+      lc_root.render(
         <LineComment data={lc} setGrade={setGrade}
-                     edit={data.edit} node={node} />,
-        lc_div
+                     edit={data.edit} node={node} />
       );
     }
 
@@ -90,8 +91,8 @@ export default function FileViewer({path, data, grade, setGrade}) {
   }
 
   return (
-    <Card className="h-100">
-      <Card.Body className="h-100">
+    <Card className="vh-100">
+      <Card.Body className="vh-100">
         <Card.Title>{path}</Card.Title>
         <div ref={editor} />
       </Card.Body>

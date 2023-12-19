@@ -28,4 +28,4 @@ config :hound,
   port: 4444
 
 # Print only warnings and errors during test
-config :logger, level: :warn
+config :logger, level: :warning

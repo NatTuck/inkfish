@@ -5,7 +5,7 @@ defmodule Inkfish.MixProject do
     [
       app: :inkfish,
       version: "0.1.0",
-      elixir: "~> 1.11",
+      elixir: "~> 1.14",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
@@ -33,20 +33,19 @@ defmodule Inkfish.MixProject do
   defp deps do
     [
       {:argon2_elixir, "~> 3.0"},
-      {:phoenix, "~> 1.7.0"},
-      {:phoenix_ecto, "~> 4.1"},
-      {:ecto_sql, "~> 3.4"},
+      {:phoenix, "~> 1.7.10"},
+      {:phoenix_ecto, "~> 4.4"},
+      {:ecto_sql, "~> 3.10"},
       {:postgrex, ">= 0.0.0"},
-      {:phoenix_html, "~> 3.0"},
+      {:phoenix_html, "~> 3.3"},
       {:phoenix_view, "~> 2.0"},
-      {:phoenix_live_view, "~> 0.18.3"},
-      {:phoenix_live_reload, "~> 1.2", only: :dev},
-      {:phoenix_live_dashboard, "~> 0.7.2"},
+      {:phoenix_live_view, "~> 0.20.1"},
+      {:phoenix_live_dashboard, "~> 0.8.2"},
       {:telemetry_metrics, "~> 0.6"},
-      {:telemetry_poller, "~> 0.5"},
-      {:gettext, "~> 0.11"},
+      {:telemetry_poller, "~> 1.0"},
+      {:gettext, "~> 0.20"},
       {:jason, "~> 1.2"},
-      {:plug_cowboy, "~> 2.0"},
+      {:plug_cowboy, "~> 2.5"},
       {:decimal, "~> 1.8"},
       {:erlexec, "~> 2.0"},
       {:gmex, "~> 0.1"},
@@ -56,16 +55,19 @@ defmodule Inkfish.MixProject do
       {:inflex, "~> 2.0" },
       {:singleton, "~> 1.3"},
       {:swoosh, "~> 1.11"},
+      {:finch, "~> 0.13"},
       {:gen_smtp, "~> 1.2"},
       {:httpoison, "~> 2.0"},
       {:ok, "~> 2.3"},
       {:briefly, "~> 0.4.0"},
+      {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_copy, "~> 0.1.3", runtime: Mix.env() == :dev},
-      {:esbuild, "~> 0.2", runtime: Mix.env() == :dev},
+      {:esbuild, "~> 0.8", runtime: Mix.env() == :dev},
       {:dart_sass, "~> 0.6", runtime: Mix.env() == :dev},
       {:ex_machina, "~> 2.4", only: :test},
       {:phoenix_integration, "~> 0.8", only: :test},
       {:hound, "~> 1.1", only: :test},
+      {:floki, ">= 0.30.0", only: :test},
     ]
   end
 
@@ -77,6 +79,7 @@ defmodule Inkfish.MixProject do
   # See the documentation for `Mix` for more info on aliases.
   defp aliases do
     [
+      deps: ["deps.get", "cmd npm install --prefix assets", "esbuild.install", "sass.install"],
       setup: ["deps.get", "ecto.setup", "cmd npm install --prefix assets"],
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],

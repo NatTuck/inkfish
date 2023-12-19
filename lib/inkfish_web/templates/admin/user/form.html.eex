@@ -5,39 +5,41 @@
     </div>
   <% end %>
 
-  <div class="form-group">
-    <%= label f, :email %>
+  <div class="mb-3">
+    <%= label f, :email, class: "form-label" %>
     <%= text_input(f, :email, name: "_email",
       class: "form-control", readonly: "readonly") %>
     <%= error_tag f, :email %>
   </div>
 
-  <div class="form-group">
-    <%= label f, :given_name %>
+  <div class="mb-3">
+    <%= label f, :given_name, class: "form-label" %>
     <%= text_input f, :given_name, class: "form-control" %>
     <%= error_tag f, :given_name %>
   </div>
 
-  <div class="form-group">
-    <%= label f, :surname %>
+  <div class="mb-3">
+    <%= label f, :surname, class: "form-label" %>
     <%= text_input f, :surname, class: "form-control" %>
     <%= error_tag f, :surname %>
   </div>
 
-  <div class="form-group">
-    <%= label f, :nickname %>
+  <div class="mb-3">
+    <%= label f, :nickname, class: "form-label" %>
     <%= text_input f, :nickname, class: "form-control" %>
     <%= error_tag f, :nickname %>
   </div>
 
-  <div class="form-group">
-    <%= label f, :is_admin %><br>
-    <%= checkbox f, :is_admin %>
+  <div class="mb-3">
+    <%= label f, :is_admin, class: "form-label" %><br>
+    <div class="form-check form-switch">
+      <%= checkbox f, :is_admin, class: "form-check-input form-switch" %>
+    </div>
     <%= error_tag f, :is_admin %>
   </div>
 
-  <div class="form-group">
-    <%= label f, :photo_upload_id %>
+  <div class="mb-3">
+    <%= label f, :photo_upload_id, class: "form-label" %>
     <%= text_input f, :photo_upload_id, class: "form-control", readonly: "readonly" %>
     <%= error_tag f, :photo_upload_id %>
 
@@ -57,7 +59,7 @@
     </div>
   </div>
   
-  <div>
+  <div class="mb-3">
     <%= submit "Save", class: "btn btn-primary" %>
   </div>
 <% end %>

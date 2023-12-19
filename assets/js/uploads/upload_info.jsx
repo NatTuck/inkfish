@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { Card, Button } from 'react-bootstrap';
-import filesize from 'filesize';
+import { filesize } from 'filesize';
 
 export default function UploadInfo({upload, clear}) {
   return (

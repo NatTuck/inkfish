@@ -5,9 +5,11 @@
     </div>
   <% end %>
 
-  <%= label f, :score %>
-  <%= number_input f, :score, step: "any" %>
-  <%= error_tag f, :score %>
+  <div class="mb-3">
+    <%= label f, :score, class="form-label" %>
+    <%= number_input f, :score, step: "any" %>
+    <%= error_tag f, :score %>
+  </div>
 
   <div>
     <%= submit "Save" %>

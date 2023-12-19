@@ -2,7 +2,7 @@ import { sortBy, sortedUniqBy } from 'lodash';
 import { createStore } from 'redux';
 
 function reducer(state = { blocks: [], done: false }, action) {
-  console.log("reducer", state, action);
+  //console.log("reducer", state, action);
 
   switch (action.type) {
   case 'blocks/set':

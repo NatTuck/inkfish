@@ -54,7 +54,7 @@ export default function GitUploader({setUploadId, token, nonce}) {
 		Repo&nbsp;URL:
 	      </Form.Label>
 	    </Col>
-	    <Col sm={8} className="form-group">
+	    <Col sm={8} className="mb-3">
 	      <Form.Control type="text" value={url}
 			    onChange={(ev) => setUrl(ev.target.value)}
 			    onKeyPress={handle_enter}

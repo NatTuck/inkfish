@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import RDP from 'react-datepicker';
 import $ from 'cash-dom';
 import { setHours, setMinutes, setSeconds, parse } from 'date-fns';
@@ -61,7 +62,8 @@ export function replace_date_time_picker(input) {
     />
   );
 
-  ReactDOM.render(elem, $(input).parent()[0])
+  var root = createRoot($(input).parent()[0]);
+  root.render(elem);
 }
 
 function set_time(dd, hh, mm, ss) {

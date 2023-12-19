@@ -5,45 +5,45 @@
     </div>
   <% end %>
 
-  <div class="form-group">
+  <div class="mb-3">
     Bucket: <%= @bucket.name %>
     <%= hidden_input f, :bucket_id %>
   </div>
 
-  <div class="form-group">
-    <%= label f, :name %>
+  <div class="mb-3">
+    <%= label f, :name, class: "form-label" %>
     <%= text_input f, :name, class: "form-control" %>
     <%= error_tag f, :name %>
   </div>
 
-  <div class="form-group">
-    <%= label f, :desc %>
+  <div class="mb-3">
+    <%= label f, :desc, class: "form-label" %>
     <%= textarea f, :desc, class: "form-control" %>
     <%= error_tag f, :desc %>
   </div>
 
-  <div class="form-group">
-    <%= label f, :due %>
+  <div class="mb-3">
+    <%= label f, :due, class: "form-label" %>
     <div>
       <%= text_input(f, :due, class: "form-control date-time-picker") %>
     </div>
     <%= error_tag f, :due %>
   </div>
 
-  <div class="form-group">
-    <%= label f, :weight %>
+  <div class="mb-3">
+    <%= label f, :weight, class: "form-label" %>
     <%= number_input f, :weight, step: "any", class: "form-control" %>
     <%= error_tag f, :weight %>
   </div>
 
-  <div class="form-group">
-    <%= label f, :teamset_id %>
+  <div class="mb-3">
+    <%= label f, :teamset_id, class: "form-label" %>
     <%= select(f, :teamset_id, Enum.map(@teamsets, &({&1.name, &1.id})),
                class: "form-control")%>
     <%= error_tag f, :teamset_id %>
   </div>
 
-  <div class="form-group">
+  <div class="mb-3">
     <p>Allowed submission methods</p>
     <p class="ml-4">
       <%= label f, :allow_upload, "File Upload" %>
@@ -56,8 +56,8 @@
     </p>
   </div>
 
-  <div class="form-group">
-    <%= label f, :starter_upload_id %>
+  <div class="mb-3">
+    <%= label f, :starter_upload_id, class: "form-label" %>
     <%= text_input f, :starter_upload_id, class: "form-control", readonly: "readonly" %>
     <%= error_tag f, :starter_upload_id %>
     <div class="file-uploader"
@@ -68,8 +68,8 @@
     </div>
   </div>
 
-  <div class="form-group">
-    <%= label f, :solution_upload_id %>
+  <div class="mb-3">
+    <%= label f, :solution_upload_id, class: "form-label" %>
     <%= text_input f, :solution_upload_id, class: "form-control", readonly: "readonly" %>
     <%= error_tag f, :solution_upload_id %>
     <div class="file-uploader"
@@ -80,7 +80,7 @@
     </div>
   </div>
 
-  <div>
+  <div class="mb-3">
     <%= submit "Save", class: "btn btn-primary" %>
   </div>
 <% end %>

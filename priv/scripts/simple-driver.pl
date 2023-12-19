@@ -5,6 +5,8 @@ use feature qw(signatures);
 no warnings "experimental::signatures";
 use autodie qw(:all);
 
+alarm(300);
+
 sub run($cmd) {
     #say "Running: $cmd";
     system(qq{su - student -c '$cmd'});

@@ -5,44 +5,44 @@
     </div>
   <% end %>
 
-  <div class="form-group">
-    <%= label f, :name %>
+  <div class="mb-3">
+    <%= label f, :name, class: "form-label" %>
     <%= text_input f, :name, class: "form-control" %>
     <%= error_tag f, :name %>
   </div>
 
-  <div class="form-group">
-    <%= label f, :kind %>
+  <div class="mb-3">
+    <%= label f, :kind, class: "form-label" %>
     <%= select f, :kind, Inkfish.Grades.GradeColumn.grade_column_types(), class: "form-control" %>
     <%= error_tag f, :kind %>
   </div>
 
-  <div class="form-group">
-    <%= label f, :points %>
+  <div class="mb-3">
+    <%= label f, :points, class: "form-label" %>
     <%= number_input f, :points, step: "any", class: "form-control" %>
     <%= error_tag f, :points %>
   </div>
 
-  <div class="form-group">
-    <%= label f, :base %>
+  <div class="mb-3">
+    <%= label f, :base, class: "form-label" %>
     <%= number_input f, :base, step: "any", class: "form-control" %>
     <%= error_tag f, :base %>
   </div>
 
-  <div class="form-group">
-    <%= label f, :params %>
+  <div class="mb-3">
+    <%= label f, :params, class: "form-label" %>
     <%= text_input f, :params, class: "form-control" %>
     <%= error_tag f, :params %>
   </div>
 
-  <div class="form-group">
-    <%= label f, :upload_id %>
+  <div class="mb-3">
+    <%= label f, :upload_id, class: "form-label" %>
     <%= text_input f, :upload_id, class: "form-control", readonly: "readonly" %>
     <%= error_tag f, :upload_id %>
     <%= ajax_upload_field "grade_column", "", "grade_column_upload_id" %>
   </div>
 
-  <div>
+  <div class="mb-3">
     <%= submit "Save", class: "btn btn-primary" %>
   </div>
 <% end %>

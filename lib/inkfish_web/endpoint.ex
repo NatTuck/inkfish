@@ -7,7 +7,8 @@ defmodule InkfishWeb.Endpoint do
   @session_options [
     store: :cookie,
     key: "_inkfish_key",
-    signing_salt: "D/1gbc4j"
+    signing_salt: "D/1gbc4j",
+    extra: "SameSite=Lax"
   ]
 
   socket "/socket", InkfishWeb.UserSocket,

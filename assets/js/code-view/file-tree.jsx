@@ -1,11 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 import TreeMenu, { defaultChildren } from 'react-simple-tree-menu';
-import { ListGroup, ListGroupItem } from 'react-bootstrap';
+import { Form, ListGroup, ListGroupItem } from 'react-bootstrap';
 import { freeze } from 'icepick';
 import _ from 'lodash';
 
 export default function FileTree({data, grade, activePath, pickFile}) {
+  let [showDotFiles, setShowDotFiles] = useState(false);
+
+  if (!showDotFiles) {
+    data = remove_dot_files(data);
+  }
+
   let comment_counts = new Map();
   for (let lc of grade.line_comments) {
     if (comment_counts.has(lc.path)) {
@@ -27,6 +33,11 @@ export default function FileTree({data, grade, activePath, pickFile}) {
   return (
     <div className="h-100">
       { grade_info }
+      <div className="p-2">
+        <Form.Switch checked={showDotFiles}
+                     onChange={(ev) => setShowDotFiles(ev.target.checked)}
+                     label="Show Hidden" />
+      </div>
       <TreeMenu
         data={[data.files]}
         debounceTime={5}
@@ -71,6 +82,22 @@ function GradeInfo({grade}) {
   );
 }
 
+function remove_dot_files(data) {
+  if (data.files) {
+    var files = remove_dot_files(data.files);
+    return Object.assign({}, data, {files});
+  }
+
+  if (data.nodes) {
+    var nodes = data.nodes
+        .filter((item) => !item.label.match(/^\./))
+        .map((item) => remove_dot_files(item));
+    return Object.assign({}, data, {nodes});
+  }
+
+  return data;
+}
+
 function list_top_dirs(data) {
   if (data.type != "directory") {
     return [];
@@ -97,7 +124,7 @@ function ListItem(props) {
   let badge = "";
   if (props.comment_counts.has(props.path)) {
     badge = (
-      <span className="badge badge-info">
+      <span className="badge bg-info">
         {props.comment_counts.get(props.path)}
       </span>
     );

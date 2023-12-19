@@ -111,6 +111,12 @@ defmodule Inkfish.Users do
     |> Repo.update()
   end
 
+  def admin_update_user(%User{} = user, attrs) do
+    user
+    |> User.admin_edit_changeset(attrs)
+    |> Repo.update()
+  end
+
   def add_secret(%User{secret: nil} = user) do
     user
     |> User.secret_changeset()

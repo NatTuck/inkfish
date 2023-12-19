@@ -1,6 +1,7 @@
 
 import React from 'react';
 import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import $ from 'cash-dom';
 import _ from 'lodash';
 
@@ -103,7 +104,7 @@ class NumberInput extends React.Component {
       return (
         <div>
           {this.state.score} / {this.state.points}
-          <div className="badge badge-danger ml-1">{this.state.error}</div>
+          <div className="badge bg-danger ml-1">{this.state.error}</div>
         </div>
       );
     }
@@ -165,20 +166,20 @@ class NumberInputToggle extends React.Component {
 function setup() {
   $('div.number-grade-cell').each((_ii, elem) => {
     var ee = $(elem);
-    ReactDOM.render(
+    var root = createRoot(elem);
+    root.render(
       <NumberInput score={ee.data('score')}
                    points={ee.data('points')}
                    sub_id={ee.data('sub-id')}
-                   grade_column_id={ee.data('grade-column-id')} />,
-      elem
+                   grade_column_id={ee.data('grade-column-id')} />
     );
   });
 
   $('span.toggle-number-inputs').each((_ii, elem) => {
     var ee = $(elem);
-    ReactDOM.render(
-      <NumberInputToggle grade_column_id={ee.data('grade-column-id')} />,
-      elem
+    var root = createRoot(elem);
+    root.render(
+      <NumberInputToggle grade_column_id={ee.data('grade-column-id')} />
     );
   });
 }
