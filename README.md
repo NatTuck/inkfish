@@ -1,13 +1,45 @@
 
 # Inkfish
 
-System package dependencies:
+
+## System Requirements
+
+Minimum system requirements:
+
+ - A dedicated (virtual) server running Debian 12
+ - 2 GB of RAM
+ - 50 GB of disk space
+
+Recommended system requirements:
+
+ - A dedicated (virtual) server running Debian 12
+ - 8 GB of RAM
+ - 200 GB of disk space
+ - 4 dedicated CPU cores
+
+The recommended requirements would enable:
+
+ - Faster deployment of updates when using the server to do in-place
+   application builds.
+ - Shorter wait times for test results.
+ - The ability to test student code under multi-core execution,
+   including parellel speedup and concurrent correctness.
+
+
+## Deps
+
+Partial system package dependencies:
 
 ```
 sudo apt install docker.io docker-buildx graphicsmagick libipc-system-simple-perl
 ```
 
 System user must be added to docker group.
+
+Erlang, Elixir, and NodeJS need to be installed somehow. System
+packages from Debian repos are likely to provide the best automatic
+update behavior.
+
 
 ## Setting up dev environment
 
