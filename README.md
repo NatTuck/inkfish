@@ -21,7 +21,7 @@ The recommended requirements would enable:
 
  - Faster deployment of updates when using the server to do in-place
    application builds.
- - Shorter wait times for test results.
+ - Shorter student wait times for test results.
  - The ability to test student code under multi-core execution,
    including parellel speedup and concurrent correctness.
 
