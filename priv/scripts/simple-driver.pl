@@ -5,8 +5,8 @@ use feature qw(signatures);
 no warnings "experimental::signatures";
 use autodie qw(:all);
 
-use File::stat;
-use Data::Dumper;
+#use File::stat;
+#use Data::Dumper;
 
 alarm(300);
 
