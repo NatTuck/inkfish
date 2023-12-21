@@ -1,4 +1,3 @@
-#[macro_use]
 extern crate clap;
 extern crate json;
 extern crate libc;
@@ -7,56 +6,64 @@ use std::{fs, io, process, thread, time};
 use std::path::PathBuf;
 use std::process::Command;
 
+use clap::{arg, Command as ClapCmd};
+
 use json::JsonValue;
 
-fn main() {
-    let opts = clap_app!(
-        tmptmpfs =>
-            (about: "Manage temporary tmpfs mounts")
-            (@subcommand list =>
-             (about: "List active mounts"))
-            (@subcommand start =>
-             (about: "Start a temporary mount")
-             (@arg time: -t +takes_value
-              "Duration mount will last")
-             (@arg size: -s +takes_value
-              "Max size of filesystem"))
-            (@subcommand clean =>
-             (about: "Clean up old mounts"))
-            (@subcommand who =>
-             (about: "Verify setuid config"))
-    ).get_matches();
 
+fn main() {
+    let matches = ClapCmd::new("tmptmpfs")
+        .about("Manage temporary tmpfs mounts")
+        .arg_required_else_help(true)
+        .subcommand(
+            ClapCmd::new("list")
+                .about("List active mounts")
+        )
+        .subcommand(
+            ClapCmd::new("start")
+                .about("Start a temporary mount")
+                .arg(arg!(-t --time <SECS> "Duration mount will last")
+                    .default_value("300"))
+                .arg(arg!(-s --size <SIZE> "Max size of filesystem")
+                    .default_value("10M"))
+        )
+        .subcommand(
+            ClapCmd::new("clean")
+                .about("Clean up old mounts")
+        )
+        .subcommand(
+            ClapCmd::new("who")
+                .about("Verify setuid config")
+        )
+        .get_matches();
+            
     setuid_root();
 
-    if let Some(_opts) = opts.subcommand_matches("list") {
-        make_base().unwrap();
+    match matches.subcommand() {
+        Some(("list", _opts)) => {
+            make_base().unwrap();
 
-        for mount in list_mounts().unwrap() {
-            println!("{}", mount);
-        }
-        return;
-    }
-
-    if let Some(opts) = opts.subcommand_matches("start") {
-        let time = opts.value_of("time").unwrap_or("300").parse::<u32>().unwrap();
-        let size = opts.value_of("size").unwrap_or("10M");
-        let path = start_mount(time, size).unwrap();
-        println!("{}", path);
-        return;
-    }
-
-    if let Some(_opts) = opts.subcommand_matches("clean") {
-        clean_mounts().unwrap();
-        return;
-    }
-
-    if let Some(_opts) = opts.subcommand_matches("who") {
-        let outp = Command::new("whoami")
-            .output().unwrap().stdout;
-        let text = std::str::from_utf8(&outp).unwrap();
-        println!("whoami = {}", text);
-        return;
+            for mount in list_mounts().unwrap() {
+                println!("{}", mount);
+            }
+        },
+        Some(("start", opts)) => {
+            let time: u32 =  opts.get_one::<String>("time").unwrap()
+                .parse::<u32>().unwrap();
+            let size: &str = opts.get_one::<String>("size").unwrap();
+            let path = start_mount(time, size).unwrap();
+            println!("{}", path);
+        },
+        Some(("clean", _opts)) => {
+            clean_mounts().unwrap();
+        },
+        Some(("who", _opts)) => {
+            let outp = Command::new("whoami")
+                .output().unwrap().stdout;
+            let text = std::str::from_utf8(&outp).unwrap();
+            println!("whoami = {}", text);
+        },
+        _ => panic!("unmatched subcommand"),
     }
 }
 
