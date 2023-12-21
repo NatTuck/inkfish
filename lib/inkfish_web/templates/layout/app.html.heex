@@ -4,11 +4,12 @@
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title><%= page_title(@conn) %> · Inkfish</title>
-    <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/assets/app.css") %>"/>
+    <link rel="stylesheet" href={Routes.static_path(@conn, "/assets/app.css")} />
     <link rel="icon" type="image/png"
-          href="<%= Routes.static_path(@conn,"/images/inkfish.png") %>"/>
+      href={Routes.static_path(@conn,"/images/inkfish.png")} />
     <script type="text/javascript" defer
-            src="<%= Routes.static_path(@conn, "/assets/app.js") %>"></script>
+      src={ Routes.static_path(@conn, "/assets/app.js") }>
+    </script>
     <script>
      window.user_token = "<%= @current_user_token %>";
      window.current_page = "<%= current_page(@conn) %>";
@@ -54,19 +55,11 @@
         </div>
       </header>
 
-      <%= if Phoenix.Flash.get(@flash, :info) do %>
-        <p class="alert alert-info" role="alert">
-          <%= Phoenix.Flash.get(@flash, :info) %>
-        </p>
-      <% end %>
-      <%= if Phoenix.Flash.get(@flash, :error) do %>
-        <p class="alert alert-danger" role="alert">
-          <%= Phoenix.Flash.get(@flash, :error) %>
-        </p>
-      <% end %>
+      <.flash kind={:info} flash={@flash} />
+      <.flash kind={:error} flash={@flash} />
     </div>
 
-    <div class="<%= if assigns[:fluid_grid] do "container-fluid" else "container-lg" end %>">
+    <div class={if assigns[:fluid_grid] do "container-fluid" else "container-lg" end}>
       <div class="inkfish-main">
         <%= @inner_content %>
       </div>

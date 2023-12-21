@@ -5,7 +5,7 @@
 
     <.simple_form :let={f} for={@changeset} action={~p"/users"}>
       <.error :if={@changeset.action == :insert}>
-	Oops, something went wrong! Please check the errors below.
+        Oops, something went wrong! Please check the errors below.
       </.error>
 
       <input type="hidden" name="token" value={@token} />
@@ -13,7 +13,7 @@
       <.input field={f[:email]} type="email" label="Verified Email" readonly required />
       <.input field={f[:password]} type="password" label="Password" required />
       <.input field={f[:password_confirmation]}
-	type="password" label="Confirm password" required />
+        type="password" label="Confirm password" required />
       <.input field={f[:given_name]} type="text" label="Given Name †" required />
       <.input field={f[:surname]} type="text" label="Surname †" required />
 
@@ -22,9 +22,9 @@
       <p>† Given Name and Surname should match official course roster.</p>
       
       <:actions>
-	<.button phx-disable-with="Creating account..." class="btn btn-primary">
-	  Create Account
-	</.button>
+        <.button phx-disable-with="Creating account..." class="btn btn-primary">
+          Create Account
+        </.button>
       </:actions>
     </.simple_form>
   </div>

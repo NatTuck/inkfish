@@ -431,7 +431,12 @@ defmodule Inkfish.Users do
 
   """
   def deliver_user_reg_email(email, url) do
-    UserNotifier.deliver_reg_email(email, url)
+    domain = User.get_reg_email_domain()
+    if String.ends_with?(email, "@#{domain}") do
+      UserNotifier.deliver_reg_email(email, url)
+    else
+      {:error, "Email domain must be '#{domain}'."}
+    end
   end
 
   ## Reset password
@@ -439,10 +444,10 @@ defmodule Inkfish.Users do
   @doc ~S"""
   Delivers the reset password email to the given user.
 
-  ## Examples
+    ## Examples
 
       iex> deliver_user_reset_password_instructions(user, url(~p"/users/reset_password/#{token}"))
-      {:ok, %{to: ..., body: ...}}
+        {:ok, %{to: ..., body: ...}}
 
   """
   def deliver_user_auth_email(%User{} = user, reset_url) do

@@ -34,31 +34,18 @@ defmodule InkfishWeb.CoreComponents do
   def flash(assigns) do
     ~H"""
     <div
-      :if={msg = render_slot(@inner_block) || Phoenix.Flash.get(@flash, @kind)}
-      id={@id}
-      phx-mounted={@autoshow && show("##{@id}")}
-      phx-click={JS.push("lv:clear-flash", value: %{key: @kind}) |> hide("##{@id}")}
+      :if={render_slot(@inner_block) || Phoenix.Flash.get(@flash, @kind)}
       role="alert"
       class={[
-        "fixed hidden top-2 right-2 w-80 sm:w-96 z-50 rounded-lg p-3 shadow-md shadow-zinc-900/5 ring-1",
-        @kind == :info && "bg-emerald-50 text-emerald-800 ring-emerald-500 fill-cyan-900",
-        @kind == :error && "bg-rose-50 p-3 text-rose-900 shadow-md ring-rose-500 fill-rose-900"
-      ]}
-      {@rest}
-    >
-      <p :if={@title} class="flex items-center gap-1.5 text-[0.8125rem] font-semibold leading-6">
-        <.icon :if={@kind == :info} name="hero-information-circle-mini" class="w-4 h-4" />
-        <.icon :if={@kind == :error} name="hero-exclamation-circle-mini" class="w-4 h-4" />
-        <%= @title %>
-      </p>
-      <p class="mt-2 text-[0.8125rem] leading-5"><%= msg %></p>
+        "alert alert-dismissible fade show",
+        @kind == :info && "alert-primary",
+        @kind == :error && "alert-danger",
+        ]}>
+      <div :if={@title}><bold><%= @title %></bold></div>
+      <div><%= render_slot(@inner_block) || Phoenix.Flash.get(@flash, @kind) %></div>
       <button
-        :if={@close}
-        type="button"
-        class="group absolute top-2 right-1 p-2"
-        aria-label={gettext("close")}
-      >
-        <.icon name="hero-x-mark-solid" class="w-5 h-5 opacity-40 group-hover:opacity-70" />
+        :if={@close} type="button" class="btn-close"
+        data-bs-dismiss="alert" aria-label="Close">
       </button>
     </div>
     """
@@ -212,7 +199,7 @@ defmodule InkfishWeb.CoreComponents do
           name={@name}
           value="true"
           checked={@checked}
-          class="form-check-input"
+          class={input_class("form-check-input", @errors)}
           {@rest}
         />
       </div>
@@ -228,8 +215,8 @@ defmodule InkfishWeb.CoreComponents do
       <select
         id={@id}
         name={@name}
-        class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-zinc-500 focus:border-zinc-500 sm:text-sm"
         multiple={@multiple}
+        class={input_class("form-control", @errors)}
         {@rest}
       >
         <option :if={@prompt} value=""><%= @prompt %></option>
@@ -241,13 +228,15 @@ defmodule InkfishWeb.CoreComponents do
   end
 
   def input(%{type: "textarea"} = assigns) do
+    
+
     ~H"""
     <div phx-feedback-for={@name} class="mb-3">
       <.label for={@id}><%= @label %></.label>
       <textarea
         id={@id || @name}
         name={@name}
-        class="form-control"
+        class={input_class("form-control", @errors)}
         style="margin-bottom: 1ex"
         {@rest}
       ><%= Phoenix.HTML.Form.normalize_value("textarea", @value) %></textarea>
@@ -263,7 +252,7 @@ defmodule InkfishWeb.CoreComponents do
       <textarea
         id={@id || @name}
         name={@name}
-        class="form-control"
+        class={input_class("form-control", @errors)}
         style="margin-bottom: 1em; font-family: monospace, fixed; min-height: 16em"
         {@rest}
       ><%= Phoenix.HTML.Form.normalize_value("textarea", @value) %></textarea>
@@ -281,12 +270,20 @@ defmodule InkfishWeb.CoreComponents do
         name={@name}
         id={@id || @name}
         value={Phoenix.HTML.Form.normalize_value(@type, @value)}
-        class="form-control"
+        class={input_class("form-control", @errors)}
         {@rest}
       />
       <.error :for={msg <- @errors}><%= msg %></.error>
     </div>
     """
+  end
+
+  def input_class(base, errors) do
+    if length(errors) == 0 do
+      base
+    else
+      "#{base} is-invalid"
+    end
   end
 
   @doc """
@@ -310,7 +307,7 @@ defmodule InkfishWeb.CoreComponents do
 
   def error(assigns) do
     ~H"""
-    <p class="phx-no-feedback:hidden mt-3 flex gap-3 text-sm leading-6 text-rose-600">
+    <p class="invalid-feedback">
       <.icon name="hero-exclamation-circle-mini" class="mt-0.5 w-5 h-5 flex-none" />
       <%= render_slot(@inner_block) %>
     </p>
@@ -494,7 +491,7 @@ defmodule InkfishWeb.CoreComponents do
 
   def icon(%{name: "hero-" <> _} = assigns) do
     ~H"""
-    <span class={[@name, @class]} />
+    <i class="bi-balloon" />
     """
   end
 
