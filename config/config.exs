@@ -8,7 +8,10 @@
 import Config
 
 config :inkfish, Inkfish.Users.UserNotifier,
-  domains: ["example.com", "ferrus.net"]
+  domains: ["example.com", "example.org"]
+
+config :inkfish, Inkfish.Users.User,
+  domain: "example.com"
 
 config :inkfish,
   ecto_repos: [Inkfish.Repo]

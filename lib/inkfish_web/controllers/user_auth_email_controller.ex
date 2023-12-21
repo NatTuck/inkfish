@@ -4,6 +4,8 @@ defmodule InkfishWeb.UserAuthEmailController do
   alias Inkfish.Users
   alias Inkfish.Users.User
 
+  alias Inkfish.Mailer
+
   def new(conn, _params) do
     render(conn, :new)
   end
@@ -14,32 +16,35 @@ defmodule InkfishWeb.UserAuthEmailController do
 
   def create(conn, %{"email" => email}) do
     email = User.normalize_email(email)
+    {_name, from} = Mailer.send_from()
 
     if user = Users.get_user_by_email(email) do
       token = sign_token("auth_email", %{user_id: user.id, email: email})
       url_text = url(~p"/users/auth/#{token}")
       case Users.deliver_user_auth_email(user, url_text) do
-	{:ok, _} ->
-	  conn
-	  |> assign(:page_title, "Auth Email Sent")
-	  |> render(:create)
-	{:error, msg} ->
-	  conn
-	  |> put_flash(:error, msg)
-	  |> redirect(to: ~p"/")
+        {:ok, _} ->
+          conn
+          |> assign(:page_title, "Auth Email Sent")
+          |> assign(:from_email, from)
+          |> render(:create)
+        {:error, msg} ->
+          conn
+          |> put_flash(:error, msg)
+          |> redirect(to: ~p"/")
       end
     else
       token = sign_token("reg_email", %{email: email})
       url_text = url(~p"/users/new/#{token}")
       case Users.deliver_user_reg_email(email, url_text) do
-	{:ok, _} ->
-	  conn
-	  |> assign(:page_title, "Auth Email Sent")
-	  |> render(:create)
-	{:error, msg} ->
-	  conn
-	  |> put_flash(:error, msg)
-	  |> redirect(to: ~p"/")
+        {:ok, _} ->
+          conn
+          |> assign(:page_title, "Auth Email Sent")
+          |> assign(:from_email, from)
+          |> render(:create)
+        {:error, msg} ->
+          conn
+          |> put_flash(:error, msg)
+          |> redirect(to: ~p"/")
       end
     end
   end

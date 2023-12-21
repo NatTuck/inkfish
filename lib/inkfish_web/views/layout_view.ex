@@ -1,5 +1,6 @@
 defmodule InkfishWeb.LayoutView do
   use InkfishWeb, :view
+  use InkfishWeb, :html
   
   def page_title(conn) do
     if conn.assigns[:page_title] do

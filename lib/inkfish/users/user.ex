@@ -29,6 +29,7 @@ defmodule Inkfish.Users.User do
     |> validate_required([:email, :password, :given_name, :surname])
     |> validate_confirmation(:password)
     |> validate_email()
+    |> validate_reg_email()
     |> set_email_confirmed()
     |> validate_password()
   end
@@ -62,6 +63,20 @@ defmodule Inkfish.Users.User do
     |> validate_format(:email, ~r/^\S+@\S+\.\S+$/)
     |> validate_length(:email, max: 160)
     |> unsafe_validate_unique(:email, Inkfish.Repo)
+  end
+
+  def validate_reg_email(cset) do
+    email = get_field(cset, :email)
+    domain = get_reg_email_domain()
+    if String.ends_with?(email, "@#{domain}") do
+      cset
+    else
+      add_error(cset, :email, "Email domain must be '#{domain}'.")
+    end
+  end
+
+  def get_reg_email_domain do
+    Application.get_env(:inkfish, Inkfish.Users.User)[:domain]
   end
 
   def secret_changeset(user) do

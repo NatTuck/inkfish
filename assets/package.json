@@ -2,8 +2,8 @@
   "dependencies": {
     "ansi_up": "^6.0.2",
     "axios": "^1.6.2",
+    "bootstrap": "^5.3.2",
     "bootstrap-icons": "^1.11.2",
-    "bootstrap-scss": "^5",
     "bootswatch": "^5",
     "cash-dom": "^8.1.5",
     "codemirror": "^5",
