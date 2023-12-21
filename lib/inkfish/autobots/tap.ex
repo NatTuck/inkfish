@@ -1,6 +1,6 @@
 defmodule Inkfish.Autobots.Tap do
   @doc """
-  Parses TAP as output by Perl's Test::Simple.
+  Parses TAP as output by Perl's Test::Simple or Python's tappy.
 
   Returns {:ok, {passed, count}} on success.
 
@@ -11,7 +11,7 @@ defmodule Inkfish.Autobots.Tap do
       score!(text)
     rescue
       _err ->
-        #IO.inspect({__MODULE__, _err})
+        # IO.inspect({__MODULE__, _err})
         {:ok, {0, 1}}
     end
   end
@@ -24,20 +24,19 @@ defmodule Inkfish.Autobots.Tap do
   Crashes on failure.
   """
   def score!(text) do
-    [predec | test_lines] = text
-    |> String.split("\n")
-    |> Enum.filter(fn line ->
-      (line =~ ~r/^ok/ ||
-       line =~ ~r/^not/ ||
-       line =~ ~r/^\d+\.\.\d+$/)
-    end)
+    lines = String.split(text, "\n")
 
-    [_, "1", total] = Regex.run(~r/^(\d+)\.\.(\d+)$/, predec)
+    [count_dec] = Enum.filter(lines, &(&1 =~ ~r/^\d+\.\.\d+$/))
+
+    [_, "1", total] = Regex.run(~r/^(\d+)\.\.(\d+)$/, count_dec)
     {total, _} = Integer.parse(total)
 
-    tests = test_lines
-    |> Enum.map(fn line ->
-      pat = ~r/^(ok|not ok)\s+(\d+)\s+-\s+(.*)$/
+    test_lines = Enum.filter lines, fn line ->
+      line =~ ~r/^ok/ || line =~ ~r/^not/
+    end
+
+    tests = Enum.map(test_lines, fn line ->
+      pat = ~r/^(ok|not ok)\s+(\d+)\s+(?:-\s+)?(.*)$/
       [_, ok, num, _text] = Regex.run(pat, line)
       {num, _} = Integer.parse(num)
       {num, ok == "ok"}

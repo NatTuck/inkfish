@@ -97,4 +97,15 @@ defmodule Inkfish.Autobots.TapTest do
   test "handles TAP with extra tests", _ do
     assert Tap.score(@tap_extra_tests) == {:ok, {6, 6}}
   end
+
+  @tap_from_tappy """
+  # TAP results for TestMethods
+  ok 1 test_add (test.TestMethods.test_add)
+  1..1
+
+  """
+
+  test "handles TAP from tap.py", _ do
+    assert Tap.score(@tap_from_tappy) == {:ok, {1, 1}}
+  end
 end
