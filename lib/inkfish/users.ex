@@ -111,10 +111,17 @@ defmodule Inkfish.Users do
     |> Repo.update()
   end
 
-  def admin_update_user(%User{} = user, attrs) do
-    user
-    |> User.admin_edit_changeset(attrs)
-    |> Repo.update()
+  def admin_update_user(%User{} = user, attrs, %User{} = editor) do
+    if editor.id == user.id do
+      # You can't de-admin yourself.
+      user
+      |> User.changeset(attrs)
+      |> Repo.update()
+    else
+      user
+      |> User.admin_edit_changeset(attrs)
+      |> Repo.update()
+    end
   end
 
   def add_secret(%User{secret: nil} = user) do

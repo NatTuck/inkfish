@@ -46,8 +46,8 @@ defmodule Inkfish.Users.User do
   @doc false
   def changeset(user, attrs) do
     user
-    |> cast(attrs, [:email, :given_name, :surname, :nickname, :photo_upload_id])
-    |> validate_required([:email, :given_name, :surname])
+    |> cast(attrs, [:given_name, :surname, :nickname, :photo_upload_id])
+    |> validate_required([:given_name, :surname])
     |> validate_email()
   end
 
