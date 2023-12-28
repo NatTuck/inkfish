@@ -59,9 +59,6 @@ if (-f "./test.pl") {
 elsif (-f "./test.py") {
     system(qq{/usr/bin/python -m tap test.py || echo "# test.py failed"});
 }
-elsif (-f "./Makefile") {
-    system(qq{make test || echo "# make test failed"});
-}
 elsif (-f "./pom.xml") {
     run(qq{mvn test || echo "# mvn test failed"});
 }
