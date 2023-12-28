@@ -8,6 +8,12 @@
   <li>
     <strong>Name:</strong>
     <%= user_display_name(@reg.user) %>
+  </li>
+
+  <li>
+    <strong>Email:</strong>
+    <%= @reg.user.email %>
+  </li>
 
   <li>
     <strong>Is grader:</strong>
