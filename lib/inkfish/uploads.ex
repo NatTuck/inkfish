@@ -125,8 +125,8 @@ defmodule Inkfish.Uploads do
 
   """
   def delete_upload(%Upload{} = upload) do
-    IO.puts("Deleting upload:")
-    IO.inspect(upload)
+    #IO.puts("Deleting upload:")
+    #IO.inspect(upload)
 
     if upload.id && upload.kind != "sub" do
       dpath = Upload.upload_dir(upload)

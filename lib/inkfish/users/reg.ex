@@ -2,7 +2,7 @@ defmodule Inkfish.Users.Reg do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @timestamps_opts [autogenerate: {Inkfish.LocalTime, :now, []}]
+  @timestamps_opts [type: :utc_datetime]
 
   schema "regs" do
     field :is_grader, :boolean, default: false

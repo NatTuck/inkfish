@@ -14,7 +14,11 @@ config :inkfish, Inkfish.Users.User,
   domain: "example.com"
 
 config :inkfish,
-  ecto_repos: [Inkfish.Repo]
+  ecto_repos: [Inkfish.Repo],
+  generators: [timestamp_type: :utc_datetime]
+
+config :inkfish, Inkfish.Repo,
+  migration_timestamps: [type: :utc_datetime]
 
 # Configures the endpoint
 config :inkfish, InkfishWeb.Endpoint,

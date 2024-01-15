@@ -2,7 +2,7 @@ defmodule Inkfish.Courses.Bucket do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @timestamps_opts [autogenerate: {Inkfish.LocalTime, :now, []}]
+  @timestamps_opts [type: :utc_datetime]
 
   schema "buckets" do
     field :name, :string

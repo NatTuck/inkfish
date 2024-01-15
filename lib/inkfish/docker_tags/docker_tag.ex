@@ -5,6 +5,8 @@ defmodule Inkfish.DockerTags.DockerTag do
   alias __MODULE__
   alias Inkfish.Docker
 
+  @timestamps_opts [type: :utc_datetime]
+
   schema "docker_tags" do
     field :dockerfile, :string
     field :name, :string

@@ -2,11 +2,11 @@ defmodule Inkfish.Assignments.Assignment do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @timestamps_opts [autogenerate: {Inkfish.LocalTime, :now, []}]
+  @timestamps_opts [type: :utc_datetime]
 
   schema "assignments" do
     field :desc, :string
-    field :due, :naive_datetime
+    field :due, :utc_datetime
     field :name, :string
     field :weight, :decimal
     field :points, :decimal

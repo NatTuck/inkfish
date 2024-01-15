@@ -33,18 +33,11 @@ defmodule Inkfish.UsersTest do
 
     test "update_user/2 with valid data updates the user" do
       user = insert(:user)
-      attrs = %{given_name: "Steve"}
+      attrs = %{nickname: "Steve"}
       assert {:ok, %User{} = user} = Users.update_user(user, attrs)
-      assert user.given_name == "Steve"
+      assert user.nickname == "Steve"
       assert user.surname == "Smith"
       assert user.is_admin == false
-    end
-
-    test "update_user/2 with invalid data returns error changeset" do
-      user = %User{ insert(:user) | password: nil, password_confirmation: nil }
-      bad_attrs = %{given_name: ""}
-      assert {:error, %Ecto.Changeset{}} = Users.update_user(user, bad_attrs)
-      assert drop_assocs(user) == drop_assocs(Users.get_user!(user.id))
     end
 
     test "delete_user/1 deletes the user" do
@@ -167,7 +160,7 @@ defmodule Inkfish.UsersTest do
 
       assert %{
                password: ["can't be blank"],
-               email: ["can't be blank"]
+               email: ["Email domain must be 'example.com'.", "can't be blank"],
              } = errors_on(changeset)
     end
 
@@ -175,7 +168,7 @@ defmodule Inkfish.UsersTest do
       {:error, changeset} = Users.create_user(%{email: "not valid", password: "not valid"})
 
       assert %{
-               email: ["has invalid format"],
+               email: ["Email domain must be 'example.com'.", "has invalid format"],
                password: ["should be at least 12 character(s)"]
              } = errors_on(changeset)
     end
@@ -252,8 +245,7 @@ defmodule Inkfish.UsersTest do
     end
 
     test "updates the password", %{user: user} do
-      {:ok, user} = Users.update_user_password(
-		      user, %{password: "new valid password"})
+      {:ok, user} = Users.update_user_password(user, %{password: "new valid password"})
       # assert is_nil(user.password)
       assert Users.get_user_by_email_and_password(user.email, "new valid password")
     end

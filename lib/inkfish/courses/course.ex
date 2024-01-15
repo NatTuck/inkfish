@@ -4,7 +4,7 @@ defmodule Inkfish.Courses.Course do
 
   alias Inkfish.Users.User
 
-  @timestamps_opts [autogenerate: {Inkfish.LocalTime, :now, []}]
+  @timestamps_opts [type: :utc_datetime]
 
   schema "courses" do
     field :name, :string

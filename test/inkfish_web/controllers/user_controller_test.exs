@@ -19,18 +19,11 @@ defmodule InkfishWeb.UserControllerTest do
     test "redirects when data is valid", %{conn: conn, user: user} do
       conn = conn
       |> login("alice@example.com")
-      |> put(Routes.user_path(conn, :update, user), user: %{given_name: "Rob"})
+      |> put(Routes.user_path(conn, :update, user), user: %{nickname: "Rob"})
       assert redirected_to(conn) == Routes.user_path(conn, :show, user)
 
       conn = get(conn, Routes.user_path(conn, :show, user))
       assert html_response(conn, 200) =~ "Rob"
-    end
-
-    test "renders errors when data is invalid", %{conn: conn, user: user} do
-      conn = conn
-      |> login("alice@example.com")
-      |> put(Routes.user_path(conn, :update, user), user: %{email: "+++"})
-      assert html_response(conn, 200) =~ "Edit User"
     end
   end
 

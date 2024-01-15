@@ -2,7 +2,7 @@ defmodule Inkfish.Grades.GradeColumn do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @timestamps_opts [autogenerate: {Inkfish.LocalTime, :now, []}]
+  @timestamps_opts [type: :utc_datetime]
 
   schema "grade_columns" do
     field :kind, :string

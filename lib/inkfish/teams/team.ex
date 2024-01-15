@@ -2,7 +2,7 @@ defmodule Inkfish.Teams.Team do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @timestamps_opts [autogenerate: {Inkfish.LocalTime, :now, []}]
+  @timestamps_opts [type: :utc_datetime]
 
   schema "teams" do
     field :active, :boolean, default: false

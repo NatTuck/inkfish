@@ -8,7 +8,6 @@ defmodule InkfishWeb.UserController do
 
   def user_check_permission(conn, _foo) do
     id = conn.params["id"] || conn.assigns["current_user_id"]
-    #IO.inspect({:user_id, id})
     {id, _} = Integer.parse(id)
     user = conn.assigns[:current_user]
     if !user.is_admin && user.id != id do
@@ -82,7 +81,6 @@ defmodule InkfishWeb.UserController do
         |> redirect(to: Routes.user_path(conn, :show, user))
 
       {:error, pw_changeset} ->
-        IO.inspect {:pwchfail, pw_changeset}
         conn
         |> put_flash(:error, "Changing password failed")
         |> assign(:changeset, Users.change_user(user))

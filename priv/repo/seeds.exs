@@ -70,13 +70,13 @@ defmodule Make do
   def days_from_now(nn) do
     one_day = 60 * 60 * 24
     Inkfish.LocalTime.now()
-    |> NaiveDateTime.add(nn*one_day)
-    |> NaiveDateTime.truncate(:second)
+    |> DateTime.add(nn*one_day)
+    |> DateTime.truncate(:second)
+    |> DateTime.shift_zone!("Etc/UTC")
   end
 end
 
-uA = Make.user("alice")
-Inkfish.Users.update_user(uA, %{is_admin: true})
+_uA = Make.user("alice", true)
 uB = Make.user("bob")
 uC = Make.user("carol")
 uD = Make.user("dave")
@@ -91,4 +91,4 @@ Make.reg(uE, c0, is_student: true)
 Make.reg(uF, c0, is_student: true)
 
 b0 = Make.bucket(c0, "Homework", Decimal.new("1.0"))
-a0 = Make.assignment(c0, b0, "Homework 1")
+_a0 = Make.assignment(c0, b0, "Homework 1")

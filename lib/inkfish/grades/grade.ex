@@ -4,7 +4,7 @@ defmodule Inkfish.Grades.Grade do
 
   alias Inkfish.Uploads.Upload
 
-  @timestamps_opts [autogenerate: {Inkfish.LocalTime, :now, []}]
+  @timestamps_opts [type: :utc_datetime]
 
   schema "grades" do
     field :score, :decimal
