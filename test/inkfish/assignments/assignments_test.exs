@@ -29,7 +29,7 @@ defmodule Inkfish.AssignmentsTest do
       attrs = params_with_assocs(:assignment)
       assert {:ok, %Assignment{} = assignment} = Assignments.create_assignment(attrs)
       assert assignment.desc == attrs.desc
-      assert DateTime.compare(assignment.due, attrs.due) == :eq
+      assert NaiveDateTime.compare(assignment.due, attrs.due) == :eq
       assert assignment.name == attrs.name
       assert assignment.weight == attrs.weight
     end
@@ -44,7 +44,7 @@ defmodule Inkfish.AssignmentsTest do
       attrs = %{ params_for(:assignment) | name: "Updated name" }
       assert {:ok, %Assignment{} = a1} = Assignments.update_assignment(assignment, attrs)
       assert a1.desc == assignment.desc
-      assert DateTime.compare(a1.due, attrs[:due]) == :eq
+      assert NaiveDateTime.compare(a1.due, attrs[:due]) == :eq
       assert a1.name == "Updated name"
       assert a1.weight == assignment.weight
     end

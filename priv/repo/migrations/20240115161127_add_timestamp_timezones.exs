@@ -5,7 +5,11 @@ defmodule Inkfish.Repo.Migrations.AddTimestampTimezones do
     alter table("assignments") do
       modify :inserted_at, :timestamptz, from: :timestamp
       modify :updated_at, :timestamptz, from: :timestamp
-      modify :due, :timestamptz, from: :timestamp
+
+      # Due should *not* be a fixed UTC time.
+      # Instead, it should be a date & time in the
+      # configured application timezone.
+      # modify :due, :timestamp, from: :timestamp
     end
 
     alter table("buckets") do

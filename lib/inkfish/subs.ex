@@ -276,7 +276,7 @@ defmodule Inkfish.Subs do
   end
 
   def hours_late(sub) do
-    due = sub.assignment.due
+    due = Inkfish.LocalTime.from_naive!(sub.assignment.due)
     subed = sub.inserted_at
     seconds_late = DateTime.diff(subed, due)
     hours_late = floor((seconds_late + 3599) / 3600)

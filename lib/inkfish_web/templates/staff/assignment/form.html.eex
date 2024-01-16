@@ -24,6 +24,7 @@
 
   <div class="mb-3">
     <%= label f, :due, class: "form-label" %>
+    (<%= @timezone %>)
     <div>
       <%= text_input(f, :due, class: "form-control date-time-picker") %>
     </div>

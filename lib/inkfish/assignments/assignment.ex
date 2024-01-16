@@ -6,7 +6,11 @@ defmodule Inkfish.Assignments.Assignment do
 
   schema "assignments" do
     field :desc, :string
-    field :due, :utc_datetime
+
+    # naive_datetime is correct
+    # This stores a local time, in the configured timezone.
+    field :due, :naive_datetime
+
     field :name, :string
     field :weight, :decimal
     field :points, :decimal

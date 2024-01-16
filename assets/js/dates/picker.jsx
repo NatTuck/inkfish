@@ -43,15 +43,16 @@ export function DatePicker(props) {
     <RDP
       selected={date}
       onChange={(dd) => setDate(dd)}
-      dateFormat="yyyy-MM-dd"
+      dateFormat="yyyy-MM-dd hh:mm"
       {...props}
     />
   );
 }
 
 export function replace_date_time_picker(input) {
-  console.log(input.value);
+  console.log("picker.jsx", input.value);
   let date0 = parse(input.value, "yyyy-MM-dd'T'kk:mm:ss", new Date());
+  console.log("picker.jsx", date0);
   let name = input.getAttribute("name");
 
   let elem = (

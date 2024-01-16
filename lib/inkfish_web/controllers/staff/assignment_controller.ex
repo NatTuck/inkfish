@@ -33,8 +33,9 @@ defmodule InkfishWeb.Staff.AssignmentController do
     changeset = Assignments.change_assignment(as)
     sta_tok = upload_token(conn, "assignment_starter")
     sol_tok = upload_token(conn, "assignment_solution")
+    timezone = Inkfish.LocalTime.timezone()
     render(conn, "new.html", changeset: changeset, teamsets: teamsets,
-      sta_tok: sta_tok, sol_tok: sol_tok)
+      sta_tok: sta_tok, sol_tok: sol_tok, timezone: timezone)
   end
 
   def create(conn, %{"assignment" => assignment_params}) do
@@ -48,8 +49,9 @@ defmodule InkfishWeb.Staff.AssignmentController do
         teamsets = Inkfish.Teams.list_teamsets(conn.assigns[:course])
         sta_tok = upload_token(conn, "assignment_starter")
         sol_tok = upload_token(conn, "assignment_solution")
+        timezone = Inkfish.LocalTime.timezone()
         render(conn, "new.html", changeset: changeset, teamsets: teamsets,
-          sta_tok: sta_tok, sol_tok: sol_tok)
+          sta_tok: sta_tok, sol_tok: sol_tok, timezone: timezone)
     end
   end
 
@@ -65,9 +67,10 @@ defmodule InkfishWeb.Staff.AssignmentController do
     teamsets = Inkfish.Teams.list_teamsets(conn.assigns[:course])
     sta_tok = upload_token(conn, "assignment_starter")
     sol_tok = upload_token(conn, "assignment_solution")
+    timezone = Inkfish.LocalTime.timezone()
     render(conn, "edit.html", assignment: assignment,
       changeset: changeset, teamsets: teamsets,
-      sta_tok: sta_tok, sol_tok: sol_tok)
+      sta_tok: sta_tok, sol_tok: sol_tok, timezone: timezone)
   end
 
   def update(conn, %{"id" => id, "assignment" => assignment_params}) do
@@ -83,8 +86,9 @@ defmodule InkfishWeb.Staff.AssignmentController do
         teamsets = Inkfish.Teams.list_teamsets(conn.assigns[:course])
         sta_tok = upload_token(conn, "assignment_starter")
         sol_tok = upload_token(conn, "assignment_solution")
+        timezone = Inkfish.LocalTime.timezone()
         render(conn, "edit.html", assignment: assignment, changeset: changeset,
-          teamsets: teamsets, sta_tok: sta_tok, sol_tok: sol_tok)
+          teamsets: teamsets, sta_tok: sta_tok, sol_tok: sol_tok, timezone: timezone)
     end
   end
 
