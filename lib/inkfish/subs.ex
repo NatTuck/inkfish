@@ -247,30 +247,38 @@ defmodule Inkfish.Subs do
     sub
   end
 
+  def get_sub_for_calc_score!(sub_id) do
+    Repo.one! from sub in Sub,
+      inner_join: as in assoc(sub, :assignment),
+      left_join: grade_columns in assoc(as, :grade_columns),
+      left_join: grades in assoc(sub, :grades),
+      preload: [assignment: {as, grade_columns: grade_columns}, grades: grades],
+      where: sub.id == ^sub_id
+  end
+
+  def calc_score_and_late_penalty(sub) do
+    scores = Enum.map sub.assignment.grade_columns, fn gdr ->
+      grade = Enum.find sub.grades, &(&1.grade_column_id == gdr.id)
+      grade && grade.score
+    end
+    if Enum.all? scores, &(!is_nil(&1)) do
+      late_penalty = late_penalty(sub)
+      total = Enum.reduce(scores, Decimal.new("0"), &Decimal.add/2)
+      |> apply_penalty(late_penalty)
+      {total, late_penalty}
+    else
+      {nil, nil}
+    end
+  end
+
   def calc_sub_score!(sub_id) do
     Ecto.Multi.new()
     |> Ecto.Multi.run(:sub0, fn (_,_) ->
-      sub = Repo.one from sub in Sub,
-        inner_join: as in assoc(sub, :assignment),
-        left_join: grade_columns in assoc(as, :grade_columns),
-        left_join: grades in assoc(sub, :grades),
-        preload: [assignment: {as, grade_columns: grade_columns}, grades: grades],
-        where: sub.id == ^sub_id
-      {:ok, sub}
+      {:ok, get_sub_for_calc_score!(sub_id)}
     end)
     |> Ecto.Multi.update(:sub, fn %{sub0: sub} ->
-      scores = Enum.map sub.assignment.grade_columns, fn gdr ->
-        grade = Enum.find sub.grades, &(&1.grade_column_id == gdr.id)
-        grade && grade.score
-      end
-      if Enum.all? scores, &(!is_nil(&1)) do
-        late_penalty = late_penalty(sub)
-        total = Enum.reduce(scores, Decimal.new("0"), &Decimal.add/2)
-        |> apply_penalty(late_penalty)
-        Ecto.Changeset.change(sub, score: total, late_penalty: late_penalty)
-      else
-        Ecto.Changeset.change(sub, score: nil)
-      end
+      {score, late_penalty} = calc_score_and_late_penalty(sub)
+      Ecto.Changeset.change(sub, score: score, late_penalty: late_penalty)
     end)
     |> Repo.transaction()
   end
@@ -297,13 +305,20 @@ defmodule Inkfish.Subs do
   end
 
   def late_penalty(sub) do
-    points_avail = Inkfish.Assignments.Assignment.assignment_total_points(sub.assignment)
-    penalty_frac = Decimal.from_float(hours_late(sub) / 100.0)
-    penalty = Decimal.mult(points_avail, penalty_frac)
     if sub.ignore_late_penalty do
       0
     else
-      penalty
+      points_avail = Inkfish.Assignments.Assignment.assignment_total_points(sub.assignment)
+      if sub.assignment.hard_deadline do
+        if hours_late(sub) > 0 do
+          points_avail
+        else
+          0
+        end
+      else
+        penalty_frac = Decimal.from_float(hours_late(sub) / 100.0)
+        Decimal.mult(points_avail, penalty_frac)
+      end
     end
   end
 
