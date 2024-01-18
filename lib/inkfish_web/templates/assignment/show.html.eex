@@ -21,6 +21,18 @@
   </li>
 
   <li>
+    <strong>Grades Visible:</strong>
+    <%= if @assignment.force_show_grades do %>
+      always
+    <% else %>
+      After 
+      <span class="human-date">
+        <%= show_timestamp(grades_show_date(@conn, @assignment)) %>
+      </span>
+    <% end %>
+  </li>
+
+  <li>
     <strong>Weight:</strong>
     <%= @assignment.weight %>
   </li>

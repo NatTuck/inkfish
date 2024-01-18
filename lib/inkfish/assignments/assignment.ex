@@ -16,6 +16,8 @@ defmodule Inkfish.Assignments.Assignment do
     field :points, :decimal
     field :allow_git, :boolean, default: true
     field :allow_upload, :boolean, default: true
+    field :hard_deadline, :boolean, default: false
+    field :force_show_grades, :boolean, default: false
 
     belongs_to :bucket, Inkfish.Courses.Bucket
     belongs_to :teamset, Inkfish.Teams.Teamset
@@ -33,7 +35,7 @@ defmodule Inkfish.Assignments.Assignment do
     assignment
     |> cast(attrs, [:name, :desc, :due, :weight, :bucket_id, :teamset_id,
                     :starter_upload_id, :solution_upload_id, :allow_git,
-                    :allow_upload])
+                    :allow_upload, :hard_deadline, :force_show_grades])
     |> validate_required([:name, :desc, :due, :weight, :bucket_id, :teamset_id])
   end
 

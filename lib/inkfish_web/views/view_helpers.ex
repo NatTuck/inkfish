@@ -190,12 +190,18 @@ defmodule InkfishWeb.ViewHelpers do
     end
   end
 
+  def grades_show_date(conn, %Assignment{} = asgn) do
+    if asgn.force_show_grades do
+      asgn.due
+    else
+      course = conn.assigns[:course]
+      grade_hide_secs = 86400 * course.grade_hide_days
+      NaiveDateTime.add(asgn.due, grade_hide_secs)
+    end
+  end
+
   def grade_hidden?(conn, %Assignment{} = asgn) do
-    course = conn.assigns[:course]
-
-    grade_hide_secs = 86400 * course.grade_hide_days
-    show_at = NaiveDateTime.add(asgn.due, grade_hide_secs)
-
+    show_at = grades_show_date(conn, asgn)
     now = Inkfish.LocalTime.now()
     NaiveDateTime.compare(show_at, now) != :lt
   end
