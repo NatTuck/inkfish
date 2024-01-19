@@ -18,7 +18,7 @@ defmodule InkfishWeb.AssignmentControllerTest do
       conn = conn
       |> login("alice@example.com")
       |> get(Routes.assignment_path(conn, :show, assignment))
-      IO.inspect(conn, pretty: true)
+      # IO.inspect(conn, pretty: true)
       assert html_response(conn, 200) =~ "Show Assignment"
     end
   end

@@ -15,11 +15,11 @@ function rel_text(aa, bb) {
 }
 
 function show_date(text) {
-    let date = parse_date_time(text);
-    let human_date = format(date, 'EEEE, yyyy-MMM-dd');
-    let human_time = format(date, 'HH:mm');
-    let rel_date = rel_text(new Date(), date);
-    return `${human_date} at ${human_time}; ${rel_date}`;
+  let date = parse_date_time(text);
+  let human_date = format(date, 'EEEE, yyyy-MMM-dd');
+  let human_time = format(date, 'HH:mm');
+  let rel_date = rel_text(new Date(), date);
+  return `${human_date} at ${human_time}; ${rel_date}`;
 }
 
 function init_dates() {
@@ -29,7 +29,6 @@ function init_dates() {
     let show = show_date(text);
     elem.innerText = show;
     $(elem).removeClass('human-date');
-    //console.log("replaced", text, "with", show);
   });
 }
 

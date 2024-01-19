@@ -2,7 +2,7 @@ defmodule Inkfish.Teams.TeamMember do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @timestamps_opts [autogenerate: {Inkfish.LocalTime, :now, []}]
+  @timestamps_opts [type: :utc_datetime]
 
   schema "team_members" do
     belongs_to :team, Inkfish.Teams.Team

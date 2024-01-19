@@ -6,6 +6,7 @@ export function parse_date(text) {
 }
 
 export function parse_date_time(text) {
+  text = text.trim();
   if (text.match(/T/)) {
     return parseISO(text);
   }

@@ -23,11 +23,26 @@
   </div>
 
   <div class="mb-3">
-    <%= label f, :due, class: "form-label" %>
     <div>
-      <%= text_input(f, :due, class: "form-control date-time-picker") %>
+      <%= label f, :due, class: "form-label" %>
+      <div>
+        <%= text_input(f, :due, class: "form-control date-time-picker") %>
+      </div>
+      <%= error_tag f, :due %>
     </div>
-    <%= error_tag f, :due %>
+    <div class="px-4">
+      <p class="mt-1">TZ: <%= @timezone %></p>
+      <div class="form-check form-switch">
+        <%= label f, :hard_deadline, "Hard Deadline" %>
+        <%= checkbox f, :hard_deadline, class: "form-check-input" %>
+        <%= error_tag f, :hard_deadline %>
+      </div>
+      <div class="form-check form-switch">
+        <%= label f, :force_show_grades, "Force Show Grades" %>
+        <%= checkbox f, :force_show_grades, class: "form-check-input" %>
+        <%= error_tag f, :force_show_grades %>
+      </div>
+    </div>
   </div>
 
   <div class="mb-3">
@@ -45,15 +60,18 @@
 
   <div class="mb-3">
     <p>Allowed submission methods</p>
-    <p class="ml-4">
-      <%= label f, :allow_upload, "File Upload" %>
-      <%= checkbox f, :allow_upload %>
-      <%= error_tag f, :allow_upload %>
-      <br>
-      <%= label f, :allow_git, "Git Clone" %>
-      <%= checkbox f, :allow_git %>
-      <%= error_tag f, :allow_git %>
-    </p>
+    <div class="px-4">
+      <div class="form-check form-switch">
+        <%= label f, :allow_upload, "File Upload" %>
+        <%= checkbox f, :allow_upload, class: "form-check-input" %>
+        <%= error_tag f, :allow_upload %>
+      </div>
+      <div class="form-check form-switch">
+        <%= label f, :allow_git, "Git Clone" %>
+        <%= checkbox f, :allow_git, class: "form-check-input" %>
+        <%= error_tag f, :allow_git %>
+      </div>
+    </div>
   </div>
 
   <div class="mb-3">

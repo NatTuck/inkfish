@@ -2,14 +2,14 @@ defmodule Inkfish.Users.User do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @timestamps_opts [autogenerate: {Inkfish.LocalTime, :now, []}]
+  @timestamps_opts [type: :utc_datetime]
 
   schema "users" do
     field :email, :string
     field :password, :string, virtual: true, redact: true
     field :password_confirmation, :string, virtual: true, redact: true
     field :hashed_password, :string, redact: true
-    field :confirmed_at, :naive_datetime
+    field :confirmed_at, :utc_datetime
     field :given_name, :string
     field :surname, :string
     field :nickname, :string, default: ""
@@ -46,8 +46,8 @@ defmodule Inkfish.Users.User do
   @doc false
   def changeset(user, attrs) do
     user
-    |> cast(attrs, [:given_name, :surname, :nickname, :photo_upload_id])
-    |> validate_required([:given_name, :surname])
+    |> cast(attrs, [:nickname, :photo_upload_id])
+    |> validate_required([])
     |> validate_email()
   end
 
@@ -68,7 +68,7 @@ defmodule Inkfish.Users.User do
   def validate_reg_email(cset) do
     email = get_field(cset, :email)
     domain = get_reg_email_domain()
-    if String.ends_with?(email, "@#{domain}") do
+    if String.ends_with?(email || "", "@#{domain}") do
       cset
     else
       add_error(cset, :email, "Email domain must be '#{domain}'.")
@@ -110,7 +110,7 @@ defmodule Inkfish.Users.User do
   end
 
   def set_email_confirmed(cset) do
-    now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
     put_change(cset, :confirmed_at, now)
   end
 

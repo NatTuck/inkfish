@@ -6,7 +6,7 @@ defmodule Inkfish.Uploads.Upload do
   alias Inkfish.Uploads.Photo
 
   @primary_key {:id, :binary_id, autogenerate: true}
-  @timestamps_opts [autogenerate: {Inkfish.LocalTime, :now, []}]
+  @timestamps_opts [type: :utc_datetime]
 
   @valid_kinds ["user_photo", "grade_column", "sub",
                 "assignment_starter", "assignment_solution"]
@@ -103,8 +103,8 @@ defmodule Inkfish.Uploads.Upload do
   def save_upload_file!(cset, upload) do
     up = get_field(cset, :upload)
     dst = upload_path(upload)
-    bs = File.copy!(up.path, dst)
-    IO.puts "Upload created copied #{bs} bytes to path '#{dst}'"
+    _bs = File.copy!(up.path, dst)
+    # IO.puts "Upload created copied #{bs} bytes to path '#{dst}'"
     unless File.exists?(dst) do
       IO.puts "Upload is missing."
       raise "New upload missing"

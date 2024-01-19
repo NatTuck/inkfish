@@ -2,16 +2,22 @@ defmodule Inkfish.Assignments.Assignment do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @timestamps_opts [autogenerate: {Inkfish.LocalTime, :now, []}]
+  @timestamps_opts [type: :utc_datetime]
 
   schema "assignments" do
     field :desc, :string
+
+    # naive_datetime is correct
+    # This stores a local time, in the configured timezone.
     field :due, :naive_datetime
+
     field :name, :string
     field :weight, :decimal
     field :points, :decimal
     field :allow_git, :boolean, default: true
     field :allow_upload, :boolean, default: true
+    field :hard_deadline, :boolean, default: false
+    field :force_show_grades, :boolean, default: false
 
     belongs_to :bucket, Inkfish.Courses.Bucket
     belongs_to :teamset, Inkfish.Teams.Teamset
@@ -29,7 +35,7 @@ defmodule Inkfish.Assignments.Assignment do
     assignment
     |> cast(attrs, [:name, :desc, :due, :weight, :bucket_id, :teamset_id,
                     :starter_upload_id, :solution_upload_id, :allow_git,
-                    :allow_upload])
+                    :allow_upload, :hard_deadline, :force_show_grades])
     |> validate_required([:name, :desc, :due, :weight, :bucket_id, :teamset_id])
   end
 

@@ -2,7 +2,7 @@ defmodule Inkfish.Subs.Sub do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @timestamps_opts [autogenerate: {Inkfish.LocalTime, :now, []}]
+  @timestamps_opts [type: :utc_datetime]
 
   schema "subs" do
     field :active, :boolean, default: false
