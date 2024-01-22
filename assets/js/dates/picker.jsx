@@ -43,7 +43,7 @@ export function DatePicker(props) {
     <RDP
       selected={date}
       onChange={(dd) => setDate(dd)}
-      dateFormat="yyyy-MM-dd hh:mm"
+      dateFormat="yyyy-MM-dd"
       {...props}
     />
   );
