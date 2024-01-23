@@ -57,7 +57,12 @@ if (-f "./test.pl") {
     system(qq{perl test.pl || echo "# test.pl failed"});
 }
 elsif (-f "./test.py") {
-    system(qq{/usr/bin/python -m tap test.py || echo "# test.py failed"});
+    if (`cat test.py` =~ /unittest/) {
+        system(qq{/usr/bin/python -m tap test.py || echo "# test.py failed"});
+    }
+    else {
+        system(qq{/usr/bin/python test.py || echo "# test.py failed"});
+    }
 }
 elsif (-f "./pom.xml") {
     run(qq{mvn test || echo "# mvn test failed"});
