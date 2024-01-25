@@ -26,6 +26,11 @@
   </li>
 
   <li>
+    <strong>Hide:</strong>
+    <%= if @assignment.hide do "Yes" else "No" end %>
+  </li>
+
+  <li>
     <strong>Due:</strong>
     <span class="human-date">
       <%= show_timestamp(@assignment.due) %>
