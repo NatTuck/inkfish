@@ -57,12 +57,12 @@ defmodule Inkfish.Itty.Server do
     {:ok, Map.merge(state0, data)}
   end
 
-  def start_cmd(%{cmd: cmd, env: env} = _state0) do
+  def start_cmd(%{cmd: cmd, env: env, uuid: uuid} = state0) do
     env = System.get_env()
     |> Map.merge(env)
     |> Enum.into([])
 
-    IO.puts(" =[Itty]= Run cmd for UUID #{state0.uuid}")
+    IO.puts(" =[Itty]= Run cmd for UUID #{uuid}")
     #IO.inspect({:run, cmd, Enum.with_index(env)}, limit: :infinity)
 
     opts = [{:stdout, self()}, {:stderr, self()}, {:env, env},
