@@ -29,7 +29,7 @@ config :inkfish, InkfishWeb.Endpoint,
   live_view: [signing_salt: "37rUe00e"]
 
 config :inkfish, Inkfish.Autobots,
-  concurrency: 2
+  concurrency: 1
 
 config :inkfish, Inkfish.Mailer,
    adapter: Swoosh.Adapters.Local

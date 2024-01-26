@@ -45,7 +45,7 @@ defmodule Inkfish.Itty.Tickets do
   end
 
   def handle_call({:done, qname, _done_ticket}, _from, state0) do
-    {serving, ticket} = Map.get(state0, qname, {0, 1})
+    {serving, ticket} = Map.get(state0, qname, {1, 1})
     serving = serving + 1
     state1 = Map.put(state0, qname, {serving, ticket})
     msg = {:now_serving, serving, ticket}

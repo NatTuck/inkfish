@@ -8,6 +8,7 @@ defmodule Inkfish.Itty.Server do
   @linger_seconds 120
   
   def start_link(state0) do
+    IO.puts(" =[Itty]= Start server with UUID #{state0.uuid}")
     GenServer.start_link(__MODULE__, state0, name: reg(state0.uuid))
   end
 
@@ -103,7 +104,7 @@ defmodule Inkfish.Itty.Server do
     %{seq: seq, ticket: ticket} = state
     text = "Now serving #{serving}. We are #{ticket}.\n"
     block = %{seq: seq, stream: :adm, text: text}
-    if ticket < serving do
+    if ticket <= serving do
       start_cmd(state)
     end
     send_block(block, state)
