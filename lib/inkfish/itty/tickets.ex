@@ -37,7 +37,7 @@ defmodule Inkfish.Itty.Tickets do
   @impl true
   def handle_call({:ticket, qname}, _from, state0) do
     conc = concurrency(qname)
-    {serving, ticket} = Map.get(state0, qname, {conc, 0})
+    {serving, ticket} = Map.get(state0, qname, {conc, 1})
     state1 = Map.put(state0, qname, {serving, ticket + 1})
     msg = {:now_serving, serving, ticket}
     Phoenix.PubSub.broadcast!(Inkfish.PubSub, "autobots:#{qname}", msg)
