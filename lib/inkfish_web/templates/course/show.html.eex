@@ -31,7 +31,7 @@
       </tr>
     </thead>
     <tbody>
-      <%= for as <- bucket.assignments do %>
+      <%= for as <- bucket.assignments, !as.hide do %>
         <tr>
           <td><%= link as.name, to: Routes.assignment_path(@conn, :show, as) %></td>
           <td class="human-date"><%= show_timestamp(as.due) %></td>

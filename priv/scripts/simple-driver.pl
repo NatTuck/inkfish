@@ -33,15 +33,9 @@ untar("/var/tmp/sub.tar.gz");
 
 chdir("/home/student");
 
-say("\nAttempt build:");
 if (-f "Makefile") {
+    say("\nFound Makefile, build:\n");
     run(qq{make});
-}
-elsif (-f "pom.xml") {
-    run(qq{mvn compile});
-}
-else {
-    say("No build config found.");
 }
 
 say("\nUnpack grading archive again:");

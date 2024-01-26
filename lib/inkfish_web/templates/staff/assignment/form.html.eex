@@ -75,6 +75,17 @@
   </div>
 
   <div class="mb-3">
+    <p>Hide this assignment from students on the course page?</p>
+    <div class="px-4">
+      <div class="form-check form-switch">
+        <%= label f, :hide, "Hide" %>
+        <%= checkbox f, :hide, class: "form-check-input" %>
+        <%= error_tag f, :hide %>
+      </div>
+    </div>
+  </div>
+
+  <div class="mb-3">
     <%= label f, :starter_upload_id, class: "form-label" %>
     <%= text_input f, :starter_upload_id, class: "form-control", readonly: "readonly" %>
     <%= error_tag f, :starter_upload_id %>
