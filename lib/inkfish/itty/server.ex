@@ -62,7 +62,8 @@ defmodule Inkfish.Itty.Server do
     |> Map.merge(env)
     |> Enum.into([])
 
-    IO.inspect({:run, cmd, Enum.with_index(env)}, limit: :infinity)
+    IO.puts(" =[Itty]= Run cmd for UUID #{state0.uuid}")
+    #IO.inspect({:run, cmd, Enum.with_index(env)}, limit: :infinity)
 
     opts = [{:stdout, self()}, {:stderr, self()}, {:env, env},
 	    {:kill_timeout, 5}, :monitor]
@@ -95,6 +96,7 @@ defmodule Inkfish.Itty.Server do
 
   def send_block(block, %{uuid: uuid, seq: seq, blocks: blocks} = state) do
     blocks = [block | blocks]
+    IO.puts(" =[Itty]= Send block for UUID #{state0.uuid} #{block.seq}")
     Phoenix.PubSub.broadcast!(Inkfish.PubSub, "ittys:" <> uuid, {:block, uuid, block})
     {:noreply, %{state | seq: seq + 1, blocks: blocks}}
   end
@@ -108,7 +110,7 @@ defmodule Inkfish.Itty.Server do
       start_cmd(state)
     end
     send_block(block, state)
- end
+  end
 
   def handle_info({:stdout, _, text}, %{seq: seq} = state) do
     block = %{seq: seq, stream: :out, text: text}
@@ -124,16 +126,17 @@ defmodule Inkfish.Itty.Server do
     %{uuid: uuid, on_exit: on_exit, qname: qname,
       ticket: ticket, blocks: blocks} = state
 
+    IO.puts(" =[Itty]= Send done for UUID #{state0.uuid}")
     Phoenix.PubSub.broadcast!(Inkfish.PubSub, "ittys:" <> uuid, {:done, uuid})
     Tickets.done(qname, ticket)
 
     if on_exit do
       rv = %{
-	uuid: uuid,
-	downstat: status,
-	status: "ok",
-	result: get_marked_output(state, state.cookie),
-	log: blocks,
+	    uuid: uuid,
+	    downstat: status,
+	    status: "ok",
+	    result: get_marked_output(state, state.cookie),
+	    log: blocks,
       }
       on_exit.(rv)
     end
