@@ -57,7 +57,7 @@ defmodule Inkfish.Itty.Server do
     {:ok, Map.merge(state0, data)}
   end
 
-  def start_cmd(%{cmd: cmd, env: env, uuid: uuid} = state0) do
+  def start_cmd(%{cmd: cmd, env: env, uuid: uuid} = _state0) do
     env = System.get_env()
     |> Map.merge(env)
     |> Enum.into([])
@@ -96,20 +96,26 @@ defmodule Inkfish.Itty.Server do
 
   def send_block(block, %{uuid: uuid, seq: seq, blocks: blocks} = state) do
     blocks = [block | blocks]
-    IO.puts(" =[Itty]= Send block for UUID #{state0.uuid} #{block.seq}")
+    IO.puts(" =[Itty]= Send block for UUID #{uuid} #{block.seq}")
     Phoenix.PubSub.broadcast!(Inkfish.PubSub, "ittys:" <> uuid, {:block, uuid, block})
     {:noreply, %{state | seq: seq + 1, blocks: blocks}}
   end
 
   @impl true
   def handle_info({:now_serving, serving, _}, state) do
-    %{seq: seq, ticket: ticket} = state
-    text = "Now serving #{serving}. We are #{ticket}.\n"
-    block = %{seq: seq, stream: :adm, text: text}
-    if ticket <= serving do
-      start_cmd(state)
+    if state.started do
+      state
+    else
+      %{seq: seq, ticket: ticket} = state
+      text = "Now serving #{serving}. We are #{ticket}.\n"
+      block = %{seq: seq, stream: :adm, text: text}
+      if ticket <= serving do
+        start_cmd(state)
+        send_block(block, Map.put(state, :started, true))
+      else
+        send_block(block, state)
+      end
     end
-    send_block(block, state)
   end
 
   def handle_info({:stdout, _, text}, %{seq: seq} = state) do
@@ -126,7 +132,7 @@ defmodule Inkfish.Itty.Server do
     %{uuid: uuid, on_exit: on_exit, qname: qname,
       ticket: ticket, blocks: blocks} = state
 
-    IO.puts(" =[Itty]= Send done for UUID #{state0.uuid}")
+    IO.puts(" =[Itty]= Send done for UUID #{uuid}")
     Phoenix.PubSub.broadcast!(Inkfish.PubSub, "ittys:" <> uuid, {:done, uuid})
     Tickets.done(qname, ticket)
 
