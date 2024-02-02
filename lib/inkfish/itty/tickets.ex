@@ -41,6 +41,12 @@ defmodule Inkfish.Itty.Tickets do
     state1 = Map.put(state0, qname, {serving, ticket + 1})
     msg = {:now_serving, serving, ticket}
     Phoenix.PubSub.broadcast!(Inkfish.PubSub, "autobots:#{qname}", msg)
+
+    Task.start fn ->
+      Process.sleep(360 * 1000)
+      Inkfish.Itty.Sup.poll(qname)
+    end
+
     {:reply, ticket, state1}
   end
 
