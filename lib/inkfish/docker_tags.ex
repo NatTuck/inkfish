@@ -132,7 +132,6 @@ defmodule Inkfish.DockerTags do
   def fresh_image?(%DockerTag{} = _dt, nil), do: false
   def fresh_image?(%DockerTag{} = dt, %{"Created" => image_time}) do
     dt_time = dt.updated_at
-    |> Inkfish.LocalTime.from_naive!()
     |> DateTime.to_unix()
 
     dt_time < image_time
