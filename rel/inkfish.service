@@ -17,4 +17,4 @@ WorkingDirectory=/home/inkfish/inkfish
 ExecStart=bash /home/inkfish/inkfish/scripts/start.sh
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=default.target
