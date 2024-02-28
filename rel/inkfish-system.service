@@ -1,14 +1,10 @@
-# User Service
-#  - loginctl enable-linger
-#  - This goes in ~/.config/systemd/user/inkfish.service
-#  - systemctl --user enable inkfish
-#  - systemctl --user start inkfish
-
 [Unit]
 Description=Inkfish
 
 [Service]
 Type=simple
+User=inkfish
+Group=inkfish
 Restart=on-failure
 Environment=MIX_ENV=prod "PORT=4080"
 Environment=LANG=en_US.UTF-8
