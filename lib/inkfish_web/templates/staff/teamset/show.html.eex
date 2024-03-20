@@ -29,5 +29,15 @@
   "Add Prof Team",
   to: Routes.staff_teamset_path(@conn, :add_prof_team, @teamset),
   method: "post", class: "btn btn-warning") %>
+<br>
+<br>
 <% end %>
 
+<h2>Suggested Teams</h2>
+
+<script>
+
+
+</script>
+
+  

@@ -44,6 +44,7 @@ defmodule InkfishWeb.Staff.TeamsetController do
 
   def show(conn, %{"id" => id}) do
     teamset = Teams.get_teamset!(id)
+    teams = Teams.past_teams(teamset)
     data = InkfishWeb.Staff.TeamsetView.render("teamset.json", %{teamset: teamset})
     render(conn, "show.html", teamset: teamset, data: data)
   end
