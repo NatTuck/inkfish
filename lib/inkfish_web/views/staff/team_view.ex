@@ -25,4 +25,11 @@ defmodule InkfishWeb.Staff.TeamView do
       subs: render_many(subs, InkfishWeb.Staff.SubView, "sub.json"),
     }
   end
+
+  def simple_view(%Team{} = team) do
+    %{
+      
+
+    }
+  end 
 end

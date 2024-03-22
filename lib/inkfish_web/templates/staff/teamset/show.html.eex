@@ -16,9 +16,9 @@
      "<%= Routes.ajax_staff_teamset_team_path(@conn, :create, @teamset) %>";
    window.team_path_template =
      "<%= Routes.ajax_staff_team_path(@conn, :show, :ID) %>";
-   window.teamset_data = JSON.parse(`
-<%= raw(Jason.encode!(@data, pretty: true)) %>
-   `);
+   window.teamset_data = JSON.parse(`<%= raw(Jason.encode!(@data, pretty: true)) %>`);
+   window.past_teams = JSON.parse(`<%= raw(Jason.encode!(@past_teams, pretty: true)) %>`);
+    
   </script>
 
 <% end %>
