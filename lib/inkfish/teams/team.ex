@@ -11,7 +11,7 @@ defmodule Inkfish.Teams.Team do
     has_many :subs, Inkfish.Subs.Sub
     has_many :team_members, Inkfish.Teams.TeamMember
     many_to_many :regs, Inkfish.Users.Reg,
-    join_through: Inkfish.Teams.TeamMember, on_replace: :delete
+      join_through: Inkfish.Teams.TeamMember, on_replace: :delete
 
     timestamps()
   end

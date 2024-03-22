@@ -26,10 +26,15 @@ defmodule InkfishWeb.Staff.TeamView do
     }
   end
 
-  def simple_view(%Team{} = team) do
-    %{
-      
+  alias InkfishWeb.ViewHelpers
 
+  def view_members(%Team{} = team) do
+    %{
+      id: team.id,
+      users: Enum.map(team.regs, fn reg ->
+        user = reg.user
+        %{ id: user.id, name: ViewHelpers.user_display_name(user) }
+      end)
     }
   end 
 end

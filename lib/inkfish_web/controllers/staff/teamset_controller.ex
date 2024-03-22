@@ -42,9 +42,11 @@ defmodule InkfishWeb.Staff.TeamsetController do
     end
   end
 
+  alias InkfishWeb.Staff.TeamView
+
   def show(conn, %{"id" => id}) do
     teamset = Teams.get_teamset!(id)
-    past_teams = Enum.map(&InkfishWeb.Staff.TeamView.view/1, Teams.past_teams(teamset))
+    past_teams = Enum.map(Teams.past_teams(teamset), &TeamView.view_members/1)
     data = InkfishWeb.Staff.TeamsetView.render("teamset.json", %{teamset: teamset})
     render(conn, "show.html", teamset: teamset, data: data, past_teams: past_teams)
   end
