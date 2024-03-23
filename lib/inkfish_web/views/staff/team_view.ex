@@ -25,4 +25,16 @@ defmodule InkfishWeb.Staff.TeamView do
       subs: render_many(subs, InkfishWeb.Staff.SubView, "sub.json"),
     }
   end
+
+  alias InkfishWeb.ViewHelpers
+
+  def view_members(%Team{} = team) do
+    %{
+      id: team.id,
+      users: Enum.map(team.regs, fn reg ->
+        user = reg.user
+        %{ id: user.id, name: ViewHelpers.user_display_name(user) }
+      end)
+    }
+  end 
 end

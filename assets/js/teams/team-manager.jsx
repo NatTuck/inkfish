@@ -5,6 +5,7 @@ import { freeze } from 'icepick';
 import _ from 'lodash';
 import $ from 'cash-dom';
 
+import { TeamSuggestions } from './team-suggestions';
 import * as ajax from './ajax';
 
 export default function init() {
@@ -12,7 +13,9 @@ export default function init() {
   if (root_div) {
     let root = createRoot(root_div);
     let data = window.teamset_data;
+    let past = window.past_teams;
     data.new_team_regs = [];
+    data.past = past;
     root.render(<TeamManager data={data} />);
   }
 }
@@ -110,35 +113,45 @@ class TeamManager extends React.Component {
     });
   }
 
-  render() {
-    let active_teams   = _.filter(this.state.teams, (team) => team.active);
-    let inactive_teams = _.filter(this.state.teams, (team) => !team.active);
+  active_teams() {
+    return _.filter(this.state.teams, (team) => team.active);
+  }
 
+  inactive_teams() {
+    return _.filter(this.state.teams, (team) => !team.active);
+  }
+
+  render() {
     let extra = this.extra_students();
 
     return (
-      <div className="row">
-        <div className="col">
-          <h2>Active Teams</h2>
-          <TeamTable root={this} teams={active_teams} />
+      <div>
+        <div className="row">
+          <div className="col">
+            <h2>Active Teams</h2>
+            <TeamTable root={this} teams={this.active_teams()} />
 
-          <h2>Inactive Teams</h2>
-          <TeamTable root={this} teams={inactive_teams} />
+            <h2>Inactive Teams</h2>
+            <TeamTable root={this} teams={this.inactive_teams()} />
+          </div>
+          <div className="col">
+            <h2>New Team</h2>
+            <RegTable root={this}
+                      regs={this.state.new_team_regs}
+                      controls={RemoveFromTeam} />
+            <button className="btn btn-primary"
+                    disabled={this.state.creating}
+                    onClick={this.create_team.bind(this)}>
+              Create Team
+            </button>
+            
+            <h2>Extra Students</h2>
+            <RegTable root={this} regs={extra} controls={AddToTeam}/>
+          </div>
         </div>
-        <div className="col">
-          <h2>New Team</h2>
-          <RegTable root={this}
-                    regs={this.state.new_team_regs}
-                    controls={RemoveFromTeam} />
-          <button className="btn btn-primary"
-                  disabled={this.state.creating}
-                  onClick={this.create_team.bind(this)}>
-            Create Team
-          </button>
-         
-          <h2>Extra Students</h2>
-          <RegTable root={this} regs={extra} controls={AddToTeam}/>
-        </div>
+
+        <h2>Suggested Teams</h2>
+        <TeamSuggestions data={this.state} active={this.active_teams()} />
       </div>
     );
   }

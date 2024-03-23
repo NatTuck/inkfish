@@ -175,6 +175,24 @@ defmodule Inkfish.Teams do
       preload: [team_members: members, regs: regs]
   end
 
+
+  @doc """
+  All active teams in this course outside the provided teamset.
+  """
+  def past_teams(%Teamset{} = teamset) do
+    Repo.all from team in Team,
+      inner_join: ts in assoc(team, :teamset),
+      where: team.active,
+      where: ts.course_id == ^teamset.course_id,
+      where: ts.id != ^teamset.id,
+      preload: [regs: :user]
+  end
+
+  def past_teams(ts_id) do
+    get_teamset!(ts_id)
+    |> past_teams()
+  end
+
   @doc """
   Gets a single team.
 
