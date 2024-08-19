@@ -6,7 +6,7 @@
   <% end %>
 
   <div class="mb-3">
-    <%= label f, :score, class="form-label" %>
+    <%= label f, :score, class: "form-label" %>
     <%= number_input f, :score, step: "any" %>
     <%= error_tag f, :score %>
   </div>
