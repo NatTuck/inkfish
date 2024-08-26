@@ -2,10 +2,11 @@ defmodule Inkfish.Users.UserNotifier do
   import Swoosh.Email
 
   alias Inkfish.Mailer
+  alias Inkfish.Users.User
 
   # Delivers the email using the application mailer.
   defp deliver(recipient, subject, body) do
-    if domain_allowed?(recipient) do
+    if User.domain_allowed?(recipient) do
       email = new()
       |> to(recipient)
       |> from(Mailer.send_from())
@@ -62,10 +63,4 @@ defmodule Inkfish.Users.UserNotifier do
     """)
   end
 
-  def domain_allowed?(email) do
-    domains = Application.get_env(:inkfish, Inkfish.Users.UserNotifier)[:domains]
-    Enum.any? domains, fn dd ->
-      Regex.match?(~r/\@#{dd}$/, email)
-    end
-  end
 end

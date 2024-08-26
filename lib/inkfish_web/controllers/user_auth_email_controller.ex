@@ -48,4 +48,25 @@ defmodule InkfishWeb.UserAuthEmailController do
       end
     end
   end
+
+  def show(conn, %{ "token" => token }) do
+    case Phoenix.Token.verify(conn, "auth_email", token, max_age: 86400) do
+      {:ok, %{email: email}} ->
+        user = Users.get_user_by_email(email)
+        if user do
+          conn
+          |> put_session(:user_id, user.id)
+          |> put_flash(:info, "Logged in as #{user.email}, don't forget to change your password.")
+          |> redirect(to: Routes.page_path(conn, :dashboard))
+        else
+          conn
+          |> put_flash(:error, "Login link failed.")
+          |> redirect(to: Routes.page_path(conn, :index))
+        end
+      {:error, _} ->
+        conn
+        |> put_flash(:error, "Bad token, probably expired. Request another link.")
+        |> redirect(to: ~p"/")
+    end
+  end
 end

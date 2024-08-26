@@ -7,11 +7,9 @@
 # General application configuration
 import Config
 
-config :inkfish, Inkfish.Users.UserNotifier,
-  domains: ["example.com", "example.org"]
-
 config :inkfish, Inkfish.Users.User,
-  domain: "example.com"
+  domain: "example.com",
+  domains: ["example.com", "example.org"]
 
 config :inkfish,
   ecto_repos: [Inkfish.Repo],

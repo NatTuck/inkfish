@@ -13,11 +13,9 @@ config :inkfish, InkfishWeb.Endpoint,
   url: [host: "inkfish.homework.quest", port: 80],
   cache_static_manifest: "priv/static/cache_manifest.json"
 
-config :inkfish, Inkfish.Users.UserNotifier,
-  domains: ["usnh.edu", "plymouth.edu", "ferrus.net"]
-
 config :inkfish, Inkfish.Users.User,
-  domain: "usnh.edu"
+  domain: "usnh.edu",
+  domains: ["usnh.edu", "ferrus.net"]
 
 config :inkfish, download_host: "https://inkfish.homework.quest"
 config :inkfish, :env, :prod
