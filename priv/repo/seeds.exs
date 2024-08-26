@@ -68,11 +68,7 @@ defmodule Make do
   end
 
   def days_from_now(nn) do
-    one_day = 60 * 60 * 24
-    Inkfish.LocalTime.now()
-    |> DateTime.add(nn*one_day)
-    |> DateTime.truncate(:second)
-    |> DateTime.shift_zone!("Etc/UTC")
+    Inkfish.LocalTime.in_days(nn)
   end
 end
 
