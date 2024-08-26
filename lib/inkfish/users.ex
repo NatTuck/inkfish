@@ -438,8 +438,7 @@ defmodule Inkfish.Users do
 
   """
   def deliver_user_reg_email(email, url) do
-    domain = User.get_reg_email_domain()
-    if String.ends_with?(email, "@#{domain}") do
+    if User.domain_allowed?(email) do
       UserNotifier.deliver_reg_email(email, url)
     else
       {:error, "Email domain must be '#{domain}'."}
