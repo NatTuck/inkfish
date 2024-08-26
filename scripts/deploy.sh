@@ -12,7 +12,7 @@ export PORT=4080
 export DATABASE_URL=$(cat ~/.config/inkfish/db_url)
 export SECRET_KEY_BASE=$(cat ~/.config/inkfish/key_base)
 
-sudo service inkfish stop
+# sudo service inkfish stop
 
 echo "Building..."
 
@@ -41,4 +41,4 @@ echo "Starting app..."
 
 #_build/prod/rel/inkfish/bin/inkfish foreground
 
-sudo service inkfish start
+#service inkfish start
