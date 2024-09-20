@@ -70,7 +70,6 @@ defmodule Inkfish.Users.User do
     domain = get_reg_email_domain()
     domains = Application.get_env(:inkfish, Inkfish.Users.User)[:domains]
     if domain_allowed?(email) do
-      IO.inspect {:domain_allowed, domain, domains}
       cset
     else
       IO.inspect {:domain_not_allowed, domain, domains}
