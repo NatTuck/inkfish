@@ -3,6 +3,6 @@
 USER="inkfish"
 HOST="homework.quest"
 
-rsync -avz --delete ../inkfish $USER@$HOST:~/
+(cd .. && rsync -avz --delete --exclude inkfish/deps --exclude inkfish/assets/node_modules --exclude inkfish/_build inkfish $USER@$HOST:~/)
 
-ssh $USER@$HOST bash -c "'(cd inkfish && scripts/deploy.sh)'"
+ssh $USER@$HOST bash -c "'(cd inkfish && scripts/deploy-user.sh)'"

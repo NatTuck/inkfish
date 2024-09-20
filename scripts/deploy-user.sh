@@ -12,7 +12,7 @@ export PORT=4080
 export DATABASE_URL=$(cat ~/.config/inkfish/db_url)
 export SECRET_KEY_BASE=$(cat ~/.config/inkfish/key_base)
 
-#systemctl --user stop inkfish
+systemctl --user stop inkfish
 
 echo "Building..."
 
@@ -27,8 +27,8 @@ export NODEBIN=`pwd`/assets/node_modules/.bin
 export PATH="$PATH:$NODEBIN"
 
 (cd assets && npm install)
-#(cd assets && webpack --mode production)
-#mix phx.digest
+(cd assets && webpack --mode production)
+mix phx.digest
 mix assets.deploy
 
 echo "Generating release..."
@@ -41,4 +41,4 @@ echo "Starting app..."
 
 #_build/prod/rel/inkfish/bin/inkfish foreground
 
-#systemctl --user start inkfish
+systemctl --user start inkfish
