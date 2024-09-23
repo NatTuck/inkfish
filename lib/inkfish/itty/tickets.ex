@@ -12,7 +12,7 @@ defmodule Inkfish.Itty.Tickets do
   @name {:global, __MODULE__}
 
   def start do
-    Singleton.start_child(__MODULE__, [], __MODULE__)
+    Singleton.start_child(Inkfish.Singleton, __MODULE__, [], __MODULE__)
   end
 
   def ticket(qname) do

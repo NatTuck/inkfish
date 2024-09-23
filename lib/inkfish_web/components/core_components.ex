@@ -11,7 +11,7 @@ defmodule InkfishWeb.CoreComponents do
   use Phoenix.Component
 
   alias Phoenix.LiveView.JS
-  import InkfishWeb.Gettext
+  use Gettext, backend: InkfishWeb.Gettext
 
   @doc """
   Renders flash notices.
@@ -39,13 +39,14 @@ defmodule InkfishWeb.CoreComponents do
       class={[
         "alert alert-dismissible fade show",
         @kind == :info && "alert-primary",
-        @kind == :error && "alert-danger",
-        ]}>
-      <div :if={@title}><bold><%= @title %></bold></div>
+        @kind == :error && "alert-danger"
+      ]}
+    >
+      <div :if={@title}>
+        <bold><%= @title %></bold>
+      </div>
       <div><%= render_slot(@inner_block) || Phoenix.Flash.get(@flash, @kind) %></div>
-      <button
-        :if={@close} type="button" class="btn-close"
-        data-bs-dismiss="alert" aria-label="Close">
+      <button :if={@close} type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close">
       </button>
     </div>
     """
@@ -73,8 +74,7 @@ defmodule InkfishWeb.CoreComponents do
       phx-disconnected={show("#disconnected")}
       phx-connected={hide("#disconnected")}
     >
-      Attempting to reconnect
-      <.icon name="hero-arrow-path" class="ml-1 w-3 h-3 animate-spin" />
+      Attempting to reconnect <.icon name="hero-arrow-path" class="ml-1 w-3 h-3 animate-spin" />
     </.flash>
     """
   end
@@ -131,11 +131,7 @@ defmodule InkfishWeb.CoreComponents do
 
   def button(assigns) do
     ~H"""
-    <button
-      type={@type}
-      class={@class}
-      {@rest}
-    >
+    <button type={@type} class={@class} {@rest}>
       <%= render_slot(@inner_block) %>
     </button>
     """
@@ -228,8 +224,6 @@ defmodule InkfishWeb.CoreComponents do
   end
 
   def input(%{type: "textarea"} = assigns) do
-    
-
     ~H"""
     <div phx-feedback-for={@name} class="mb-3">
       <.label for={@id}><%= @label %></.label>

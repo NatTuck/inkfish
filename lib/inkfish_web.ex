@@ -25,23 +25,24 @@ defmodule InkfishWeb do
     quote do
       use Phoenix.Controller,
         formats: [:html, :json]
-#        layouts: [html: InkfishWeb.Layouts]
+
+      #        layouts: [html: InkfishWeb.Layouts]
 
       import Plug.Conn
-      import InkfishWeb.Gettext
+      use Gettext, backend: InkfishWeb.Gettext
       import InkfishWeb.ViewHelpers
       alias InkfishWeb.Router.Helpers, as: Routes
 
       unquote(verified_routes())
     end
   end
-  
+
   def controller do
     quote do
       use Phoenix.Controller, namespace: InkfishWeb
 
       import Plug.Conn
-      import InkfishWeb.Gettext
+      use Gettext, backend: InkfishWeb.Gettext
       import InkfishWeb.ViewHelpers
       alias InkfishWeb.Router.Helpers, as: Routes
 
@@ -73,7 +74,7 @@ defmodule InkfishWeb do
       # Core UI components and translation
       import InkfishWeb.CoreComponents
       import InkfishWeb.FormComponents
-      import InkfishWeb.Gettext
+      use Gettext, backend: InkfishWeb.Gettext
 
       # Shortcut for generating JS commands
       alias Phoenix.LiveView.JS
@@ -117,7 +118,7 @@ defmodule InkfishWeb do
   def channel do
     quote do
       use Phoenix.Channel
-      import InkfishWeb.Gettext
+      use Gettext, backend: InkfishWeb.Gettext
     end
   end
 
@@ -130,7 +131,7 @@ defmodule InkfishWeb do
       import Phoenix.View
 
       import InkfishWeb.ErrorHelpers
-      import InkfishWeb.Gettext
+      use Gettext, backend: InkfishWeb.Gettext
       import InkfishWeb.ViewHelpers
       alias InkfishWeb.Router.Helpers, as: Routes
 

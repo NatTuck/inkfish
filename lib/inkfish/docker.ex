@@ -62,7 +62,7 @@ defmodule Inkfish.Docker do
     """
     FROM debian:bookworm
 
-    ENV DEBIAN_FRONTEND noninteractive
+    ENV DEBIAN_FRONTEND=noninteractive
 
     RUN apt-get -y update && apt-get -y upgrade
 
@@ -75,6 +75,8 @@ defmodule Inkfish.Docker do
     RUN apt-get -y install debian-goodies util-linux \\
         build-essential perl-doc libipc-run-perl libarchive-zip-perl \\
         wamerican libbsd-dev ruby python3 pkg-config time curl
+
+    RUN apt-get -y install maven openjdk-17-jdk libxml-parser-perl 
 
     RUN adduser student --disabled-password --gecos "Student,,,,"
     """

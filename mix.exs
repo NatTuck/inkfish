@@ -44,7 +44,7 @@ defmodule Inkfish.MixProject do
       {:telemetry_metrics, "~> 0.6"},
       {:telemetry_poller, "~> 1.0"},
       {:ecto_psql_extras, "~> 0.6"},
-      {:gettext, "~> 0.20"},
+      {:gettext, "~> 0.26 and >= 0.26.1"},
       {:jason, "~> 1.2"},
       {:plug_cowboy, "~> 2.5"},
       {:decimal, "~> 1.8"},
@@ -53,7 +53,7 @@ defmodule Inkfish.MixProject do
       {:tzdata, "~> 1.0"},
       {:earmark, "~> 1.4"},
       {:html_sanitize_ex, "~> 1.4"},
-      {:inflex, "~> 2.0" },
+      {:inflex, "~> 2.0"},
       {:singleton, "~> 1.3"},
       {:swoosh, "~> 1.11"},
       {:finch, "~> 0.13"},
@@ -61,6 +61,7 @@ defmodule Inkfish.MixProject do
       {:httpoison, "~> 2.0"},
       {:ok, "~> 2.3"},
       {:briefly, "~> 0.4.0"},
+      {:igniter, "~> 0.1"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_copy, "~> 0.1.3", runtime: Mix.env() == :dev},
       {:esbuild, "~> 0.8", runtime: Mix.env() == :dev},
@@ -68,7 +69,7 @@ defmodule Inkfish.MixProject do
       {:ex_machina, "~> 2.7", only: :test},
       {:phoenix_integration, "~> 0.8", only: :test},
       {:hound, "~> 1.1", only: :test},
-      {:floki, ">= 0.30.0", only: :test},
+      {:floki, ">= 0.30.0", only: :test}
     ]
   end
 
