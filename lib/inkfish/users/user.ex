@@ -68,11 +68,11 @@ defmodule Inkfish.Users.User do
   def validate_reg_email(cset) do
     email = get_field(cset, :email)
     domain = get_reg_email_domain()
-    domains = Application.get_env(:inkfish, Inkfish.Users.User)[:domains]
+    _domains = Application.get_env(:inkfish, Inkfish.Users.User)[:domains]
     if domain_allowed?(email) do
       cset
     else
-      IO.inspect {:domain_not_allowed, domain, domains}
+      #IO.inspect {:domain_not_allowed, domain, _domains}
       add_error(cset, :email, "Email domain must be '#{domain}'.")
     end
   end
@@ -84,7 +84,7 @@ defmodule Inkfish.Users.User do
   def domain_allowed?(email) do
     domains = Application.get_env(:inkfish, Inkfish.Users.User)[:domains]
     Enum.any? domains, fn dd ->
-      Regex.match?(~r/\@#{dd}$/, email)
+      email && Regex.match?(~r/\@#{dd}$/, email)
     end
   end
 
