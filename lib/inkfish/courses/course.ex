@@ -1,4 +1,6 @@
 defmodule Inkfish.Courses.Course do
+  alias __MODULE__
+
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -12,6 +14,7 @@ defmodule Inkfish.Courses.Course do
     field :footer, :string, default: ""
     field :grade_hide_days, :integer
     field :archived, :boolean
+    field :sections, :string
     has_many :regs, Inkfish.Users.Reg
     has_many :join_reqs, Inkfish.JoinReqs.JoinReq
     has_many :buckets, Inkfish.Courses.Bucket
@@ -38,5 +41,9 @@ defmodule Inkfish.Courses.Course do
     else
       nil
     end
+  end
+
+  def get_sections(%Course{} = course) do
+    String.split(course.sections, 
   end
 end
