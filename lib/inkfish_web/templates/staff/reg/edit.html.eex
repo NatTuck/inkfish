@@ -17,7 +17,7 @@
 
   <div class="mb-3">
     <%= label f, :section, class: "form-label" %>
-    <%= select(f, :section, options_for_select(), class: "form-control") %>
+    <%= select(f, :section, @sections, class: "form-control") %>
     <%= error_tag f, :section %>
   </div>
 

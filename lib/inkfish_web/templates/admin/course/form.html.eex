@@ -14,7 +14,7 @@
   <div class="mb-3">
     <%= label f, :start_date, class: "form-label" %>
     <div>
-      <%= text_input(f, :start_date, class: "form-contro
+      <%= text_input(f, :start_date, class: "form-control date-picker") %>
       <%= checkbox f, :archived, class: "form-check-input form-switch" %>
       &nbsp;
       <%= label f, :archived, "archive old course", class: "form-check-label" %>

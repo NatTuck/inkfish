@@ -56,7 +56,8 @@ defmodule InkfishWeb.Staff.RegController do
   def edit(conn, %{"id" => id}) do
     reg = Users.get_reg!(id)
     changeset = Users.change_reg(reg)
-    render(conn, "edit.html", reg: reg, changeset: changeset)
+    sections = ["" | Courses.Course.list_sections(reg.course)]
+    render(conn, "edit.html", reg: reg, sections: sections, changeset: changeset)
   end
 
   def update(conn, %{"id" => id, "reg" => reg_params}) do
