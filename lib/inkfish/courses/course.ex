@@ -33,7 +33,6 @@ defmodule Inkfish.Courses.Course do
                     :instructor, :solo_teamset_id, :sections])
     |> validate_required([:name, :start_date])
     |> validate_length(:name, min: 3)
-    |> validate_sections()
   end
 
   def instructor_login(course) do
@@ -45,6 +44,8 @@ defmodule Inkfish.Courses.Course do
   end
 
   def list_sections(%Course{} = course) do
-    String.split(course.sections, ",", trim: true)
+    course.sections
+    |> String.replace(~r/\s/, "") 
+    |> String.split(",", trim: true)
   end
 end
