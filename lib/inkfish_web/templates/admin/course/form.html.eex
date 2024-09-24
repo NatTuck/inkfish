@@ -14,23 +14,7 @@
   <div class="mb-3">
     <%= label f, :start_date, class: "form-label" %>
     <div>
-      <%= text_input(f, :start_date, class: "form-control date-picker") %>
-    </div>
-    <%= error_tag f, :start_date %>
-  </div>
-
-  <div class="mb-3">
-    <%= label f, :footer, class: "form-label" %>
-    <%= textarea f, :footer, class: "form-control" %>
-    <%= error_tag f, :footer %>
-    <div class="text-muted">
-      Accepts markdown.
-    </div>
-  </div>
-
-  <div class="mb-3">
-    <div class="form-label">Archive?</div>
-    <div class="form-check form-switch">
+      <%= text_input(f, :start_date, class: "form-contro
       <%= checkbox f, :archived, class: "form-check-input form-switch" %>
       &nbsp;
       <%= label f, :archived, "archive old course", class: "form-check-label" %>
@@ -46,6 +30,11 @@
     <div class="text-muted">
       start typing to search
     </div>
+  </div>
+
+  <div class="mb-3">
+    <%= label f, :sections, class: "form-label" %>
+    <%= text_input f, :sections, class: "form-control" %>
   </div>
 
   <div class="mb-3">

@@ -9,6 +9,7 @@ defmodule Inkfish.Users.Reg do
     field :is_prof, :boolean, default: false
     field :is_staff, :boolean, default: false
     field :is_student, :boolean, default: false
+    field :section, :string
     belongs_to :user, Inkfish.Users.User
     belongs_to :course, Inkfish.Courses.Course
     many_to_many :teams, Inkfish.Teams.Team, join_through: "team_members"

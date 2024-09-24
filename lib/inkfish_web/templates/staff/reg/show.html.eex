@@ -16,6 +16,11 @@
   </li>
 
   <li>
+    <strong>Section:</strong>
+    <%= @reg.section %>
+  </li>
+
+  <li>
     <strong>Is grader:</strong>
     <%= @reg.is_grader %>
   </li>

@@ -30,9 +30,10 @@ defmodule Inkfish.Courses.Course do
   def changeset(course, attrs) do
     course
     |> cast(attrs, [:name, :start_date, :footer, :archived,
-                    :instructor, :solo_teamset_id])
+                    :instructor, :solo_teamset_id, :sections])
     |> validate_required([:name, :start_date])
     |> validate_length(:name, min: 3)
+    |> validate_sections()
   end
 
   def instructor_login(course) do
@@ -43,7 +44,7 @@ defmodule Inkfish.Courses.Course do
     end
   end
 
-  def get_sections(%Course{} = course) do
-    String.split(course.sections, 
+  def list_sections(%Course{} = course) do
+    String.split(course.sections, ",", trim: true)
   end
 end
