@@ -1,4 +1,6 @@
 defmodule Inkfish.Users.User do
+  alias __MODULE__
+
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -129,7 +131,7 @@ defmodule Inkfish.Users.User do
   If there is no user or the user doesn't have a password, we call
   `Argon2.no_user_verify/0` to avoid timing attacks.
   """
-  def valid_password?(%Inkfish.Users.User{hashed_password: hashed_password}, password)
+  def valid_password?(%User{hashed_password: hashed_password}, password)
       when is_binary(hashed_password) and byte_size(password) > 0 do
     Argon2.verify_pass(password, hashed_password)
   end
@@ -146,5 +148,9 @@ defmodule Inkfish.Users.User do
       _other ->
         text
     end
+  end
+
+  def display_name(%User{} = user) do
+    "#{user.given_name} #{user.surname}"
   end
 end

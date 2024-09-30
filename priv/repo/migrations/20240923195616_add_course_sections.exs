@@ -3,7 +3,7 @@ defmodule Inkfish.Repo.Migrations.AddCourseSections do
 
   def change do
     alter table("courses") do
-      add :sections, :string, null: false, default: ""
+      add :sections, :string
     end
 
     alter table("regs") do

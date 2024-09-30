@@ -44,8 +44,8 @@ defmodule Inkfish.Courses.Course do
   end
 
   def list_sections(%Course{} = course) do
-    course.sections
-    |> String.replace(~r/\s/, "") 
+    (course.sections || "")
+    |> String.replace(~r/,\s*/, ",") 
     |> String.split(",", trim: true)
   end
 end
