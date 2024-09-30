@@ -70,7 +70,8 @@ defmodule InkfishWeb.Staff.RegController do
         |> redirect(to: Routes.staff_reg_path(conn, :show, reg))
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        render(conn, "edit.html", reg: reg, changeset: changeset)
+        sections = ["" | Courses.Course.list_sections(reg.course)]
+        render(conn, "edit.html", reg: reg, changeset: changeset, sections: sections)
     end
   end
 

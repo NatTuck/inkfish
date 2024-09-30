@@ -74,6 +74,7 @@ defmodule Inkfish.Factory do
       name: sequence(:user_name, &"CS #{&1}"),
       start_date: Date.utc_today(),
       instructor: "Bob Anderson [bob@example.com]",
+      sections: ""
     }
   end
   
