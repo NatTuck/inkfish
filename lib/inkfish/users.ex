@@ -260,9 +260,9 @@ defmodule Inkfish.Users do
     if user.is_admin && is_nil(reg) do
       # Admins are always registered for every course as no role.
       {:ok, reg} = create_reg(%{user_id: user.id, course_id: course.id})
-      reg
+      %Reg{ reg | user: user, course: course}
     else
-      reg
+      %Reg{ reg | user: user, course: course}
     end
   end
 

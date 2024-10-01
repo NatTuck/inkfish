@@ -1,4 +1,6 @@
 defmodule Inkfish.Courses.Course do
+  alias __MODULE__
+
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -12,6 +14,7 @@ defmodule Inkfish.Courses.Course do
     field :footer, :string, default: ""
     field :grade_hide_days, :integer
     field :archived, :boolean
+    field :sections, :string
     has_many :regs, Inkfish.Users.Reg
     has_many :join_reqs, Inkfish.JoinReqs.JoinReq
     has_many :buckets, Inkfish.Courses.Bucket
@@ -27,7 +30,7 @@ defmodule Inkfish.Courses.Course do
   def changeset(course, attrs) do
     course
     |> cast(attrs, [:name, :start_date, :footer, :archived,
-                    :instructor, :solo_teamset_id])
+                    :instructor, :solo_teamset_id, :sections])
     |> validate_required([:name, :start_date])
     |> validate_length(:name, min: 3)
   end
@@ -38,5 +41,11 @@ defmodule Inkfish.Courses.Course do
     else
       nil
     end
+  end
+
+  def list_sections(%Course{} = course) do
+    (course.sections || "")
+    |> String.replace(~r/,\s*/, ",") 
+    |> String.split(",", trim: true)
   end
 end

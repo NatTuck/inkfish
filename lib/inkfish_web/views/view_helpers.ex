@@ -39,7 +39,7 @@ defmodule InkfishWeb.ViewHelpers do
   end
 
   def user_display_name(%User{} = user) do
-    "#{user.given_name} #{user.surname}"
+    User.display_name(user)
   end
 
   def is_staff?(reg, user) do

@@ -16,6 +16,12 @@
   </div>
 
   <div class="mb-3">
+    <%= label f, :section, class: "form-label" %>
+    <%= select(f, :section, @sections, class: "form-control") %>
+    <%= error_tag f, :section %>
+  </div>
+
+  <div class="mb-3">
     <div class="form-check">
       <%= checkbox f, :is_grader, class: "form-check-input" %>
       <%= label f, :is_grader %>

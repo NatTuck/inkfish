@@ -6,6 +6,22 @@ import { Map, Set } from 'immutable';
 import _ from 'lodash';
 
 export function TeamSuggestions({data, active}) {
+  let sections = data.course.sections;
+  if (sections.length == 0) {
+    sections = sections.concat("default");
+  }
+
+  var suggs = sections.map((sec) => (
+    <div key={sec}>
+      <h3>Section {sec}</h3>
+      <SectionSuggestions data={data} active={active} section={sec} />
+    </div>
+  ));
+
+  return (<div>{suggs}</div>);
+}
+
+function SectionSuggestions({data, active, section}) {
   let [pairs, setPairs] = useState([]);
 
   let busy = Set();
@@ -18,7 +34,7 @@ export function TeamSuggestions({data, active}) {
   let names = Map();
   let students = [];
   for (let reg of data.course.regs) {
-    if (reg.is_student && !busy.has(reg.user_id)) {
+    if (reg.is_student && !busy.has(reg.user_id) && reg.section == section) {
       let user = reg.user;
       names = names.set(user.id, user.name);
       students.push(user.id);

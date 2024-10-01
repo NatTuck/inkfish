@@ -34,6 +34,11 @@
     <strong>Solo Teamset ID:</strong>
     <%= @course.solo_teamset_id %>
   </li>
+
+  <li>
+    <strong>Sections:</strong>
+    <%= inspect(Inkfish.Courses.Course.list_sections(@course)) %>
+  </li>
 </ul>
 
 <%= for bucket <- @course.buckets do %>

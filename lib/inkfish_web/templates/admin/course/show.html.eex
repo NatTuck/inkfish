@@ -17,6 +17,11 @@
   </li>
 
   <li>
+    <strong>Sections:</strong>
+    <%= @course.sections %>
+  </li>
+
+  <li>
     <strong>Archived?</strong>
     <%= show_bool(@course.archived) %>
   </li>

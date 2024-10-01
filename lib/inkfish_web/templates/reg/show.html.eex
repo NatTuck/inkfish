@@ -22,5 +22,10 @@
     <%= @reg.is_grader %>
   </li>
 
+  <li>
+    <strong>Section:</strong>
+    <%= @reg.section %>
+  </li>
+
 </ul>
 

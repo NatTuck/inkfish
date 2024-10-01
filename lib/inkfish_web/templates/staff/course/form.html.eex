@@ -20,6 +20,12 @@
   </div>
 
   <div class="mb-3">
+    <%= label f, :sections, class: "form-label" %>
+    <%= text_input f, :sections, class: "form-control" %>
+    <%= error_tag f, :sections %>
+  </div>
+
+  <div class="mb-3">
     <%= label f, :footer, class: "form-label" %>
     <%= textarea f, :footer, class: "form-control" %>
     <%= error_tag f, :footer %>
