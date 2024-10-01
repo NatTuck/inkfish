@@ -27,7 +27,7 @@ export NODEBIN=`pwd`/assets/node_modules/.bin
 export PATH="$PATH:$NODEBIN"
 
 (cd assets && npm install)
-(cd assets && webpack --mode production)
+# (cd assets && webpack --mode production)
 mix phx.digest
 mix assets.deploy
 
