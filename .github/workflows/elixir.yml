@@ -14,6 +14,9 @@ on:
 permissions:
   contents: read
 
+env:
+  SHELL: /usr/bin/bash
+
 jobs:
   build:
 
@@ -54,5 +57,7 @@ jobs:
         restore-keys: ${{ runner.os }}-mix-
     - name: Install dependencies
       run: mix deps.get
+    - name: Setup
+      run: mix ecto.setup
     - name: Run tests
       run: mix test
