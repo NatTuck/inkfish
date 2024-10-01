@@ -59,7 +59,7 @@ jobs:
     - name: Install dependencies
       run: mix deps.get
     - name: Install tmptmpfs
-      run: (cd support/tmptmpfs && cargo build && ./install.sh)
+      run: (cd support/tmptmpfs && cargo build && sudo ./install.sh)
     - name: Setup
       run: MIX_ENV=test mix ecto.setup
     - name: Run tests
