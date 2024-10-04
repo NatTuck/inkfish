@@ -51,7 +51,7 @@ defmodule InkfishWeb.SubController do
 
     case Subs.create_sub(sub_params) do
       {:ok, sub} ->
-        :ok = GradingTasks.assign_grading_tasks(sub.assignment_id)
+        GradingTasks.assign_grading_tasks(sub.assignment_id)
 
         conn
         |> put_flash(:info, "Sub created successfully.")
