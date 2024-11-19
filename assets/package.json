@@ -1,13 +1,13 @@
 {
   "dependencies": {
+    "@uiw/react-codemirror": "^4.23.6",
     "ansi_up": "^6.0.2",
     "axios": "^1.6.2",
     "bootstrap": "^5.3.2",
     "bootstrap-icons": "^1.11.2",
     "bootswatch": "^5",
     "cash-dom": "^8.1.5",
-    "codemirror": "^5",
-    "codemirror-mode-elixir": "^1",
+    "codemirror": "^6.0.1",
     "date-fns": "^2.30.0",
     "filesize": "^10.1",
     "html-react-parser": "^5.0.7",
@@ -29,5 +29,6 @@
   },
   "devDependencies": {
     "jest": "^29.7.0"
-  }
+  },
+  "packageManager": "pnpm@9.12.3+sha512.cce0f9de9c5a7c95bef944169cc5dfe8741abfb145078c0d508b868056848a87c81e626246cb60967cbd7fd29a6c062ef73ff840d96b3c86c40ac92cf4a813ee"
 }
