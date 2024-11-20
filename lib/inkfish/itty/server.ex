@@ -96,7 +96,7 @@ defmodule Inkfish.Itty.Server do
 
   def send_block(block, %{uuid: uuid, seq: seq, blocks: blocks} = state) do
     blocks = [block | blocks]
-    IO.puts(" =[Itty]= Send block for UUID #{uuid} #{block.seq}")
+    # IO.puts(" =[Itty]= Send block for UUID #{uuid} #{block.seq}")
     Phoenix.PubSub.broadcast!(Inkfish.PubSub, "ittys:" <> uuid, {:block, uuid, block})
     {:noreply, %{state | seq: seq + 1, blocks: blocks}}
   end
