@@ -1,11 +1,9 @@
 defmodule Inkfish.Itty.Server do
   use GenServer
 
-  alias Inkfish.Itty.Tickets
-
   # How long to stay alive waiting for late
   # subscribers after the process terminates.
-  @linger_seconds 120
+  @linger_seconds 300
   
   def start_link(state0) do
     IO.puts(" =[Itty]= Start server with UUID #{state0.uuid}")
@@ -46,13 +44,11 @@ defmodule Inkfish.Itty.Server do
 
   @impl true
   def init(%{qname: qname} = state0) do
-    ticket = Tickets.ticket(qname)
     data = %{
       seq: 0,
       blocks: [],
       done: false,
       started: false,
-      ticket: ticket
     }
     {:ok, Map.merge(state0, data)}
   end
@@ -129,15 +125,14 @@ defmodule Inkfish.Itty.Server do
   end
 
   def handle_info({:DOWN, _, _, _, status}, state) do
-    %{uuid: uuid, on_exit: on_exit, qname: qname,
-      ticket: ticket, blocks: blocks} = state
+    %{uuid: uuid, on_exit: on_exit, qname: qname, blocks: blocks} = state
 
     IO.puts(" =[Itty]= Send done for UUID #{uuid}")
     Phoenix.PubSub.broadcast!(Inkfish.PubSub, "ittys:" <> uuid, {:done, uuid})
-    Tickets.done(qname, ticket)
 
     if on_exit do
       rv = %{
+        qname: qname,
 	    uuid: uuid,
 	    downstat: status,
 	    status: "ok",

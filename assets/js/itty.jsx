@@ -19,7 +19,8 @@ export function withChannel(op) {
 
 export function Itty({chan, uuid, token}) {
   const dispatch = useDispatch();
-  const {blocks, done} = useSelector(({blocks, done}) => ({blocks, done}));
+  const blocks = useSelector((state) => state.blocks);
+  const done = useSelector((state) => state.done);
   console.log("blocks,done", blocks, done);
 
   useEffect(() => {

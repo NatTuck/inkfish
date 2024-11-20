@@ -7,15 +7,15 @@ defmodule InkfishWeb.IttyChannel do
   def join("itty:" <> uuid, _payload, socket) do
     if authorized?(socket) do
       case Itty.open(uuid) do
-	{:ok, state} ->
-	  socket = socket
-	  |> assign(:uuid, uuid)
-	  |> assign(:itty, state)
-	  |> assign(:blocks, state.blocks)
-	  |> assign(:done, state.done)
-	  {:ok, state, socket}
-	_else ->
-	  {:error, %{reason: "bad itty"}}
+        {:ok, state} ->
+          socket = socket
+          |> assign(:uuid, uuid)
+          |> assign(:itty, state)
+          |> assign(:blocks, state.blocks)
+          |> assign(:done, state.done)
+          {:ok, state, socket}
+        _else ->
+          {:error, %{reason: "bad itty"}}
       end
     else
       {:error, %{reason: "unauthorized"}}

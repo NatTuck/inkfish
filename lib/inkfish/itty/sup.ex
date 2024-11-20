@@ -1,8 +1,6 @@
 defmodule Inkfish.Itty.Sup do
   use Supervisor
 
-  alias Inkfish.Itty.Tickets
-
   def start_link(arg) do
     Supervisor.start_link(__MODULE__, arg, name: __MODULE__)
   end
@@ -24,7 +22,7 @@ defmodule Inkfish.Itty.Sup do
     end
 
     unless alive do
-      Tickets.done(qname, 1)
+      IO.puts "Poll found no survivors."
     end
   end
 end
