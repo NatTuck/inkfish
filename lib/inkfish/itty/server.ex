@@ -1,6 +1,8 @@
 defmodule Inkfish.Itty.Server do
   use GenServer
 
+  alias Inkfish.Itty.Task
+
   # How long to stay alive waiting for late
   # subscribers after the process terminates.
   @linger_seconds 300
@@ -14,7 +16,7 @@ defmodule Inkfish.Itty.Server do
     {:via, Registry, {Inkfish.Itty.Reg, uuid}}
   end
 
-  def start(uuid, qname, cmd, env, on_exit) do
+  def start(%Task{uuid, qname, cmd, env, on_exit}) do
     cookie = Inkfish.Text.gen_uuid()
     env = env
     |> Map.update("COOKIE", cookie, &(&1))

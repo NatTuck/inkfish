@@ -1,5 +1,11 @@
 defmodule Inkfish.Itty do
   alias Inkfish.Itty.Server
+  alias Inkfish.Itty.Task
+
+  def start(%Task{} = task) do
+    {:ok, _pid} = Server.start(task)
+    :ok
+  end
 
   def run(uuid, qname, script, env, on_exit) do
     {:ok, _pid} = Server.start(uuid, qname, script, env, on_exit)
