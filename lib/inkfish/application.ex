@@ -20,6 +20,7 @@ defmodule Inkfish.Application do
       InkfishWeb.Endpoint,
       # Live console output
       Inkfish.Itty.Sup,
+      Inkfish.Itty.Queue,
     ]
 
 
