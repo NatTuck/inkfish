@@ -13,6 +13,11 @@ defmodule Inkfish.Itty do
     |> Queue.schedule()
   end
 
+  def run2(script, dupkey) do
+    Task.new(script)
+    |> Queue.schedule()
+  end
+
   def run3(qname, script, env) do
     env = env
     |> Enum.map(fn {kk, vv} ->
