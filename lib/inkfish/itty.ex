@@ -1,25 +1,16 @@
 defmodule Inkfish.Itty do
   alias Inkfish.Itty.Server
   alias Inkfish.Itty.Task
+  alias Inkfish.Itty.Queue
 
   def start(%Task{} = task) do
     {:ok, _pid} = Server.start(task)
     :ok
   end
 
-  def run(uuid, qname, script, env, on_exit) do
-    {:ok, _pid} = Server.start(uuid, qname, script, env, on_exit)
-    {:ok, uuid}
-  end
-  
-  def run(uuid, script) do
-    {:ok, _pid} = Server.start(uuid, :default, script, %{}, &(&1))
-    {:ok, uuid}
-  end
-
   def run(script) do
-    uuid = Inkfish.Text.gen_uuid()
-    run(uuid, script)
+    Task.new(script)
+    |> Queue.schedule()
   end
 
   def run3(qname, script, env) do
@@ -29,8 +20,9 @@ defmodule Inkfish.Itty do
     end)
     |> Enum.into(%{})
 
-    uuid = Inkfish.Text.gen_uuid()
-    run(uuid, qname, script, env, &(&1))
+    task = Task.new(script)
+    %Task{ task | qname: qname, env: env }
+    |> Queue.schedule()
   end
   
   def peek(uuid) do
