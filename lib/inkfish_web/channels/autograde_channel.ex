@@ -29,16 +29,24 @@ defmodule InkfishWeb.AutogradeChannel do
         if done do
           Process.send_after(self(), {:done, uuid}, 1)
         end
-      {:error, _} ->
+      {:error, msg} ->
 	    grade = Grades.get_grade_by_log_uuid(uuid)
 	    |> Grades.preload_sub_and_upload()
-	
+
+        status = Inkfish.Itty.status(uuid)
+        # FIXME: If we're here and we got {:ready, N}, we want to
+        # retry in a bit.
+
 	    if grade do
 	      log = Grades.Grade.get_log(grade)
 	      push(socket, "block", %{seq: 10, stream: :err, text: "itty missing\n" })
-	      push(socket, "block", %{seq: 11, stream: :out, text: Jason.encode!(log)})
+	      push(socket, "block", %{seq: 11, stream: :err, text: "#{msg}\n" })
+	      push(socket, "block", %{seq: 12, stream: :err, text: "#{inspect(status)}\n" })
+	      push(socket, "block", %{seq: 20, stream: :out, text: Jason.encode!(log)})
 	    else
 	      push(socket, "block", %{seq: 10, stream: :err, text: "itty missing\n" })
+	      push(socket, "block", %{seq: 11, stream: :err, text: "#{msg}\n" })
+	      push(socket, "block", %{seq: 12, stream: :err, text: "#{inspect(status)}\n" })
 	    end
 
 	    Process.send_after(self(), {:done, uuid}, 1)

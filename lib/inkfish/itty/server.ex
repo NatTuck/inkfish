@@ -16,14 +16,14 @@ defmodule Inkfish.Itty.Server do
     {:via, Registry, {Inkfish.Itty.Reg, uuid}}
   end
 
-  def start(%Task{uuid, qname, cmd, env, on_exit}) do
+  def start(%Task{uuid: uuid, script: script, env: env, on_exit: on_exit}) do
     cookie = Inkfish.Text.gen_uuid()
     env = env
     |> Map.update("COOKIE", cookie, &(&1))
     state0 = %{
-      qname: qname,
+      done: false,
       uuid: uuid,
-      cmd: cmd,
+      cmd: script,
       cookie: cookie,
       env: env,
       on_exit: on_exit,
@@ -44,29 +44,43 @@ defmodule Inkfish.Itty.Server do
     end 
   end
 
-  @impl true
-  def init(%{qname: qname} = state0) do
-    data = %{
-      seq: 0,
-      blocks: [],
-      done: false,
-      started: false,
-    }
-    {:ok, Map.merge(state0, data)}
+  def running?(uuid) do
+    if Enum.empty?(Registry.lookup(Inkfish.Itty.Reg, uuid)) do
+      false
+    else
+      {:ok, state} = GenServer.call(reg(uuid), :peek)
+      !state.done
+    end
   end
 
-  def start_cmd(%{cmd: cmd, env: env, uuid: uuid} = _state0) do
+  def stop(uuid) do
+    if !Enum.empty?(Registry.lookup(Inkfish.Itty.Reg, uuid)) do
+      GenServer.call(reg(uuid), :stop)
+    else
+      :ok
+    end
+  end
+
+  @impl true
+  def init(%{env: env, cmd: cmd, uuid: uuid} = state0) do
+    # Start the process
     env = System.get_env()
     |> Map.merge(env)
     |> Enum.into([])
 
-    IO.puts(" =[Itty]= Run cmd for UUID #{uuid}")
-    #IO.inspect({:run, cmd, Enum.with_index(env)}, limit: :infinity)
-
     opts = [{:stdout, self()}, {:stderr, self()}, {:env, env},
-	    {:kill_timeout, 5}, :monitor]
-    {:ok, _pid, _ospid} = :exec.run(cmd, opts, 30)
-    :ok
+            {:kill_timeout, 3600}, :monitor]
+
+    IO.puts(" =[Itty]= Run cmd [#{cmd}] for UUID #{uuid}")
+    {:ok, _pid, ospid} = :exec.run(cmd, opts, 30)
+
+    data = %{
+      seq: 0,
+      blocks: [],
+      ospid: ospid,
+      done: false,
+    }
+    {:ok, Map.merge(state0, data)}
   end
 
   def view(state) do
@@ -92,6 +106,17 @@ defmodule Inkfish.Itty.Server do
     {:reply, {:ok, view(state)}, state}
   end
 
+  def handle_call(:stop, _from, %{ospid: ospid} = state) do
+    send_text("Stopping process early.\n", state)
+    :exec.stop(ospid)
+    {:reply, :ok, state}
+  end
+
+  def send_text(text, %{seq: seq} = state) do
+    block = %{seq: seq, stream: :adm, text: text}
+    send_block(block, state)
+  end
+
   def send_block(block, %{uuid: uuid, seq: seq, blocks: blocks} = state) do
     blocks = [block | blocks]
     # IO.puts(" =[Itty]= Send block for UUID #{uuid} #{block.seq}")
@@ -100,22 +125,6 @@ defmodule Inkfish.Itty.Server do
   end
 
   @impl true
-  def handle_info({:now_serving, serving, _}, state) do
-    if state.started do
-      state
-    else
-      %{seq: seq, ticket: ticket} = state
-      text = "Now serving #{serving}. We are #{ticket}.\n"
-      block = %{seq: seq, stream: :adm, text: text}
-      if ticket <= serving do
-        start_cmd(state)
-        send_block(block, Map.put(state, :started, true))
-      else
-        send_block(block, state)
-      end
-    end
-  end
-
   def handle_info({:stdout, _, text}, %{seq: seq} = state) do
     block = %{seq: seq, stream: :out, text: text}
     send_block(block, state)
@@ -127,14 +136,13 @@ defmodule Inkfish.Itty.Server do
   end
 
   def handle_info({:DOWN, _, _, _, status}, state) do
-    %{uuid: uuid, on_exit: on_exit, qname: qname, blocks: blocks} = state
+    %{uuid: uuid, on_exit: on_exit, blocks: blocks} = state
 
     IO.puts(" =[Itty]= Send done for UUID #{uuid}")
     Phoenix.PubSub.broadcast!(Inkfish.PubSub, "ittys:" <> uuid, {:done, uuid})
 
     if on_exit do
       rv = %{
-        qname: qname,
 	    uuid: uuid,
 	    downstat: status,
 	    status: "ok",

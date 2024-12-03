@@ -29,7 +29,7 @@ defmodule InkfishWeb.IttyChannel do
 
   @impl true
   def handle_info({:block, _uuid, item}, socket) do
-    IO.inspect {:block, item}
+    # IO.inspect {:block, item}
     push(socket, "block", item)
     {:noreply, socket}
   end

@@ -5,33 +5,36 @@ defmodule Inkfish.Itty do
 
   def start(%Task{} = task) do
     {:ok, _pid} = Server.start(task)
-    :ok
+    {:ok, task.uuid}
   end
 
   def run(script) do
     Task.new(script)
-    |> Queue.schedule()
+    |> start()
   end
 
-  def run2(script, dupkey) do
-    Task.new(script)
-    |> Queue.schedule()
-  end
-
-  def run3(qname, script, env) do
+  def run(script, env) do
     env = env
     |> Enum.map(fn {kk, vv} ->
       {to_string(kk), to_string(vv)}
     end)
     |> Enum.into(%{})
 
-    task = Task.new(script)
-    %Task{ task | qname: qname, env: env }
-    |> Queue.schedule()
+    Task.new_env(script, env)
+    |> start()
   end
-  
+
+  def schedule(%Task{} = task) do
+    Queue.schedule(task)
+  end
+
   def peek(uuid) do
     Server.peek(uuid)
+  end
+
+  def running?(%Task{} = task), do: running?(task.uuid)
+  def running?(uuid) do
+    Server.running?(uuid)
   end
 
   def open(uuid) do
@@ -42,5 +45,13 @@ defmodule Inkfish.Itty do
   def close(uuid) do
     Phoenix.PubSub.unsubscribe(Inkfish.PubSub, "ittys:" <> uuid)
     peek(uuid)
+  end
+
+  def stop(uuid) do
+    Server.stop(uuid)
+  end
+
+  def status(uuid) do
+    Queue.status(uuid)
   end
 end
