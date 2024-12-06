@@ -28,8 +28,7 @@ defmodule InkfishWeb.Staff.TeamsetControllerTest do
   describe "create teamset" do
     test "redirects to show when data is valid", %{conn: conn, course: course} do
       params = params_for(:teamset, course: course)
-      conn = post(conn, Routes.staff_course_teamset_path(conn, :create, course),
-        teamset: params)
+      conn = post(conn, Routes.staff_course_teamset_path(conn, :create, course), teamset: params)
 
       assert %{id: id} = redirected_params(conn)
       assert redirected_to(conn) == Routes.staff_teamset_path(conn, :show, id)
@@ -40,8 +39,7 @@ defmodule InkfishWeb.Staff.TeamsetControllerTest do
 
     test "renders errors when data is invalid", %{conn: conn, course: course} do
       params = %{name: ""}
-      conn = post(conn, Routes.staff_course_teamset_path(conn, :create, course),
-        teamset: params)
+      conn = post(conn, Routes.staff_course_teamset_path(conn, :create, course), teamset: params)
       assert html_response(conn, 200) =~ "New Teamset"
     end
   end
@@ -56,8 +54,7 @@ defmodule InkfishWeb.Staff.TeamsetControllerTest do
   describe "update teamset" do
     test "redirects when data is valid", %{conn: conn, teamset: teamset} do
       params = %{name: "new name"}
-      conn = put(conn, Routes.staff_teamset_path(conn, :update, teamset),
-        teamset: params)
+      conn = put(conn, Routes.staff_teamset_path(conn, :update, teamset), teamset: params)
       assert redirected_to(conn) == Routes.staff_teamset_path(conn, :show, teamset)
 
       conn = get(conn, Routes.staff_teamset_path(conn, :show, teamset))
@@ -66,8 +63,7 @@ defmodule InkfishWeb.Staff.TeamsetControllerTest do
 
     test "renders errors when data is invalid", %{conn: conn, teamset: teamset} do
       params = %{name: ""}
-      conn = put(conn, Routes.staff_teamset_path(conn, :update, teamset),
-        teamset: params)
+      conn = put(conn, Routes.staff_teamset_path(conn, :update, teamset), teamset: params)
       assert html_response(conn, 200) =~ "Edit Teamset"
     end
   end
@@ -75,8 +71,14 @@ defmodule InkfishWeb.Staff.TeamsetControllerTest do
   describe "delete teamset" do
     test "deletes chosen teamset", %{conn: conn, teamset: teamset} do
       conn = delete(conn, Routes.staff_teamset_path(conn, :delete, teamset))
-      assert redirected_to(conn) == Routes.staff_course_teamset_path(
-        conn, :index, teamset.course_id)
+
+      assert redirected_to(conn) ==
+               Routes.staff_course_teamset_path(
+                 conn,
+                 :index,
+                 teamset.course_id
+               )
+
       assert_error_sent 404, fn ->
         get(conn, Routes.staff_teamset_path(conn, :show, teamset))
       end

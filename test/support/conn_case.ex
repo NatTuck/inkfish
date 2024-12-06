@@ -52,10 +52,12 @@ defmodule InkfishWeb.ConnCase do
 
   def login(conn, email) do
     user = Inkfish.Users.get_user_by_email!(email)
+
     conn
     |> init_test_session(%{user_id: user.id})
-    #|> assign(:current_user, user)
-    #|> assign(:current_user_id, user.id)
+
+    # |> assign(:current_user, user)
+    # |> assign(:current_user_id, user.id)
   end
 
   import Inkfish.Factory
@@ -79,7 +81,7 @@ defmodule InkfishWeb.ConnCase do
   It returns an updated `conn`.
   """
   def log_in_user(conn, user) do
-    IO.inspect {:warn, :log_in_user}
+    IO.inspect({:warn, :log_in_user})
     login(conn, user)
   end
 end

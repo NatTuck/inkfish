@@ -5,10 +5,14 @@ defmodule InkfishWeb.JoinReqController do
   alias Inkfish.JoinReqs.JoinReq
 
   alias InkfishWeb.Plugs
-  plug Plugs.FetchItem, [course: "course_id"]
-    when action in [:index, :new, :create]
-  plug Plugs.FetchItem, [join_req: "id"]
-    when action not in [:index, :new, :create]
+
+  plug Plugs.FetchItem,
+       [course: "course_id"]
+       when action in [:index, :new, :create]
+
+  plug Plugs.FetchItem,
+       [join_req: "id"]
+       when action not in [:index, :new, :create]
 
   def new(conn, _params) do
     changeset = JoinReqs.change_join_req(%JoinReq{})
@@ -16,9 +20,10 @@ defmodule InkfishWeb.JoinReqController do
   end
 
   def create(conn, %{"join_req" => params}) do
-    params = params
-    |> Map.put("user_id", conn.assigns[:current_user].id)
-    |> Map.put("course_id", conn.assigns[:course].id)
+    params =
+      params
+      |> Map.put("user_id", conn.assigns[:current_user].id)
+      |> Map.put("course_id", conn.assigns[:course].id)
 
     case JoinReqs.create_join_req(params) do
       {:ok, _join_req} ->

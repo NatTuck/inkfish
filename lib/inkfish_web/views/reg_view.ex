@@ -5,7 +5,7 @@ defmodule InkfishWeb.RegView do
     user = get_assoc(reg, :user)
 
     %{
-      user: render_one(user, InkfishWeb.UserView, "user.json"),
+      user: render_one(user, InkfishWeb.UserView, "user.json")
     }
   end
 end

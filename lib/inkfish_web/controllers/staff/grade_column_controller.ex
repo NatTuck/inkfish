@@ -2,10 +2,14 @@ defmodule InkfishWeb.Staff.GradeColumnController do
   use InkfishWeb, :controller
 
   alias InkfishWeb.Plugs
-  plug Plugs.FetchItem, [assignment: "assignment_id"]
-    when action in [:index, :new, :create]
-  plug Plugs.FetchItem, [grade_column: "id"]
-    when action not in [:index, :new, :create]
+
+  plug Plugs.FetchItem,
+       [assignment: "assignment_id"]
+       when action in [:index, :new, :create]
+
+  plug Plugs.FetchItem,
+       [grade_column: "id"]
+       when action not in [:index, :new, :create]
 
   plug Plugs.RequireReg, staff: true
 
@@ -25,17 +29,23 @@ defmodule InkfishWeb.Staff.GradeColumnController do
   def new(conn, _params) do
     defaults = %GradeColumn{
       points: Decimal.new("50"),
-      base: Decimal.new("50"),
+      base: Decimal.new("50")
     }
+
     changeset = Grades.change_grade_column(defaults)
+
     conn
     |> assign(:page_title, "New Grade Column")
     |> render("new.html", changeset: changeset)
   end
 
   def create(conn, %{"grade_column" => grade_column_params}) do
-    grade_column_params = Map.put(
-      grade_column_params, "assignment_id", conn.assigns[:assignment].id)
+    grade_column_params =
+      Map.put(
+        grade_column_params,
+        "assignment_id",
+        conn.assigns[:assignment].id
+      )
 
     case Grades.create_grade_column(grade_column_params) do
       {:ok, grade_column} ->

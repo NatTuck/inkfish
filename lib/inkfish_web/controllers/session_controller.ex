@@ -2,9 +2,10 @@ defmodule InkfishWeb.SessionController do
   use InkfishWeb, :controller
 
   alias Inkfish.Users
-  
-  def create(conn, %{"email" => email, "password" => pass }) do
+
+  def create(conn, %{"email" => email, "password" => pass}) do
     user = Users.get_user_by_email_and_password(email, pass)
+
     if user do
       conn
       |> put_session(:user_id, user.id)
@@ -16,7 +17,7 @@ defmodule InkfishWeb.SessionController do
       |> redirect(to: Routes.page_path(conn, :index))
     end
   end
-  
+
   def delete(conn, _params) do
     conn
     |> delete_session(:user_id)
@@ -26,6 +27,7 @@ defmodule InkfishWeb.SessionController do
 
   def resume(conn, _params) do
     user = Users.get_user!(get_session(conn, :real_uid))
+
     conn
     |> delete_session(:real_uid)
     |> put_session(:user_id, user.id)

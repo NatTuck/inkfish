@@ -9,9 +9,9 @@ defmodule InkfishWeb.SubmitTest do
     metadata = Phoenix.Ecto.SQL.Sandbox.metadata_for(YourApp.Repo, self())
     Hound.start_session(metadata: metadata)
 
-    on_exit fn ->
+    on_exit(fn ->
       Hound.end_session()
-    end
+    end)
 
     :ok
   end
@@ -20,8 +20,10 @@ defmodule InkfishWeb.SubmitTest do
     cond do
       op.() ->
         true
+
       waited > timeout ->
         false
+
       true ->
         :timer.sleep(50)
         wait_for(op, timeout, waited + 50)
@@ -36,6 +38,7 @@ defmodule InkfishWeb.SubmitTest do
     op = fn ->
       String.contains?(visible_page_text(), text)
     end
+
     wait_for(op, timeout)
   end
 
@@ -63,11 +66,11 @@ defmodule InkfishWeb.SubmitTest do
 
     assert wait_for_text("Done. Upload is")
 
-    assert wait_for fn ->
-      up = find_element(:id, "sub_upload_id")
-      text = attribute_value(up, :value)
-      String.length(text) > 0
-    end
+    assert wait_for(fn ->
+             up = find_element(:id, "sub_upload_id")
+             text = attribute_value(up, :value)
+             String.length(text) > 0
+           end)
 
     click({:class, "btn-primary"})
 

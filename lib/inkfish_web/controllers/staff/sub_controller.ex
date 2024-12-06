@@ -2,10 +2,15 @@ defmodule InkfishWeb.Staff.SubController do
   use InkfishWeb, :controller1
 
   alias InkfishWeb.Plugs
-  plug Plugs.FetchItem, [sub: "id"]
-    when action not in [:index, :new, :create]
-  plug Plugs.FetchItem, [assignment: "assignment_id"]
-    when action in [:index, :new, :create]
+
+  plug Plugs.FetchItem,
+       [sub: "id"]
+       when action not in [:index, :new, :create]
+
+  plug Plugs.FetchItem,
+       [assignment: "assignment_id"]
+       when action in [:index, :new, :create]
+
   plug Plugs.RequireReg, staff: true
 
   alias InkfishWeb.Plugs.Breadcrumb
@@ -25,17 +30,17 @@ defmodule InkfishWeb.Staff.SubController do
     sub = %{sub | team: Teams.get_team!(sub.team_id)}
     sub_data = InkfishWeb.Staff.SubView.render("sub.json", sub: sub)
 
-    autogrades = sub.grades
-    |> Enum.filter(&(!is_nil(&1.log_uuid)))
-    |> Enum.map(fn grade ->
-      grade = %{grade | sub: sub}
-      log = Grade.get_log(grade)
-      token = Phoenix.Token.sign(conn, "autograde", %{uuid: grade.log_uuid})
-      {grade, token, log}
-    end)
+    autogrades =
+      sub.grades
+      |> Enum.filter(&(!is_nil(&1.log_uuid)))
+      |> Enum.map(fn grade ->
+        grade = %{grade | sub: sub}
+        log = Grade.get_log(grade)
+        token = Phoenix.Token.sign(conn, "autograde", %{uuid: grade.log_uuid})
+        {grade, token, log}
+      end)
 
-    render(conn, "show.html", sub: sub, sub_data: sub_data,
-      autogrades: autogrades)
+    render(conn, "show.html", sub: sub, sub_data: sub_data, autogrades: autogrades)
   end
 
   def update(conn, %{"id" => _id, "sub" => params}) do
@@ -70,15 +75,5 @@ defmodule InkfishWeb.Staff.SubController do
       |> put_resp_header("content-type", "application/json; charset=UTF-8")
       |> send_resp(200, Jason.encode!(%{assignment: data}))
     end
-  end
-
-  def rerun_scripts(conn, %{"id" => _id}) do
-    sub = conn.assigns[:sub]
-
-    Inkfish.Subs.autograde!(sub)
-
-    conn
-    |> put_flash(:info, "Rerunning all grading scripts for sub")
-    |> redirect(to: Routes.staff_sub_path(conn, :show, sub))
   end
 end

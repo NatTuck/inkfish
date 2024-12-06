@@ -10,19 +10,19 @@ defmodule Inkfish.UsersTest do
     test "list_users/0 returns users" do
       user = insert(:user)
       users = Users.list_users()
-      assert [%User{} |_] = users
-      assert Enum.member?(Enum.map(users, &(&1.id)), user.id)
+      assert [%User{} | _] = users
+      assert Enum.member?(Enum.map(users, & &1.id), user.id)
     end
 
     test "get_user!/1 returns the user with given id" do
-      user = %User{ insert(:user) | password: nil, password_confirmation: nil }
+      user = %User{insert(:user) | password: nil, password_confirmation: nil}
       assert drop_assocs(Users.get_user!(user.id)) == drop_assocs(user)
     end
 
     test "create_user/1 with valid data creates a user" do
       attrs = params_for(:user)
       assert {:ok, %User{} = user} = Users.create_user(attrs)
-      assert user.email =~ ~r[sam\d+@example.com];
+      assert user.email =~ ~r[sam\d+@example.com]
       assert user.is_admin == false
     end
 
@@ -54,11 +54,11 @@ defmodule Inkfish.UsersTest do
 
   describe "regs" do
     alias Inkfish.Users.Reg
-    
+
     test "list_regs/0 returns newly inserted reg" do
       reg = insert(:reg)
-      regs = Users.list_regs
-      assert Enum.member?(Enum.map(regs, &(&1.id)), reg.id)
+      regs = Users.list_regs()
+      assert Enum.member?(Enum.map(regs, & &1.id), reg.id)
     end
 
     test "get_reg!/1 returns the reg with given id" do
@@ -67,10 +67,11 @@ defmodule Inkfish.UsersTest do
     end
 
     test "create_reg/1 with valid data creates a reg" do
-      params = params_for(:reg)
-      |> Map.put(:course_id, insert(:course).id)
-      |> Map.put(:user_id, insert(:user).id)
-      
+      params =
+        params_for(:reg)
+        |> Map.put(:course_id, insert(:course).id)
+        |> Map.put(:user_id, insert(:user).id)
+
       assert {:ok, %Reg{} = reg} = Users.create_reg(params)
       assert reg.is_grader == false
       assert reg.is_prof == false
@@ -160,7 +161,7 @@ defmodule Inkfish.UsersTest do
 
       assert %{
                password: ["can't be blank"],
-               email: ["Email domain must be 'example.com'.", "can't be blank"],
+               email: ["Email domain must be 'example.com'.", "can't be blank"]
              } = errors_on(changeset)
     end
 
@@ -267,7 +268,7 @@ defmodule Inkfish.UsersTest do
   def user_fixture(attrs \\ %{}) do
     attrs = valid_user_attributes(attrs)
     {:ok, user} = Inkfish.Users.create_user(attrs)
-    %User{ user | password: attrs[:password] }
+    %User{user | password: attrs[:password]}
   end
 
   def extract_user_token(fun) do

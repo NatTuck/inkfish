@@ -71,7 +71,10 @@ defmodule InkfishWeb.Staff.BucketControllerTest do
   describe "delete bucket" do
     test "deletes chosen bucket", %{conn: conn, bucket: bucket} do
       conn = delete(conn, Routes.staff_bucket_path(conn, :delete, bucket))
-      assert redirected_to(conn) == Routes.staff_course_bucket_path(conn, :index, bucket.course_id)
+
+      assert redirected_to(conn) ==
+               Routes.staff_course_bucket_path(conn, :index, bucket.course_id)
+
       assert_error_sent 404, fn ->
         get(conn, Routes.staff_bucket_path(conn, :show, bucket))
       end

@@ -15,7 +15,7 @@ defmodule InkfishWeb.Staff.RegView do
       user: render_one(user, InkfishWeb.UserView, "user.json"),
       course_id: reg.course_id,
       course: render_one(course, InkfishWeb.Staff.CourseView, "course.json"),
-      section: reg.section,
+      section: reg.section
     }
   end
 end

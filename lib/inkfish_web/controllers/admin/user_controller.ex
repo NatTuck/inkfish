@@ -4,7 +4,7 @@ defmodule InkfishWeb.Admin.UserController do
   alias Inkfish.Users
 
   plug InkfishWeb.Plugs.Breadcrumb, {"Admin Users", :admin_user, :index}
-    
+
   def index(conn, _params) do
     users = Users.list_users()
     render(conn, "index.html", users: users)
@@ -38,11 +38,13 @@ defmodule InkfishWeb.Admin.UserController do
 
   def delete(conn, %{"id" => id}) do
     user = Users.get_user!(id)
+
     case Users.delete_user(user) do
       {:ok, _user} ->
         conn
         |> put_flash(:info, "User deleted successfully.")
         |> redirect(to: Routes.admin_user_path(conn, :index))
+
       {:error, msg} ->
         conn
         |> put_flash(:error, msg)
@@ -52,6 +54,7 @@ defmodule InkfishWeb.Admin.UserController do
 
   def impersonate(conn, %{"id" => id}) do
     user = Users.get_user!(id)
+
     conn
     |> put_flash(:info, "Impersonating #{user.email}")
     |> put_session(:real_uid, conn.assigns[:current_user].id)

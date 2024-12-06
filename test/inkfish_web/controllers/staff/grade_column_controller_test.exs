@@ -3,11 +3,9 @@ defmodule InkfishWeb.Staff.GradeColumnControllerTest do
   import Inkfish.Factory
 
   setup %{conn: conn} do
-    %{staff: staff, assignment: assignment,
-      grade_column: grade_column} = stock_course()
+    %{staff: staff, assignment: assignment, grade_column: grade_column} = stock_course()
     conn = login(conn, staff)
-    {:ok, conn: conn, staff: staff,
-     assignment: assignment, grade_column: grade_column}
+    {:ok, conn: conn, staff: staff, assignment: assignment, grade_column: grade_column}
   end
 
   describe "index" do
@@ -27,8 +25,11 @@ defmodule InkfishWeb.Staff.GradeColumnControllerTest do
   describe "create grade_column" do
     test "redirects to show when data is valid", %{conn: conn, assignment: asg} do
       params = params_for(:grade_column)
-      conn = post(conn, Routes.staff_assignment_grade_column_path(conn, :create, asg),
-        grade_column: params)
+
+      conn =
+        post(conn, Routes.staff_assignment_grade_column_path(conn, :create, asg),
+          grade_column: params
+        )
 
       assert %{id: id} = redirected_params(conn)
       assert redirected_to(conn) == Routes.staff_grade_column_path(conn, :show, id)
@@ -39,8 +40,12 @@ defmodule InkfishWeb.Staff.GradeColumnControllerTest do
 
     test "renders errors when data is invalid", %{conn: conn, assignment: asg} do
       params = %{name: ""}
-      conn = post(conn, Routes.staff_assignment_grade_column_path(conn, :create, asg),
-        grade_column: params)
+
+      conn =
+        post(conn, Routes.staff_assignment_grade_column_path(conn, :create, asg),
+          grade_column: params
+        )
+
       assert html_response(conn, 200) =~ "New Grade Column"
     end
   end
@@ -55,8 +60,7 @@ defmodule InkfishWeb.Staff.GradeColumnControllerTest do
   describe "update grade_column" do
     test "redirects when data is valid", %{conn: conn, grade_column: gc} do
       params = %{name: "some updated name"}
-      conn = put(conn, Routes.staff_grade_column_path(conn, :update, gc),
-        grade_column: params)
+      conn = put(conn, Routes.staff_grade_column_path(conn, :update, gc), grade_column: params)
       assert redirected_to(conn) == Routes.staff_grade_column_path(conn, :show, gc)
 
       conn = get(conn, Routes.staff_grade_column_path(conn, :show, gc))
@@ -65,8 +69,7 @@ defmodule InkfishWeb.Staff.GradeColumnControllerTest do
 
     test "renders errors when data is invalid", %{conn: conn, grade_column: gc} do
       params = %{name: ""}
-      conn = put(conn, Routes.staff_grade_column_path(conn, :update, gc),
-        grade_column: params)
+      conn = put(conn, Routes.staff_grade_column_path(conn, :update, gc), grade_column: params)
       assert html_response(conn, 200) =~ "Edit Grade Column"
     end
   end
@@ -74,8 +77,14 @@ defmodule InkfishWeb.Staff.GradeColumnControllerTest do
   describe "delete grade_column" do
     test "deletes chosen grade_column", %{conn: conn, grade_column: grade_column} do
       conn = delete(conn, Routes.staff_grade_column_path(conn, :delete, grade_column))
-      assert redirected_to(conn) == Routes.staff_assignment_path(
-        conn, :show, grade_column.assignment_id)
+
+      assert redirected_to(conn) ==
+               Routes.staff_assignment_path(
+                 conn,
+                 :show,
+                 grade_column.assignment_id
+               )
+
       assert_error_sent 404, fn ->
         get(conn, Routes.staff_grade_column_path(conn, :show, grade_column))
       end

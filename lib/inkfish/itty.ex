@@ -14,11 +14,12 @@ defmodule Inkfish.Itty do
   end
 
   def run(script, env) do
-    env = env
-    |> Enum.map(fn {kk, vv} ->
-      {to_string(kk), to_string(vv)}
-    end)
-    |> Enum.into(%{})
+    env =
+      env
+      |> Enum.map(fn {kk, vv} ->
+        {to_string(kk), to_string(vv)}
+      end)
+      |> Enum.into(%{})
 
     Task.new_env(script, env)
     |> start()
@@ -33,6 +34,7 @@ defmodule Inkfish.Itty do
   end
 
   def running?(%Task{} = task), do: running?(task.uuid)
+
   def running?(uuid) do
     Server.running?(uuid)
   end

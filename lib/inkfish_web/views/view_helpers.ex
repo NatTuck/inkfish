@@ -16,9 +16,10 @@ defmodule InkfishWeb.ViewHelpers do
   def upload_token(conn, kind) do
     nonce = Base.encode16(:crypto.strong_rand_bytes(32))
     token = Phoenix.Token.sign(conn, "upload", %{kind: kind, nonce: nonce})
+
     %{
       nonce: nonce,
-      token: token,
+      token: token
     }
   end
 
@@ -50,10 +51,13 @@ defmodule InkfishWeb.ViewHelpers do
     cond do
       reg.is_prof ->
         "prof"
+
       reg.is_staff ->
         "staff"
+
       reg.is_student ->
         "student"
+
       true ->
         "observer"
     end
@@ -61,7 +65,7 @@ defmodule InkfishWeb.ViewHelpers do
 
   def show_team_members(%Team{} = team) do
     team.team_members
-    |> Enum.map(&(user_display_name(&1.reg.user)))
+    |> Enum.map(&user_display_name(&1.reg.user))
     |> Enum.join(", ")
   end
 
@@ -75,7 +79,7 @@ defmodule InkfishWeb.ViewHelpers do
   end
 
   def show_teamset_assignments(ts) do
-    Enum.join(Enum.map(ts.assignments, &(&1.name)), ", ")
+    Enum.join(Enum.map(ts.assignments, & &1.name), ", ")
   end
 
   def show_pct(nil) do
@@ -83,27 +87,29 @@ defmodule InkfishWeb.ViewHelpers do
   end
 
   def show_pct(%Decimal{} = score) do
-    ctx = %Decimal.Context{Decimal.Context.get | precision: 3}
-    Decimal.Context.with ctx, fn ->
+    ctx = %Decimal.Context{Decimal.Context.get() | precision: 3}
+
+    Decimal.Context.with(ctx, fn ->
       score
       |> Decimal.add(Decimal.new("0"))
       |> Decimal.to_string(:normal)
-    end
+    end)
   end
 
   def show_letter_grade(%Course{} = _course, nil), do: "∅"
 
   def show_letter_grade(%Course{} = _course, %Decimal{} = score) do
-    num = score
-    |> Decimal.mult(Decimal.new(100))
-    |> Decimal.round()
-    |> Decimal.to_integer
+    num =
+      score
+      |> Decimal.mult(Decimal.new(100))
+      |> Decimal.round()
+      |> Decimal.to_integer()
 
     # FIXME: Global scale. Should be per course.
     # Scale for 5610 Fall 2019 was 2.2%.
-    
-    #num = num + 410 # systems spring 2021 
-    #num = num + 350 # web dev spring 2021
+
+    # num = num + 410 # systems spring 2021 
+    # num = num + 350 # web dev spring 2021
 
     cond do
       num >= 9300 -> "A"
@@ -122,12 +128,13 @@ defmodule InkfishWeb.ViewHelpers do
   end
 
   def show_score(%Decimal{} = score) do
-    ctx = %Decimal.Context{Decimal.Context.get | precision: 3}
-    Decimal.Context.with ctx, fn ->
+    ctx = %Decimal.Context{Decimal.Context.get() | precision: 3}
+
+    Decimal.Context.with(ctx, fn ->
       score
       |> Decimal.add(Decimal.new("0"))
       |> Decimal.to_string(:normal)
-    end
+    end)
   end
 
   def show_score(nil) do
@@ -145,6 +152,7 @@ defmodule InkfishWeb.ViewHelpers do
 
   def show_score(conn, %Grade{} = grade) do
     asgn = conn.assigns[:assignment]
+
     if grade.grade_column.kind == "script" do
       show_score(grade.score)
     else
@@ -157,14 +165,13 @@ defmodule InkfishWeb.ViewHelpers do
   end
 
   def show_score(conn, %Assignment{} = asgn) do
-    sub = Enum.find asgn.subs, &(&1.active)
+    sub = Enum.find(asgn.subs, & &1.active)
     show_score(conn, asgn, sub && sub.score)
   end
 
   def show_score(conn, %Grade{} = grade, %GradeColumn{} = gcol) do
     show_score(conn, %Grade{grade | grade_column: gcol})
   end
- 
 
   def show_score(_conn, %Assignment{} = _a, nil) do
     show_score(nil)
@@ -176,14 +183,14 @@ defmodule InkfishWeb.ViewHelpers do
 
   def show_score(conn, %Assignment{} = asgn, %Decimal{} = score) do
     user = conn.assigns[:current_user]
-    reg  = conn.assigns[:current_reg]
+    reg = conn.assigns[:current_reg]
 
     if is_staff?(reg, user) do
       show_score(score)
     else
       if grade_hidden?(conn, asgn) do
         # Hourglass with Flowing Sand
-        raw "&#9203;"
+        raw("&#9203;")
       else
         show_score(score)
       end
@@ -215,9 +222,10 @@ defmodule InkfishWeb.ViewHelpers do
   def trusted_markdown(code) do
     case Earmark.as_html(code) do
       {:ok, html, []} ->
-        raw html
+        raw(html)
+
       {:error, _html, _msgs} ->
-        raw "error rendering markdown"
+        raw("error rendering markdown")
     end
   end
 
@@ -226,9 +234,10 @@ defmodule InkfishWeb.ViewHelpers do
   def sanitize_markdown(code) do
     case Earmark.as_html(code) do
       {:ok, html, []} ->
-        raw HtmlSanitizeEx.basic_html(html)
+        raw(HtmlSanitizeEx.basic_html(html))
+
       {:error, _html, _msgs} ->
-        raw "error rendering markdown"
+        raw("error rendering markdown")
     end
   end
 
@@ -253,13 +262,14 @@ defmodule InkfishWeb.ViewHelpers do
 
   def render_autograde_log(items) do
     items
-    |> Enum.sort_by(&(&1["seq"]))
-    |> Enum.map(&(&1["text"]))
+    |> Enum.sort_by(& &1["seq"])
+    |> Enum.map(& &1["text"])
     |> Enum.join("")
   end
 
   def get_assoc(item, field) do
     data = Map.get(item, field)
+
     if Ecto.assoc_loaded?(data) do
       data
     else

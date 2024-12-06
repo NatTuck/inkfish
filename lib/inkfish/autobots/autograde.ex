@@ -8,16 +8,18 @@ defmodule Inkfish.Autobots.Autograde do
     unpacked_sub = Upload.unpacked_path(grade.sub.upload)
     unpacked_gra = Upload.unpacked_path(grade.grade_column.upload)
 
-    script_dir = Application.app_dir(:inkfish)
-    |> Path.join("priv/scripts")
+    script_dir =
+      Application.app_dir(:inkfish)
+      |> Path.join("priv/scripts")
 
-    grade_script = script_dir
-    |> Path.join("simple-grade.pl")
+    grade_script =
+      script_dir
+      |> Path.join("simple-grade.pl")
 
     env = %{
       "SCR" => script_dir,
       "SUB" => unpacked_sub,
-      "GRA" => unpacked_gra,
+      "GRA" => unpacked_gra
     }
 
     on_exit = fn rv ->
@@ -29,8 +31,7 @@ defmodule Inkfish.Autobots.Autograde do
 
     dupkey = {grade.sub.assignment_id, grade.sub.reg_id}
 
-    %Task{uuid: grade.log_uuid, script: grade_script,
-          env: env, on_exit: on_exit, dupkey: dupkey}
+    %Task{uuid: grade.log_uuid, script: grade_script, env: env, on_exit: on_exit, dupkey: dupkey}
     |> Itty.schedule()
   end
 end

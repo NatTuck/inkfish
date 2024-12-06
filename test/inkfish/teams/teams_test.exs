@@ -87,8 +87,12 @@ defmodule Inkfish.TeamsTest do
       team_member = team_member_fixture()
       team = insert(:team)
       params = %{team_id: team.id}
-      assert {:ok, %TeamMember{} = _team_member} = Teams.update_team_member(
-						     team_member, params)
+
+      assert {:ok, %TeamMember{} = _team_member} =
+               Teams.update_team_member(
+                 team_member,
+                 params
+               )
     end
 
     test "update_team_member/2 with invalid data returns error changeset" do

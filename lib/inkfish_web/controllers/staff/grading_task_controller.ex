@@ -2,7 +2,7 @@ defmodule InkfishWeb.Staff.GradingTaskController do
   use InkfishWeb, :controller
 
   alias InkfishWeb.Plugs
-  plug Plugs.FetchItem, [assignment: "assignment_id"]
+  plug Plugs.FetchItem, assignment: "assignment_id"
   plug Plugs.RequireReg, staff: true
 
   alias InkfishWeb.Plugs.Breadcrumb
@@ -20,12 +20,12 @@ defmodule InkfishWeb.Staff.GradingTaskController do
 
     tasks = Assignments.list_grading_tasks(as)
 
-    user_tasks = Enum.filter tasks, fn sub ->
-      sub.grader_id == reg.id
-    end
+    user_tasks =
+      Enum.filter(tasks, fn sub ->
+        sub.grader_id == reg.id
+      end)
 
-    render(conn, "show.html", graders: graders,
-      tasks: tasks, user_tasks: user_tasks)
+    render(conn, "show.html", graders: graders, tasks: tasks, user_tasks: user_tasks)
   end
 
   def create(conn, _params) do
@@ -41,17 +41,19 @@ defmodule InkfishWeb.Staff.GradingTaskController do
   def edit(conn, _params) do
     %{course: course, assignment: as} = conn.assigns
 
-    graders = Courses.list_course_graders(course)
-    |> Enum.map(fn gdr ->
-      InkfishWeb.Staff.RegView.render("reg.json", %{reg: gdr})
-    end)
-    |> Jason.encode!()
+    graders =
+      Courses.list_course_graders(course)
+      |> Enum.map(fn gdr ->
+        InkfishWeb.Staff.RegView.render("reg.json", %{reg: gdr})
+      end)
+      |> Jason.encode!()
 
-    asg = Assignments.get_assignment_for_grading_tasks!(as.id)
-    |> (fn arg ->
-      InkfishWeb.Staff.AssignmentView.render("assignment.json", %{assignment: arg})
-    end).()
-    |> Jason.encode!()
+    asg =
+      Assignments.get_assignment_for_grading_tasks!(as.id)
+      |> (fn arg ->
+            InkfishWeb.Staff.AssignmentView.render("assignment.json", %{assignment: arg})
+          end).()
+      |> Jason.encode!()
 
     render(conn, "edit.html", graders: graders, asg: asg)
   end

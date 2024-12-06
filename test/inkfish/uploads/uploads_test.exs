@@ -9,25 +9,28 @@ defmodule Inkfish.UploadsTest do
 
     setup do
       base = Upload.upload_base()
+
       if String.length(base) > 10 && base =~ ~r/test/ do
         File.rm_rf!(base)
       end
+
       :ok
     end
 
     def upload_file do
       priv = :code.priv_dir(:inkfish)
       path = Path.join(priv, "test_data/helloc.tar.gz")
-      %{ path: path, filename: "helloc.tar.gz" }
+      %{path: path, filename: "helloc.tar.gz"}
     end
 
     def upload_fixture(attrs \\ %{}) do
-      attrs = if attrs[:upload] do
-        params_with_assocs(:upload, attrs)
-      else
-        params_with_assocs(:upload, attrs)
-        |> Map.put(:upload, upload_file())
-      end
+      attrs =
+        if attrs[:upload] do
+          params_with_assocs(:upload, attrs)
+        else
+          params_with_assocs(:upload, attrs)
+          |> Map.put(:upload, upload_file())
+        end
 
       {:ok, upload} = Uploads.create_upload(attrs)
       upload
@@ -41,17 +44,18 @@ defmodule Inkfish.UploadsTest do
 
     test "list_uploads/0 returns all uploads" do
       upload = upload_fixture()
-      assert_uploads_eq hd(Uploads.list_uploads()), upload
+      assert_uploads_eq(hd(Uploads.list_uploads()), upload)
     end
 
     test "get_upload!/1 returns the upload with given id" do
       upload = upload_fixture()
-      assert_uploads_eq Uploads.get_upload!(upload.id), upload
+      assert_uploads_eq(Uploads.get_upload!(upload.id), upload)
     end
 
     test "create_upload/1 with valid data creates a upload" do
-      attrs = params_with_assocs(:upload)
-      |> Map.put(:upload, upload_file())
+      attrs =
+        params_with_assocs(:upload)
+        |> Map.put(:upload, upload_file())
 
       assert {:ok, %Upload{} = upload} = Uploads.create_upload(attrs)
       assert upload.kind == "assignment_starter"

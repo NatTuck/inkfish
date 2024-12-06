@@ -26,7 +26,6 @@ config :inkfish, Inkfish.Mailer,
   cmd_args: "",
   send_from: {"Inkfish", "no-reply@homework.quest"}
 
-
 # Do not print debug messages in production
 config :logger, level: :info
 

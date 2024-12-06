@@ -24,15 +24,19 @@ defmodule Inkfish.Courses do
 
   """
   def list_courses do
-    Repo.all from cc in Course,
-      order_by: [asc: cc.name]
+    Repo.all(
+      from cc in Course,
+        order_by: [asc: cc.name]
+    )
   end
 
   def list_courses_for_user(user) do
-    regs = from reg in Reg,
-      where: reg.user_id == ^user.id
+    regs =
+      from reg in Reg,
+        where: reg.user_id == ^user.id
+
     Repo.all(Course)
-    |> Repo.preload([regs: regs])
+    |> Repo.preload(regs: regs)
   end
 
   @doc """
@@ -51,6 +55,7 @@ defmodule Inkfish.Courses do
   """
   def get_course!(id) do
     course = Repo.get!(Course, id)
+
     if course.solo_teamset_id == nil do
       %Course{} = course
       ts = Inkfish.Teams.create_solo_teamset!(course)
@@ -69,77 +74,99 @@ defmodule Inkfish.Courses do
   end
 
   def get_course_for_grading_tasks!(id) do
-    Repo.one! from cc in Course,
-      where: cc.id == ^id,
-      left_join: buckets in assoc(cc, :buckets),
-      left_join: asgs in assoc(buckets, :assignments),
-      left_join: gcols in assoc(asgs, :grade_columns),
-      left_join: subs in assoc(asgs, :subs),
-      left_join: grades in assoc(subs, :grades),
-      left_join: ggcol in assoc(grades, :grade_column),
-      left_join: grader in assoc(subs, :grader),
-      left_join: user in assoc(grader, :user),
-      preload: [buckets: {buckets, assignments:
-                          {asgs, grade_columns: gcols,
-                           subs: {subs, grades: {grades, grade_column: ggcol},
-                           grader: {grader, user: user}}}}]
+    Repo.one!(
+      from cc in Course,
+        where: cc.id == ^id,
+        left_join: buckets in assoc(cc, :buckets),
+        left_join: asgs in assoc(buckets, :assignments),
+        left_join: gcols in assoc(asgs, :grade_columns),
+        left_join: subs in assoc(asgs, :subs),
+        left_join: grades in assoc(subs, :grades),
+        left_join: ggcol in assoc(grades, :grade_column),
+        left_join: grader in assoc(subs, :grader),
+        left_join: user in assoc(grader, :user),
+        preload: [
+          buckets:
+            {buckets,
+             assignments:
+               {asgs,
+                grade_columns: gcols,
+                subs: {subs, grades: {grades, grade_column: ggcol}, grader: {grader, user: user}}}}
+        ]
+    )
   end
 
   def get_course_for_staff_view!(id) do
-    Repo.one! from cc in Course,
-      where: cc.id == ^id,
-      left_join: buckets in assoc(cc, :buckets),
-      left_join: bas in assoc(buckets, :assignments),
-      left_join: gcols in assoc(bas, :grade_columns),
-      left_join: teamsets in assoc(cc, :teamsets),
-      left_join: tas in assoc(teamsets, :assignments),
-      left_join: reqs in assoc(cc, :join_reqs),
-      order_by: [asc: buckets.name, desc: bas.due, asc: bas.name],
-      preload: [buckets: {buckets, assignments: {bas, grade_columns: gcols}},
-                teamsets: {teamsets, assignments: tas},
-                join_reqs: reqs]
+    Repo.one!(
+      from cc in Course,
+        where: cc.id == ^id,
+        left_join: buckets in assoc(cc, :buckets),
+        left_join: bas in assoc(buckets, :assignments),
+        left_join: gcols in assoc(bas, :grade_columns),
+        left_join: teamsets in assoc(cc, :teamsets),
+        left_join: tas in assoc(teamsets, :assignments),
+        left_join: reqs in assoc(cc, :join_reqs),
+        order_by: [asc: buckets.name, desc: bas.due, asc: bas.name],
+        preload: [
+          buckets: {buckets, assignments: {bas, grade_columns: gcols}},
+          teamsets: {teamsets, assignments: tas},
+          join_reqs: reqs
+        ]
+    )
   end
 
   def get_course_for_gradesheet!(id) do
-    Repo.one! from cc in Course,
-      where: cc.id == ^id,
-      left_join: buckets in assoc(cc, :buckets),
-      left_join: asgs in assoc(buckets, :assignments),
-      left_join: regs in assoc(cc, :regs),
-      where: regs.is_student or is_nil(regs.is_student),
-      left_join: student in assoc(regs, :user),
-      left_join: teams in assoc(regs, :teams),
-      left_join: subs in assoc(teams, :subs),
-      where: subs.active or is_nil(subs.active),
-      order_by: student.surname,
-      preload: [regs: {regs, user: student, teams: {teams, subs: subs}},
-                buckets: {buckets, assignments: asgs}]
+    Repo.one!(
+      from cc in Course,
+        where: cc.id == ^id,
+        left_join: buckets in assoc(cc, :buckets),
+        left_join: asgs in assoc(buckets, :assignments),
+        left_join: regs in assoc(cc, :regs),
+        where: regs.is_student or is_nil(regs.is_student),
+        left_join: student in assoc(regs, :user),
+        left_join: teams in assoc(regs, :teams),
+        left_join: subs in assoc(teams, :subs),
+        where: subs.active or is_nil(subs.active),
+        order_by: student.surname,
+        preload: [
+          regs: {regs, user: student, teams: {teams, subs: subs}},
+          buckets: {buckets, assignments: asgs}
+        ]
+    )
   end
 
   def get_course_for_student_view!(id) do
-     Repo.one! from cc in Course,
-      where: cc.id == ^id,
-      left_join: teamsets in assoc(cc, :teamsets),
-      left_join: tas in assoc(teamsets, :assignments),
-      left_join: buckets in assoc(cc, :buckets),
-      left_join: bas in assoc(buckets, :assignments),
-      left_join: gcols in assoc(bas, :grade_columns),
-      order_by: [asc: buckets.name, desc: bas.due, asc: bas.name],
-      preload: [buckets: {buckets, assignments: {bas, grade_columns: gcols}},
-                teamsets: {teamsets, assignments: tas}]
+    Repo.one!(
+      from cc in Course,
+        where: cc.id == ^id,
+        left_join: teamsets in assoc(cc, :teamsets),
+        left_join: tas in assoc(teamsets, :assignments),
+        left_join: buckets in assoc(cc, :buckets),
+        left_join: bas in assoc(buckets, :assignments),
+        left_join: gcols in assoc(bas, :grade_columns),
+        order_by: [asc: buckets.name, desc: bas.due, asc: bas.name],
+        preload: [
+          buckets: {buckets, assignments: {bas, grade_columns: gcols}},
+          teamsets: {teamsets, assignments: tas}
+        ]
+    )
   end
 
   def preload_subs_for_student!(%Course{} = course, reg_id) do
-    buckets = Enum.map course.buckets, fn (bucket) ->
-      preload_subs_for_student!(bucket, reg_id)
-    end
+    buckets =
+      Enum.map(course.buckets, fn bucket ->
+        preload_subs_for_student!(bucket, reg_id)
+      end)
+
     %{course | buckets: buckets}
   end
 
   def preload_subs_for_student!(%Bucket{} = bucket, reg_id) do
-    asgs = Enum.map bucket.assignments, fn asg ->
-      preload_subs_for_student!(asg, reg_id)
-    end
+    asgs =
+      Enum.map(bucket.assignments, fn asg ->
+        preload_subs_for_student!(asg, reg_id)
+      end)
+
     %{bucket | assignments: asgs}
   end
 
@@ -149,16 +176,21 @@ defmodule Inkfish.Courses do
   end
 
   def get_teams_for_student!(%Course{} = course, %Reg{} = reg) do
-    ts = Enum.map course.teamsets, fn (ts) ->
-      team = Inkfish.Teams.get_active_team(ts, reg)
-      |> Repo.preload(:subs)
-      {ts.id, team}
-    end
+    ts =
+      Enum.map(course.teamsets, fn ts ->
+        team =
+          Inkfish.Teams.get_active_team(ts, reg)
+          |> Repo.preload(:subs)
+
+        {ts.id, team}
+      end)
+
     Enum.into(ts, %{})
   end
 
   def get_course_by_name(name) do
     course = Repo.get_by(Course, name: name)
+
     if course do
       get_course_for_student_view!(course.id)
     else
@@ -182,15 +214,20 @@ defmodule Inkfish.Courses do
     course = Course.changeset(%Course{}, attrs)
     instructor = Course.instructor_login(course)
 
-    result = Ecto.Multi.new()
-    |> Ecto.Multi.insert(:course, course)
-    |> course_add_instructor(instructor)
-    |> course_add_solo_teamset()
-    |> Repo.transaction()
+    result =
+      Ecto.Multi.new()
+      |> Ecto.Multi.insert(:course, course)
+      |> course_add_instructor(instructor)
+      |> course_add_solo_teamset()
+      |> Repo.transaction()
 
     case result do
-      {:ok, %{course_w_ts: course}} -> {:ok, course}
-      {:error, :course, cset, _}  -> {:error, cset}
+      {:ok, %{course_w_ts: course}} ->
+        {:ok, course}
+
+      {:error, :course, cset, _} ->
+        {:error, cset}
+
       {:error, :reg, cset, _} ->
         cset = Ecto.Changeset.add_error(cset, :instructor, "instructor reg failed")
         {:error, cset}
@@ -207,19 +244,22 @@ defmodule Inkfish.Courses do
       Reg.changeset(%Reg{}, %{user_id: user.id, course_id: course.id, is_prof: true})
     end
 
-    Ecto.Multi.insert(tx, :reg, op, on_conflict: :replace_all,
-      conflict_target: [:user_id, :course_id])
+    Ecto.Multi.insert(tx, :reg, op,
+      on_conflict: :replace_all,
+      conflict_target: [:user_id, :course_id]
+    )
   end
 
   def course_add_solo_teamset(tx) do
-    tx = Ecto.Multi.insert tx, :tset, fn %{course: course} ->
-      attrs = %{ name: "Solo Work", course_id: course.id }
-      Teamset.changeset(%Teamset{}, attrs)
-    end
+    tx =
+      Ecto.Multi.insert(tx, :tset, fn %{course: course} ->
+        attrs = %{name: "Solo Work", course_id: course.id}
+        Teamset.changeset(%Teamset{}, attrs)
+      end)
 
-    Ecto.Multi.update tx, :course_w_ts, fn %{course: course, tset: tset} ->
+    Ecto.Multi.update(tx, :course_w_ts, fn %{course: course, tset: tset} ->
       Course.changeset(course, %{solo_teamset_id: tset.id})
-    end
+    end)
   end
 
   @doc """
@@ -238,14 +278,19 @@ defmodule Inkfish.Courses do
     course = Course.changeset(course, attrs)
     instructor = Course.instructor_login(course)
 
-    result = Ecto.Multi.new()
-    |> Ecto.Multi.update(:course, course)
-    |> course_add_instructor(instructor)
-    |> Repo.transaction()
+    result =
+      Ecto.Multi.new()
+      |> Ecto.Multi.update(:course, course)
+      |> course_add_instructor(instructor)
+      |> Repo.transaction()
 
     case result do
-      {:ok, %{course: course}} -> {:ok, course}
-      {:error, :course, cset, _}  -> {:error, cset}
+      {:ok, %{course: course}} ->
+        {:ok, course}
+
+      {:error, :course, cset, _} ->
+        {:error, cset}
+
       {:error, :reg, cset, _} ->
         cset = Ecto.Changeset.add_error(cset, :instructor, "instructor reg failed")
         {:error, cset}
@@ -281,12 +326,14 @@ defmodule Inkfish.Courses do
     Course.changeset(course, %{})
   end
 
-  
   def get_one_course_prof(%Course{} = course) do
-    Repo.one from uu in User,
-      join: rr in Reg, on: rr.user_id == uu.id,
-      where: rr.course_id == ^course.id and rr.is_prof,
-      limit: 1
+    Repo.one(
+      from uu in User,
+        join: rr in Reg,
+        on: rr.user_id == uu.id,
+        where: rr.course_id == ^course.id and rr.is_prof,
+        limit: 1
+    )
   end
 
   def list_course_graders(%Course{} = course) do
@@ -294,11 +341,13 @@ defmodule Inkfish.Courses do
   end
 
   def list_course_graders(course_id) do
-    Repo.all from reg in Reg,
-      inner_join: user in assoc(reg, :user),
-      where: reg.course_id == ^course_id,
-      where: reg.is_grader,
-      preload: [user: user]
+    Repo.all(
+      from reg in Reg,
+        inner_join: user in assoc(reg, :user),
+        where: reg.course_id == ^course_id,
+        where: reg.is_grader,
+        preload: [user: user]
+    )
   end
 
   @doc """
@@ -315,8 +364,10 @@ defmodule Inkfish.Courses do
   end
 
   def list_buckets(course_id) do
-    Repo.all from bb in Bucket,
-      where: bb.course_id == ^course_id
+    Repo.all(
+      from bb in Bucket,
+        where: bb.course_id == ^course_id
+    )
   end
 
   @doc """
@@ -337,12 +388,13 @@ defmodule Inkfish.Courses do
   def get_bucket(id), do: Repo.get(Bucket, id)
 
   def get_bucket_path!(id) do
-    Repo.one! from bb in Bucket,
-      where: bb.id == ^id,
-      inner_join: course in assoc(bb, :course),
-      preload: [course: course]
+    Repo.one!(
+      from bb in Bucket,
+        where: bb.id == ^id,
+        inner_join: course in assoc(bb, :course),
+        preload: [course: course]
+    )
   end
-
 
   @doc """
   Creates a bucket.

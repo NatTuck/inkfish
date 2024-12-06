@@ -6,7 +6,7 @@ defmodule Inkfish.Itty.Server do
   # How long to stay alive waiting for late
   # subscribers after the process terminates.
   @linger_seconds 300
-  
+
   def start_link(state0) do
     IO.puts(" =[Itty]= Start server with UUID #{state0.uuid}")
     GenServer.start_link(__MODULE__, state0, name: reg(state0.uuid))
@@ -18,21 +18,26 @@ defmodule Inkfish.Itty.Server do
 
   def start(%Task{uuid: uuid, script: script, env: env, on_exit: on_exit}) do
     cookie = Inkfish.Text.gen_uuid()
-    env = env
-    |> Map.update("COOKIE", cookie, &(&1))
+
+    env =
+      env
+      |> Map.update("COOKIE", cookie, & &1)
+
     state0 = %{
       done: false,
       uuid: uuid,
       cmd: script,
       cookie: cookie,
       env: env,
-      on_exit: on_exit,
+      on_exit: on_exit
     }
+
     spec = %{
       id: __MODULE__,
       start: {__MODULE__, :start_link, [state0]},
-      restart: :temporary,
+      restart: :temporary
     }
+
     DynamicSupervisor.start_child(Inkfish.Itty.DynSup, spec)
   end
 
@@ -40,8 +45,8 @@ defmodule Inkfish.Itty.Server do
     if !Enum.empty?(Registry.lookup(Inkfish.Itty.Reg, uuid)) do
       GenServer.call(reg(uuid), :peek)
     else
-      {:error, "unknown"}
-    end 
+      {:error, "No such task"}
+    end
   end
 
   def running?(uuid) do
@@ -64,35 +69,40 @@ defmodule Inkfish.Itty.Server do
   @impl true
   def init(%{env: env, cmd: cmd, uuid: uuid} = state0) do
     # Start the process
-    env = System.get_env()
-    |> Map.merge(env)
-    |> Enum.into([])
+    env =
+      System.get_env()
+      |> Map.merge(env)
+      |> Enum.into([])
 
-    opts = [{:stdout, self()}, {:stderr, self()}, {:env, env},
-            {:kill_timeout, 3600}, :monitor]
+    opts = [{:stdout, self()}, {:stderr, self()}, {:env, env}, {:kill_timeout, 3600}, :monitor]
 
     IO.puts(" =[Itty]= Run cmd [#{cmd}] for UUID #{uuid}")
     {:ok, _pid, ospid} = :exec.run(cmd, opts, 30)
 
+    block = %{seq: 99, stream: :adm, text: "\nStarting task.\n\n"}
+
     data = %{
-      seq: 0,
-      blocks: [],
+      seq: 100,
+      blocks: [block],
       ospid: ospid,
-      done: false,
+      done: false
     }
+
     {:ok, Map.merge(state0, data)}
   end
 
   def view(state) do
-    outputs = [:adm, :out, :err]
-    |> Enum.map(fn stream ->
-      {stream, get_stream_text(state, stream)}
-    end)
-    |> Enum.into(%{})
+    outputs =
+      [:adm, :out, :err]
+      |> Enum.map(fn stream ->
+        {stream, get_stream_text(state, stream)}
+      end)
+      |> Enum.into(%{})
 
-    view = state
-    |> Map.drop([:on_exit])
-    |> Map.put(:outputs, outputs)
+    view =
+      state
+      |> Map.drop([:on_exit])
+      |> Map.put(:outputs, outputs)
 
     if view.done do
       Map.put(view, :result, get_marked_output(state, state.cookie))
@@ -131,7 +141,7 @@ defmodule Inkfish.Itty.Server do
   end
 
   def handle_info({:stderr, _, text}, %{seq: seq} = state) do
-    block = %{seq: seq, stream: :err, text: text} 
+    block = %{seq: seq, stream: :err, text: text}
     send_block(block, state)
   end
 
@@ -143,12 +153,13 @@ defmodule Inkfish.Itty.Server do
 
     if on_exit do
       rv = %{
-	    uuid: uuid,
-	    downstat: status,
-	    status: "ok",
-	    result: get_marked_output(state, state.cookie),
-	    log: blocks,
+        uuid: uuid,
+        downstat: status,
+        status: "ok",
+        result: get_marked_output(state, state.cookie),
+        log: blocks
       }
+
       on_exit.(rv)
     end
 
@@ -162,7 +173,7 @@ defmodule Inkfish.Itty.Server do
   end
 
   def handle_info(foo, state0) do
-    IO.inspect {:info, foo}
+    IO.inspect({:info, foo})
     {:noreply, state0}
   end
 
@@ -175,8 +186,9 @@ defmodule Inkfish.Itty.Server do
   end
 
   def get_marked_output(state, cookie) do
-    splits = get_stream_text(state, :out)
-    |> String.split("\n#{cookie}\n", trim: true)
+    splits =
+      get_stream_text(state, :out)
+      |> String.split("\n#{cookie}\n", trim: true)
 
     if length(splits) > 1 do
       Enum.at(splits, 1)

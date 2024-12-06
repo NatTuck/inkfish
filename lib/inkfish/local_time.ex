@@ -11,12 +11,14 @@ defmodule Inkfish.LocalTime do
 
   def in_hours(nn) do
     seconds_per_hour = 60 * 60
+
     now()
     |> NaiveDateTime.add(nn * seconds_per_hour)
   end
-  
+
   def in_days(nn) do
     seconds_per_day = 24 * 60 * 60
+
     now()
     |> NaiveDateTime.add(nn * seconds_per_day)
   end

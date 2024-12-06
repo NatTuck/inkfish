@@ -20,7 +20,9 @@ defmodule Inkfish.LineCommentsTest do
 
     test "get_line_comment!/1 returns the line_comment with given id" do
       line_comment = line_comment_fixture()
-      assert drop_assocs(LineComments.get_line_comment!(line_comment.id)) == drop_assocs(line_comment)
+
+      assert drop_assocs(LineComments.get_line_comment!(line_comment.id)) ==
+               drop_assocs(line_comment)
     end
 
     test "create_line_comment/1 with valid data creates a line_comment" do
@@ -38,7 +40,7 @@ defmodule Inkfish.LineCommentsTest do
 
     test "update_line_comment/2 with valid data updates the line_comment" do
       line_comment = line_comment_fixture()
-      attrs = %{ line: 43, points: "25.0" }
+      attrs = %{line: 43, points: "25.0"}
       assert {:ok, %LineComment{} = lc} = LineComments.update_line_comment(line_comment, attrs)
       assert lc.line == 43
       assert lc.path == line_comment.path
@@ -48,9 +50,11 @@ defmodule Inkfish.LineCommentsTest do
 
     test "update_line_comment/2 with invalid data returns error changeset" do
       line_comment = line_comment_fixture()
-      params = %{ grade_id: nil }
+      params = %{grade_id: nil}
       assert {:error, %Ecto.Changeset{}} = LineComments.update_line_comment(line_comment, params)
-      assert drop_assocs(line_comment) == drop_assocs(LineComments.get_line_comment!(line_comment.id))
+
+      assert drop_assocs(line_comment) ==
+               drop_assocs(LineComments.get_line_comment!(line_comment.id))
     end
 
     test "delete_line_comment/1 deletes the line_comment" do

@@ -6,8 +6,9 @@ defmodule Inkfish.Combos do
   end
 
   def permutations([]), do: [[]]
+
   def permutations(xs) do
-    for x <- xs, rest <- permutations(xs--[x]) do
+    for x <- xs, rest <- permutations(xs -- [x]) do
       [x | rest]
     end
   end

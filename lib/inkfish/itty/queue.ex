@@ -3,7 +3,7 @@ defmodule Inkfish.Itty.Queue do
   alias Inkfish.Itty.Task
   alias Inkfish.Itty
 
-  defstruct [ready: [], running: []]
+  defstruct ready: [], running: []
 
   @concurrency 2
 
@@ -33,11 +33,11 @@ defmodule Inkfish.Itty.Queue do
 
   @impl true
   def handle_call({:schedule, %Task{} = task}, _from, %Queue{} = queue) do
-    Enum.each queue.running, fn tt ->
+    Enum.each(queue.running, fn tt ->
       if task_conflict?(tt, task) do
         Itty.stop(tt.uuid)
       end
-    end
+    end)
 
     Process.send_after(self(), :poll, 100)
     queue = queue_schedule(queue, task)
@@ -69,8 +69,10 @@ defmodule Inkfish.Itty.Queue do
   end
 
   def spawn_next(%Queue{ready: []} = queue), do: queue
+
   def spawn_next(%Queue{ready: [task | ready], running: running} = queue) do
     Process.send_after(self(), :poll, 10_000)
+
     if length(running) < @concurrency do
       {:ok, _uuid} = Itty.start(task)
       %Queue{queue | running: [task | running], ready: ready}
@@ -80,11 +82,12 @@ defmodule Inkfish.Itty.Queue do
   end
 
   def queue_schedule(%Queue{} = queue, %Task{} = task) do
-    task = %Task{ task | state: :ready }
+    task = %Task{task | state: :ready}
 
-    ready = queue.ready
-    |> Enum.reject(&(task_conflict?(task, &1)))
-    |> Enum.concat([task])
+    ready =
+      queue.ready
+      |> Enum.reject(&task_conflict?(task, &1))
+      |> Enum.concat([task])
 
     %Queue{queue | ready: ready}
   end

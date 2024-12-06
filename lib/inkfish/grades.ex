@@ -37,19 +37,23 @@ defmodule Inkfish.Grades do
 
   """
   def get_grade_column!(id) do
-    Repo.one! from gr in GradeColumn,
-      where: gr.id == ^id,
-      left_join: upload in assoc(gr, :upload),
-      preload: [upload: upload]
+    Repo.one!(
+      from gr in GradeColumn,
+        where: gr.id == ^id,
+        left_join: upload in assoc(gr, :upload),
+        preload: [upload: upload]
+    )
   end
 
   def get_grade_column_path!(id) do
-    Repo.one! from gr in GradeColumn,
-      where: gr.id == ^id,
-      inner_join: as in assoc(gr, :assignment),
-      inner_join: bucket in assoc(as, :bucket),
-      inner_join: course in assoc(bucket, :course),
-      preload: [assignment: {as, bucket: {bucket, course: course}}]
+    Repo.one!(
+      from gr in GradeColumn,
+        where: gr.id == ^id,
+        inner_join: as in assoc(gr, :assignment),
+        inner_join: bucket in assoc(as, :bucket),
+        inner_join: course in assoc(bucket, :course),
+        preload: [assignment: {as, bucket: {bucket, course: course}}]
+    )
   end
 
   @doc """
@@ -163,59 +167,72 @@ defmodule Inkfish.Grades do
 
   """
   def get_grade!(id) do
-    Repo.one! from grade in Grade,
-      where: grade.id == ^id,
-      inner_join: sub in assoc(grade, :sub),
-      inner_join: reg in assoc(sub, :reg),
-      inner_join: reg_user in assoc(reg, :user),
-      inner_join: team in assoc(sub, :team),
-      left_join: team_regs in assoc(team, :regs),
-      left_join: team_user in assoc(team_regs, :user),
-      left_join: gc in assoc(grade, :grade_column),
-      left_join: lcs in assoc(grade, :line_comments),
-      left_join: user in assoc(lcs, :user),
-      preload: [grade_column: gc, line_comments: {lcs, user: user},
-                sub: {sub, reg: {reg, user: reg_user},
-                      team: {team, regs: {team_regs, user: team_user}}}]
+    Repo.one!(
+      from grade in Grade,
+        where: grade.id == ^id,
+        inner_join: sub in assoc(grade, :sub),
+        inner_join: reg in assoc(sub, :reg),
+        inner_join: reg_user in assoc(reg, :user),
+        inner_join: team in assoc(sub, :team),
+        left_join: team_regs in assoc(team, :regs),
+        left_join: team_user in assoc(team_regs, :user),
+        left_join: gc in assoc(grade, :grade_column),
+        left_join: lcs in assoc(grade, :line_comments),
+        left_join: user in assoc(lcs, :user),
+        preload: [
+          grade_column: gc,
+          line_comments: {lcs, user: user},
+          sub: {sub, reg: {reg, user: reg_user}, team: {team, regs: {team_regs, user: team_user}}}
+        ]
+    )
   end
 
   def get_grade_path!(id) do
-    Repo.one! from grade in Grade,
-      where: grade.id == ^id,
-      inner_join: sub in assoc(grade, :sub),
-      inner_join: team in assoc(sub, :team),
-      left_join: regs in assoc(team, :regs),
-      left_join: user in assoc(regs, :user),
-      inner_join: as in assoc(sub, :assignment),
-      inner_join: bucket in assoc(as, :bucket),
-      inner_join: course in assoc(bucket, :course),
-      inner_join: gc in assoc(grade, :grade_column),
-      preload: [sub: {sub, assignment: {as, bucket: {bucket, course: course}},
-                           team: {team, regs: {regs, user: user}}},
-                grade_column: gc]
+    Repo.one!(
+      from grade in Grade,
+        where: grade.id == ^id,
+        inner_join: sub in assoc(grade, :sub),
+        inner_join: team in assoc(sub, :team),
+        left_join: regs in assoc(team, :regs),
+        left_join: user in assoc(regs, :user),
+        inner_join: as in assoc(sub, :assignment),
+        inner_join: bucket in assoc(as, :bucket),
+        inner_join: course in assoc(bucket, :course),
+        inner_join: gc in assoc(grade, :grade_column),
+        preload: [
+          sub:
+            {sub,
+             assignment: {as, bucket: {bucket, course: course}},
+             team: {team, regs: {regs, user: user}}},
+          grade_column: gc
+        ]
+    )
   end
 
   def get_grade_for_autograding!(id) do
-    Repo.one! from grade in Grade,
-      where: grade.id == ^id,
-      inner_join: sub in assoc(grade, :sub),
-      inner_join: up in assoc(sub, :upload),
-      inner_join: as in assoc(sub, :assignment),
-      inner_join: gc in assoc(grade, :grade_column),
-      left_join: gc_up in assoc(gc, :upload),
-      preload: [sub: {sub, assignment: as, upload: up},
-                grade_column: {gc, upload: gc_up}]
+    Repo.one!(
+      from grade in Grade,
+        where: grade.id == ^id,
+        inner_join: sub in assoc(grade, :sub),
+        inner_join: up in assoc(sub, :upload),
+        inner_join: as in assoc(sub, :assignment),
+        inner_join: gc in assoc(grade, :grade_column),
+        left_join: gc_up in assoc(gc, :upload),
+        preload: [sub: {sub, assignment: as, upload: up}, grade_column: {gc, upload: gc_up}]
+    )
   end
 
   def get_grade_by_log_uuid(uuid) do
-    Repo.one from grade in Grade,
-      where: grade.log_uuid == ^uuid,
-      inner_join: gc in assoc(grade, :grade_column),
-      preload: [grade_column: gc]
+    Repo.one(
+      from grade in Grade,
+        where: grade.log_uuid == ^uuid,
+        inner_join: gc in assoc(grade, :grade_column),
+        preload: [grade_column: gc]
+    )
   end
 
   def preload_sub_and_upload(grade) do
-    Repo.preload(grade, [sub: :upload])
+    Repo.preload(grade, sub: :upload)
   end
 
   @doc """
@@ -235,32 +252,35 @@ defmodule Inkfish.Grades do
     |> Grade.changeset(attrs)
     |> Repo.insert(
       on_conflict: {:replace, [:score]},
-      conflict_target: [:sub_id, :grade_column_id])
+      conflict_target: [:sub_id, :grade_column_id]
+    )
   end
 
   def create_null_grade(sub_id, grade_column_id) do
     attrs = %{
       sub_id: sub_id,
       grade_column_id: grade_column_id,
-      score: nil,
+      score: nil
     }
+
     create_grade(attrs)
   end
 
   def create_autograde(sub_id, gcol_id) do
     uuid = Inkfish.Text.gen_uuid()
+
     attrs = %{
       grade_column_id: gcol_id,
       sub_id: sub_id,
-      log_uuid: uuid,
+      log_uuid: uuid
     }
+
     {:ok, grade} = create_grade(attrs)
 
     grade = get_grade_for_autograding!(grade.id)
 
     Autobots.autograde(grade)
   end
-
 
   @doc """
   Updates a grade.
@@ -313,29 +333,36 @@ defmodule Inkfish.Grades do
 
   def update_feedback_score(grade_id) do
     grade = get_grade!(grade_id)
-    gcol  = get_grade_column!(grade.grade_column_id)
-    delta = Enum.reduce grade.line_comments, Decimal.new("0.0"), fn (lc, acc) ->
-      Decimal.add(lc.points, acc)
-    end
+    gcol = get_grade_column!(grade.grade_column_id)
+
+    delta =
+      Enum.reduce(grade.line_comments, Decimal.new("0.0"), fn lc, acc ->
+        Decimal.add(lc.points, acc)
+      end)
 
     score = Decimal.add(gcol.base, delta)
     {:ok, grade} = update_grade(grade, %{score: score})
 
     Inkfish.Subs.calc_sub_score!(grade.sub_id)
-    {:ok, %{grade|grade_column: gcol}}
+    {:ok, %{grade | grade_column: gcol}}
   end
 
   def set_grade_log!(uuid, log) do
-    grade = Repo.one! from grade in Grade,
-      where: grade.log_uuid == ^uuid,
-      inner_join: sub in assoc(grade, :sub),
-      inner_join: up in assoc(sub, :upload),
-      preload: [sub: {sub, upload: up}]
+    grade =
+      Repo.one!(
+        from grade in Grade,
+          where: grade.log_uuid == ^uuid,
+          inner_join: sub in assoc(grade, :sub),
+          inner_join: up in assoc(sub, :upload),
+          preload: [sub: {sub, upload: up}]
+      )
 
     path = Grade.log_path(grade)
+
     case Jason.encode(log) do
       {:ok, data} ->
         File.write!(path, data)
+
       other ->
         IO.puts("Jason.encode failed")
         IO.inspect(other)
@@ -347,9 +374,10 @@ defmodule Inkfish.Grades do
   def set_grade_score(grade, passed, tests) do
     grade = get_grade!(grade.id)
 
-    score = passed
-    |> safe_div(tests)
-    |> Decimal.mult(grade.grade_column.points)
+    score =
+      passed
+      |> safe_div(tests)
+      |> Decimal.mult(grade.grade_column.points)
 
     update_grade(grade, %{score: score})
   end

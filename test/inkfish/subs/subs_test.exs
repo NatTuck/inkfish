@@ -43,7 +43,7 @@ defmodule Inkfish.SubsTest do
 
     test "update_sub/2 with invalid data returns error changeset" do
       sub = sub_fixture()
-      params = %{ params_for(:sub) | hours_spent: nil }
+      params = %{params_for(:sub) | hours_spent: nil}
       assert {:error, %Ecto.Changeset{}} = Subs.update_sub(sub, params)
       assert drop_assocs(sub) == drop_assocs(Subs.get_sub!(sub.id))
     end

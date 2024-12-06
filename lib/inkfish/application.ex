@@ -20,9 +20,8 @@ defmodule Inkfish.Application do
       InkfishWeb.Endpoint,
       # Live console output
       Inkfish.Itty.Sup,
-      Inkfish.Itty.Queue,
+      Inkfish.Itty.Queue
     ]
-
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options

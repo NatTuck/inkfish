@@ -8,12 +8,15 @@ defmodule InkfishWeb.IttyChannel do
     if authorized?(socket) do
       case Itty.open(uuid) do
         {:ok, state} ->
-          socket = socket
-          |> assign(:uuid, uuid)
-          |> assign(:itty, state)
-          |> assign(:blocks, state.blocks)
-          |> assign(:done, state.done)
+          socket =
+            socket
+            |> assign(:uuid, uuid)
+            |> assign(:itty, state)
+            |> assign(:blocks, state.blocks)
+            |> assign(:done, state.done)
+
           {:ok, state, socket}
+
         _else ->
           {:error, %{reason: "bad itty"}}
       end
@@ -35,7 +38,7 @@ defmodule InkfishWeb.IttyChannel do
   end
 
   def handle_info({:done, uuid}, socket) do
-    IO.inspect {:done, uuid}
+    IO.inspect({:done, uuid})
     push(socket, "done", %{uuid: uuid})
     {:noreply, socket}
   end

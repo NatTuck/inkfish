@@ -3,16 +3,16 @@
     <h1>Log In</h1>
     <%= form_for @conn, Routes.session_path(@conn, :create), fn f -> %>
       <div class="mb-3">
-        <%= label f, :email, class: "form-label" %>
-        <%= text_input f, :email, class: "form-control" %>
-      </div>
-      
-      <div class="mb-3">
-        <%= label f, :password, class: "form-label" %>
-        <%= password_input f, :password, class: "form-control" %>
+        <%= label(f, :email, class: "form-label") %>
+        <%= text_input(f, :email, class: "form-control") %>
       </div>
 
-      <%= submit "Log In", class: "btn btn-primary" %>
+      <div class="mb-3">
+        <%= label(f, :password, class: "form-label") %>
+        <%= password_input(f, :password, class: "form-control") %>
+      </div>
+
+      <%= submit("Log In", class: "btn btn-primary") %>
     <% end %>
   </div>
 </div>
@@ -23,12 +23,12 @@
     <p>Enter your email to create a new account or reset your password.</p>
 
     <%= form_for @conn, ~p"/users/send_auth_email", fn f -> %>
-       <div class="mb-3">
-        <%= label f, :email, class: "form-label" %>
-        <%= text_input f, :email, class: "form-control" %>
+      <div class="mb-3">
+        <%= label(f, :email, class: "form-label") %>
+        <%= text_input(f, :email, class: "form-control") %>
       </div>
 
-      <%= submit "Request", class: "btn btn-primary" %>
+      <%= submit("Request", class: "btn btn-primary") %>
     <% end %>
   </div>
 </div>

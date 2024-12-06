@@ -2,8 +2,11 @@ defmodule InkfishWeb.TeamController do
   use InkfishWeb, :controller
 
   alias InkfishWeb.Plugs
-  plug Plugs.FetchItem, [team: "id"]
-    when action not in [:index, :new, :create]
+
+  plug Plugs.FetchItem,
+       [team: "id"]
+       when action not in [:index, :new, :create]
+
   plug Plugs.RequireReg
 
   alias InkfishWeb.Plugs.Breadcrumb

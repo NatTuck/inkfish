@@ -1,9 +1,13 @@
 defmodule Inkfish.Itty.Task do
   alias __MODULE__
 
-  defstruct [uuid: nil, script: "echo hello, world", dupkey: nil, state: nil,
-             env: %{}, on_exit: &Task.default_on_exit/1]
-  
+  defstruct uuid: nil,
+            script: "echo hello, world",
+            dupkey: nil,
+            state: nil,
+            env: %{},
+            on_exit: &Task.default_on_exit/1
+
   def new(script) do
     uuid = Inkfish.Text.gen_uuid()
     %Task{uuid: uuid, script: script}

@@ -18,7 +18,7 @@ defmodule InkfishWeb.Staff.AssignmentView do
       bucket: render_one(bucket, BucketView, "bucket.json"),
       teamset: render_one(teamset, TeamsetView, "teamset.json"),
       grade_columns: render_many(gcols, GradeColumnView, "grade_column.json"),
-      subs: render_many(subs, SubView, "sub.json"),
+      subs: render_many(subs, SubView, "sub.json")
     }
   end
 end

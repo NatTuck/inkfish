@@ -2,18 +2,24 @@ defmodule InkfishWeb.Staff.BucketController do
   use InkfishWeb, :controller
 
   alias InkfishWeb.Plugs
-  plug Plugs.FetchItem, [course: "course_id"]
-    when action in [:index, :new, :create]
-  plug Plugs.FetchItem, [bucket: "id"]
-    when action not in [:index, :new, :create]
+
+  plug Plugs.FetchItem,
+       [course: "course_id"]
+       when action in [:index, :new, :create]
+
+  plug Plugs.FetchItem,
+       [bucket: "id"]
+       when action not in [:index, :new, :create]
 
   plug Plugs.RequireReg, staff: true
 
   alias InkfishWeb.Plugs.Breadcrumb
   plug Breadcrumb, {"Courses (Staff)", :staff_course, :index}
   plug Breadcrumb, {:show, :staff, :course}
-  plug Breadcrumb, {"Buckets", :staff_course_bucket, :index, :course}
-    when action not in [:index, :new, :create]
+
+  plug Breadcrumb,
+       {"Buckets", :staff_course_bucket, :index, :course}
+       when action not in [:index, :new, :create]
 
   alias Inkfish.Courses
   alias Inkfish.Courses.Bucket
@@ -27,8 +33,9 @@ defmodule InkfishWeb.Staff.BucketController do
   def new(conn, %{"course_id" => course_id}) do
     defaults = %Bucket{
       course_id: course_id,
-      weight: 100,
+      weight: 100
     }
+
     changeset = Courses.change_bucket(defaults)
     render(conn, "new.html", changeset: changeset)
   end

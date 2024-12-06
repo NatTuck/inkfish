@@ -31,25 +31,28 @@ defmodule Inkfish.Autobots.Tap do
     [_, "1", total] = Regex.run(~r/^(\d+)\.\.(\d+)$/, count_dec)
     {total, _} = Integer.parse(total)
 
-    test_lines = Enum.filter lines, fn line ->
-      line =~ ~r/^ok/ || line =~ ~r/^not/
-    end
+    test_lines =
+      Enum.filter(lines, fn line ->
+        line =~ ~r/^ok/ || line =~ ~r/^not/
+      end)
 
-    tests = Enum.map(test_lines, fn line ->
-      pat = ~r/^(ok|not ok)\s+(\d+)\s+(?:-\s+)?(.*)$/
-      [_, ok, num, _text] = Regex.run(pat, line)
-      {num, _} = Integer.parse(num)
-      {num, ok == "ok"}
-    end)
-    |> Enum.into(%{})
+    tests =
+      Enum.map(test_lines, fn line ->
+        pat = ~r/^(ok|not ok)\s+(\d+)\s+(?:-\s+)?(.*)$/
+        [_, ok, num, _text] = Regex.run(pat, line)
+        {num, _} = Integer.parse(num)
+        {num, ok == "ok"}
+      end)
+      |> Enum.into(%{})
 
-    passed = Enum.reduce 1..total, 0, fn (ii, acc) ->
-      if tests[ii] do
-        acc + 1
-      else
-        acc
-      end
-    end
+    passed =
+      Enum.reduce(1..total, 0, fn ii, acc ->
+        if tests[ii] do
+          acc + 1
+        else
+          acc
+        end
+      end)
 
     {:ok, {passed, total}}
   end

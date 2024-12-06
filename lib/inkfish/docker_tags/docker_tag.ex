@@ -24,14 +24,15 @@ defmodule Inkfish.DockerTags.DockerTag do
   def default do
     %DockerTag{
       name: "inkfish:latest",
-      dockerfile: Docker.default_dockerfile(),
+      dockerfile: Docker.default_dockerfile()
     }
   end
 
   def build_dir(id) do
-    text = id
-    |> to_string()
-    |> String.pad_leading(6, "0")
+    text =
+      id
+      |> to_string()
+      |> String.pad_leading(6, "0")
 
     "~/.cache/inkfish/docker_tags/"
     |> Path.expand()

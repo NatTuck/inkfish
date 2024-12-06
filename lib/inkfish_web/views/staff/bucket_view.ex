@@ -8,7 +8,7 @@ defmodule InkfishWeb.Staff.BucketView do
 
     %{
       name: bucket.name,
-      assignments: render_many(assignments, AssignmentView, "assignment.json"),
+      assignments: render_many(assignments, AssignmentView, "assignment.json")
     }
   end
 end

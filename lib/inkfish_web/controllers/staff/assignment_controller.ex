@@ -3,18 +3,23 @@ defmodule InkfishWeb.Staff.AssignmentController do
 
   alias InkfishWeb.Plugs
 
-  plug Plugs.FetchItem, [bucket: "bucket_id"]
-    when action in [:index, :new, :create]
-  plug Plugs.FetchItem, [assignment: "id"]
-    when action not in [:index, :new, :create]
+  plug Plugs.FetchItem,
+       [bucket: "bucket_id"]
+       when action in [:index, :new, :create]
+
+  plug Plugs.FetchItem,
+       [assignment: "id"]
+       when action not in [:index, :new, :create]
 
   plug Plugs.RequireReg, staff: true
 
   alias Plugs.Breadcrumb
   plug Breadcrumb, {"Courses (Staff)", :staff_course, :index}
   plug Breadcrumb, {:show, :staff, :course}
-  plug Breadcrumb, {:show, :staff, :assignment}
-    when action not in [:index, :new, :create, :show]
+
+  plug Breadcrumb,
+       {:show, :staff, :assignment}
+       when action not in [:index, :new, :create, :show]
 
   alias Inkfish.Assignments
   alias Inkfish.Assignments.Assignment
@@ -23,19 +28,27 @@ defmodule InkfishWeb.Staff.AssignmentController do
     teamsets = Inkfish.Teams.list_teamsets(conn.assigns[:course])
     today = Inkfish.LocalTime.today()
     {:ok, due} = NaiveDateTime.new(Date.add(today, 7), ~T[23:59:59])
+
     as = %Assignment{
       bucket_id: params["bucket_id"],
       teamset_id: hd(teamsets).id,
       weight: Decimal.new("1.0"),
       due: due,
-      allow_git: false,
+      allow_git: false
     }
+
     changeset = Assignments.change_assignment(as)
     sta_tok = upload_token(conn, "assignment_starter")
     sol_tok = upload_token(conn, "assignment_solution")
     timezone = Inkfish.LocalTime.timezone()
-    render(conn, "new.html", changeset: changeset, teamsets: teamsets,
-      sta_tok: sta_tok, sol_tok: sol_tok, timezone: timezone)
+
+    render(conn, "new.html",
+      changeset: changeset,
+      teamsets: teamsets,
+      sta_tok: sta_tok,
+      sol_tok: sol_tok,
+      timezone: timezone
+    )
   end
 
   def create(conn, %{"assignment" => assignment_params}) do
@@ -50,8 +63,14 @@ defmodule InkfishWeb.Staff.AssignmentController do
         sta_tok = upload_token(conn, "assignment_starter")
         sol_tok = upload_token(conn, "assignment_solution")
         timezone = Inkfish.LocalTime.timezone()
-        render(conn, "new.html", changeset: changeset, teamsets: teamsets,
-          sta_tok: sta_tok, sol_tok: sol_tok, timezone: timezone)
+
+        render(conn, "new.html",
+          changeset: changeset,
+          teamsets: teamsets,
+          sta_tok: sta_tok,
+          sol_tok: sol_tok,
+          timezone: timezone
+        )
     end
   end
 
@@ -68,9 +87,15 @@ defmodule InkfishWeb.Staff.AssignmentController do
     sta_tok = upload_token(conn, "assignment_starter")
     sol_tok = upload_token(conn, "assignment_solution")
     timezone = Inkfish.LocalTime.timezone()
-    render(conn, "edit.html", assignment: assignment,
-      changeset: changeset, teamsets: teamsets,
-      sta_tok: sta_tok, sol_tok: sol_tok, timezone: timezone)
+
+    render(conn, "edit.html",
+      assignment: assignment,
+      changeset: changeset,
+      teamsets: teamsets,
+      sta_tok: sta_tok,
+      sol_tok: sol_tok,
+      timezone: timezone
+    )
   end
 
   def update(conn, %{"id" => id, "assignment" => assignment_params}) do
@@ -87,8 +112,15 @@ defmodule InkfishWeb.Staff.AssignmentController do
         sta_tok = upload_token(conn, "assignment_starter")
         sol_tok = upload_token(conn, "assignment_solution")
         timezone = Inkfish.LocalTime.timezone()
-        render(conn, "edit.html", assignment: assignment, changeset: changeset,
-          teamsets: teamsets, sta_tok: sta_tok, sol_tok: sol_tok, timezone: timezone)
+
+        render(conn, "edit.html",
+          assignment: assignment,
+          changeset: changeset,
+          teamsets: teamsets,
+          sta_tok: sta_tok,
+          sol_tok: sol_tok,
+          timezone: timezone
+        )
     end
   end
 

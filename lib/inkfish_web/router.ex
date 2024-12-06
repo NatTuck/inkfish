@@ -48,7 +48,7 @@ defmodule InkfishWeb.Router do
     get "/users/auth/:token", UserAuthEmailController, :show
     get "/users/new/:token", UserController, :new
     post "/users", UserController, :create
- end
+  end
 
   scope "/", InkfishWeb do
     pipe_through [:browser, :require_user_session]
@@ -59,17 +59,22 @@ defmodule InkfishWeb.Router do
     resources "/uploads", UploadController, only: [:create, :show]
     get "/uploads/:id/_meta/thumb", UploadController, :thumb
     get "/uploads/:id/_meta/unpacked/*path", UploadController, :unpacked
+
     resources "/courses", CourseController, only: [:index, :show] do
       resources "/join_reqs", JoinReqController, only: [:new, :create]
     end
+
     resources "/regs", RegController, only: [:show]
     resources "/teams", TeamController, only: [:show]
+
     resources "/assignments", AssignmentController, only: [:show] do
       resources "/subs", SubController, only: [:new, :create]
     end
+
     resources "/subs", SubController, only: [:show]
     get "/subs/:id/files", SubController, :files
-    #resources "/grade_columns", GradeColumnController, only: [:show]
+    post "/subs/:id/rerun_scripts", SubController, :rerun_scripts
+    # resources "/grade_columns", GradeColumnController, only: [:show]
     resources "/grades", GradeController, only: [:show]
   end
 
@@ -83,6 +88,7 @@ defmodule InkfishWeb.Router do
       resources "/buckets", BucketController, only: [:index, :new, :create]
       post "/join_reqs/accept_all", JoinReqController, :accept_all
     end
+
     get "/courses/:id/gradesheet", CourseController, :gradesheet
     get "/courses/:id/tasks", CourseController, :tasks
     resources "/regs", RegController, except: [:index, :new, :create]
@@ -90,26 +96,29 @@ defmodule InkfishWeb.Router do
     post "/join_reqs/:id/accept", JoinReqController, :accept
     resources "/teamsets", TeamsetController, except: [:index, :new, :create]
     post "/teamsets/:id/add_prof_team", TeamsetController, :add_prof_team
+
     resources "/buckets", BucketController, except: [:index, :new, :create] do
       resources "/assignments", AssignmentController, only: [:new, :create]
     end
+
     resources "/assignments", AssignmentController, except: [:index, :new, :create] do
       resources "/grade_columns", GradeColumnController, only: [:index, :new, :create]
-      resources "/grading_tasks", GradingTaskController,
-        except: [:new, :delete], singleton: true
+      resources "/grading_tasks", GradingTaskController, except: [:new, :delete], singleton: true
     end
+
     post "/assignments/:id/create_fake_subs", AssignmentController, :create_fake_subs
     resources "/grade_columns", GradeColumnController, except: [:index, :new, :create]
+
     resources "/subs", SubController, only: [:show, :update] do
       resources "/grades", GradeController, only: [:create]
     end
-    post "/subs/:id/rerun_scripts", SubController, :rerun_scripts
+
     resources "/grades", GradeController, only: [:edit, :show]
   end
 
   scope "/admin", InkfishWeb.Admin, as: :admin do
     pipe_through [:browser, :require_admin_session]
-    
+
     resources "/users", UserController, except: [:new, :create]
     post "/users/:id/impersonate", UserController, :impersonate
     resources "/courses", CourseController
@@ -132,13 +141,17 @@ defmodule InkfishWeb.Router do
     resources "/subs", SubController, only: [:update] do
       resources "/grades", GradeController, only: [:create]
     end
+
     resources "/grades", GradeController, only: [] do
       resources "/line_comments", LineCommentController, only: [:create]
     end
+
     resources "/line_comments", LineCommentController, only: [:show, :update, :delete]
+
     resources "/teamsets", TeamsetController, only: [] do
       resources "/teams", TeamController, only: [:index, :create]
     end
+
     resources "/teams", TeamController, only: [:show, :update, :delete]
   end
 

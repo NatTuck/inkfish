@@ -41,16 +41,20 @@ defmodule Inkfish.Users do
 
   """
   def get_user!(id) do
-    Repo.one! from uu in User,
-      where: uu.id == ^id,
-      left_join: photo in assoc(uu, :photo_upload),
-      preload: [photo_upload: photo]
+    Repo.one!(
+      from uu in User,
+        where: uu.id == ^id,
+        left_join: photo in assoc(uu, :photo_upload),
+        preload: [photo_upload: photo]
+    )
   end
 
   def get_an_admin! do
-    Repo.one! from uu in User,
-      where: uu.is_admin,
-      limit: 1
+    Repo.one!(
+      from uu in User,
+        where: uu.is_admin,
+        limit: 1
+    )
   end
 
   @doc """
@@ -71,6 +75,7 @@ defmodule Inkfish.Users do
   def get_user_by_email!(nil) do
     raise "Nil email"
   end
+
   def get_user_by_email!(email) do
     Repo.get_by!(User, email: email)
   end
@@ -129,6 +134,7 @@ defmodule Inkfish.Users do
     |> User.secret_changeset()
     |> Repo.update()
   end
+
   def add_secret(user), do: {:ok, user}
 
   @doc """
@@ -164,18 +170,23 @@ defmodule Inkfish.Users do
   def change_user() do
     change_user(%User{})
   end
+
   def change_user(%User{} = user) do
     User.changeset(user, %{})
   end
 
   def search_users(query) do
-    query = query
-    |> String.replace(~r{[%_\\]}, "\\1")
-    qq = "%#{query}%"
-    Repo.all from uu in User,
-      where: ilike(uu.email, ^qq) or ilike(uu.given_name, ^qq) or ilike(uu.surname, ^qq)
-  end
+    query =
+      query
+      |> String.replace(~r{[%_\\]}, "\\1")
 
+    qq = "%#{query}%"
+
+    Repo.all(
+      from uu in User,
+        where: ilike(uu.email, ^qq) or ilike(uu.given_name, ^qq) or ilike(uu.surname, ^qq)
+    )
+  end
 
   @doc """
   Returns the list of regs.
@@ -194,21 +205,26 @@ defmodule Inkfish.Users do
     do: list_regs_for_course(course.id)
 
   def list_regs_for_course(course_id) do
-    Repo.all from reg in Reg,
-      where: reg.course_id == ^course_id,
-      inner_join: user in assoc(reg, :user),
-      preload: [user: user]
+    Repo.all(
+      from reg in Reg,
+        where: reg.course_id == ^course_id,
+        inner_join: user in assoc(reg, :user),
+        preload: [user: user]
+    )
   end
 
   def list_regs_for_user(%User{} = user) do
-    regs = Repo.all from reg in Reg,
-      where: reg.user_id == ^user.id,
-      inner_join: course in assoc(reg, :course),
-      preload: [course: course]
+    regs =
+      Repo.all(
+        from reg in Reg,
+          where: reg.user_id == ^user.id,
+          inner_join: course in assoc(reg, :course),
+          preload: [course: course]
+      )
 
-    Enum.map regs, fn reg ->
+    Enum.map(regs, fn reg ->
       %{reg | user: user}
-    end
+    end)
   end
 
   def list_regs_for_user(user_id) do
@@ -231,11 +247,13 @@ defmodule Inkfish.Users do
 
   """
   def get_reg!(id) do
-    Repo.one! from reg in Reg,
-      where: reg.id == ^id,
-      inner_join: user in assoc(reg, :user),
-      inner_join: course in assoc(reg, :course),
-      preload: [user: user, course: course]
+    Repo.one!(
+      from reg in Reg,
+        where: reg.id == ^id,
+        inner_join: user in assoc(reg, :user),
+        inner_join: course in assoc(reg, :course),
+        preload: [user: user, course: course]
+    )
   end
 
   def get_reg(id) do
@@ -247,40 +265,46 @@ defmodule Inkfish.Users do
   end
 
   def get_reg_path!(id) do
-    Repo.one! from reg in Reg,
-      where: reg.id == ^id,
-      inner_join: course in assoc(reg, :course),
-      preload: [course: course]
+    Repo.one!(
+      from reg in Reg,
+        where: reg.id == ^id,
+        inner_join: course in assoc(reg, :course),
+        preload: [course: course]
+    )
   end
 
   def find_reg(%User{} = user, %Course{} = course) do
-    reg = Repo.one from reg in Reg,
-      where: reg.user_id == ^user.id and reg.course_id == ^course.id
+    reg =
+      Repo.one(
+        from reg in Reg,
+          where: reg.user_id == ^user.id and reg.course_id == ^course.id
+      )
 
     if user.is_admin && is_nil(reg) do
       # Admins are always registered for every course as no role.
       {:ok, reg} = create_reg(%{user_id: user.id, course_id: course.id})
-      %Reg{ reg | user: user, course: course}
+      %Reg{reg | user: user, course: course}
     else
-      %Reg{ reg | user: user, course: course}
+      %Reg{reg | user: user, course: course}
     end
   end
 
   def preload_reg_teams!(%Reg{} = reg) do
-    Repo.preload(reg, [teams: :subs])
+    Repo.preload(reg, teams: :subs)
   end
 
   def get_reg_for_grading_tasks!(reg_id) do
-    Repo.one from reg in Reg,
-      where: reg.id == ^reg_id,
-      left_join: subs in assoc(reg, :grading_subs),
-      left_join: asg in assoc(subs, :assignment),
-      left_join: sreg in assoc(subs, :reg),
-      left_join: suser in assoc(sreg, :user),
-      preload: [
-        gradings_subs: {subs, assignment: asg,
-                              reg: {sreg, user: suser}}
-      ]
+    Repo.one(
+      from reg in Reg,
+        where: reg.id == ^reg_id,
+        left_join: subs in assoc(reg, :grading_subs),
+        left_join: asg in assoc(subs, :assignment),
+        left_join: sreg in assoc(subs, :reg),
+        left_join: suser in assoc(sreg, :user),
+        preload: [
+          gradings_subs: {subs, assignment: asg, reg: {sreg, user: suser}}
+        ]
+    )
   end
 
   @doc """
@@ -296,9 +320,10 @@ defmodule Inkfish.Users do
 
   """
   def create_reg(%{"user_email" => user_email} = attrs) do
-    email = user_email
-    |> User.extract_email()
-    |> User.normalize_email()
+    email =
+      user_email
+      |> User.extract_email()
+      |> User.normalize_email()
 
     attrs
     |> Map.put("user_id", get_user_by_email!(email).id)
@@ -362,7 +387,7 @@ defmodule Inkfish.Users do
   def next_due(%Reg{} = reg) do
     Inkfish.Assignments.next_due(reg.course_id, reg.user_id)
   end
-  
+
   ## Database getters
 
   @doc """
