@@ -30,7 +30,7 @@ defmodule Inkfish.DataCase do
   setup tags do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Inkfish.Repo)
 
-    unless tags[:async] do
+    if !tags[:async] do
       Ecto.Adapters.SQL.Sandbox.mode(Inkfish.Repo, {:shared, self()})
     end
 

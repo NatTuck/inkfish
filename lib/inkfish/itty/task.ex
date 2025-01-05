@@ -3,7 +3,8 @@ defmodule Inkfish.Itty.Task do
 
   defstruct uuid: nil,
             script: "echo hello, world",
-            dupkey: nil,
+            user_id: nil,
+            asg_id: nil,
             state: nil,
             env: %{},
             on_exit: &Task.default_on_exit/1
@@ -13,9 +14,9 @@ defmodule Inkfish.Itty.Task do
     %Task{uuid: uuid, script: script}
   end
 
-  def new(script, dupkey) do
+  def new(script, user_id, asg_id) do
     uuid = Inkfish.Text.gen_uuid()
-    %Task{uuid: uuid, script: script, dupkey: dupkey}
+    %Task{uuid: uuid, script: script, user_id: asg_id}
   end
 
   def new_env(script, env) do

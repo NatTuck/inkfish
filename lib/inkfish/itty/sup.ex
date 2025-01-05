@@ -22,7 +22,7 @@ defmodule Inkfish.Itty.Sup do
         qname == Map.get(info, :qname) && Map.get(info, :started)
       end)
 
-    unless alive do
+    if !alive do
       IO.puts("Poll found no survivors.")
     end
   end

@@ -29,9 +29,8 @@ defmodule Inkfish.Autobots.Autograde do
       Grades.set_grade_score(grade, passed, tests)
     end
 
-    dupkey = {grade.sub.assignment_id, grade.sub.reg_id}
-
-    %Task{uuid: grade.log_uuid, script: grade_script, env: env, on_exit: on_exit, dupkey: dupkey}
+    %Task{uuid: grade.log_uuid, script: grade_script, env: env, on_exit: on_exit,
+          user_id: grade.sub.reg.user_id, asg_id: grade.sub.assignment_id}
     |> Itty.schedule()
   end
 end

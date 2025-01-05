@@ -13,6 +13,10 @@ defmodule Inkfish.Itty.Queue do
     GenServer.start_link(__MODULE__, %Queue{}, name: __MODULE__)
   end
 
+  def list() do
+    GenServer.call(__MODULE__, :list)
+  end
+
   def schedule(%Task{} = task) do
     Itty.stop(task.uuid)
     GenServer.call(__MODULE__, {:schedule, task})
@@ -32,6 +36,11 @@ defmodule Inkfish.Itty.Queue do
   end
 
   @impl true
+  def handle_call(:list, _from, %Queue{} = queue) do
+    delay_poll()
+    {:reply, {:ok, queue}, queue}
+  end
+  
   def handle_call({:schedule, %Task{} = task}, _from, %Queue{} = queue) do
     Enum.each(queue.running, fn tt ->
       if task_conflict?(tt, task) do
@@ -39,12 +48,15 @@ defmodule Inkfish.Itty.Queue do
       end
     end)
 
-    Process.send_after(self(), :poll, 100)
-    queue = queue_schedule(queue, task)
+    queue = queue
+    |> queue_poll()
+    |> queue_schedule(task)
+
     {:reply, {:ok, task.uuid}, queue}
   end
 
   def handle_call({:status, uuid}, _from, %Queue{} = queue) do
+    delay_poll()
     if Enum.any?(queue.running, &(&1.uuid == uuid)) do
       {:reply, :running}
     else
@@ -56,16 +68,17 @@ defmodule Inkfish.Itty.Queue do
   end
 
   def handle_call(:poll, _from, %Queue{} = queue) do
-    Process.send_after(self(), :poll, 100)
     {:reply, :ok, queue}
   end
 
   @impl true
-  def handle_info(:poll, %Queue{running: running} = queue) do
-    IO.inspect({:poll, queue})
-    running = Enum.filter(running, &Itty.running?/1)
-    queue = spawn_next(%Queue{queue | running: running})
+  def handle_info(:poll, %Queue{} = queue) do
+    queue = queue_poll(queue)
     {:noreply, queue}
+  end
+
+  def delay_poll() do
+    Process.send_after(self(), :poll, 100)
   end
 
   def spawn_next(%Queue{ready: []} = queue), do: queue
@@ -81,6 +94,11 @@ defmodule Inkfish.Itty.Queue do
     end
   end
 
+  def queue_poll(%Queue{running: running} = queue) do
+    running = Enum.filter(running, &Itty.running?/1)
+    spawn_next(%Queue{queue | running: running})
+  end
+
   def queue_schedule(%Queue{} = queue, %Task{} = task) do
     task = %Task{task | state: :ready}
 
@@ -93,6 +111,14 @@ defmodule Inkfish.Itty.Queue do
   end
 
   def task_conflict?(%Task{} = t1, %Task{} = t2) do
-    t1.uuid == t2.uuid || (t1.dupkey && t1.dupkey == t2.dupkey)
+    t1.uuid == t2.uuid || (dupkey(t1) && dupkey(t1) == dupkey(t2))
+  end
+
+  def dupkey(%Task{user_id: user_id, asg_id: asg_id}) do
+    if is_nil(user_id) && is_nil(asg_id) do
+      nil
+    else
+      {user_id, asg_id}
+    end
   end
 end

@@ -76,6 +76,8 @@ defmodule InkfishWeb.Router do
     post "/subs/:id/rerun_scripts", SubController, :rerun_scripts
     # resources "/grade_columns", GradeColumnController, only: [:show]
     resources "/grades", GradeController, only: [:show]
+
+    get "/queue", QueueController, :list
   end
 
   scope "/staff", InkfishWeb.Staff, as: :staff do

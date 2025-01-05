@@ -285,7 +285,11 @@ defmodule Inkfish.Users do
       {:ok, reg} = create_reg(%{user_id: user.id, course_id: course.id})
       %Reg{reg | user: user, course: course}
     else
-      %Reg{reg | user: user, course: course}
+      if is_nil(reg) do
+        nil
+      else
+        %Reg{reg | user: user, course: course}
+      end
     end
   end
 

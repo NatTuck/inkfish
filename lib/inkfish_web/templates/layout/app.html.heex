@@ -29,10 +29,12 @@
           </div>
           <div class="col-md-5">
             <%= if @current_user && @current_user.is_admin do %>
-              <%= render(InkfishWeb.LayoutView, "admin_nav.html", assigns) %>
+              <%= render(InkfishWeb.LayoutView, "admin_nav.html", assigns) %> |
             <% else %>
               &nbsp;
             <% end %>
+
+            <%= link("Queue", to: ~p"/queue") %>
           </div>
           <div class="col-md-5">
             <%= if @current_user do %>
