@@ -27,10 +27,12 @@ defmodule Inkfish.Autobots.Autograde do
 
       Grades.set_grade_log!(rv.uuid, rv)
       Grades.set_grade_score(grade, passed, tests)
+
+      Itty.poll()
     end
 
     %Task{uuid: grade.log_uuid, script: grade_script, env: env, on_exit: on_exit,
-          user_id: grade.sub.reg.user_id, asg_id: grade.sub.assignment_id}
+          grade: grade}
     |> Itty.schedule()
   end
 end

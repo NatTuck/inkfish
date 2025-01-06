@@ -14,7 +14,10 @@ defmodule Inkfish.Itty.Queue do
   end
 
   def list() do
-    GenServer.call(__MODULE__, :list)
+    {:ok, queue} = GenServer.call(__MODULE__, :list)
+    ready = Enum.map(queue.ready, &Task.view_task/1)
+    running = Enum.map(queue.running, &Task.view_task/1)
+    {:ok, %{ ready: ready, running: running}}
   end
 
   def schedule(%Task{} = task) do
@@ -87,6 +90,8 @@ defmodule Inkfish.Itty.Queue do
     Process.send_after(self(), :poll, 10_000)
 
     if length(running) < @concurrency do
+      task = %Task{ task | state: :running, started_at: LocalTime.now() }
+
       {:ok, _uuid} = Itty.start(task)
       %Queue{queue | running: [task | running], ready: ready}
     else
@@ -100,7 +105,7 @@ defmodule Inkfish.Itty.Queue do
   end
 
   def queue_schedule(%Queue{} = queue, %Task{} = task) do
-    task = %Task{task | state: :ready}
+    task = %Task{task | state: :ready, queued_at: LocalTime.now()}
 
     ready =
       queue.ready
@@ -114,11 +119,11 @@ defmodule Inkfish.Itty.Queue do
     t1.uuid == t2.uuid || (dupkey(t1) && dupkey(t1) == dupkey(t2))
   end
 
-  def dupkey(%Task{user_id: user_id, asg_id: asg_id}) do
-    if is_nil(user_id) && is_nil(asg_id) do
+  def dupkey(%Task{grade: grade}) do
+    if is_nil(grade) do
       nil
     else
-      {user_id, asg_id}
+      {grade.grade_column_id, grade.sub.reg_id}
     end
   end
 end

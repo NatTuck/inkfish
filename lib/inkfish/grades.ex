@@ -214,11 +214,13 @@ defmodule Inkfish.Grades do
       from grade in Grade,
         where: grade.id == ^id,
         inner_join: sub in assoc(grade, :sub),
+        inner_join: reg in assoc(sub, :reg),
         inner_join: up in assoc(sub, :upload),
         inner_join: as in assoc(sub, :assignment),
         inner_join: gc in assoc(grade, :grade_column),
         left_join: gc_up in assoc(gc, :upload),
-        preload: [sub: {sub, assignment: as, upload: up}, grade_column: {gc, upload: gc_up}]
+        preload: [sub: {sub, assignment: as, upload: up, reg: reg},
+                  grade_column: {gc, upload: gc_up}]
     )
   end
 
@@ -233,6 +235,10 @@ defmodule Inkfish.Grades do
 
   def preload_sub_and_upload(grade) do
     Repo.preload(grade, sub: :upload)
+  end
+
+  def preload_for_task_view(%Grade{} = grade) do
+    Repo.preload(grade, sub: [assignment: [bucket: :course], reg: :user])
   end
 
   @doc """

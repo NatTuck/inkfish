@@ -23,6 +23,10 @@ defmodule InkfishWeb.ViewHelpers do
     }
   end
 
+  def show_timestamp(nil) do
+    "(nil)"
+  end
+
   def show_timestamp(ndt = %NaiveDateTime{}) do
     show_timestamp(LocalTime.from_naive!(ndt))
   end

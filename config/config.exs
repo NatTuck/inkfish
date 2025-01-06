@@ -40,6 +40,7 @@ config :phoenix, :json_library, Jason
 # Force a default time zone.
 config :elixir, :time_zone_database, Tzdata.TimeZoneDatabase
 config :inkfish, :time_zone, "America/New_York"
+config :local_time, :time_zone, "America/New_York"
 
 config :esbuild,
   version: "0.17.11",

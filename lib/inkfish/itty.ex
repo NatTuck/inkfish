@@ -56,4 +56,8 @@ defmodule Inkfish.Itty do
   def status(uuid) do
     Queue.status(uuid)
   end
+
+  def poll() do
+    Queue.poll()
+  end
 end
