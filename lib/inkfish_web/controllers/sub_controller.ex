@@ -57,12 +57,8 @@ defmodule InkfishWeb.SubController do
       |> Map.put("reg_id", reg.id)
       |> Map.put("team_id", team.id)
 
-    IO.inspect({:sub_params, sub_params})
-
     case Subs.create_sub(sub_params) do
       {:ok, sub} ->
-        IO.inspect({:sub, sub})
-
         try do
           GradingTasks.assign_grading_tasks(sub.assignment_id)
         rescue
@@ -74,7 +70,7 @@ defmodule InkfishWeb.SubController do
         |> redirect(to: Routes.sub_path(conn, :show, sub))
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        IO.inspect({:error, changeset})
+        # IO.inspect({:error, changeset})
         nonce = Base.encode16(:crypto.strong_rand_bytes(32))
         token = Phoenix.Token.sign(conn, "upload", %{kind: "sub", nonce: nonce})
 
