@@ -7,6 +7,7 @@
     <table class="table table-striped">
       <thead>
         <tr>
+          <th>Sub</th>
           <th>User</th>
           <th>Course</th>
           <th>Assignment</th>
@@ -18,10 +19,22 @@
       <tbody>
         <%= for task <- @running do %>
         <tr>
-          <td><%= link(user_display_name(task.grade.sub.reg.user),
-            to: Routes.reg_path(@conn, :show, task.grade.sub.reg)) %></td>
-          <td><%= task.grade.sub.assignment.bucket.course.name %></td>
-          <td><%= task.grade.sub.assignment.name %></td>
+          <td>
+            <%= link(task.grade.sub_id,
+              to: Routes.sub_path(@conn, :show, task.grade.sub)) %>
+          </td>
+          <td>
+            <%= link(user_display_name(task.grade.sub.reg.user),
+              to: Routes.reg_path(@conn, :show, task.grade.sub.reg)) %>
+          </td>
+          <td>
+            <%= link(task.grade.sub.assignment.bucket.course.name,
+              to: Routes.course_path(@conn, :show, task.grade.sub.assignment.bucket.course)) %>
+          </td>
+          <td>
+            <%= link(task.grade.sub.assignment.name,
+              to: Routes.assignment_path(@conn, :show, task.grade.sub.assignment)) %>
+          </td>
           <td><%= task.grade.grade_column_id %></td>
           <td>
             <span class="human-date">
@@ -43,6 +56,7 @@
     <table class="table table-striped">
       <thead>
         <tr>
+          <th>Sub</th>
           <th>User</th>
           <th>Course</th>
           <th>Assignment</th>
@@ -53,9 +67,22 @@
       <tbody>
         <%= for task <- @ready do %>
         <tr>
-          <td><%= user_display_name(task.grade.sub.reg.user) %></td>
-          <td><%= task.grade.sub.assignment.bucket.course.name %></td>
-          <td><%= task.grade.sub.assignment.name %></td>
+          <td>
+            <%= link(task.grade.sub_id,
+              to: Routes.sub_path(@conn, :show, task.grade.sub)) %>
+          </td>
+          <td>
+            <%= link(user_display_name(task.grade.sub.reg.user),
+              to: Routes.reg_path(@conn, :show, task.grade.sub.reg)) %>
+          </td>
+          <td>
+            <%= link(task.grade.sub.assignment.bucket.course.name,
+              to: Routes.course_path(@conn, :show, task.grade.sub.assignment.bucket.course)) %>
+          </td>
+          <td>
+            <%= link(task.grade.sub.assignment.name,
+              to: Routes.assignment_path(@conn, :show, task.grade.sub.assignment)) %>
+          </td>
           <td><%= task.grade.grade_column_id %></td>
           <td>
             <span class="human-date">
