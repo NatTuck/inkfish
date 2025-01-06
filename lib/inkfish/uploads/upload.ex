@@ -8,8 +8,7 @@ defmodule Inkfish.Uploads.Upload do
   @primary_key {:id, :binary_id, autogenerate: true}
   @timestamps_opts [type: :utc_datetime]
 
-  @valid_kinds ["user_photo", "grade_column", "sub",
-                "assignment_starter", "assignment_solution"]
+  @valid_kinds ["user_photo", "grade_column", "sub", "assignment_starter", "assignment_solution"]
 
   schema "uploads" do
     field :name, :string
@@ -18,10 +17,8 @@ defmodule Inkfish.Uploads.Upload do
     belongs_to :user, Inkfish.Users.User
 
     has_one :photo_user, Inkfish.Users.User, foreign_key: :photo_upload_id
-    has_one :starter_assignment, Inkfish.Assignments.Assignment,
-      foreign_key: :starter_upload_id
-    has_one :solution_assignment, Inkfish.Assignments.Assignment,
-      foreign_key: :solution_upload_id
+    has_one :starter_assignment, Inkfish.Assignments.Assignment, foreign_key: :starter_upload_id
+    has_one :solution_assignment, Inkfish.Assignments.Assignment, foreign_key: :solution_upload_id
     has_many :subs, Inkfish.Subs.Sub
 
     field :upload, :any, virtual: true
@@ -73,6 +70,7 @@ defmodule Inkfish.Uploads.Upload do
 
   def validate_kind(%Ecto.Changeset{} = cset) do
     kind = get_field(cset, :kind)
+
     if Enum.member?(@valid_kinds, kind) do
       cset
     else
@@ -82,8 +80,10 @@ defmodule Inkfish.Uploads.Upload do
 
   def validate_file_size(%Ecto.Changeset{} = cset) do
     upload = get_field(cset, :upload)
+
     if upload do
       size = file_size(upload.path)
+
       if size > 10_485_760 do
         add_error(cset, :upload, "uploaded file is too big")
       else
@@ -105,8 +105,8 @@ defmodule Inkfish.Uploads.Upload do
     dst = upload_path(upload)
     _bs = File.copy!(up.path, dst)
     # IO.puts "Upload created copied #{bs} bytes to path '#{dst}'"
-    unless File.exists?(dst) do
-      IO.puts "Upload is missing."
+    if !File.exists?(dst) do
+      IO.puts("Upload is missing.")
       raise "New upload missing"
     end
   end

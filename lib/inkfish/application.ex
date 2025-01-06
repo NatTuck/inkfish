@@ -20,15 +20,13 @@ defmodule Inkfish.Application do
       InkfishWeb.Endpoint,
       # Live console output
       Inkfish.Itty.Sup,
+      Inkfish.Itty.Queue
     ]
-
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Inkfish.Supervisor]
     rv = Supervisor.start_link(children, opts)
-    # This needs to come after the supervisor starts.
-    {:ok, _} = Inkfish.Itty.Tickets.start()
     rv
   end
 

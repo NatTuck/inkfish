@@ -17,4 +17,3 @@ defmodule InkfishWeb.Staff.GradeView do
     }
   end
 end
-

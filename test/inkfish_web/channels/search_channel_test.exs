@@ -12,12 +12,12 @@ defmodule InkfishWeb.SearchChannelTest do
   end
 
   test "query returns carol", %{socket: socket} do
-    ref = push socket, "q", "carol"
+    ref = push(socket, "q", "carol")
     assert_reply ref, :ok, %{matches: ["Carol Anderson [carol@example.com]"]}
   end
 
   test "broadcasts are pushed to the client", %{socket: socket} do
-    broadcast_from! socket, "broadcast", %{"some" => "data"}
+    broadcast_from!(socket, "broadcast", %{"some" => "data"})
     assert_push "broadcast", %{"some" => "data"}
   end
 end

@@ -20,9 +20,11 @@ defmodule InkfishWeb.Staff.AssignmentControllerTest do
     setup [:create_stock_course]
 
     test "renders form", %{conn: conn, staff: staff, bucket: bucket} do
-      conn = conn
-      |> login(staff)
-      |> get(Routes.staff_bucket_assignment_path(conn, :new, bucket))
+      conn =
+        conn
+        |> login(staff)
+        |> get(Routes.staff_bucket_assignment_path(conn, :new, bucket))
+
       assert html_response(conn, 200) =~ "New Assignment"
     end
   end
@@ -33,9 +35,10 @@ defmodule InkfishWeb.Staff.AssignmentControllerTest do
     test "redirects to show when data is valid", %{conn: conn, staff: staff, bucket: bucket} do
       params = params_with_assocs(:assignment, bucket: bucket)
 
-      conn = conn
-      |> login(staff)
-      |> post(Routes.staff_bucket_assignment_path(conn, :create, bucket), assignment: params)
+      conn =
+        conn
+        |> login(staff)
+        |> post(Routes.staff_bucket_assignment_path(conn, :create, bucket), assignment: params)
 
       assert %{id: id} = redirected_params(conn)
       assert redirected_to(conn) == Routes.staff_assignment_path(conn, :show, id)
@@ -47,9 +50,11 @@ defmodule InkfishWeb.Staff.AssignmentControllerTest do
     test "renders errors when data is invalid", %{conn: conn, bucket: bucket, staff: staff} do
       params = %{bucket_id: -1, name: ""}
 
-      conn = conn
-      |> login(staff)
-      |> post(Routes.staff_bucket_assignment_path(conn, :create, bucket), assignment: params)
+      conn =
+        conn
+        |> login(staff)
+        |> post(Routes.staff_bucket_assignment_path(conn, :create, bucket), assignment: params)
+
       assert html_response(conn, 200) =~ "New Assignment"
     end
   end
@@ -58,9 +63,11 @@ defmodule InkfishWeb.Staff.AssignmentControllerTest do
     setup [:create_assignment]
 
     test "renders form for editing chosen assignment", %{conn: conn, assignment: assignment} do
-      conn = conn
-      |> login("alice@example.com")
-      |> get(Routes.staff_assignment_path(conn, :edit, assignment))
+      conn =
+        conn
+        |> login("alice@example.com")
+        |> get(Routes.staff_assignment_path(conn, :edit, assignment))
+
       assert html_response(conn, 200) =~ "Edit Assignment"
     end
   end
@@ -71,9 +78,11 @@ defmodule InkfishWeb.Staff.AssignmentControllerTest do
     test "redirects when data is valid", %{conn: conn, assignment: assignment} do
       params = %{name: "Assignment #z"}
 
-      conn = conn
-      |> login("alice@example.com")
-      |> put(Routes.staff_assignment_path(conn, :update, assignment), assignment: params)
+      conn =
+        conn
+        |> login("alice@example.com")
+        |> put(Routes.staff_assignment_path(conn, :update, assignment), assignment: params)
+
       assert redirected_to(conn) == Routes.staff_assignment_path(conn, :show, assignment)
 
       conn = get(conn, Routes.staff_assignment_path(conn, :show, assignment))
@@ -83,9 +92,11 @@ defmodule InkfishWeb.Staff.AssignmentControllerTest do
     test "renders errors when data is invalid", %{conn: conn, assignment: assignment} do
       params = %{bucket_id: -1, name: ""}
 
-      conn = conn
-      |> login("alice@example.com")
-      |> put(Routes.staff_assignment_path(conn, :update, assignment), assignment: params)
+      conn =
+        conn
+        |> login("alice@example.com")
+        |> put(Routes.staff_assignment_path(conn, :update, assignment), assignment: params)
+
       assert html_response(conn, 200) =~ "Edit Assignment"
     end
   end
@@ -94,10 +105,13 @@ defmodule InkfishWeb.Staff.AssignmentControllerTest do
     setup [:create_assignment]
 
     test "deletes chosen assignment", %{conn: conn, assignment: assignment} do
-      conn = conn
-      |> login("alice@example.com")
-      |> delete(Routes.staff_assignment_path(conn, :delete, assignment))
+      conn =
+        conn
+        |> login("alice@example.com")
+        |> delete(Routes.staff_assignment_path(conn, :delete, assignment))
+
       assert redirected_to(conn) == Routes.staff_course_path(conn, :show, conn.assigns[:course])
+
       assert_error_sent 404, fn ->
         get(conn, Routes.staff_assignment_path(conn, :show, assignment))
       end

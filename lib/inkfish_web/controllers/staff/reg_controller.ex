@@ -2,17 +2,24 @@ defmodule InkfishWeb.Staff.RegController do
   use InkfishWeb, :controller
 
   alias InkfishWeb.Plugs
-  plug Plugs.FetchItem, [course: "course_id"]
-    when action in [:index, :new, :create]
-  plug Plugs.FetchItem, [reg: "id"]
-    when action not in [:index, :new, :create]
+
+  plug Plugs.FetchItem,
+       [course: "course_id"]
+       when action in [:index, :new, :create]
+
+  plug Plugs.FetchItem,
+       [reg: "id"]
+       when action not in [:index, :new, :create]
+
   plug Plugs.RequireReg, staff: true
 
   alias InkfishWeb.Plugs.Breadcrumb
   plug Breadcrumb, {"Courses (Staff)", :staff_course, :index}
   plug Breadcrumb, {:show, :staff, :course}
-  plug Breadcrumb, {"Regs", :staff_course_reg, :index, :course}
-    when action not in [:index, :new, :create]
+
+  plug Breadcrumb,
+       {"Regs", :staff_course_reg, :index, :course}
+       when action not in [:index, :new, :create]
 
   alias Inkfish.Users
   alias Inkfish.Users.Reg
@@ -46,10 +53,13 @@ defmodule InkfishWeb.Staff.RegController do
   def show(conn, %{"id" => id}) do
     reg = Users.get_reg!(id)
     course = Courses.get_course_for_staff_view!(reg.course_id)
-    subs = Enum.reduce Subs.list_subs_for_reg(reg), %{}, fn (sub, acc) ->
-      xs = Map.get(acc, sub.assignment_id) || []
-      Map.put(acc, sub.assignment_id, [sub | xs])
-    end
+
+    subs =
+      Enum.reduce(Subs.list_subs_for_reg(reg), %{}, fn sub, acc ->
+        xs = Map.get(acc, sub.assignment_id) || []
+        Map.put(acc, sub.assignment_id, [sub | xs])
+      end)
+
     render(conn, "show.html", reg: reg, course: course, subs: subs)
   end
 

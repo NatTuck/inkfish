@@ -2,7 +2,7 @@ defmodule InkfishWeb.Staff.CourseControllerTest do
   use InkfishWeb.ConnCase
   import Inkfish.Factory
 
-  #alias Inkfish.Courses
+  # alias Inkfish.Courses
 
   setup %{conn: conn} do
     course = insert(:course)
@@ -35,8 +35,11 @@ defmodule InkfishWeb.Staff.CourseControllerTest do
 
   describe "update course" do
     test "redirects when data is valid", %{conn: conn, course: course} do
-      conn = put(conn, Routes.staff_course_path(conn, :update, course),
-        course: %{footer: "some updated footer"})
+      conn =
+        put(conn, Routes.staff_course_path(conn, :update, course),
+          course: %{footer: "some updated footer"}
+        )
+
       assert redirected_to(conn) == Routes.staff_course_path(conn, :show, course)
 
       conn = get(conn, Routes.staff_course_path(conn, :show, course))

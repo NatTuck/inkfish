@@ -2,7 +2,8 @@ defmodule Inkfish.Subs.Sub do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @timestamps_opts [type: :utc_datetime]
+  @timestamps_opts [type: :utc_datetime,
+                    autogenerate: {Inkfish.LocalTime, :now_utc, []}]
 
   schema "subs" do
     field :active, :boolean, default: false
@@ -24,8 +25,15 @@ defmodule Inkfish.Subs.Sub do
   @doc false
   def changeset(sub, attrs) do
     sub
-    |> cast(attrs, [:assignment_id, :reg_id, :team_id, :upload_id,
-                   :hours_spent, :note, :grader_id])
+    |> cast(attrs, [
+      :assignment_id,
+      :reg_id,
+      :team_id,
+      :upload_id,
+      :hours_spent,
+      :note,
+      :grader_id
+    ])
     |> validate_required([:assignment_id, :reg_id, :team_id, :upload_id, :hours_spent])
     |> foreign_key_constraint(:upload_id)
   end
@@ -42,6 +50,7 @@ defmodule Inkfish.Subs.Sub do
 
   def change_grader(sub, grader_id) do
     attrs = %{"grader_id" => grader_id}
+
     sub
     |> cast(attrs, [:grader_id])
     |> validate_required([])
@@ -49,13 +58,17 @@ defmodule Inkfish.Subs.Sub do
   end
 
   def to_map(sub) do
-    grades = Enum.map sub.grades, fn gr ->
-      Inkfish.Grades.Grade.to_map(gr)
-    end
-    sub = Map.drop(
-      sub,
-      [:__struct__, :__meta__, :assignment, :reg, :team, :upload, :grader]
-    )
-    %{ sub | grades: grades }
+    grades =
+      Enum.map(sub.grades, fn gr ->
+        Inkfish.Grades.Grade.to_map(gr)
+      end)
+
+    sub =
+      Map.drop(
+        sub,
+        [:__struct__, :__meta__, :assignment, :reg, :team, :upload, :grader]
+      )
+
+    %{sub | grades: grades}
   end
 end

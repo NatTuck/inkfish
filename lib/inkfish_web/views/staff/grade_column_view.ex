@@ -3,7 +3,7 @@ defmodule InkfishWeb.Staff.GradeColumnView do
 
   def render("grade_column.json", %{grade_column: grade_column}) do
     %{
-      kind: grade_column.kind,
+      kind: grade_column.kind
     }
   end
 end

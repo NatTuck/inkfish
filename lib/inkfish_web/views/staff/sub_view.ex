@@ -18,7 +18,7 @@ defmodule InkfishWeb.Staff.SubView do
       team: render_one(team, InkfishWeb.Staff.TeamView, "team.json"),
       grades: render_many(grades, InkfishWeb.Staff.GradeView, "grade.json"),
       grader_id: sub.grader_id,
-      grader: render_one(grader, InkfishWeb.RegView, "reg.json"),
+      grader: render_one(grader, InkfishWeb.RegView, "reg.json")
     }
   end
 end

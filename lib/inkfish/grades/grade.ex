@@ -25,10 +25,13 @@ defmodule Inkfish.Grades.Grade do
 
   def to_map(grade) do
     grade = Map.drop(grade, [:__struct__, :__meta__, :sub, :grade_column])
-    lcs = Enum.map grade.line_comments, fn lc ->
-      Inkfish.LineComments.LineComment.to_map(lc)
-    end
-    %{ grade | line_comments: lcs }
+
+    lcs =
+      Enum.map(grade.line_comments, fn lc ->
+        Inkfish.LineComments.LineComment.to_map(lc)
+      end)
+
+    %{grade | line_comments: lcs}
   end
 
   def log_path(grade) do

@@ -24,15 +24,19 @@ defmodule Inkfish.JoinReqs do
   end
 
   def list_for_course(%Course{} = course) do
-    Repo.all from req in JoinReq,
-      where: req.course_id == ^course.id,
-      inner_join: user in assoc(req, :user),
-      preload: [user: user]
+    Repo.all(
+      from req in JoinReq,
+        where: req.course_id == ^course.id,
+        inner_join: user in assoc(req, :user),
+        preload: [user: user]
+    )
   end
 
   def list_for_user(%User{} = user) do
-    Repo.all from jr in JoinReq,
-      where: jr.user_id == ^user.id
+    Repo.all(
+      from jr in JoinReq,
+        where: jr.user_id == ^user.id
+    )
   end
 
   @doc """
@@ -52,11 +56,13 @@ defmodule Inkfish.JoinReqs do
   def get_join_req!(id), do: Repo.get!(JoinReq, id)
 
   def get_join_req_path!(id) do
-    Repo.one! from req in JoinReq,
-      where: req.id == ^id,
-      inner_join: course in assoc(req, :course),
-      inner_join: user in assoc(req, :user),
-      preload: [user: user, course: course]
+    Repo.one!(
+      from req in JoinReq,
+        where: req.id == ^id,
+        inner_join: course in assoc(req, :course),
+        inner_join: user in assoc(req, :user),
+        preload: [user: user, course: course]
+    )
   end
 
   @doc """
@@ -133,7 +139,7 @@ defmodule Inkfish.JoinReqs do
       is_staff: staff,
       is_grader: staff,
       is_student: !staff,
-      is_prof: false,
+      is_prof: false
     }
 
     {:ok, _reg} = Inkfish.Users.create_reg(attrs)

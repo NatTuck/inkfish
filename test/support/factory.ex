@@ -1,6 +1,6 @@
 defmodule Inkfish.Factory do
   use ExMachina.Ecto, repo: Inkfish.Repo
-  
+
   alias Inkfish.Users.User
   alias Inkfish.Users.Reg
   alias Inkfish.Courses.Course
@@ -18,15 +18,23 @@ defmodule Inkfish.Factory do
 
   def stock_course do
     course_params = %{
-      params_for(:course) | instructor: "Bob Anderson [bob@example.com]",
-			    name: "Stock Course", sections: "lab03, lab04"}
+      params_for(:course)
+      | instructor: "Bob Anderson [bob@example.com]",
+        name: "Stock Course",
+        sections: "lab03, lab04"
+    }
+
     {:ok, course} = Inkfish.Courses.create_course(course_params)
     bucket = insert(:bucket, course: course)
-    asgn = insert(
-      :assignment,
-      teamset: course.solo_teamset,
-      teamset_id: course.solo_teamset_id,
-      bucket: bucket)
+
+    asgn =
+      insert(
+        :assignment,
+        teamset: course.solo_teamset,
+        teamset_id: course.solo_teamset_id,
+        bucket: bucket
+      )
+
     grade_column = insert(:grade_column, assignment: asgn)
     staff = Inkfish.Users.get_user_by_email!("carol@example.com")
     staff_reg = insert(:reg, course: course, user: staff, is_staff: true, is_grader: true)
@@ -55,7 +63,7 @@ defmodule Inkfish.Factory do
     login = sequence(:login, &"sam#{&1}")
     pass = "#{login}#{login}abc123"
     hashed_pass = Argon2.hash_pwd_salt(pass)
-    
+
     %User{
       email: "#{login}@example.com",
       given_name: String.capitalize(login),
@@ -64,10 +72,10 @@ defmodule Inkfish.Factory do
       nickname: "",
       password: pass,
       password_confirmation: pass,
-      hashed_password: hashed_pass,
+      hashed_password: hashed_pass
     }
   end
-  
+
   def course_factory do
     %Course{
       footer: "",
@@ -77,7 +85,7 @@ defmodule Inkfish.Factory do
       sections: ""
     }
   end
-  
+
   def reg_factory do
     %Reg{
       is_grader: false,
@@ -85,7 +93,7 @@ defmodule Inkfish.Factory do
       is_staff: false,
       is_student: true,
       user: build(:user),
-      course: build(:course),
+      course: build(:course)
     }
   end
 
@@ -94,7 +102,7 @@ defmodule Inkfish.Factory do
       course: build(:course),
       user: build(:user),
       note: "let me in",
-      staff_req: false,
+      staff_req: false
     }
   end
 
@@ -103,36 +111,36 @@ defmodule Inkfish.Factory do
       name: "helloc.tar.gz",
       kind: "assignment_starter",
       user: build(:user),
-      size: 9001,
+      size: 9001
     }
   end
-  
+
   def bucket_factory do
     %Bucket{
       name: "Homework",
       weight: Decimal.new("1.0"),
-      course: build(:course),
+      course: build(:course)
     }
   end
 
   def teamset_factory do
     %Teamset{
       name: "Homework Teamset",
-      course: build(:course),
+      course: build(:course)
     }
   end
 
   def team_factory do
     %Team{
       active: true,
-      teamset: build(:teamset),
+      teamset: build(:teamset)
     }
   end
 
   def team_member_factory do
     %TeamMember{
       team: build(:team),
-      reg: build(:reg),
+      reg: build(:reg)
     }
   end
 
@@ -145,7 +153,7 @@ defmodule Inkfish.Factory do
       name: sequence(:as_name, &"HW #{&1}"),
       weight: Decimal.new("1.0"),
       bucket: build(:bucket, course: course),
-      teamset: build(:teamset, course: course),
+      teamset: build(:teamset, course: course)
     }
   end
 
@@ -158,7 +166,7 @@ defmodule Inkfish.Factory do
       reg: build(:reg),
       team: build(:team),
       upload: build(:upload),
-      grader: build(:reg),
+      grader: build(:reg)
     }
   end
 
@@ -168,7 +176,7 @@ defmodule Inkfish.Factory do
       name: "Number Grade",
       points: Decimal.new("50.0"),
       base: Decimal.new("40.0"),
-      assignment: build(:assignment),
+      assignment: build(:assignment)
     }
   end
 
@@ -176,7 +184,7 @@ defmodule Inkfish.Factory do
     %Grade{
       score: Decimal.new("45.7"),
       sub: build(:sub),
-      grade_column: build(:grade_column),
+      grade_column: build(:grade_column)
     }
   end
 
@@ -187,7 +195,7 @@ defmodule Inkfish.Factory do
       points: Decimal.new("-5.0"),
       text: "Don't mix tabs and spaces",
       grade: build(:grade),
-      user: build(:user),
+      user: build(:user)
     }
   end
 end

@@ -22,7 +22,7 @@ defmodule InkfishWeb.Staff.TeamView do
       active: team.active,
       regs: render_many(regs, InkfishWeb.Staff.RegView, "reg.json"),
       teamset: render_one(teamset, InkfishWeb.Staff.TeamsetView, "teamset.json"),
-      subs: render_many(subs, InkfishWeb.Staff.SubView, "sub.json"),
+      subs: render_many(subs, InkfishWeb.Staff.SubView, "sub.json")
     }
   end
 
@@ -31,10 +31,11 @@ defmodule InkfishWeb.Staff.TeamView do
   def view_members(%Team{} = team) do
     %{
       id: team.id,
-      users: Enum.map(team.regs, fn reg ->
-        user = reg.user
-        %{ id: user.id, name: ViewHelpers.user_display_name(user) }
-      end)
+      users:
+        Enum.map(team.regs, fn reg ->
+          user = reg.user
+          %{id: user.id, name: ViewHelpers.user_display_name(user)}
+        end)
     }
-  end 
+  end
 end

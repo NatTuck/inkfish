@@ -18,7 +18,6 @@ defmodule Inkfish.Users.User do
     field :is_admin, :boolean, default: false
     field :secret, :string
 
-
     belongs_to :photo_upload, Inkfish.Uploads.Upload, type: :binary_id
     has_many :regs, Inkfish.Users.Reg
 
@@ -39,8 +38,7 @@ defmodule Inkfish.Users.User do
   @doc false
   def admin_edit_changeset(user, attrs) do
     user
-    |> cast(attrs, [:email, :given_name, :surname, :nickname,
-                    :photo_upload_id, :is_admin])
+    |> cast(attrs, [:email, :given_name, :surname, :nickname, :photo_upload_id, :is_admin])
     |> validate_required([:email, :given_name, :surname])
     |> validate_email()
   end
@@ -71,10 +69,11 @@ defmodule Inkfish.Users.User do
     email = get_field(cset, :email)
     domain = get_reg_email_domain()
     _domains = Application.get_env(:inkfish, Inkfish.Users.User)[:domains]
+
     if domain_allowed?(email) do
       cset
     else
-      #IO.inspect {:domain_not_allowed, domain, _domains}
+      # IO.inspect {:domain_not_allowed, domain, _domains}
       add_error(cset, :email, "Email domain must be '#{domain}'.")
     end
   end
@@ -85,13 +84,14 @@ defmodule Inkfish.Users.User do
 
   def domain_allowed?(email) do
     domains = Application.get_env(:inkfish, Inkfish.Users.User)[:domains]
-    Enum.any? domains, fn dd ->
+
+    Enum.any?(domains, fn dd ->
       email && Regex.match?(~r/\@#{dd}$/, email)
-    end
+    end)
   end
 
   def secret_changeset(user) do
-    secret = :crypto.strong_rand_bytes(16) |> Base.encode16
+    secret = :crypto.strong_rand_bytes(16) |> Base.encode16()
     cast(user, %{secret: secret}, [:secret])
   end
 
@@ -104,6 +104,7 @@ defmodule Inkfish.Users.User do
 
   def hash_password(changeset) do
     password = get_change(changeset, :password)
+
     if password && changeset.valid? do
       changeset
       |> put_change(:hashed_password, Argon2.hash_pwd_salt(password))
@@ -145,6 +146,7 @@ defmodule Inkfish.Users.User do
     case Regex.run(~r/\[(\S+@\S+)\]/, text) do
       xs when is_list(xs) and length(xs) > 1 ->
         Enum.at(xs, 1)
+
       _other ->
         text
     end

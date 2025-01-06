@@ -3,10 +3,13 @@ defmodule InkfishWeb.Staff.GradeController do
 
   alias Inkfish.Grades
 
-  plug InkfishWeb.Plugs.FetchItem, [grade: "id"]
-    when action not in [:index, :new, :create]
-  plug InkfishWeb.Plugs.FetchItem, [sub: "sub_id"]
-    when action in [:index, :new, :create]
+  plug InkfishWeb.Plugs.FetchItem,
+       [grade: "id"]
+       when action not in [:index, :new, :create]
+
+  plug InkfishWeb.Plugs.FetchItem,
+       [sub: "sub_id"]
+       when action in [:index, :new, :create]
 
   plug InkfishWeb.Plugs.RequireReg, staff: true
 
@@ -17,9 +20,10 @@ defmodule InkfishWeb.Staff.GradeController do
   plug Breadcrumb, {:show, :staff, :sub}
 
   def create(conn, %{"sub_id" => sub_id, "grade" => grade_params}) do
-    grade_params = grade_params
-    |> Map.put("sub_id", sub_id)
-    |> Map.put("grading_user_id", conn.assigns[:current_user_id])
+    grade_params =
+      grade_params
+      |> Map.put("sub_id", sub_id)
+      |> Map.put("grading_user_id", conn.assigns[:current_user_id])
 
     if conn.assigns[:client_mode] == :browser do
       browser_create(conn, %{"grade" => grade_params})
@@ -34,6 +38,7 @@ defmodule InkfishWeb.Staff.GradeController do
         Inkfish.Subs.calc_sub_score!(grade.sub_id)
         save_sub_dump!(grade.sub_id)
         redirect(conn, to: Routes.staff_grade_path(conn, :edit, grade.id))
+
       {:error, %Ecto.Changeset{} = _changeset} ->
         conn
         |> put_flash(:error, "Failed to create grade.")
@@ -66,13 +71,22 @@ defmodule InkfishWeb.Staff.GradeController do
     rubric = Inkfish.Uploads.get_upload(grade.grade_column.upload_id)
     changeset = Grades.change_grade(grade)
     grade_json = InkfishWeb.Staff.GradeView.render("grade.json", %{grade: grade})
-    data = Inkfish.Subs.read_sub_data(grade.sub_id)
-    |> Map.put(:edit, true)
-    |> Map.put(:grade_id, id)
-    |> Map.put(:grade, grade_json)
+
+    data =
+      Inkfish.Subs.read_sub_data(grade.sub_id)
+      |> Map.put(:edit, true)
+      |> Map.put(:grade_id, id)
+      |> Map.put(:grade, grade_json)
+
     sub = Inkfish.Subs.get_sub!(grade.sub_id)
-    render(conn, "edit.html", grade: grade, sub: sub, changeset: changeset,
-      data: data, rubric: rubric)
+
+    render(conn, "edit.html",
+      grade: grade,
+      sub: sub,
+      changeset: changeset,
+      data: data,
+      rubric: rubric
+    )
   end
 
   def update(conn, %{"id" => id, "grade" => grade_params}) do
@@ -95,5 +109,4 @@ defmodule InkfishWeb.Staff.GradeController do
   def save_sub_dump!(sub_id) do
     Inkfish.Subs.save_sub_dump!(sub_id)
   end
-
 end

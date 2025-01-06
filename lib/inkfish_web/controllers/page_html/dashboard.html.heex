@@ -22,17 +22,19 @@
           <tr>
             <td>
               <%= link(reg.course.name,
-                    to: Routes.course_path(@conn, :show, reg.course.id)) %>
+                to: Routes.course_path(@conn, :show, reg.course.id)
+              ) %>
               <%= if is_staff?(reg, reg.user) do %>
                 (<%= link("Staff View",
-                  to: Routes.staff_course_path(@conn, :show, reg.course)) %>)
+                  to: Routes.staff_course_path(@conn, :show, reg.course)
+                ) %>)
               <% end %>
             </td>
             <td><%= show_reg_role(reg) %></td>
             <td>
               <% next = Map.get(@dues, reg.course_id) %>
               <%= if next do %>
-                <%= next.name %> <br>
+                <%= next.name %> <br />
                 <span class="human-date"><%= next.due %></span>
               <% else %>
                 ∅

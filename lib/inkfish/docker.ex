@@ -1,6 +1,6 @@
 defmodule Inkfish.Docker do
   use OK.Pipe
-  
+
   def base do
     "http+unix://%2Fvar%2Frun%2Fdocker.sock/"
   end
@@ -15,6 +15,7 @@ defmodule Inkfish.Docker do
 
   def get(path) do
     uri = Path.join(base(), path)
+
     {:ok, uri}
     ~>> HTTPoison.get()
     ~>> get_2xx_body()
@@ -29,10 +30,11 @@ defmodule Inkfish.Docker do
 
   def post(path, data) do
     uri = Path.join(base(), path)
+
     {:ok, uri}
     ~>> post_json(data)
     ~>> get_2xx_body()
-    ~>> Jason.decode()    
+    ~>> Jason.decode()
   end
 
   def list_containers() do
@@ -49,7 +51,7 @@ defmodule Inkfish.Docker do
 
   def get_image_by_tag(tag) do
     list_images()
-    ~>> Enum.find(&(Enum.member?(&1["RepoTags"], tag)))
+    ~>> Enum.find(&Enum.member?(&1["RepoTags"], tag))
   end
 
   def create(image, opts \\ %{}) do

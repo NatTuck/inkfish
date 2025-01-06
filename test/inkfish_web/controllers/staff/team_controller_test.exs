@@ -10,15 +10,18 @@ defmodule InkfishWeb.Staff.TeamControllerTest do
     team = insert(:team, teamset: teamset)
     conn = login(conn, staff)
 
-    {:ok, conn: put_req_header(conn, "accept", "application/json"),
-     course: course, teamset: teamset, team: team}
+    {:ok,
+     conn: put_req_header(conn, "accept", "application/json"),
+     course: course,
+     teamset: teamset,
+     team: team}
   end
 
   describe "index" do
     test "lists all teams", %{conn: conn, teamset: ts, team: team} do
       conn = get(conn, Routes.ajax_staff_teamset_team_path(conn, :index, ts))
       xs = json_response(conn, 200)["data"]
-      assert Enum.any?(xs, &(&1["active"]))
+      assert Enum.any?(xs, & &1["active"])
       assert Enum.any?(xs, &(&1["id"] == team.id))
     end
   end
@@ -27,11 +30,12 @@ defmodule InkfishWeb.Staff.TeamControllerTest do
     test "returns team when data is valid", %{conn: conn, course: course, teamset: ts} do
       r1 = insert(:reg, course: course)
       r2 = insert(:reg, course: course)
-      params = params_for(:team, teamset: ts)
-      |> Map.put(:reg_ids, [r1.id, r2.id])
 
-      conn = post(conn, Routes.ajax_staff_teamset_team_path(conn, :create, ts),
-        team: params)
+      params =
+        params_for(:team, teamset: ts)
+        |> Map.put(:reg_ids, [r1.id, r2.id])
+
+      conn = post(conn, Routes.ajax_staff_teamset_team_path(conn, :create, ts), team: params)
 
       data = json_response(conn, 201)["data"]
       assert data["teamset"]["id"] == ts.id
@@ -42,8 +46,7 @@ defmodule InkfishWeb.Staff.TeamControllerTest do
 
     test "renders errors when data is invalid", %{conn: conn, teamset: ts} do
       params = %{}
-      conn = post(conn, Routes.ajax_staff_teamset_team_path(conn, :create, ts),
-        team: params)
+      conn = post(conn, Routes.ajax_staff_teamset_team_path(conn, :create, ts), team: params)
       assert json_response(conn, 422)["errors"]
     end
   end
@@ -70,6 +73,7 @@ defmodule InkfishWeb.Staff.TeamControllerTest do
     test "deletes chosen team", %{conn: conn, team: team} do
       conn = delete(conn, Routes.ajax_staff_team_path(conn, :delete, team))
       assert json_response(conn, 200)["data"]["id"] == team.id
+
       assert_error_sent 404, fn ->
         get(conn, Routes.ajax_staff_team_path(conn, :show, team))
       end

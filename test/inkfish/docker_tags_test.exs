@@ -36,14 +36,19 @@ defmodule Inkfish.DockerTagsTest do
       docker_tag = docker_tag_fixture()
       update_attrs = %{dockerfile: "some updated dockerfile", name: "some updated name"}
 
-      assert {:ok, %DockerTag{} = docker_tag} = DockerTags.update_docker_tag(docker_tag, update_attrs)
+      assert {:ok, %DockerTag{} = docker_tag} =
+               DockerTags.update_docker_tag(docker_tag, update_attrs)
+
       assert docker_tag.dockerfile == "some updated dockerfile"
       assert docker_tag.name == "some updated name"
     end
 
     test "update_docker_tag/2 with invalid data returns error changeset" do
       docker_tag = docker_tag_fixture()
-      assert {:error, %Ecto.Changeset{}} = DockerTags.update_docker_tag(docker_tag, @invalid_attrs)
+
+      assert {:error, %Ecto.Changeset{}} =
+               DockerTags.update_docker_tag(docker_tag, @invalid_attrs)
+
       assert docker_tag == DockerTags.get_docker_tag!(docker_tag.id)
     end
 

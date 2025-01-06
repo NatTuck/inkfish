@@ -17,7 +17,7 @@ defmodule Inkfish.Subs do
     %Sub{
       active: true,
       assignment: as,
-      score: Decimal.new("0.0"),
+      score: Decimal.new("0.0")
     }
   end
 
@@ -39,11 +39,13 @@ defmodule Inkfish.Subs do
   end
 
   def list_subs_for_reg(reg_id) do
-    Repo.all from sub in Sub,
-      inner_join: team in assoc(sub, :team),
-      inner_join: tregs in assoc(team, :regs),
-      where: tregs.id == ^reg_id,
-      order_by: [desc: sub.inserted_at]
+    Repo.all(
+      from sub in Sub,
+        inner_join: team in assoc(sub, :team),
+        inner_join: tregs in assoc(team, :regs),
+        where: tregs.id == ^reg_id,
+        order_by: [desc: sub.inserted_at]
+    )
   end
 
   def active_sub_for_reg(asg_id, %Reg{} = reg) do
@@ -51,28 +53,35 @@ defmodule Inkfish.Subs do
   end
 
   def active_sub_for_reg(asg_id, reg_id) do
-    Repo.one from sub in Sub,
-      where: sub.reg_id == ^reg_id,
-      where: sub.assignment_id == ^asg_id,
-      where: sub.active,
-      limit: 1
+    Repo.one(
+      from sub in Sub,
+        where: sub.reg_id == ^reg_id,
+        where: sub.assignment_id == ^asg_id,
+        where: sub.active,
+        limit: 1
+    )
   end
 
   def active_sub_for_team(asg_id, team_id) do
-    Repo.one from sub in Sub,
-      where: sub.team_id == ^team_id,
-      where: sub.assignment_id == ^asg_id,
-      where: sub.active,
-      limit: 1
+    Repo.one(
+      from sub in Sub,
+        where: sub.team_id == ^team_id,
+        where: sub.assignment_id == ^asg_id,
+        where: sub.active,
+        limit: 1
+    )
   end
 
   def count_subs_for_grader(asgs, reg) do
-    as_ids = Enum.map(asgs, &(&1.id))
-    Repo.one from sub in Sub,
-      where: sub.grader_id == ^reg.id,
-      where: sub.assignment_id in ^as_ids,
-      where: sub.active,
-      select: count(sub.id)
+    as_ids = Enum.map(asgs, & &1.id)
+
+    Repo.one(
+      from sub in Sub,
+        where: sub.grader_id == ^reg.id,
+        where: sub.assignment_id in ^as_ids,
+        where: sub.active,
+        select: count(sub.id)
+    )
   end
 
   @doc """
@@ -90,36 +99,44 @@ defmodule Inkfish.Subs do
 
   """
   def get_sub!(id) do
-    Repo.one! from sub in Sub,
-      where: sub.id == ^id,
-      inner_join: upload in assoc(sub, :upload),
-      inner_join: reg in assoc(sub, :reg),
-      inner_join: user in assoc(reg, :user),
-      inner_join: team in assoc(sub, :team),
-      left_join: grader in assoc(sub, :grader),
-      left_join: gruser in assoc(grader, :user),
-      left_join: grades in assoc(sub, :grades),
-      left_join: lcs in assoc(grades, :line_comments),
-      left_join: gc in assoc(grades, :grade_column),
-      preload: [upload: upload, team: team,
-                grades: {grades, grade_column: gc, line_comments: lcs},
-                reg: {reg, user: user},
-                grader: {grader, user: gruser}]
+    Repo.one!(
+      from sub in Sub,
+        where: sub.id == ^id,
+        inner_join: upload in assoc(sub, :upload),
+        inner_join: reg in assoc(sub, :reg),
+        inner_join: user in assoc(reg, :user),
+        inner_join: team in assoc(sub, :team),
+        left_join: grader in assoc(sub, :grader),
+        left_join: gruser in assoc(grader, :user),
+        left_join: grades in assoc(sub, :grades),
+        left_join: lcs in assoc(grades, :line_comments),
+        left_join: gc in assoc(grades, :grade_column),
+        preload: [
+          upload: upload,
+          team: team,
+          grades: {grades, grade_column: gc, line_comments: lcs},
+          reg: {reg, user: user},
+          grader: {grader, user: gruser}
+        ]
+    )
   end
 
   def get_sub_path!(id) do
-    Repo.one! from sub in Sub,
-      where: sub.id == ^id,
-      inner_join: team in assoc(sub, :team),
-      left_join: team_regs in assoc(team, :regs),
-      left_join: grades in assoc(sub, :grades),
-      inner_join: as in assoc(sub, :assignment),
-      left_join: grade_columns in assoc(as, :grade_columns),
-      inner_join: bucket in assoc(as, :bucket),
-      inner_join: course in assoc(bucket, :course),
-      preload: [assignment: {as, bucket: {bucket, course: course},
-                             grade_columns: grade_columns},
-               team: {team, regs: team_regs}]
+    Repo.one!(
+      from sub in Sub,
+        where: sub.id == ^id,
+        inner_join: team in assoc(sub, :team),
+        left_join: team_regs in assoc(team, :regs),
+        left_join: grades in assoc(sub, :grades),
+        inner_join: as in assoc(sub, :assignment),
+        left_join: grade_columns in assoc(as, :grade_columns),
+        inner_join: bucket in assoc(as, :bucket),
+        inner_join: course in assoc(bucket, :course),
+        preload: [
+          assignment: {as, bucket: {bucket, course: course}, grade_columns: grade_columns},
+          team: {team, regs: team_regs}
+        ]
+    )
   end
 
   @doc """
@@ -135,51 +152,55 @@ defmodule Inkfish.Subs do
 
   """
   def create_sub(attrs \\ %{}) do
-    result = %Sub{}
-    |> Sub.changeset(attrs)
-    |> Repo.insert()
+    result =
+      %Sub{}
+      |> Sub.changeset(attrs)
+      |> Repo.insert()
 
     case result do
       {:ok, sub} ->
         set_one_sub_active!(sub)
         autograde!(sub)
         {:ok, sub}
+
       error ->
         error
     end
   end
 
   def get_script_grades(sub) do
-    sub = Repo.preload(sub, [grades: :grade_column])
-    Enum.filter sub.grades, fn gr ->
+    sub = Repo.preload(sub, grades: :grade_column)
+
+    Enum.filter(sub.grades, fn gr ->
       gr.grade_column.kind == "script"
-    end
+    end)
   end
 
   def autograde!(sub) do
     asg = Inkfish.Assignments.get_assignment!(sub.assignment_id)
 
-    sub = Repo.preload(sub, [grades: :grade_column])
-    Enum.each sub.grades, fn gr ->
+    sub = Repo.preload(sub, grades: :grade_column)
+
+    Enum.each(sub.grades, fn gr ->
       if gr.grade_column.kind == "script" do
         Grades.delete_grade(gr)
       end
-    end
+    end)
 
-    Enum.flat_map asg.grade_columns, fn gcol ->
+    Enum.flat_map(asg.grade_columns, fn gcol ->
       if gcol.kind == "script" do
         {:ok, uuid} = Grades.create_autograde(sub.id, gcol.id)
         [uuid]
       else
         []
       end
-    end
+    end)
   end
 
   def set_one_sub_active!(new_sub) do
     prev = active_sub_for_team(new_sub.assignment_id, new_sub.team_id)
     # If the active sub has been graded or late penalty ignored, we keep it.
-    if prev && (prev.score || prev.ignore_late_penalty)  do
+    if prev && (prev.score || prev.ignore_late_penalty) do
       set_sub_active!(prev)
     else
       set_sub_active!(new_sub)
@@ -194,22 +215,27 @@ defmodule Inkfish.Subs do
     # This should be the active sub for each member of the
     # team.
 
-    member_ids = Enum.map team.team_members, &(&1.reg_id)
+    member_ids = Enum.map(team.team_members, & &1.reg_id)
 
-    teams = Repo.all from tt in Team,
-      left_join: members in assoc(tt, :team_members),
-      where: members.reg_id in ^member_ids
+    teams =
+      Repo.all(
+        from tt in Team,
+          left_join: members in assoc(tt, :team_members),
+          where: members.reg_id in ^member_ids
+      )
 
-    team_ids = Enum.map teams, &(&1.id)
+    team_ids = Enum.map(teams, & &1.id)
 
-    subs = from sub in Sub,
-      where: sub.assignment_id == ^asg_id,
-      where: sub.team_id in ^team_ids
+    subs =
+      from sub in Sub,
+        where: sub.assignment_id == ^asg_id,
+        where: sub.team_id in ^team_ids
 
-    {:ok, _} = Ecto.Multi.new
-    |> Ecto.Multi.update_all(:subs, subs, set: [active: false])
-    |> Ecto.Multi.update(:sub, Sub.make_active(new_sub))
-    |> Repo.transaction()
+    {:ok, _} =
+      Ecto.Multi.new()
+      |> Ecto.Multi.update_all(:subs, subs, set: [active: false])
+      |> Ecto.Multi.update(:sub, Sub.make_active(new_sub))
+      |> Repo.transaction()
   end
 
   @doc """
@@ -237,34 +263,44 @@ defmodule Inkfish.Subs do
   end
 
   def update_sub_ignore_late(%Sub{} = sub, attrs) do
-    {:ok, sub} = sub
-    |> Sub.change_ignore_late(attrs)
-    |> Repo.update()
+    {:ok, sub} =
+      sub
+      |> Sub.change_ignore_late(attrs)
+      |> Repo.update()
+
     if sub.ignore_late_penalty do
       set_sub_active!(sub)
     end
+
     calc_sub_score!(sub.id)
     sub
   end
 
   def get_sub_for_calc_score!(sub_id) do
-    Repo.one! from sub in Sub,
-      inner_join: as in assoc(sub, :assignment),
-      left_join: grade_columns in assoc(as, :grade_columns),
-      left_join: grades in assoc(sub, :grades),
-      preload: [assignment: {as, grade_columns: grade_columns}, grades: grades],
-      where: sub.id == ^sub_id
+    Repo.one!(
+      from sub in Sub,
+        inner_join: as in assoc(sub, :assignment),
+        left_join: grade_columns in assoc(as, :grade_columns),
+        left_join: grades in assoc(sub, :grades),
+        preload: [assignment: {as, grade_columns: grade_columns}, grades: grades],
+        where: sub.id == ^sub_id
+    )
   end
 
   def calc_score_and_late_penalty(sub) do
-    scores = Enum.map sub.assignment.grade_columns, fn gdr ->
-      grade = Enum.find sub.grades, &(&1.grade_column_id == gdr.id)
-      grade && grade.score
-    end
-    if Enum.all? scores, &(!is_nil(&1)) do
+    scores =
+      Enum.map(sub.assignment.grade_columns, fn gdr ->
+        grade = Enum.find(sub.grades, &(&1.grade_column_id == gdr.id))
+        grade && grade.score
+      end)
+
+    if Enum.all?(scores, &(!is_nil(&1))) do
       late_penalty = late_penalty(sub)
-      total = Enum.reduce(scores, Decimal.new("0"), &Decimal.add/2)
-      |> apply_penalty(late_penalty)
+
+      total =
+        Enum.reduce(scores, Decimal.new("0"), &Decimal.add/2)
+        |> apply_penalty(late_penalty)
+
       {total, late_penalty}
     else
       {nil, nil}
@@ -273,7 +309,7 @@ defmodule Inkfish.Subs do
 
   def calc_sub_score!(sub_id) do
     Ecto.Multi.new()
-    |> Ecto.Multi.run(:sub0, fn (_,_) ->
+    |> Ecto.Multi.run(:sub0, fn _, _ ->
       {:ok, get_sub_for_calc_score!(sub_id)}
     end)
     |> Ecto.Multi.update(:sub, fn %{sub0: sub} ->
@@ -288,6 +324,7 @@ defmodule Inkfish.Subs do
     subed = sub.inserted_at
     seconds_late = DateTime.diff(subed, due)
     hours_late = floor((seconds_late + 3599) / 3600)
+
     if hours_late > 0 do
       hours_late
     else
@@ -297,7 +334,8 @@ defmodule Inkfish.Subs do
 
   def apply_penalty(score0, penalty) do
     score1 = Decimal.sub(score0, penalty)
-    if Decimal.cmp(score1, Decimal.new("0")) == :lt do
+
+    if Decimal.compare(score1, Decimal.new("0")) == :lt do
       0
     else
       score1
@@ -309,6 +347,7 @@ defmodule Inkfish.Subs do
       0
     else
       points_avail = Inkfish.Assignments.Assignment.assignment_total_points(sub.assignment)
+
       if sub.assignment.hard_deadline do
         if hours_late(sub) > 0 do
           points_avail
@@ -321,7 +360,6 @@ defmodule Inkfish.Subs do
       end
     end
   end
-
 
   @doc """
   Deletes a Sub.
@@ -336,7 +374,7 @@ defmodule Inkfish.Subs do
 
   """
   def delete_sub(%Sub{} = _sub) do
-    #Repo.delete(sub)
+    # Repo.delete(sub)
     {:error, "We don't delete subs"}
   end
 
@@ -355,9 +393,10 @@ defmodule Inkfish.Subs do
 
   def read_sub_data(%Sub{} = sub) do
     files = Inkfish.Uploads.Data.read_data(sub.upload)
+
     %{
       sub_id: sub.id,
-      files: files,
+      files: files
     }
   end
 
@@ -367,8 +406,11 @@ defmodule Inkfish.Subs do
 
   def save_sub_dump!(sub_id) do
     sub = Inkfish.Subs.get_sub!(sub_id)
-    json = Sub.to_map(sub)
-    |> Jason.encode!(pretty: true)
+
+    json =
+      Sub.to_map(sub)
+      |> Jason.encode!(pretty: true)
+
     Inkfish.Subs.save_sub_dump!(sub.id, json)
   end
 
@@ -377,6 +419,6 @@ defmodule Inkfish.Subs do
     base = Inkfish.Uploads.Upload.upload_dir(sub.upload_id)
     path = Path.join(base, "dump.json")
     File.write!(path, json)
-    #IO.inspect({"Data for sub dumped", sub.id, path})
+    # IO.inspect({"Data for sub dumped", sub.id, path})
   end
 end

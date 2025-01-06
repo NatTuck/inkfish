@@ -8,9 +8,11 @@ defmodule InkfishWeb.CourseControllerTest do
 
   describe "index" do
     test "lists all courses", %{conn: conn} do
-      conn = conn
-      |> login("erin@example.com")
-      |> get(Routes.course_path(conn, :index))
+      conn =
+        conn
+        |> login("erin@example.com")
+        |> get(Routes.course_path(conn, :index))
+
       assert html_response(conn, 200) =~ "Listing Courses"
     end
   end
@@ -19,9 +21,11 @@ defmodule InkfishWeb.CourseControllerTest do
     setup [:create_course]
 
     test "shows chosen course", %{conn: conn, course: course} do
-      conn = conn
-      |> login("alice@example.com")
-      |> get(Routes.course_path(conn, :show, course))
+      conn =
+        conn
+        |> login("alice@example.com")
+        |> get(Routes.course_path(conn, :show, course))
+
       assert html_response(conn, 200) =~ course.name
     end
   end

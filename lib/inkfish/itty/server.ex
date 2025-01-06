@@ -1,12 +1,12 @@
 defmodule Inkfish.Itty.Server do
   use GenServer
 
-  alias Inkfish.Itty.Tickets
+  alias Inkfish.Itty.Task
 
   # How long to stay alive waiting for late
   # subscribers after the process terminates.
-  @linger_seconds 120
-  
+  @linger_seconds 300
+
   def start_link(state0) do
     IO.puts(" =[Itty]= Start server with UUID #{state0.uuid}")
     GenServer.start_link(__MODULE__, state0, name: reg(state0.uuid))
@@ -16,23 +16,28 @@ defmodule Inkfish.Itty.Server do
     {:via, Registry, {Inkfish.Itty.Reg, uuid}}
   end
 
-  def start(uuid, qname, cmd, env, on_exit) do
+  def start(%Task{uuid: uuid, script: script, env: env, on_exit: on_exit}) do
     cookie = Inkfish.Text.gen_uuid()
-    env = env
-    |> Map.update("COOKIE", cookie, &(&1))
+
+    env =
+      env
+      |> Map.update("COOKIE", cookie, & &1)
+
     state0 = %{
-      qname: qname,
+      done: false,
       uuid: uuid,
-      cmd: cmd,
+      cmd: script,
       cookie: cookie,
       env: env,
-      on_exit: on_exit,
+      on_exit: on_exit
     }
+
     spec = %{
       id: __MODULE__,
       start: {__MODULE__, :start_link, [state0]},
-      restart: :temporary,
+      restart: :temporary
     }
+
     DynamicSupervisor.start_child(Inkfish.Itty.DynSup, spec)
   end
 
@@ -40,47 +45,64 @@ defmodule Inkfish.Itty.Server do
     if !Enum.empty?(Registry.lookup(Inkfish.Itty.Reg, uuid)) do
       GenServer.call(reg(uuid), :peek)
     else
-      {:error, "unknown"}
-    end 
+      {:error, "No such task"}
+    end
+  end
+
+  def running?(uuid) do
+    if Enum.empty?(Registry.lookup(Inkfish.Itty.Reg, uuid)) do
+      false
+    else
+      {:ok, state} = GenServer.call(reg(uuid), :peek)
+      !state.done
+    end
+  end
+
+  def stop(uuid) do
+    if !Enum.empty?(Registry.lookup(Inkfish.Itty.Reg, uuid)) do
+      GenServer.call(reg(uuid), :stop)
+    else
+      :ok
+    end
   end
 
   @impl true
-  def init(%{qname: qname} = state0) do
-    ticket = Tickets.ticket(qname)
+  def init(%{env: env, cmd: cmd, uuid: uuid} = state0) do
+    # Start the process
+    env =
+      System.get_env()
+      |> Map.merge(env)
+      |> Enum.into([])
+
+    opts = [{:stdout, self()}, {:stderr, self()}, {:env, env}, {:kill_timeout, 3600}, :monitor]
+
+    IO.puts(" =[Itty]= Run cmd [#{cmd}] for UUID #{uuid}")
+    {:ok, _pid, ospid} = :exec.run(cmd, opts, 30)
+
+    block = %{seq: 99, stream: :adm, text: "\nStarting task.\n\n"}
+
     data = %{
-      seq: 0,
-      blocks: [],
-      done: false,
-      started: false,
-      ticket: ticket
+      seq: 100,
+      blocks: [block],
+      ospid: ospid,
+      done: false
     }
+
     {:ok, Map.merge(state0, data)}
   end
 
-  def start_cmd(%{cmd: cmd, env: env, uuid: uuid} = _state0) do
-    env = System.get_env()
-    |> Map.merge(env)
-    |> Enum.into([])
-
-    IO.puts(" =[Itty]= Run cmd for UUID #{uuid}")
-    #IO.inspect({:run, cmd, Enum.with_index(env)}, limit: :infinity)
-
-    opts = [{:stdout, self()}, {:stderr, self()}, {:env, env},
-	    {:kill_timeout, 5}, :monitor]
-    {:ok, _pid, _ospid} = :exec.run(cmd, opts, 30)
-    :ok
-  end
-
   def view(state) do
-    outputs = [:adm, :out, :err]
-    |> Enum.map(fn stream ->
-      {stream, get_stream_text(state, stream)}
-    end)
-    |> Enum.into(%{})
+    outputs =
+      [:adm, :out, :err]
+      |> Enum.map(fn stream ->
+        {stream, get_stream_text(state, stream)}
+      end)
+      |> Enum.into(%{})
 
-    view = state
-    |> Map.drop([:on_exit])
-    |> Map.put(:outputs, outputs)
+    view =
+      state
+      |> Map.drop([:on_exit])
+      |> Map.put(:outputs, outputs)
 
     if view.done do
       Map.put(view, :result, get_marked_output(state, state.cookie))
@@ -94,6 +116,17 @@ defmodule Inkfish.Itty.Server do
     {:reply, {:ok, view(state)}, state}
   end
 
+  def handle_call(:stop, _from, %{ospid: ospid} = state) do
+    send_text("Stopping process early.\n", state)
+    :exec.stop(ospid)
+    {:reply, :ok, state}
+  end
+
+  def send_text(text, %{seq: seq} = state) do
+    block = %{seq: seq, stream: :adm, text: text}
+    send_block(block, state)
+  end
+
   def send_block(block, %{uuid: uuid, seq: seq, blocks: blocks} = state) do
     blocks = [block | blocks]
     # IO.puts(" =[Itty]= Send block for UUID #{uuid} #{block.seq}")
@@ -102,48 +135,31 @@ defmodule Inkfish.Itty.Server do
   end
 
   @impl true
-  def handle_info({:now_serving, serving, _}, state) do
-    if state.started do
-      state
-    else
-      %{seq: seq, ticket: ticket} = state
-      text = "Now serving #{serving}. We are #{ticket}.\n"
-      block = %{seq: seq, stream: :adm, text: text}
-      if ticket <= serving do
-        start_cmd(state)
-        send_block(block, Map.put(state, :started, true))
-      else
-        send_block(block, state)
-      end
-    end
-  end
-
   def handle_info({:stdout, _, text}, %{seq: seq} = state) do
     block = %{seq: seq, stream: :out, text: text}
     send_block(block, state)
   end
 
   def handle_info({:stderr, _, text}, %{seq: seq} = state) do
-    block = %{seq: seq, stream: :err, text: text} 
+    block = %{seq: seq, stream: :err, text: text}
     send_block(block, state)
   end
 
   def handle_info({:DOWN, _, _, _, status}, state) do
-    %{uuid: uuid, on_exit: on_exit, qname: qname,
-      ticket: ticket, blocks: blocks} = state
+    %{uuid: uuid, on_exit: on_exit, blocks: blocks} = state
 
     IO.puts(" =[Itty]= Send done for UUID #{uuid}")
     Phoenix.PubSub.broadcast!(Inkfish.PubSub, "ittys:" <> uuid, {:done, uuid})
-    Tickets.done(qname, ticket)
 
     if on_exit do
       rv = %{
-	    uuid: uuid,
-	    downstat: status,
-	    status: "ok",
-	    result: get_marked_output(state, state.cookie),
-	    log: blocks,
+        uuid: uuid,
+        downstat: status,
+        status: "ok",
+        result: get_marked_output(state, state.cookie),
+        log: blocks
       }
+
       on_exit.(rv)
     end
 
@@ -157,7 +173,7 @@ defmodule Inkfish.Itty.Server do
   end
 
   def handle_info(foo, state0) do
-    IO.inspect {:info, foo}
+    IO.inspect({:info, foo})
     {:noreply, state0}
   end
 
@@ -170,8 +186,9 @@ defmodule Inkfish.Itty.Server do
   end
 
   def get_marked_output(state, cookie) do
-    splits = get_stream_text(state, :out)
-    |> String.split("\n#{cookie}\n", trim: true)
+    splits =
+      get_stream_text(state, :out)
+      |> String.split("\n#{cookie}\n", trim: true)
 
     if length(splits) > 1 do
       Enum.at(splits, 1)

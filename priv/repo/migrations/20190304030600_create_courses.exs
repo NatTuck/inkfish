@@ -10,6 +10,5 @@ defmodule Inkfish.Repo.Migrations.CreateCourses do
 
       timestamps()
     end
-
   end
 end

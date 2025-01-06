@@ -21,13 +21,14 @@ alias Inkfish.Assignments.Assignment
 defmodule Make do
   def user(name, admin \\ false) do
     name = String.downcase(name)
+
     user = %User{
       given_name: String.capitalize(name),
-      surname: "Anderson", 
+      surname: "Anderson",
       email: "#{name}@example.com",
-      is_admin: admin,
-    } 
-    
+      is_admin: admin
+    }
+
     Repo.insert!(user)
   end
 
@@ -48,13 +49,14 @@ defmodule Make do
 
   def assignment(bucket, name) do
     course = Inkfish.Courses.get_course!(bucket.course_id)
+
     %Assignment{
       bucket_id: bucket.id,
       name: name,
       teamset_id: course.solo_teamset_id,
       weight: Decimal.new(1),
       desc: "this is the #{name} assignment",
-      due: Inkfish.LocalTime.in_days(2),
+      due: Inkfish.LocalTime.in_days(2)
     }
     |> Repo.insert!()
   end
@@ -69,7 +71,7 @@ _u4 = Make.user("erin")
 _u5 = Make.user("frank")
 
 c0 = Make.course("Data Science of Art History")
-#_c1 = Make.course("Machine Learning with Baroque Pottery")
+# _c1 = Make.course("Machine Learning with Baroque Pottery")
 
 Make.reg(u1, c0, is_prof: true)
 Make.reg(u2, c0, is_staff: true, is_grader: true)

@@ -19,7 +19,8 @@ export function withChannel(op) {
 
 export function Itty({chan, uuid, token}) {
   const dispatch = useDispatch();
-  const {blocks, done} = useSelector(({blocks, done}) => ({blocks, done}));
+  const blocks = useSelector((state) => state.blocks);
+  const done = useSelector((state) => state.done);
   console.log("blocks,done", blocks, done);
 
   useEffect(() => {
@@ -27,11 +28,11 @@ export function Itty({chan, uuid, token}) {
     channel.join()
       .receive("ok", (msg) => {
         console.log("Joined", uuid, msg);
-	dispatch({type: 'set', data: msg});
+	    dispatch({type: 'set', data: msg});
       })
       .receive("error", (msg) => {
         console.log("Unable to join", msg);
-	channel.leave();
+	    channel.leave();
       });
     channel.on("block", (msg) => {
       console.log("Block", uuid, msg);
@@ -57,7 +58,7 @@ export function Itty({chan, uuid, token}) {
   let lines = _.sortBy(blocks, ['seq']).map(({seq, text}) => (
     <span key={seq}>{parseHTML(ansi_up.ansi_to_html(text))}</span>
   ));
-      
+  
   return (
     <>
       <pre id="itty-console" className="console autograde-console">{ lines }</pre>

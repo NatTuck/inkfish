@@ -8,7 +8,7 @@ defmodule Inkfish.Assignments.Assignment do
     field :desc, :string
 
     # naive_datetime is correct
-    # This stores a local time, in the configured timezone.
+    # This stores a local time, in the configured timezone
     field :due, :naive_datetime
 
     field :name, :string
@@ -34,16 +34,27 @@ defmodule Inkfish.Assignments.Assignment do
   @doc false
   def changeset(assignment, attrs) do
     assignment
-    |> cast(attrs, [:name, :desc, :due, :weight, :bucket_id, :teamset_id,
-                    :starter_upload_id, :solution_upload_id, :allow_git,
-                    :allow_upload, :hard_deadline, :force_show_grades,
-                    :hide])
+    |> cast(attrs, [
+      :name,
+      :desc,
+      :due,
+      :weight,
+      :bucket_id,
+      :teamset_id,
+      :starter_upload_id,
+      :solution_upload_id,
+      :allow_git,
+      :allow_upload,
+      :hard_deadline,
+      :force_show_grades,
+      :hide
+    ])
     |> validate_required([:name, :desc, :due, :weight, :bucket_id, :teamset_id])
   end
 
   def assignment_total_points(as) do
-    Enum.reduce as.grade_columns, Decimal.new("0"), fn (gcol, sum) ->
+    Enum.reduce(as.grade_columns, Decimal.new("0"), fn gcol, sum ->
       Decimal.add(gcol.points, sum)
-    end
+    end)
   end
 end

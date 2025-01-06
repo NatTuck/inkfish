@@ -5,7 +5,7 @@ defmodule Mix.Tasks.Db.Dump do
     conf = Application.fetch_env!(:inkfish, Inkfish.Repo)
 
     if conf[:url] do
-      url  = conf[:url]
+      url = conf[:url]
       cs = Regex.run(~r{^ecto://(\w+):(\w+)@(\w+)/(\w+)$}, url)
       [_, user, pass, host, db] = cs
       show_cmd(user, pass, host, db)
@@ -18,6 +18,6 @@ defmodule Mix.Tasks.Db.Dump do
     cmd0 = ~s(PGPASSWORD='#{pass}' pg_dump -h '#{host}' )
     cmd1 = ~s(-U '#{user}' '#{db}')
     cmnd = cmd0 <> cmd1
-    IO.puts "#{cmnd}"
+    IO.puts("#{cmnd}")
   end
 end

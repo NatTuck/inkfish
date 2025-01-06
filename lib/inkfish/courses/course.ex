@@ -29,8 +29,15 @@ defmodule Inkfish.Courses.Course do
   @doc false
   def changeset(course, attrs) do
     course
-    |> cast(attrs, [:name, :start_date, :footer, :archived,
-                    :instructor, :solo_teamset_id, :sections])
+    |> cast(attrs, [
+      :name,
+      :start_date,
+      :footer,
+      :archived,
+      :instructor,
+      :solo_teamset_id,
+      :sections
+    ])
     |> validate_required([:name, :start_date])
     |> validate_length(:name, min: 3)
   end
@@ -45,7 +52,7 @@ defmodule Inkfish.Courses.Course do
 
   def list_sections(%Course{} = course) do
     (course.sections || "")
-    |> String.replace(~r/,\s*/, ",") 
+    |> String.replace(~r/,\s*/, ",")
     |> String.split(",", trim: true)
   end
 end

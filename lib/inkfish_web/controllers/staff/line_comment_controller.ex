@@ -5,10 +5,14 @@ defmodule InkfishWeb.Staff.LineCommentController do
   alias Inkfish.LineComments.LineComment
 
   alias InkfishWeb.Plugs
-  plug Plugs.FetchItem, [line_comment: "id"]
-    when action not in [:index, :new, :create]
-  plug Plugs.FetchItem, [grade: "grade_id"]
-    when action in [:index, :new, :create]
+
+  plug Plugs.FetchItem,
+       [line_comment: "id"]
+       when action not in [:index, :new, :create]
+
+  plug Plugs.FetchItem,
+       [grade: "grade_id"]
+       when action in [:index, :new, :create]
 
   plug Plugs.RequireReg, staff: true
 
@@ -20,8 +24,9 @@ defmodule InkfishWeb.Staff.LineCommentController do
   end
 
   def create(conn, %{"line_comment" => lc_params}) do
-    lc_params = lc_params
-    |> Map.put("user_id", conn.assigns[:current_user].id)
+    lc_params =
+      lc_params
+      |> Map.put("user_id", conn.assigns[:current_user].id)
 
     with {:ok, %LineComment{} = lc} <- LineComments.create_line_comment(lc_params) do
       conn
@@ -39,7 +44,8 @@ defmodule InkfishWeb.Staff.LineCommentController do
   def update(conn, %{"id" => _id, "line_comment" => line_comment_params}) do
     line_comment = conn.assigns[:line_comment]
 
-    with {:ok, %LineComment{} = line_comment} <- LineComments.update_line_comment(line_comment, line_comment_params) do
+    with {:ok, %LineComment{} = line_comment} <-
+           LineComments.update_line_comment(line_comment, line_comment_params) do
       render(conn, "show.json", line_comment: line_comment)
     end
   end

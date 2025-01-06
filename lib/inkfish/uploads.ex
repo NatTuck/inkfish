@@ -37,6 +37,7 @@ defmodule Inkfish.Uploads do
 
   """
   def get_upload!(id), do: Repo.get!(Upload, id)
+
   def get_upload(id) do
     id && Repo.get(Upload, id)
   end
@@ -55,12 +56,14 @@ defmodule Inkfish.Uploads do
   """
   def create_upload(attrs \\ %{}) do
     cset = Upload.changeset(%Upload{}, attrs)
+
     case Repo.insert(cset) do
-      {:ok, upload}  ->
+      {:ok, upload} ->
         Upload.save_upload_file!(cset, upload)
         Upload.unpack(upload)
         clean_uploads()
         {:ok, Upload.fetch_size(upload)}
+
       error ->
         error
     end
@@ -68,10 +71,12 @@ defmodule Inkfish.Uploads do
 
   def create_git_upload(attrs \\ %{}) do
     cset = Upload.git_changeset(%Upload{}, attrs)
+
     case Repo.insert(cset) do
-      {:ok, upload}  ->
+      {:ok, upload} ->
         clean_uploads()
         {:ok, upload}
+
       error ->
         error
     end
@@ -81,14 +86,17 @@ defmodule Inkfish.Uploads do
     attrs = %{
       "user_id" => owner.id,
       "kind" => "sub",
-      "name" => "fake-upload.tar.gz",
+      "name" => "fake-upload.tar.gz"
     }
+
     cset = Upload.fake_changeset(%Upload{}, attrs)
+
     case Repo.insert(cset) do
-      {:ok, upload}  ->
+      {:ok, upload} ->
         Upload.save_upload_file!(cset, upload, :fake)
         Upload.unpack(upload)
         {:ok, upload}
+
       error ->
         error
     end
@@ -125,24 +133,26 @@ defmodule Inkfish.Uploads do
 
   """
   def delete_upload(%Upload{} = upload) do
-    #IO.puts("Deleting upload:")
-    #IO.inspect(upload)
+    # IO.puts("Deleting upload:")
+    # IO.inspect(upload)
 
     if upload.id && upload.kind != "sub" do
       dpath = Upload.upload_dir(upload)
+
       if String.length(dpath) > 10 do
         File.rm_rf!(dpath)
         File.rmdir(Path.dirname(dpath))
       end
+
       Repo.delete(upload)
     end
   end
 
   def clean_uploads() do
     if Application.get_env(:inkfish, :env) != :test do
-      Task.start fn ->
+      Task.start(fn ->
         Inkfish.Uploads.Cleanup.cleanup()
-      end
+      end)
     end
   end
 

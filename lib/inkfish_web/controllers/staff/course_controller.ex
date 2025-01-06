@@ -2,14 +2,20 @@ defmodule InkfishWeb.Staff.CourseController do
   use InkfishWeb, :controller
 
   alias InkfishWeb.Plugs
-  plug Plugs.FetchItem, [course: "id"]
-    when action not in [:index]
-  plug Plugs.RequireReg, [staff: true]
-    when action not in [:index]
+
+  plug Plugs.FetchItem,
+       [course: "id"]
+       when action not in [:index]
+
+  plug Plugs.RequireReg,
+       [staff: true]
+       when action not in [:index]
 
   plug InkfishWeb.Plugs.Breadcrumb, {"Courses (Staff)", :staff_course, :index}
-  plug InkfishWeb.Plugs.Breadcrumb, {:show, :staff, :course}
-    when action not in [:index, :new, :create]
+
+  plug InkfishWeb.Plugs.Breadcrumb,
+       {:show, :staff, :course}
+       when action not in [:index, :new, :create]
 
   alias Inkfish.Courses
   alias Inkfish.Grades.Gradesheet
@@ -50,27 +56,31 @@ defmodule InkfishWeb.Staff.CourseController do
   def gradesheet(conn, %{"id" => id}) do
     course = Courses.get_course_for_gradesheet!(id)
     sheet = Gradesheet.from_course(course)
-    render(conn, "gradesheet.html", fluid_grid: true,
-      course: course, sheet: sheet)
+    render(conn, "gradesheet.html", fluid_grid: true, course: course, sheet: sheet)
   end
 
   def tasks(conn, %{"id" => id}) do
     %{current_reg: reg} = conn.assigns
 
     course = Courses.get_course_for_grading_tasks!(id)
-    tasks = course.buckets
-    |> Enum.flat_map(fn bucket ->
-      Enum.map bucket.assignments, fn asg ->
-        subs = Enum.filter asg.subs, fn sub ->
-          grade = Enum.find sub.grades, &(&1.grade_column.kind == "feedback")
-          mine = (!reg.is_grader || sub.grader_id == reg.id)
-          done = (grade && grade.score)
-          sub.active && mine && !done
-        end
-        {asg.id, length(subs)}
-      end
-    end)
-    |> Enum.into(%{})
+
+    tasks =
+      course.buckets
+      |> Enum.flat_map(fn bucket ->
+        Enum.map(bucket.assignments, fn asg ->
+          subs =
+            Enum.filter(asg.subs, fn sub ->
+              grade = Enum.find(sub.grades, &(&1.grade_column.kind == "feedback"))
+              mine = !reg.is_grader || sub.grader_id == reg.id
+              done = grade && grade.score
+              sub.active && mine && !done
+            end)
+
+          {asg.id, length(subs)}
+        end)
+      end)
+      |> Enum.into(%{})
+
     render(conn, "tasks.html", course: course, tasks: tasks)
   end
 end

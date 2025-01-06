@@ -90,7 +90,7 @@ defmodule Inkfish.GradesTest do
 
     test "update_grade_column/2 with valid data updates the grade_column" do
       grade_column = grade_column_fixture()
-      params = %{ name: "Updated", base: "30.0" }
+      params = %{name: "Updated", base: "30.0"}
       assert {:ok, %GradeColumn{} = gc1} = Grades.update_grade_column(grade_column, params)
       assert gc1.kind == grade_column.kind
       assert gc1.name == "Updated"

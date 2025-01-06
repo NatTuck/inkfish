@@ -8,10 +8,15 @@ defmodule InkfishWeb.Staff.TeamController do
   action_fallback InkfishWeb.FallbackController
 
   alias InkfishWeb.Plugs
-  plug Plugs.FetchItem, [team: "id"]
-    when action not in [:index, :new, :create]
-  plug Plugs.FetchItem, [teamset: "teamset_id"]
-    when action in [:index, :new, :create]
+
+  plug Plugs.FetchItem,
+       [team: "id"]
+       when action not in [:index, :new, :create]
+
+  plug Plugs.FetchItem,
+       [teamset: "teamset_id"]
+       when action in [:index, :new, :create]
+
   plug Plugs.RequireReg, staff: true
 
   def index(conn, %{"teamset_id" => teamset_id}) do
@@ -20,18 +25,21 @@ defmodule InkfishWeb.Staff.TeamController do
   end
 
   def create(conn, %{"teamset_id" => teamset_id, "team" => team_params}) do
-    regs = Enum.map (team_params["reg_ids"] || []), fn (reg_id) ->
-      Users.get_reg!(reg_id)
-    end
+    regs =
+      Enum.map(team_params["reg_ids"] || [], fn reg_id ->
+        Users.get_reg!(reg_id)
+      end)
 
-    team_params = team_params
-    |> Map.put("teamset_id", teamset_id)
-    |> Map.put("regs", regs)
+    team_params =
+      team_params
+      |> Map.put("teamset_id", teamset_id)
+      |> Map.put("regs", regs)
 
     with {:ok, %Team{} = team} <- Teams.create_team(team_params) do
       # Fetch updated teamset
       teamset = Teams.get_teamset!(team.teamset_id)
       team = %{team | teamset: teamset}
+
       conn
       |> put_status(:created)
       |> put_resp_header("location", Routes.ajax_staff_team_path(conn, :show, team))

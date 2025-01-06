@@ -7,8 +7,11 @@
   </:actions>
 </.header>
 
-<.table id="docker_tags" rows={@docker_tags}
-        row_click={&JS.navigate(~p"/admin/docker_tags/#{&1}")}>
+<.table
+  id="docker_tags"
+  rows={@docker_tags}
+  row_click={&JS.navigate(~p"/admin/docker_tags/#{&1}")}
+>
   <:col :let={docker_tag} label="Name">
     <.link navigate={~p"/admin/docker_tags/#{docker_tag}"}>
       <%= docker_tag.name %>
@@ -21,7 +24,11 @@
     <.link navigate={~p"/admin/docker_tags/#{docker_tag}/edit"}>Edit</.link>
   </:action>
   <:action :let={docker_tag}>
-    <.link href={~p"/admin/docker_tags/#{docker_tag}"} method="delete" data-confirm="Are you sure?">
+    <.link
+      href={~p"/admin/docker_tags/#{docker_tag}"}
+      method="delete"
+      data-confirm="Are you sure?"
+    >
       Delete
     </.link>
   </:action>

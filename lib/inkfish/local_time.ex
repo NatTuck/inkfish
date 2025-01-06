@@ -1,23 +1,36 @@
 defmodule Inkfish.LocalTime do
   def now() do
-    :calendar.local_time()
-    |> NaiveDateTime.from_erl!()
+    LocalTime.now()
+  end
+
+  def now_utc() do
+    now()
+    |> as_utc()
+    |> DateTime.truncate(:second)
+  end
+
+  def now_naive() do
+    now()
+    |> DateTime.truncate(:second)
+    |> DateTime.to_naive()
   end
 
   def today() do
     now()
-    |> NaiveDateTime.to_date()
+    |> DateTime.to_date()
   end
 
   def in_hours(nn) do
     seconds_per_hour = 60 * 60
-    now()
+
+    now_naive()
     |> NaiveDateTime.add(nn * seconds_per_hour)
   end
-  
+
   def in_days(nn) do
     seconds_per_day = 24 * 60 * 60
-    now()
+
+    now_naive()
     |> NaiveDateTime.add(nn * seconds_per_day)
   end
 
