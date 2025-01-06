@@ -335,7 +335,7 @@ defmodule Inkfish.Subs do
   def apply_penalty(score0, penalty) do
     score1 = Decimal.sub(score0, penalty)
 
-    if Decimal.cmp(score1, Decimal.new("0")) == :lt do
+    if Decimal.compare(score1, Decimal.new("0")) == :lt do
       0
     else
       score1

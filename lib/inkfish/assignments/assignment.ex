@@ -8,7 +8,7 @@ defmodule Inkfish.Assignments.Assignment do
     field :desc, :string
 
     # naive_datetime is correct
-    # This stores a local time, in the configured timezone.
+    # This stores a local time, in the configured timezone
     field :due, :naive_datetime
 
     field :name, :string

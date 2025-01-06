@@ -5,6 +5,9 @@ config :argon2_elixir, t_cost: 1, m_cost: 8
 
 config :inkfish, :env, :test
 
+config :inkfish, :time_zone, "Africa/Nairobi"
+config :local_time, :time_zone, "Africa/Nairobi"
+
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
 config :inkfish, InkfishWeb.Endpoint,

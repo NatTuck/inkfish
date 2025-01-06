@@ -60,7 +60,7 @@ defmodule InkfishWeb.CourseController do
   end
 
   defp fix_weight(ww) do
-    if Decimal.cmp(ww, Decimal.new(0)) == :gt do
+    if Decimal.compare(ww, Decimal.new(0)) == :gt do
       ww
     else
       Decimal.new(1)

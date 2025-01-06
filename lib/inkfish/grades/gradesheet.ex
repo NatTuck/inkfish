@@ -18,7 +18,7 @@ defmodule Inkfish.Grades.Gradesheet do
   end
 
   def d_sort(xs) do
-    Enum.sort(xs, &(Decimal.cmp(&1, &2) != :gt))
+    Enum.sort(xs, &(Decimal.compare(&1, &2) != :gt))
   end
 
   def d_median([]), do: nil
