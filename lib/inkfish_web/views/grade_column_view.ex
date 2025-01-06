@@ -6,7 +6,7 @@ defmodule InkfishWeb.GradeColumnView do
       kind: gc.kind,
       name: gc.name,
       base: gc.base,
-      points: gc.points,
+      points: gc.points
     }
   end
 end

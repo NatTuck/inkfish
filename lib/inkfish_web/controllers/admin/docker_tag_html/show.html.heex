@@ -1,6 +1,7 @@
 <h1>Docker Tag: <%= @docker_tag.name %></h1>
 <p>
-  <.link href={~p"/admin/docker_tags"}>Back to docker_tags</.link> |
+  <.link href={~p"/admin/docker_tags"}>Back to docker_tags</.link>
+  |
   <.link href={~p"/admin/docker_tags/#{@docker_tag}/edit"}>
     Edit docker_tag
   </.link>
@@ -11,12 +12,12 @@
 <div class="row">
   <div class="col">
     <%= form_for @conn.params, ~p"/admin/docker_tags/#{@docker_tag}/build", fn _f -> %>
-    <button class="btn btn-warning">Build</button>
+      <button class="btn btn-warning">Build</button>
     <% end %>
   </div>
   <div class="col">
     <%= form_for @conn.params, ~p"/admin/docker_tags/#{@docker_tag}/clean", fn _f -> %>
-    <button class="btn btn-danger">Clean</button>
+      <button class="btn btn-danger">Clean</button>
     <% end %>
   </div>
 </div>
@@ -24,11 +25,10 @@
 <pre><%= inspect(@image, pretty: true) %></pre>
 
 <%= if @fresh do %>
-<p>Image is up to date!</p>
+  <p>Image is up to date!</p>
 <% else %>
-<p>Image is stale.</p>
+  <p>Image is stale.</p>
 <% end %>
 
 <h2>Dockerfile</h2>
 <pre><%= @docker_tag.dockerfile %></pre>
-

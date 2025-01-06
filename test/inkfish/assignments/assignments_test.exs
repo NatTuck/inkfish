@@ -14,10 +14,11 @@ defmodule Inkfish.AssignmentsTest do
 
     test "list_assignments/0 returns all assignments" do
       assignment = assignment_fixture()
+
       assert Enum.member?(
-        drop_assocs(Assignments.list_assignments()),
-        drop_assocs(assignment)
-      )
+               drop_assocs(Assignments.list_assignments()),
+               drop_assocs(assignment)
+             )
     end
 
     test "get_assignment!/1 returns the assignment with given id" do
@@ -41,7 +42,7 @@ defmodule Inkfish.AssignmentsTest do
 
     test "update_assignment/2 with valid data updates the assignment" do
       assignment = assignment_fixture()
-      attrs = %{ params_for(:assignment) | name: "Updated name" }
+      attrs = %{params_for(:assignment) | name: "Updated name"}
       assert {:ok, %Assignment{} = a1} = Assignments.update_assignment(assignment, attrs)
       assert a1.desc == assignment.desc
       assert NaiveDateTime.compare(a1.due, attrs[:due]) == :eq

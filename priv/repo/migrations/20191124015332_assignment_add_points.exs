@@ -9,7 +9,8 @@ defmodule Inkfish.Repo.Migrations.AssignmentAddPoints do
 
   def down do
     alter table("assignments") do
-      remove :points # :decimal, null: false, default: "0.0"
+      # :decimal, null: false, default: "0.0"
+      remove :points
     end
   end
 end

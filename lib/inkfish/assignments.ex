@@ -39,103 +39,122 @@ defmodule Inkfish.Assignments do
 
   """
   def get_assignment!(id) do
-    Repo.one! from as in Assignment,
-      where: as.id == ^id,
-      left_join: teamset in assoc(as, :teamset),
-      left_join: grade_columns in assoc(as, :grade_columns),
-      left_join: starter in assoc(as, :starter_upload),
-      left_join: solution in assoc(as, :solution_upload),
-      preload: [teamset: teamset, grade_columns: grade_columns,
-                starter_upload: starter, solution_upload: solution]
+    Repo.one!(
+      from as in Assignment,
+        where: as.id == ^id,
+        left_join: teamset in assoc(as, :teamset),
+        left_join: grade_columns in assoc(as, :grade_columns),
+        left_join: starter in assoc(as, :starter_upload),
+        left_join: solution in assoc(as, :solution_upload),
+        preload: [
+          teamset: teamset,
+          grade_columns: grade_columns,
+          starter_upload: starter,
+          solution_upload: solution
+        ]
+    )
   end
 
   def list_subs_for_reg(as_id, %Reg{} = reg),
     do: list_subs_for_reg(as_id, reg.id)
 
   def list_subs_for_reg(as_id, reg_id) do
-    teams = Repo.all from tt in Team,
-      inner_join: teamset in assoc(tt, :teamset),
-      left_join: asgs in assoc(teamset, :assignments),
-      left_join: members in assoc(tt, :team_members),
-      where: members.reg_id == ^reg_id,
-      where: asgs.id == ^as_id
-    team_ids = Enum.map teams, &(&1.id)
+    teams =
+      Repo.all(
+        from tt in Team,
+          inner_join: teamset in assoc(tt, :teamset),
+          left_join: asgs in assoc(teamset, :assignments),
+          left_join: members in assoc(tt, :team_members),
+          where: members.reg_id == ^reg_id,
+          where: asgs.id == ^as_id
+      )
 
-    Repo.all from sub in Sub,
-      where: sub.assignment_id == ^as_id,
-      where: sub.reg_id == ^reg_id or sub.team_id in ^team_ids,
-      left_join: grades in assoc(sub, :grades),
-      order_by: [desc: :inserted_at],
-      preload: [grades: grades]
+    team_ids = Enum.map(teams, & &1.id)
+
+    Repo.all(
+      from sub in Sub,
+        where: sub.assignment_id == ^as_id,
+        where: sub.reg_id == ^reg_id or sub.team_id in ^team_ids,
+        left_join: grades in assoc(sub, :grades),
+        order_by: [desc: :inserted_at],
+        preload: [grades: grades]
+    )
   end
 
   def list_active_subs(%Assignment{} = as) do
-    Repo.all from sub in Sub,
-      where: sub.assignment_id == ^as.id,
-      where: sub.active,
-      left_join: grades in assoc(sub, :grades),
-      left_join: reg in assoc(sub, :reg),
-      left_join: user in assoc(reg, :user),
-      left_join: gcol in assoc(grades, :grade_column),
-      preload: [grades: {grades, grade_column: gcol},
-                reg: {reg, user: user}]
+    Repo.all(
+      from sub in Sub,
+        where: sub.assignment_id == ^as.id,
+        where: sub.active,
+        left_join: grades in assoc(sub, :grades),
+        left_join: reg in assoc(sub, :reg),
+        left_join: user in assoc(reg, :user),
+        left_join: gcol in assoc(grades, :grade_column),
+        preload: [grades: {grades, grade_column: gcol}, reg: {reg, user: user}]
+    )
   end
 
   def get_assignment_for_staff!(id) do
-    Repo.one! from as in Assignment,
-      where: as.id == ^id,
-      left_join: teamset in assoc(as, :teamset),
-      left_join: grade_columns in assoc(as, :grade_columns),
-      left_join: starter in assoc(as, :starter_upload),
-      left_join: solution in assoc(as, :solution_upload),
-      preload: [
-        teamset: teamset,
-        grade_columns: grade_columns,
-        starter_upload: starter,
-        solution_upload: solution,
-      ]
+    Repo.one!(
+      from as in Assignment,
+        where: as.id == ^id,
+        left_join: teamset in assoc(as, :teamset),
+        left_join: grade_columns in assoc(as, :grade_columns),
+        left_join: starter in assoc(as, :starter_upload),
+        left_join: solution in assoc(as, :solution_upload),
+        preload: [
+          teamset: teamset,
+          grade_columns: grade_columns,
+          starter_upload: starter,
+          solution_upload: solution
+        ]
+    )
   end
 
   def get_assignment_path!(id) do
-    Repo.one! from as in Assignment,
-      where: as.id == ^id,
-      inner_join: bucket in assoc(as, :bucket),
-      inner_join: course in assoc(bucket, :course),
-      inner_join: teamset in assoc(as, :teamset),
-      left_join: starter in assoc(as, :starter_upload),
-      left_join: grade_columns in assoc(as, :grade_columns),
-      preload: [
-        bucket: {bucket, course: course},
-        grade_columns: grade_columns,
-        teamset: teamset,
-        starter_upload: starter
-      ]
+    Repo.one!(
+      from as in Assignment,
+        where: as.id == ^id,
+        inner_join: bucket in assoc(as, :bucket),
+        inner_join: course in assoc(bucket, :course),
+        inner_join: teamset in assoc(as, :teamset),
+        left_join: starter in assoc(as, :starter_upload),
+        left_join: grade_columns in assoc(as, :grade_columns),
+        preload: [
+          bucket: {bucket, course: course},
+          grade_columns: grade_columns,
+          teamset: teamset,
+          starter_upload: starter
+        ]
+    )
   end
 
   def get_assignment_for_grading_tasks!(id) do
-    Repo.one! from as in Assignment,
-      where: as.id == ^id,
-      left_join: bucket in assoc(as, :bucket),
-      left_join: grade_columns in assoc(as, :grade_columns),
-      left_join: subs in assoc(as, :subs),
-      left_join: grades in assoc(subs, :grades),
-      left_join: ggcol in assoc(grades, :grade_column),
-      left_join: reg in assoc(subs, :reg),
-      left_join: user in assoc(reg, :user),
-      left_join: grader in assoc(subs, :grader),
-      left_join: guser in assoc(grader, :user),
-      where: subs.active,
-      where: reg.is_student,
-      preload: [
-        bucket: bucket,
-        grade_columns: grade_columns,
-        subs: {
-          subs,
-          reg: {reg, user: user},
-          grader: {grader, user: guser},
-          grades: {grades, grade_column: ggcol}
-        }
-      ]
+    Repo.one!(
+      from as in Assignment,
+        where: as.id == ^id,
+        left_join: bucket in assoc(as, :bucket),
+        left_join: grade_columns in assoc(as, :grade_columns),
+        left_join: subs in assoc(as, :subs),
+        left_join: grades in assoc(subs, :grades),
+        left_join: ggcol in assoc(grades, :grade_column),
+        left_join: reg in assoc(subs, :reg),
+        left_join: user in assoc(reg, :user),
+        left_join: grader in assoc(subs, :grader),
+        left_join: guser in assoc(grader, :user),
+        where: subs.active,
+        where: reg.is_student,
+        preload: [
+          bucket: bucket,
+          grade_columns: grade_columns,
+          subs: {
+            subs,
+            reg: {reg, user: user},
+            grader: {grader, user: guser},
+            grades: {grades, grade_column: ggcol}
+          }
+        ]
+    )
   end
 
   @doc """
@@ -180,17 +199,23 @@ defmodule Inkfish.Assignments do
 
   def update_assignment_points!(as_id) do
     Ecto.Multi.new()
-    |> Ecto.Multi.run(:as0, fn (_,_) ->
-      as = Repo.one from as in Assignment,
-        where: as.id == ^as_id,
-        left_join: gcs in assoc(as, :grade_columns),
-        preload: [grade_columns: gcs]
+    |> Ecto.Multi.run(:as0, fn _, _ ->
+      as =
+        Repo.one(
+          from as in Assignment,
+            where: as.id == ^as_id,
+            left_join: gcs in assoc(as, :grade_columns),
+            preload: [grade_columns: gcs]
+        )
+
       {:ok, as}
     end)
     |> Ecto.Multi.update(:as1, fn %{as0: as} ->
-      points = Enum.reduce as.grade_columns, Decimal.new("0.0"), fn (gc, acc) ->
-        Decimal.add(acc, gc.points)
-      end
+      points =
+        Enum.reduce(as.grade_columns, Decimal.new("0.0"), fn gc, acc ->
+          Decimal.add(acc, gc.points)
+        end)
+
       Ecto.Changeset.change(as, points: points)
     end)
     |> Repo.transaction()
@@ -226,11 +251,13 @@ defmodule Inkfish.Assignments do
   end
 
   def next_due(course_id, _user_id) do
-    Repo.one from as in Assignment,
-      inner_join: bucket in assoc(as, :bucket),
-      where: bucket.course_id == ^course_id,
-      where: as.due > fragment("now()::timestamp"),
-      limit: 1
+    Repo.one(
+      from as in Assignment,
+        inner_join: bucket in assoc(as, :bucket),
+        where: bucket.course_id == ^course_id,
+        where: as.due > fragment("now()::timestamp"),
+        limit: 1
+    )
   end
 
   @doc """
@@ -241,17 +268,19 @@ defmodule Inkfish.Assignments do
     {:ok, upload} = Inkfish.Uploads.create_fake_upload(owner)
     teams = Inkfish.Teams.list_teams(as.teamset_id)
 
-    Enum.each teams, fn team ->
+    Enum.each(teams, fn team ->
       submitter = hd(team.regs)
+
       attrs = %{
         assignment_id: as.id,
         reg_id: submitter.id,
         team_id: team.id,
         upload_id: upload.id,
-        hours_spent: "0.0",
+        hours_spent: "0.0"
       }
+
       {:ok, _sub} = Inkfish.Subs.create_sub(attrs)
-    end
+    end)
   end
 
   @doc """
@@ -268,10 +297,10 @@ defmodule Inkfish.Assignments do
 
     # FIXME: Actually do thing
     # Remove grading tasks for inactive subs.
-    #GradingTasks.unassign_inactive_subs(as)
+    # GradingTasks.unassign_inactive_subs(as)
 
     # Process active subs.
-    #GradingTasks.assign_grading_tasks(as)
+    # GradingTasks.assign_grading_tasks(as)
   end
 
   def list_grading_tasks(as) do
@@ -279,9 +308,11 @@ defmodule Inkfish.Assignments do
 
     asg.subs
     |> Enum.filter(fn sub ->
-      grade = Enum.find sub.grades, fn gr ->
-        gr.grade_column.kind == "feedback"
-      end
+      grade =
+        Enum.find(sub.grades, fn gr ->
+          gr.grade_column.kind == "feedback"
+        end)
+
       grade == nil || grade.score == nil
     end)
     |> Enum.map(fn sub ->

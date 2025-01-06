@@ -1,0 +1,97 @@
+<div class="row">
+  <div class="col">
+    <h1>Job Queue</h1>
+
+    <h2>Running</h2>
+
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>Sub</th>
+          <th>User</th>
+          <th>Course</th>
+          <th>Assignment</th>
+          <th>Gcol</th>
+          <th>Scheduled</th>
+          <th>Started</th>
+        </tr>
+      </thead>
+      <tbody>
+        <%= for task <- @running do %>
+        <tr>
+          <td>
+            <%= link(task.grade.sub_id,
+              to: Routes.sub_path(@conn, :show, task.grade.sub)) %>
+          </td>
+          <td>
+            <%= link(user_display_name(task.grade.sub.reg.user),
+              to: Routes.reg_path(@conn, :show, task.grade.sub.reg)) %>
+          </td>
+          <td>
+            <%= link(task.grade.sub.assignment.bucket.course.name,
+              to: Routes.course_path(@conn, :show, task.grade.sub.assignment.bucket.course)) %>
+          </td>
+          <td>
+            <%= link(task.grade.sub.assignment.name,
+              to: Routes.assignment_path(@conn, :show, task.grade.sub.assignment)) %>
+          </td>
+          <td><%= task.grade.grade_column_id %></td>
+          <td>
+            <span class="human-date">
+              <%= show_timestamp(task.queued_at) %>
+            </span>
+          </td>
+          <td>
+            <span class="human-date">
+              <%= show_timestamp(task.started_at) %>
+            </span>
+          </td>
+        </tr>
+        <% end %>
+      </tbody>
+    </table>
+
+    <h2>Waiting to Run</h2>
+
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>Sub</th>
+          <th>User</th>
+          <th>Course</th>
+          <th>Assignment</th>
+          <th>Gcol</th>
+          <th>Scheduled</th>
+        </tr>
+      </thead>
+      <tbody>
+        <%= for task <- @ready do %>
+        <tr>
+          <td>
+            <%= link(task.grade.sub_id,
+              to: Routes.sub_path(@conn, :show, task.grade.sub)) %>
+          </td>
+          <td>
+            <%= link(user_display_name(task.grade.sub.reg.user),
+              to: Routes.reg_path(@conn, :show, task.grade.sub.reg)) %>
+          </td>
+          <td>
+            <%= link(task.grade.sub.assignment.bucket.course.name,
+              to: Routes.course_path(@conn, :show, task.grade.sub.assignment.bucket.course)) %>
+          </td>
+          <td>
+            <%= link(task.grade.sub.assignment.name,
+              to: Routes.assignment_path(@conn, :show, task.grade.sub.assignment)) %>
+          </td>
+          <td><%= task.grade.grade_column_id %></td>
+          <td>
+            <span class="human-date">
+              <%= show_timestamp(task.queued_at) %>
+            </span>
+          </td>
+        </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>

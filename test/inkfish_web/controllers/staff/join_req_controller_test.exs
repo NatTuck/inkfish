@@ -20,8 +20,14 @@ defmodule InkfishWeb.Staff.JoinReqControllerTest do
   describe "delete join_req" do
     test "deletes chosen join_req", %{conn: conn, join_req: join_req} do
       conn = delete(conn, Routes.staff_join_req_path(conn, :delete, join_req))
-      assert redirected_to(conn) == Routes.staff_course_join_req_path(
-        conn, :index, join_req.course_id)
+
+      assert redirected_to(conn) ==
+               Routes.staff_course_join_req_path(
+                 conn,
+                 :index,
+                 join_req.course_id
+               )
+
       assert_error_sent 404, fn ->
         get(conn, Routes.staff_join_req_path(conn, :show, join_req))
       end

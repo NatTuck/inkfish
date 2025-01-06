@@ -12,6 +12,7 @@ defmodule Inkfish.Uploads.Data do
 
   def read_tree(base, rel) do
     path = Path.join(base, rel)
+
     case File.stat(path) do
       {:ok, stat} ->
         info = %{
@@ -19,18 +20,21 @@ defmodule Inkfish.Uploads.Data do
           path: rel,
           label: label(rel),
           type: to_string(stat.type),
-          size: stat.size,
+          size: stat.size
         }
+
         read_item(base, rel, info)
+
       other ->
         msg = inspect(other)
+
         %{
           key: rel,
           path: rel,
           label: label(rel),
           type: "text/plain",
           size: String.length(msg),
-	  text: msg, 
+          text: msg
         }
     end
   end
@@ -53,6 +57,7 @@ defmodule Inkfish.Uploads.Data do
   def add_xtra_file(nodes, rel) do
     if rel == "" do
       name = "Ω_grading_extra.txt"
+
       text = """
       Bonus file for extra grading space.
       - one
@@ -60,14 +65,16 @@ defmodule Inkfish.Uploads.Data do
       - green
       - lemon
       """
+
       xtra = %{
         key: name,
         path: name,
         label: name,
         type: "text/plain",
         size: String.length(text),
-        text: text,
+        text: text
       }
+
       [xtra | nodes]
     else
       nodes
@@ -77,9 +84,12 @@ defmodule Inkfish.Uploads.Data do
   def read_item(base, rel, %{type: "directory"} = info) do
     path = Path.join(base, rel)
     items = File.ls!(path)
-    nodes = read_list(base, rel, items)
-    |> add_xtra_file(rel)
-    |> Enum.sort_by(&(&1.path))
+
+    nodes =
+      read_list(base, rel, items)
+      |> add_xtra_file(rel)
+      |> Enum.sort_by(& &1.path)
+
     Map.put(info, :nodes, nodes)
   end
 
@@ -95,18 +105,23 @@ defmodule Inkfish.Uploads.Data do
 
   def set_mode(info, base, rel) do
     name = Path.basename(rel)
-    
+
     cond do
       info.size > 32768 ->
         info
+
       name =~ ~r/^\./ ->
         info
+
       name =~ ~r/\.ex$/i ->
         Map.put(info, :mode, "elixir")
+
       name =~ ~r/\.c$/i ->
         Map.put(info, :mode, "clike")
+
       text_file?(Path.join(base, rel)) ->
         Map.put(info, :mode, "null")
+
       true ->
         info
     end
@@ -114,6 +129,7 @@ defmodule Inkfish.Uploads.Data do
 
   def read_text(info, base, rel) do
     path = Path.join(base, rel)
+
     if info[:mode] && text_file?(path) do
       text = File.read!(path)
       Map.put(info, :text, corrupt_invalid_utf8(text))

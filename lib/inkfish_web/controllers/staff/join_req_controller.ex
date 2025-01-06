@@ -4,18 +4,24 @@ defmodule InkfishWeb.Staff.JoinReqController do
   alias Inkfish.JoinReqs
 
   alias InkfishWeb.Plugs
-  plug Plugs.FetchItem, [course: "course_id"]
-    when action in [:index, :new, :create, :accept_all]
-  plug Plugs.FetchItem, [join_req: "id"]
-    when action not in [:index, :new, :create, :accept_all]
+
+  plug Plugs.FetchItem,
+       [course: "course_id"]
+       when action in [:index, :new, :create, :accept_all]
+
+  plug Plugs.FetchItem,
+       [join_req: "id"]
+       when action not in [:index, :new, :create, :accept_all]
 
   plug Plugs.RequireReg, staff: true
 
   alias InkfishWeb.Plugs.Breadcrumb
   plug Breadcrumb, {"Courses (Staff)", :staff_course, :index}
   plug Breadcrumb, {:show, :staff, :course}
-  plug Breadcrumb, {"Join Reqs", :staff_course_join_req, :index, :course}
-    when action not in [:index]
+
+  plug Breadcrumb,
+       {"Join Reqs", :staff_course_join_req, :index, :course}
+       when action not in [:index]
 
   def index(conn, _params) do
     join_reqs = JoinReqs.list_for_course(conn.assigns[:course])
@@ -38,18 +44,21 @@ defmodule InkfishWeb.Staff.JoinReqController do
 
   def accept_all(conn, %{"course_id" => course_id}) do
     course = conn.assigns[:course]
+
     if to_string(course_id) != to_string(course.id) do
       raise "Course ID mismatch"
     end
 
-    join_reqs = JoinReqs.list_for_course(course)
-    |> Enum.filter(&(!&1.staff_req))
+    join_reqs =
+      JoinReqs.list_for_course(course)
+      |> Enum.filter(&(!&1.staff_req))
 
-    Enum.each join_reqs, fn req ->
+    Enum.each(join_reqs, fn req ->
       :ok = JoinReqs.accept_join_req(req, false)
-    end
+    end)
 
     count = length(join_reqs)
+
     conn
     |> put_flash(:info, "Accepted #{count} reqs")
     |> redirect(to: Routes.staff_course_join_req_path(conn, :index, conn.assigns[:course]))

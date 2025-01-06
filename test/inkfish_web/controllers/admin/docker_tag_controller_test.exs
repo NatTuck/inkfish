@@ -9,18 +9,20 @@ defmodule InkfishWeb.Admin.DockerTagControllerTest do
 
   describe "index" do
     setup [:login_admin]
-    
+
     test "lists all docker_tags", %{conn: conn} do
-      conn = conn
-      |> login("alice@example.com")
-      |> get(~p"/admin/docker_tags")
+      conn =
+        conn
+        |> login("alice@example.com")
+        |> get(~p"/admin/docker_tags")
+
       assert html_response(conn, 200) =~ "Listing Docker tags"
     end
   end
 
   describe "new docker_tag" do
     setup [:login_admin]
-    
+
     test "renders form", %{conn: conn} do
       conn = get(conn, ~p"/admin/docker_tags/new")
       assert html_response(conn, 200) =~ "New Docker tag"
@@ -29,7 +31,7 @@ defmodule InkfishWeb.Admin.DockerTagControllerTest do
 
   describe "create docker_tag" do
     setup [:login_admin]
-    
+
     test "redirects to show when data is valid", %{conn: conn} do
       conn = post(conn, ~p"/admin/docker_tags", docker_tag: @create_attrs)
 
@@ -86,8 +88,10 @@ defmodule InkfishWeb.Admin.DockerTagControllerTest do
   end
 
   defp login_admin(%{conn: conn}) do
-    conn = conn
-    |> login("alice@example.com")
+    conn =
+      conn
+      |> login("alice@example.com")
+
     %{conn: conn}
   end
 

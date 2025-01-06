@@ -1,34 +1,42 @@
 defmodule Inkfish.Itty do
   alias Inkfish.Itty.Server
+  alias Inkfish.Itty.Task
+  alias Inkfish.Itty.Queue
 
-  def run(uuid, qname, script, env, on_exit) do
-    {:ok, _pid} = Server.start(uuid, qname, script, env, on_exit)
-    {:ok, uuid}
-  end
-  
-  def run(uuid, script) do
-    {:ok, _pid} = Server.start(uuid, :default, script, %{}, &(&1))
-    {:ok, uuid}
+  def start(%Task{} = task) do
+    {:ok, _pid} = Server.start(task)
+    {:ok, task.uuid}
   end
 
   def run(script) do
-    uuid = Inkfish.Text.gen_uuid()
-    run(uuid, script)
+    Task.new(script)
+    |> start()
   end
 
-  def run3(qname, script, env) do
-    env = env
-    |> Enum.map(fn {kk, vv} ->
-      {to_string(kk), to_string(vv)}
-    end)
-    |> Enum.into(%{})
+  def run(script, env) do
+    env =
+      env
+      |> Enum.map(fn {kk, vv} ->
+        {to_string(kk), to_string(vv)}
+      end)
+      |> Enum.into(%{})
 
-    uuid = Inkfish.Text.gen_uuid()
-    run(uuid, qname, script, env, &(&1))
+    Task.new_env(script, env)
+    |> start()
   end
-  
+
+  def schedule(%Task{} = task) do
+    Queue.schedule(task)
+  end
+
   def peek(uuid) do
     Server.peek(uuid)
+  end
+
+  def running?(%Task{} = task), do: running?(task.uuid)
+
+  def running?(uuid) do
+    Server.running?(uuid)
   end
 
   def open(uuid) do
@@ -39,5 +47,17 @@ defmodule Inkfish.Itty do
   def close(uuid) do
     Phoenix.PubSub.unsubscribe(Inkfish.PubSub, "ittys:" <> uuid)
     peek(uuid)
+  end
+
+  def stop(uuid) do
+    Server.stop(uuid)
+  end
+
+  def status(uuid) do
+    Queue.status(uuid)
+  end
+
+  def poll() do
+    Queue.poll()
   end
 end

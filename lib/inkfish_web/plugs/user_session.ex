@@ -1,6 +1,6 @@
 defmodule InkfishWeb.Plugs.UserSession do
   use InkfishWeb, :controller
-  
+
   alias Inkfish.Users
 
   def require_no_session(conn, _args) do
@@ -15,7 +15,7 @@ defmodule InkfishWeb.Plugs.UserSession do
       conn
     end
   end
-  
+
   def require_user_session(conn, _args) do
     user = conn.assigns[:current_user]
 
@@ -28,7 +28,7 @@ defmodule InkfishWeb.Plugs.UserSession do
       |> halt
     end
   end
-  
+
   def require_admin_session(conn, _args) do
     user = conn.assigns[:current_user]
 
@@ -41,12 +41,13 @@ defmodule InkfishWeb.Plugs.UserSession do
       |> halt
     end
   end
-  
+
   def require_staff_session(conn, _args) do
     user = conn.assigns[:current_user]
     course = conn.assigns[:current_course]
 
     reg = Users.find_reg(user, course)
+
     if reg && (reg.is_prof || reg.is_staff) do
       conn
     else

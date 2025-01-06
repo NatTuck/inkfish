@@ -21,7 +21,8 @@ defmodule InkfishWeb.Staff.LineCommentView do
     grade = get_assoc(line_comment, :grade)
     grade_json = render_one(grade, InkfishWeb.Staff.GradeView, "grade.json")
 
-    %{id: line_comment.id,
+    %{
+      id: line_comment.id,
       path: line_comment.path,
       line: line_comment.line,
       points: line_comment.points,
@@ -29,7 +30,7 @@ defmodule InkfishWeb.Staff.LineCommentView do
       user_id: line_comment.user_id,
       user: user_json,
       grade_id: line_comment.grade_id,
-      grade: grade_json,
+      grade: grade_json
     }
   end
 end

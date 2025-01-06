@@ -20,12 +20,13 @@ defmodule Inkfish.LatePolicyTest do
     sub = Subs.get_sub_path!(sub.id)
 
     gcol = hd(sub.assignment.grade_columns)
-    
+
     grade_attrs = %{
       sub_id: sub.id,
       grade_column_id: gcol.id,
       score: Decimal.new("25.0")
     }
+
     {:ok, grade} = Grades.create_grade(grade_attrs)
     %Sub{sub | grades: [grade]}
   end
@@ -33,9 +34,11 @@ defmodule Inkfish.LatePolicyTest do
   describe "late penalties" do
     setup do
       base = Upload.upload_base()
+
       if String.length(base) > 10 && base =~ ~r/test/ do
         File.rm_rf!(base)
       end
+
       :ok
     end
 

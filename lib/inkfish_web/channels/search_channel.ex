@@ -5,8 +5,10 @@ defmodule InkfishWeb.SearchChannel do
 
   def join("search:" <> topic, payload, socket) do
     if authorized?(socket, payload) do
-      socket = socket
-      |> assign(:topic, topic)
+      socket =
+        socket
+        |> assign(:topic, topic)
+
       {:ok, socket}
     else
       {:error, %{reason: "unauthorized"}}
@@ -21,9 +23,9 @@ defmodule InkfishWeb.SearchChannel do
   end
 
   def search("users", query) do
-    Enum.map Users.search_users(query), fn user ->
+    Enum.map(Users.search_users(query), fn user ->
       "#{user.given_name} #{user.surname} [#{user.email}]"
-    end
+    end)
   end
 
   # Add authorization logic here as required.
@@ -32,4 +34,3 @@ defmodule InkfishWeb.SearchChannel do
     !is_nil(user)
   end
 end
-

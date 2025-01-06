@@ -31,9 +31,11 @@ defmodule Inkfish.Teams do
   end
 
   def list_teamsets(course_id) do
-    Repo.all from ts in Teamset,
-      where: ts.course_id == ^course_id,
-      order_by: ts.inserted_at
+    Repo.all(
+      from ts in Teamset,
+        where: ts.course_id == ^course_id,
+        order_by: ts.inserted_at
+    )
   end
 
   @doc """
@@ -55,24 +57,32 @@ defmodule Inkfish.Teams do
   end
 
   def get_teamset(id) do
-    ts = Repo.one from ts in Teamset,
-      where: ts.id == ^id,
-      inner_join: course in assoc(ts, :course),
-      left_join: cregs in assoc(course, :regs),
-      left_join: cuser in assoc(cregs, :user),
-      left_join: teams in assoc(ts, :teams),
-      left_join: regs in assoc(teams, :regs),
-      left_join: user in assoc(regs, :user),
-      preload: [course: {course, regs: {cregs, user: cuser}},
-                teams: {teams, regs: {regs, user: user}}]
-    Repo.preload(ts, [teams: :subs])
+    ts =
+      Repo.one(
+        from ts in Teamset,
+          where: ts.id == ^id,
+          inner_join: course in assoc(ts, :course),
+          left_join: cregs in assoc(course, :regs),
+          left_join: cuser in assoc(cregs, :user),
+          left_join: teams in assoc(ts, :teams),
+          left_join: regs in assoc(teams, :regs),
+          left_join: user in assoc(regs, :user),
+          preload: [
+            course: {course, regs: {cregs, user: cuser}},
+            teams: {teams, regs: {regs, user: user}}
+          ]
+      )
+
+    Repo.preload(ts, teams: :subs)
   end
 
   def get_teamset_path!(id) do
-    Repo.one! from ts in Teamset,
-      where: ts.id == ^id,
-      inner_join: course in assoc(ts, :course),
-      preload: [course: course]
+    Repo.one!(
+      from ts in Teamset,
+        where: ts.id == ^id,
+        inner_join: course in assoc(ts, :course),
+        preload: [course: course]
+    )
   end
 
   def get_solo_teamset!(%Course{} = course) do
@@ -98,15 +108,16 @@ defmodule Inkfish.Teams do
   end
 
   def create_solo_teamset!(%Course{} = course) do
-    attrs = %{ name: "Solo Work", course_id: course.id }
+    attrs = %{name: "Solo Work", course_id: course.id}
     solo_ts = Teamset.changeset(%Teamset{}, attrs)
 
-    {:ok, items} = Ecto.Multi.new()
-    |> Ecto.Multi.insert(:teamset, solo_ts)
-    |> Ecto.Multi.update(:course, fn %{teamset: ts} ->
-      Course.changeset(course, %{solo_teamset_id: ts.id})
-    end)
-    |> Repo.transaction()
+    {:ok, items} =
+      Ecto.Multi.new()
+      |> Ecto.Multi.insert(:teamset, solo_ts)
+      |> Ecto.Multi.update(:course, fn %{teamset: ts} ->
+        Course.changeset(course, %{solo_teamset_id: ts.id})
+      end)
+      |> Repo.transaction()
 
     items[:teamset]
   end
@@ -168,24 +179,27 @@ defmodule Inkfish.Teams do
 
   """
   def list_teams(teamset_id) do
-    Repo.all from team in Team,
-      where: team.teamset_id == ^teamset_id,
-      left_join: members in assoc(team, :team_members),
-      left_join: regs in assoc(team, :regs),
-      preload: [team_members: members, regs: regs]
+    Repo.all(
+      from team in Team,
+        where: team.teamset_id == ^teamset_id,
+        left_join: members in assoc(team, :team_members),
+        left_join: regs in assoc(team, :regs),
+        preload: [team_members: members, regs: regs]
+    )
   end
-
 
   @doc """
   All active teams in this course outside the provided teamset.
   """
   def past_teams(%Teamset{} = teamset) do
-    Repo.all from team in Team,
-      inner_join: ts in assoc(team, :teamset),
-      where: team.active,
-      where: ts.course_id == ^teamset.course_id,
-      where: ts.id != ^teamset.id,
-      preload: [regs: :user]
+    Repo.all(
+      from team in Team,
+        inner_join: ts in assoc(team, :teamset),
+        where: team.active,
+        where: ts.course_id == ^teamset.course_id,
+        where: ts.id != ^teamset.id,
+        preload: [regs: :user]
+    )
   end
 
   def past_teams(ts_id) do
@@ -208,14 +222,19 @@ defmodule Inkfish.Teams do
 
   """
   def get_team!(id) do
-    Repo.one! from team in Team,
-      where: team.id == ^id,
-      inner_join: ts in assoc(team, :teamset),
-      left_join: members in assoc(team, :team_members),
-      left_join: reg in assoc(members, :reg),
-      left_join: user in assoc(reg, :user),
-      preload: [team_members: {members, reg: {reg, user: user}},
-                teamset: ts, regs: {reg, user: user}]
+    Repo.one!(
+      from team in Team,
+        where: team.id == ^id,
+        inner_join: ts in assoc(team, :teamset),
+        left_join: members in assoc(team, :team_members),
+        left_join: reg in assoc(members, :reg),
+        left_join: user in assoc(reg, :user),
+        preload: [
+          team_members: {members, reg: {reg, user: user}},
+          teamset: ts,
+          regs: {reg, user: user}
+        ]
+    )
   end
 
   def get_team(id) do
@@ -227,11 +246,13 @@ defmodule Inkfish.Teams do
   end
 
   def get_team_path!(id) do
-    Repo.one! from team in Team,
-      where: team.id == ^id,
-      inner_join: ts in assoc(team, :teamset),
-      inner_join: course in assoc(ts, :course),
-      preload: [teamset: {ts, course: course}]
+    Repo.one!(
+      from team in Team,
+        where: team.id == ^id,
+        inner_join: ts in assoc(team, :teamset),
+        inner_join: course in assoc(ts, :course),
+        preload: [teamset: {ts, course: course}]
+    )
   end
 
   def get_active_team(%Assignment{} = asg, %Reg{} = reg) do
@@ -240,18 +261,22 @@ defmodule Inkfish.Teams do
   end
 
   def get_active_team(%Teamset{} = ts, %Reg{} = reg) do
-    team = Repo.one from team in Team,
-      inner_join: ts in assoc(team, :teamset),
-      left_join: member in assoc(team, :team_members),
-      where: team.teamset_id == ^ts.id,
-      where: member.reg_id == ^reg.id,
-      where: team.active
+    team =
+      Repo.one(
+        from team in Team,
+          inner_join: ts in assoc(team, :teamset),
+          left_join: member in assoc(team, :team_members),
+          where: team.teamset_id == ^ts.id,
+          where: member.reg_id == ^reg.id,
+          where: team.active
+      )
 
-    team1 = if team == nil && ts.name == "Solo Work" do
-      create_solo_team(ts, reg)
-    else
-      team
-    end
+    team1 =
+      if team == nil && ts.name == "Solo Work" do
+        create_solo_team(ts, reg)
+      else
+        team
+      end
 
     if team1 do
       get_team!(team1.id)
@@ -262,11 +287,13 @@ defmodule Inkfish.Teams do
 
   def create_solo_team(%Teamset{} = ts, %Reg{} = reg) do
     regs = [Inkfish.Users.Reg.changeset(reg, %{})]
+
     team_attrs = %{
       active: true,
       teamset_id: ts.id,
       regs: regs
     }
+
     {:ok, team} = create_team(team_attrs)
     team
   end

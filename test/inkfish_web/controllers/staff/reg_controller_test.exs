@@ -73,6 +73,7 @@ defmodule InkfishWeb.Staff.RegControllerTest do
     test "deletes chosen reg", %{conn: conn, reg: reg} do
       conn = delete(conn, Routes.staff_reg_path(conn, :delete, reg))
       assert redirected_to(conn) == Routes.staff_course_reg_path(conn, :index, reg.course_id)
+
       assert_error_sent 404, fn ->
         get(conn, Routes.staff_reg_path(conn, :show, reg))
       end

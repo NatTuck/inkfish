@@ -2,17 +2,24 @@ defmodule InkfishWeb.Staff.TeamsetController do
   use InkfishWeb, :controller
 
   alias InkfishWeb.Plugs
-  plug Plugs.FetchItem, [teamset: "id"]
-    when action not in [:index, :new, :create]
-  plug Plugs.FetchItem, [course: "course_id"]
-    when action in [:index, :new, :create]
+
+  plug Plugs.FetchItem,
+       [teamset: "id"]
+       when action not in [:index, :new, :create]
+
+  plug Plugs.FetchItem,
+       [course: "course_id"]
+       when action in [:index, :new, :create]
+
   plug Plugs.RequireReg, staff: true
 
   alias InkfishWeb.Plugs.Breadcrumb
   plug Breadcrumb, {"Courses (Staff)", :staff_course, :index}
   plug Breadcrumb, {:show, :staff, :course}
-  plug Breadcrumb, {"Team Sets", :staff_course_teamset, :index, :course}
-    when action not in [:index]
+
+  plug Breadcrumb,
+       {"Team Sets", :staff_course_teamset, :index, :course}
+       when action not in [:index]
 
   alias Inkfish.Teams
   alias Inkfish.Teams.Teamset
@@ -28,8 +35,9 @@ defmodule InkfishWeb.Staff.TeamsetController do
   end
 
   def create(conn, %{"course_id" => course_id, "teamset" => teamset_params}) do
-    teamset_params = teamset_params
-    |> Map.put("course_id", course_id)
+    teamset_params =
+      teamset_params
+      |> Map.put("course_id", course_id)
 
     case Teams.create_teamset(teamset_params) do
       {:ok, teamset} ->
@@ -83,6 +91,7 @@ defmodule InkfishWeb.Staff.TeamsetController do
   def add_prof_team(conn, %{"id" => id}) do
     teamset = Teams.get_teamset!(id)
     reg = conn.assigns[:current_reg]
+
     if reg.is_prof do
       team = Teams.get_active_team(teamset, reg)
 

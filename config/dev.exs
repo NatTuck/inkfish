@@ -27,7 +27,9 @@ config :inkfish, InkfishWeb.Endpoint,
   check_origin: false,
   watchers: [
     asset_copy: {
-      Phoenix.Copy, :watch, [:default]
+      Phoenix.Copy,
+      :watch,
+      [:default]
     },
     esbuild: {
       Esbuild,

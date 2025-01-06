@@ -9,10 +9,11 @@ defmodule InkfishWeb.AutogradeChannelTest do
     {:ok, _, socket} =
       socket(InkfishWeb.UserSocket, nil, %{user_id: user.id})
       |> subscribe_and_join(
-           InkfishWeb.AutogradeChannel,
-           "autograde:" <> nonce,
-           %{"token" => token}
+        InkfishWeb.AutogradeChannel,
+        "autograde:" <> nonce,
+        %{"token" => token}
       )
+
     {:ok, socket: socket}
   end
 
@@ -20,7 +21,7 @@ defmodule InkfishWeb.AutogradeChannelTest do
   # and maybe the git channel with a dummy script.
   @tag :skip
   test "broadcasts are pushed to the client", %{socket: socket} do
-    broadcast_from! socket, "broadcast", %{"some" => "data"}
+    broadcast_from!(socket, "broadcast", %{"some" => "data"})
     assert_push "broadcast", %{"some" => "data"}
   end
 end

@@ -15,8 +15,7 @@ config :inkfish,
   ecto_repos: [Inkfish.Repo],
   generators: [timestamp_type: :utc_datetime]
 
-config :inkfish, Inkfish.Repo,
-  migration_timestamps: [type: :utc_datetime]
+config :inkfish, Inkfish.Repo, migration_timestamps: [type: :utc_datetime]
 
 # Configures the endpoint
 config :inkfish, InkfishWeb.Endpoint,
@@ -26,11 +25,7 @@ config :inkfish, InkfishWeb.Endpoint,
   pubsub_server: Inkfish.PubSub,
   live_view: [signing_salt: "37rUe00e"]
 
-config :inkfish, Inkfish.Autobots,
-  concurrency: 1
-
-config :inkfish, Inkfish.Mailer,
-   adapter: Swoosh.Adapters.Local
+config :inkfish, Inkfish.Mailer, adapter: Swoosh.Adapters.Local
 
 # Configures Elixir's Logger
 config :logger, :console,
@@ -43,6 +38,7 @@ config :phoenix, :json_library, Jason
 # Force a default time zone.
 config :elixir, :time_zone_database, Tzdata.TimeZoneDatabase
 config :inkfish, :time_zone, "America/New_York"
+config :local_time, :time_zone, "America/New_York"
 
 config :esbuild,
   version: "0.17.11",

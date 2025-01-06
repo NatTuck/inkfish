@@ -106,9 +106,10 @@ defmodule Inkfish.DockerTags do
   alias Inkfish.Itty
 
   def build_dir(%DockerTag{} = dt) do
-    text = dt.id
-    |> to_string()
-    |> String.pad_leading(6, "0")
+    text =
+      dt.id
+      |> to_string()
+      |> String.pad_leading(6, "0")
 
     "~/.cache/inkfish/docker_tags/"
     |> Path.expand()
@@ -130,9 +131,11 @@ defmodule Inkfish.DockerTags do
   end
 
   def fresh_image?(%DockerTag{} = _dt, nil), do: false
+
   def fresh_image?(%DockerTag{} = dt, %{"Created" => image_time}) do
-    dt_time = dt.updated_at
-    |> DateTime.to_unix()
+    dt_time =
+      dt.updated_at
+      |> DateTime.to_unix()
 
     dt_time < image_time
   end

@@ -30,14 +30,16 @@ defmodule InkfishWeb.Admin.DockerTagController do
 
   def show(conn, %{"id" => id}) do
     docker_tag = DockerTags.get_docker_tag!(id)
+
     case Docker.get_image_by_tag(docker_tag.name) do
       {:error, ee} ->
-	conn
+        conn
         |> put_flash(:error, inspect(ee))
-	|> redirect(to: ~p"/admin/docker_tags")
-      image -> 
-	fresh = DockerTags.fresh_image?(docker_tag, image)
-	render(conn, :show, docker_tag: docker_tag, image: image, fresh: fresh)
+        |> redirect(to: ~p"/admin/docker_tags")
+
+      image ->
+        fresh = DockerTags.fresh_image?(docker_tag, image)
+        render(conn, :show, docker_tag: docker_tag, image: image, fresh: fresh)
     end
   end
 

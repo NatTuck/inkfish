@@ -1,7 +1,7 @@
 defmodule InkfishWeb.IntegrationCase do
- use ExUnit.CaseTemplate
+  use ExUnit.CaseTemplate
 
- using do
+  using do
     quote do
       use InkfishWeb.ConnCase
       use PhoenixIntegration

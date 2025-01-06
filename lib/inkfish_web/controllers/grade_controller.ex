@@ -4,11 +4,15 @@ defmodule InkfishWeb.GradeController do
   alias Inkfish.Grades
 
   alias InkfishWeb.Plugs
-  plug Plugs.FetchItem, [grade: "id"]
-    when action not in [:index, :new, :create]
+
+  plug Plugs.FetchItem,
+       [grade: "id"]
+       when action not in [:index, :new, :create]
+
   plug Plugs.RequireReg
+
   plug Plugs.RequireSubmitter
-    when action in [:show]
+       when action in [:show]
 
   alias InkfishWeb.Plugs.Breadcrumb
   plug Breadcrumb, {"Courses", :course, :index}
@@ -27,10 +31,13 @@ defmodule InkfishWeb.GradeController do
     else
       {id, _} = Integer.parse(id)
       grade_json = InkfishWeb.Staff.GradeView.render("grade.json", %{grade: grade})
-      data = Inkfish.Subs.read_sub_data(grade.sub_id)
-      |> Map.put(:edit, false)
-      |> Map.put(:grade_id, id)
-      |> Map.put(:grade, grade_json)
+
+      data =
+        Inkfish.Subs.read_sub_data(grade.sub_id)
+        |> Map.put(:edit, false)
+        |> Map.put(:grade_id, id)
+        |> Map.put(:grade, grade_json)
+
       render(conn, "show.html", grade: grade, data: data)
     end
   end

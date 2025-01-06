@@ -9,6 +9,7 @@ defmodule Inkfish.Sandbox.Shell do
     File.write!(script, text)
     {text, code} = System.cmd("bash", [script], stderr_to_stdout: true)
     File.rm(script)
+
     if code == 0 do
       :ok
     else

@@ -4,21 +4,32 @@ import { createRoot } from 'react-dom/client';
 import { Card } from 'react-bootstrap';
 import _ from 'lodash';
 
-import CodeMirror from 'codemirror';
-import 'codemirror-mode-elixir';
-import 'codemirror/mode/markdown/markdown';
-import 'codemirror/mode/clike/clike';
-import 'codemirror/mode/gas/gas';
-import 'codemirror/mode/htmlmixed/htmlmixed';
-import 'codemirror/mode/javascript/javascript';
-import 'codemirror/mode/jsx/jsx';
-import 'codemirror/mode/css/css';
-import 'codemirror/mode/sass/sass';
+import CodeMirror from '@uiw/react-codemirror';
 
 import LineComment from './line-comment';
+import { detectMode } from './langs';
 
 import { create_line_comment } from '../ajax';
 
+export default function FileViewer({path, data, grade, setGrade}) {
+  const texts = useMemo(() => build_texts_map(data.files), [data.files]);
+  const text = texts.get(path);
+  
+  let extensions = [];
+  let langMode = detectMode(path, text);
+  if (langMode) {
+    extensions.push(langMode);
+  }
+
+  return (
+    <CodeMirror value={text}
+                extensions={extensions}
+                readOnly={true}
+    />
+  );
+} 
+
+/*
 export default function FileViewer({path, data, grade, setGrade}) {
   const texts = useMemo(() => build_texts_map(data.files), [data.files]);
   const editor = useRef(null);
@@ -99,6 +110,7 @@ export default function FileViewer({path, data, grade, setGrade}) {
     </Card>
   );
 }
+*/
 
 function build_texts_map(node) {
   let mm = new Map();

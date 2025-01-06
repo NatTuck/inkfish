@@ -19,8 +19,8 @@ defmodule Inkfish.Courses.Bucket do
     |> cast(attrs, [:course_id, :name, :weight])
     |> validate_required([:course_id, :name, :weight])
     |> validate_length(:name, min: 3)
-    |> validate_change(:weight, fn (_, weight) ->
-      if Decimal.cmp(weight, "0.0") == :lt || Decimal.cmp(weight, "100.0")== :gt do
+    |> validate_change(:weight, fn _, weight ->
+      if Decimal.compare(weight, "0.0") == :lt || Decimal.compare(weight, "100.0") == :gt do
         [weight: "must be between 0.0 and 100.0, inclusive"]
       else
         []

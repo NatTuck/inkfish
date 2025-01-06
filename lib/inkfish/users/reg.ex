@@ -29,12 +29,12 @@ defmodule Inkfish.Users.Reg do
     |> validate_not_student_and_staff()
     |> unique_constraint(:user_id, name: :regs_course_id_user_id_index)
   end
-  
+
   def validate_not_student_and_staff(cset) do
     sp = get_field(cset, :is_student) && get_field(cset, :is_prof)
     ss = get_field(cset, :is_student) && get_field(cset, :is_staff)
     sg = get_field(cset, :is_student) && get_field(cset, :is_grader)
-    
+
     if sp || ss || sg do
       add_error(cset, :is_student, "Students can't be staff")
     else

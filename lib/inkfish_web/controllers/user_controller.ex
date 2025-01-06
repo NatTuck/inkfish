@@ -1,6 +1,6 @@
 defmodule InkfishWeb.UserController do
   use InkfishWeb, :controller1
-  
+
   alias Inkfish.Users
   alias Inkfish.Users.User
 
@@ -10,6 +10,7 @@ defmodule InkfishWeb.UserController do
     id = conn.params["id"] || conn.assigns["current_user_id"]
     {id, _} = Integer.parse(id)
     user = conn.assigns[:current_user]
+
     if !user.is_admin && user.id != id do
       conn
       |> put_flash(:error, "Access denied.")
@@ -25,6 +26,7 @@ defmodule InkfishWeb.UserController do
       {:ok, %{email: email}} ->
         changeset = Users.change_user(%User{email: email})
         render(conn, :new, changeset: changeset, token: token)
+
       :error ->
         conn
         |> put_flash(:error, "Bad token, probably expired. Request another link.")
@@ -36,7 +38,7 @@ defmodule InkfishWeb.UserController do
     case Phoenix.Token.verify(conn, "reg_email", token, max_age: 86400) do
       {:ok, %{email: email}} ->
         user_params = Map.put(user_params, "email", User.normalize_email(email))
-    
+
         case Users.create_user(user_params) do
           {:ok, user} ->
             conn
@@ -49,6 +51,7 @@ defmodule InkfishWeb.UserController do
             |> put_flash(:error, "Error creating user, see details below.")
             |> render(:new, changeset: changeset, token: token)
         end
+
       :error ->
         conn
         |> put_flash(:error, "Bad token, probably expired. Request another link.")

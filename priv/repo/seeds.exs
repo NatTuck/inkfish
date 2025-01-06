@@ -27,12 +27,13 @@ defmodule Make do
   def user(name, admin \\ false) do
     name = String.downcase(name)
     pass = Argon2.hash_pwd_salt("#{name}#{name}")
+
     user = %User{
       given_name: String.capitalize(name),
       surname: "Anderson",
       email: "#{name}@example.com",
       is_admin: admin,
-      hashed_password: pass,
+      hashed_password: pass
     }
 
     Repo.insert!(user)
@@ -56,14 +57,16 @@ defmodule Make do
 
   def assignment(course, bucket, name) do
     ts = Teams.get_solo_teamset!(course)
+
     as = %Assignment{
       name: name,
       desc: name,
       due: days_from_now(3),
       weight: Decimal.new("1.0"),
       bucket_id: bucket.id,
-      teamset_id: ts.id,
+      teamset_id: ts.id
     }
+
     Repo.insert!(as)
   end
 

@@ -31,5 +31,4 @@ config :inkfish, InkfishWeb.Endpoint,
   ],
   secret_key_base: secret_key_base
 
-config :inkfish, InkfishWeb.Endpoint, 
-  server: !System.get_env("NOSERVER")
+config :inkfish, InkfishWeb.Endpoint, server: !System.get_env("NOSERVER")

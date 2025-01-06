@@ -1,12 +1,10 @@
 <h1>Building Image: <%= @docker_tag.name %></h1>
 
 <p>
-  <.link href={~p"/admin/docker_tags"}>Back to docker_tags</.link> |
-  <.link href={~p"/admin/docker_tags/#{@docker_tag}"}>View</.link>
+  <.link href={~p"/admin/docker_tags"}>Back to docker_tags</.link>
+  | <.link href={~p"/admin/docker_tags/#{@docker_tag}"}>View</.link>
 </p>
 
 <div id="itty-root" data-uuid={@uuid}>
   Loading...
 </div>
-
-

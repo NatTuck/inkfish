@@ -10,10 +10,12 @@ defmodule InkfishWeb.UploadController do
         params
         |> Map.put("kind", kind)
         |> Map.put("nonce", nonce)
+
       _other ->
         params
     end
   end
+
   def check_token(_conn, params), do: params
 
   def create(conn, %{"upload" => upload_params}) do
@@ -21,6 +23,7 @@ defmodule InkfishWeb.UploadController do
 
     upload_params = Map.put(upload_params, "user_id", conn.assigns[:current_user].id)
     mode = conn.assigns[:client_mode]
+
     case {mode, Uploads.create_upload(upload_params)} do
       {:browser, {:ok, upload}} ->
         conn
@@ -37,8 +40,9 @@ defmodule InkfishWeb.UploadController do
           name: upload.name,
           path: Routes.upload_path(conn, :show, upload),
           size: upload.size,
-          id: upload.id,
+          id: upload.id
         }
+
         conn
         |> put_resp_header("content-type", "application/json")
         |> send_resp(201, Jason.encode!(resp))
@@ -50,7 +54,7 @@ defmodule InkfishWeb.UploadController do
     end
   end
 
- def show(conn, %{"id" => id, "show" => show}) do
+  def show(conn, %{"id" => id, "show" => show}) do
     upload = Uploads.get_upload!(id)
     path = Upload.upload_path(upload)
 
@@ -60,11 +64,13 @@ defmodule InkfishWeb.UploadController do
         |> put_resp_header("content-type", "text/plain")
         |> put_resp_header("content-disposition", "inline")
         |> send_resp(200, File.read!(path))
+
       upload.kind == "user_photo" ->
         conn
         |> put_resp_header("content-type", "image/jpeg")
         |> put_resp_header("content-disposition", "inline")
         |> send_resp(200, File.read!(path))
+
       true ->
         conn
         |> put_resp_header("content-type", "application/octet-stream")
@@ -76,9 +82,10 @@ defmodule InkfishWeb.UploadController do
   def show(conn, %{"id" => id}) do
     show(conn, %{"id" => id, "show" => false})
   end
- 
+
   def download(conn, %{"id" => id, "name" => name}) do
     upload = Uploads.get_upload!(id)
+
     if name == upload.name do
       path = Upload.upload_path(upload)
 
@@ -92,7 +99,6 @@ defmodule InkfishWeb.UploadController do
     end
   end
 
-
   def thumb(conn, %{"id" => id}) do
     upload = Uploads.get_upload!(id)
     path = Uploads.Photo.thumb_path(upload)
@@ -103,6 +109,7 @@ defmodule InkfishWeb.UploadController do
         |> put_resp_header("content-type", "image/jpeg")
         |> put_resp_header("content-disposition", "inline")
         |> send_resp(200, File.read!(path))
+
       _ ->
         conn
         |> put_resp_header("content-type", "text/plain")
@@ -113,9 +120,10 @@ defmodule InkfishWeb.UploadController do
   def unpacked(conn, %{"id" => id, "path" => parts}) do
     {:ok, cwd} = :file.get_cwd()
 
-    rel_path = parts
-    |> Enum.join("/")
-    |> :filelib.safe_relative_path(cwd)
+    rel_path =
+      parts
+      |> Enum.join("/")
+      |> :filelib.safe_relative_path(cwd)
 
     if rel_path == :unsafe do
       conn
@@ -127,13 +135,12 @@ defmodule InkfishWeb.UploadController do
       path = Path.join(base, rel_path)
       name = Path.basename(path)
 
-      ctype = (
+      ctype =
         if name =~ ~r/\.jpg/ do
           "image/jpeg"
         else
           "application/octet-stream"
         end
-      )
 
       conn
       |> put_resp_header("content-type", ctype)

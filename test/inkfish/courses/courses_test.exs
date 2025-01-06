@@ -68,13 +68,14 @@ defmodule Inkfish.CoursesTest do
 
   describe "buckets" do
     alias Inkfish.Courses.Bucket
-    
+
     test "list_buckets/0 returns all buckets" do
       bucket = insert(:bucket)
+
       assert Enum.member?(
-        drop_assocs(Courses.list_buckets()),
-        drop_assocs(bucket)
-      )
+               drop_assocs(Courses.list_buckets()),
+               drop_assocs(bucket)
+             )
     end
 
     test "get_bucket!/1 returns the bucket with given id" do
@@ -83,9 +84,10 @@ defmodule Inkfish.CoursesTest do
     end
 
     test "create_bucket/1 with valid data creates a bucket" do
-      params = params_for(:bucket)
-      |> Map.put(:course_id, insert(:course).id)
-      
+      params =
+        params_for(:bucket)
+        |> Map.put(:course_id, insert(:course).id)
+
       assert {:ok, %Bucket{} = bucket} = Courses.create_bucket(params)
       assert bucket.name == "Homework"
       assert bucket.weight == Decimal.new("1.0")
