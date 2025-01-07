@@ -47,6 +47,12 @@ importers:
       '@codemirror/legacy-modes':
         specifier: ^6.4.2
         version: 6.4.2
+      '@codemirror/state':
+        specifier: ^6.5.0
+        version: 6.5.0
+      '@codemirror/view':
+        specifier: ^6.36.1
+        version: 6.36.1
       '@uiw/react-codemirror':
         specifier: ^4.23.7
         version: 4.23.7(@babel/runtime@7.26.0)(@codemirror/autocomplete@6.18.4)(@codemirror/language@6.10.8)(@codemirror/lint@6.8.4)(@codemirror/search@6.5.8)(@codemirror/state@6.5.0)(@codemirror/theme-one-dark@6.1.2)(@codemirror/view@6.36.1)(codemirror@6.0.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -71,9 +77,6 @@ importers:
       classnames:
         specifier: ^2.5.1
         version: 2.5.1
-      codemirror:
-        specifier: ^6.0.1
-        version: 6.0.1
       codemirror-lang-elixir:
         specifier: ^4.0.0
         version: 4.0.0

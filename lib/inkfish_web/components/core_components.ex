@@ -9,7 +9,6 @@ defmodule InkfishWeb.CoreComponents do
 
   alias Phoenix.LiveView.JS
   use Gettext, backend: InkfishWeb.Gettext
-  import InkfishWeb.Gettext
 
   @doc """
   Renders a modal.

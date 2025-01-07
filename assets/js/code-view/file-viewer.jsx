@@ -5,65 +5,167 @@ import { Card } from 'react-bootstrap';
 import _ from 'lodash';
 
 import CodeMirror from '@uiw/react-codemirror';
+import { lineNumbers, highlightSpecialChars, scrollPastEnd } from '@codemirror/view';
+import { foldGutter, syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language';
 
 import LineComment from './line-comment';
-import { detectMode } from './langs';
+import { detectLangModes } from './langs';
 
 import { create_line_comment } from '../ajax';
+
+import { EditorView, WidgetType, Decoration,
+         ViewUpdate, ViewPlugin } from '@codemirror/view';
+import { EditorState, Range, RangeSet,
+         StateField, StateEffect } from '@codemirror/state';
+
+const lcSetState = StateEffect.define({});
+
+const lcState = StateField.define({
+  create(state) {
+    return [];
+  },
+  update(lcs0, tx) {
+    for (let eff of tx.effects) {
+      if (eff.is(lcSetState)) {
+        return eff.value;
+      }
+    }
+    return lcs0;
+  }
+});
+
+class LineCommentWidget extends WidgetType {
+  constructor(lc) {
+    super();
+    this.lc = lc;
+  }
+
+  toDOM() {
+    console.log("Rendering widget");
+    
+    let lc_div = document.createElement("div");
+    let lc_root = createRoot(lc_div);
+    lc_root.render(
+      <div>This is a react component.</div>
+    );
+    return lc_div;
+  }
+}
+
+class LcPlug {
+  constructor() {
+    this.decos = RangeSet.empty;
+  }
+
+  update(change) {
+    console.log("change", change);
+    
+    let lcs = change.state.field(lcState);
+    let ranges = lcs.map((lc) => {
+      let lcw = new LineCommentWidget(lc);
+      let lv = Decoration.widget({widget: lcw, block: true});
+      let line = change.state.doc.line(lc.line);
+      return lv.range(line.from);
+    });
+
+    console.log("Ranges", ranges);
+
+    this.decos = RangeSet.of(ranges, true);
+  }
+}
+
+const lcSpec = {
+  decorations: vp => vp.decos,
+};
+
+const lineCommentsPlugin = ViewPlugin.fromClass(LcPlug, lcSpec);
+
+function makeLcWidgets(state) {
+  let lcs = state.field(lcState);
+
+  let ranges = lcs.map((lc) => {
+    let lcw = new LineCommentWidget(lc);
+    let lv = Decoration.widget({widget: lcw, block: true});
+    let line = state.doc.line(lc.line);
+    return lv.range(line.from);
+  });
+
+  console.log("Ranges", ranges);
+
+  return RangeSet.of(ranges, true);
+}
 
 export default function FileViewer({path, data, grade, setGrade}) {
   const texts = useMemo(() => build_texts_map(data.files), [data.files]);
   const text = texts.get(path);
-  
-  let extensions = [];
-  let langMode = detectMode(path, text);
-  if (langMode) {
-    extensions.push(langMode);
+
+  function gutter_click(view, info, ev) {
+    ev.preventDefault();
+
+    let line = view.state.doc.lineAt(info.from).number;
+    let lcs0 = view.state.field(lcState);
+    let lcs1 = lcs0.concat([{line}]);
+
+    view.dispatch({
+      effects: lcSetState.of(lcs1),
+    });
   }
+  
+  let extensions = detectLangModes(path, text);
+  extensions.push(
+    lineNumbers({domEventHandlers: { click: gutter_click } }),
+    highlightSpecialChars(),
+    scrollPastEnd(),
+    foldGutter(),
+    syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+    EditorState.readOnly.of(true),
+    lcState.extension,
+    EditorView.decorations.compute(["doc", lcState], makeLcWidgets),
+  );
 
   return (
-    <CodeMirror value={text}
+    <CodeMirror basicSetup={false}
+                value={text}
                 extensions={extensions}
-                readOnly={true}
     />
   );
 } 
 
 /*
-export default function FileViewer({path, data, grade, setGrade}) {
+  export default function FileViewer({path, data, grade, setGrade}) {
   const texts = useMemo(() => build_texts_map(data.files), [data.files]);
   const editor = useRef(null);
 
   //console.log("grade", grade);
 
   function gutter_click(_cm, line, _class, ev) {
-    ev.preventDefault();
-    _.debounce(() => {
-      console.log(line, ev);
-      create_line_comment(grade.id, path, line)
-        .then((resp) => {
-          console.log("resp", resp);
-          setGrade(resp.data.grade);
-        });
-    }, 100, {leading: true})();
+  ev.preventDefault();
+  _.debounce(() => {
+  console.log(line, ev);
+  create_line_comment(grade.id, path, line)
+  .then((resp) => {
+  console.log("resp", resp);
+  setGrade(resp.data.grade);
+  });
+  }, 100, {leading: true})();
   }
 
   useEffect(() => {
-    let cm = CodeMirror(editor.current, {
-      readOnly: true,
-      lineNumbers: true,
-      lineWrapping: true,
-      value: texts.get(path) || "(missing)",
-    });
+  let cm = CodeMirror(editor.current, {
+  readOnly: true,
+  lineNumbers: true,
+  lineWrapping: true,
+  value: texts.get(path) || "(missing)",
+  });
 
-    if (data.edit) {
-      cm.on("gutterClick", gutter_click);
-    }
+  if (data.edit) {
+  cm.on("gutterClick", gutter_click);
+  }
 
-    for (let lc of grade.line_comments) {
-      if (lc.path != path) {
-        continue;
-      }
+  for (let lc of grade.line_comments) {
+  if (lc.path != path) {
+  continue;
+  }
 
       if (!cm.lineInfo(lc.line)) {
         lc.line = 0;

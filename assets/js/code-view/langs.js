@@ -10,6 +10,7 @@ import { xml } from '@codemirror/lang-xml';
 
 import { StreamLanguage } from '@codemirror/language';
 import { gas } from '@codemirror/legacy-modes/mode/gas';
+import { perl } from '@codemirror/legacy-modes/mode/perl';
 
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { languages } from '@codemirror/language-data';
@@ -18,48 +19,52 @@ function hasExt(path, exts) {
   return exts.some((ext) => path.endsWith('.' + ext));
 }
 
-export function detectMode(path, code) {
+export function detectLangModes(path, code) {
   if (hasExt(path, ['ex', 'exs'])) {
-    return elixir();
+    return [elixir()];
   }
 
   if (hasExt(path, ['c', 'cpp', 'cc', 'cxx', 'h', 'hh', 'hxx', 'hpp'])) {
-    return cpp();
+    return [cpp()];
   }
 
   if (hasExt(path, ['java'])) {
-    return java();
+    return [java()];
   }
 
   if (hasExt(path, ['py'])) {
-    return python();
+    return [python()];
   }
 
   if (hasExt(path, ['js', 'mjs', 'jsx'])) {
-    return javascript({jsx: true});
+    return [javascript({jsx: true})];
   }
 
   if (hasExt(path, ['ts', 'mts', 'tsx'])) {
-    return javascript({jsx: true, typescript: true});
+    return [javascript({jsx: true, typescript: true})];
   }
 
   if (hasExt(path, ['html'])) {
-    return html();
+    return [html()];
   }
 
   if (hasExt(path, ['xml'])) {
-    return xml();
+    return [xml()];
   }
 
   if (hasExt(path, ['s', 'S'])) {
-    return StreamLanguage.define(gas);
+    return [StreamLanguage.define(gas)];
+  }
+
+  if (hasExt(path, ['pl'])) {
+    return [StreamLanguage.define(perl)];
   }
 
   if (hasExt(path, ['md'])) {
-    return markdown(
+    return [markdown(
       {base: markdownLanguage, codeLanguages: languages}
-    );
+    )];
   }
 
-  return null;
+  return [];
 }
