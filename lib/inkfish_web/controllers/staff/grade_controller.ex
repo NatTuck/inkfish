@@ -71,12 +71,15 @@ defmodule InkfishWeb.Staff.GradeController do
     rubric = Inkfish.Uploads.get_upload(grade.grade_column.upload_id)
     changeset = Grades.change_grade(grade)
     grade_json = InkfishWeb.Staff.GradeView.render("grade.json", %{grade: grade})
+    grader = conn.assigns[:current_user]
+    grader_json = InkfishWeb.UserView.render("user.json", %{user: grader})
 
     data =
       Inkfish.Subs.read_sub_data(grade.sub_id)
       |> Map.put(:edit, true)
       |> Map.put(:grade_id, id)
       |> Map.put(:grade, grade_json)
+      |> Map.put(:grader, grader_json)
 
     sub = Inkfish.Subs.get_sub!(grade.sub_id)
 

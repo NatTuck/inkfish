@@ -47,7 +47,7 @@ export default function FileTree({data, grade, activePath, pickFile}) {
             {items.map((props) => (
               <ListItem {...props}
                         comment_counts={comment_counts}
-                        active={props.label == activePath}
+                        active={props.path == activePath}
                         onClickLabel={(ev) => pickFile(ev, props)}/>
             ))}
           </ListGroup>

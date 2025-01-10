@@ -10,8 +10,6 @@ export default function Viewer({data}) {
   const [activePath, setActivePath] = useState("");
   const [grade, setGrade] = useState(data.grade);
 
-  //console.log(data);
-
   function pickFile(ev, props) {
     ev.preventDefault();
     setActivePath(props.path);
@@ -28,7 +26,7 @@ export default function Viewer({data}) {
       <Col md={9} className="h-100">
         <FileViewer data={data}
                     path={activePath}
-                    grade={grade}
+                    grade={data.grade}
                     setGrade={setGrade} />
       </Col>
     </Row>

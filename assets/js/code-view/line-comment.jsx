@@ -3,14 +3,16 @@ import ReactDOM from 'react-dom';
 import { Card, Row, Col, Form, Button } from 'react-bootstrap';
 import { AlertTriangle, Check, Save, Trash } from 'react-feather';
 
-import { delete_line_comment, update_line_comment} from '../ajax';
+import { create_line_comment, delete_line_comment,
+         update_line_comment} from '../ajax';
 
-export default function LineComment({data, setGrade, edit, node}) {
+export default function LineComment({data, edit, actions}) {
+  const [id, setId] = useState(data.id);
   const [points, setPoints] = useState(data.points);
   const [text, setText] = useState(data.text);
   const [status, setStatus] = useState(null);
 
-  useEffect(() => node.changed());
+  let {line, path} = data;
 
   let color = line_comment_color(points);
   let icons = [];
@@ -18,12 +20,10 @@ export default function LineComment({data, setGrade, edit, node}) {
   if (status) {
     if (status == "ok") {
       // TODO: Make this actually display.
-      console.log("check icon");
       icons.push(<Check key="ok" />);
     }
     else {
       // TODO: Show error message.
-      console.log("alert icon");
       icons.push(<AlertTriangle key="err" />);
     }
   }
@@ -41,26 +41,52 @@ export default function LineComment({data, setGrade, edit, node}) {
 
   function save_comment(ev) {
     ev.preventDefault();
-    update_line_comment(data.id, points, text)
-      .then((resp) => {
-        console.log("update resp", resp);
-        setStatus("ok");
-        setGrade(resp.data.grade);
-      })
-      .catch((resp) => {
-        let msg = JSON.stringify(resp);
-        setStatus(msg);
-        console.log("error saving", msg);
-      });
+    if (id) {
+      update_line_comment(id, points, text)
+        .then((resp) => {
+          console.log("update resp", resp);
+          setStatus("ok");
+          actions.setGrade(resp.data.grade);
+          actions.updateThisComment(resp.data);
+        })
+        .catch((resp) => {
+          console.log("error saving", resp);
+          let msg = JSON.stringify(resp);
+          setStatus(msg);
+        });
+    }
+    else {
+      console.log("aa");
+      // First save
+      create_line_comment(data.grade.id, path, line, points, text)
+        .then((resp) => {
+          console.log("create resp", resp);
+          setId(resp.data.id);
+          setStatus("ok");
+          actions.setGrade(resp.data.grade);
+          actions.updateThisComment({...resp.data, uuid: data.uuid});
+        })
+        .catch((resp) => {
+          console.log("error creating", resp);
+          let msg = JSON.stringify(resp);
+          setStatus(msg);
+        });
+    }
   }
 
   function delete_comment(ev) {
     ev.preventDefault();
-    delete_line_comment(data.id)
-      .then((resp) => {
-        console.log("delete resp", resp);
-        setGrade(resp.data.grade);
-      });
+    if (data.id) {
+      delete_line_comment(data.id)
+        .then((resp) => {
+          console.log("delete resp", resp);
+          actions.removeThisComment();
+          actions.setGrade(resp.data.grade);
+        });
+    }
+    else {
+      actions.removeThisComment();
+    }
   }
 
   function Buttons({edit}) {
@@ -86,8 +112,11 @@ export default function LineComment({data, setGrade, edit, node}) {
     <Card className="comment-card">
       <Card.Body className={color}>
         <Row>
-          <Col sm={9}>
+          <Col sm={6}>
             <p>Grader: {data.user.name}</p>
+          </Col>
+          <Col sm={3}>
+            <p>id: {id || "(unsaved)"}</p>
           </Col>
           <Col sm={3} className="text-right">
             { icons }

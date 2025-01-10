@@ -120,6 +120,7 @@ defmodule Inkfish.LineComments do
         {:ok, grade} = Inkfish.Grades.update_feedback_score(lc.grade_id)
         grade = Grades.get_grade!(grade.id)
         Inkfish.Subs.save_sub_dump!(grade.sub.id)
+        lc = Repo.preload(lc, :user)
         {:ok, %{lc | grade: grade}}
 
       other ->
