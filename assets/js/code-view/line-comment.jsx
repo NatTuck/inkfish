@@ -76,8 +76,10 @@ export default function LineComment({data, edit, actions}) {
 
   function delete_comment(ev) {
     ev.preventDefault();
-    if (data.id) {
-      delete_line_comment(data.id)
+    console.log("delete", data);
+
+    if (id) {
+      delete_line_comment(id)
         .then((resp) => {
           console.log("delete resp", resp);
           actions.removeThisComment();
