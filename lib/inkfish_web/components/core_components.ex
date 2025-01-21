@@ -1,17 +1,66 @@
 defmodule InkfishWeb.CoreComponents do
+  # CoreComponents with Bootstrap from
+  # https://github.com/jmnda-dev/phx-bootstrap-dashboard
+
   @moduledoc """
-  Provides core UI components.
-
-  The components in this module use Tailwind CSS, a utility-first CSS framework.
-  See the [Tailwind CSS documentation](https://tailwindcss.com) to learn how to
-  customize the generated components in this module.
-
-  Icons are provided by [heroicons](https://heroicons.com). See `icon/1` for usage.
+  Some core components with Bootstrap styling
   """
-  use Phoenix.Component
+  use Phoenix.Component, global_prefixes: ~w(x- data-bs- aria-)
 
   alias Phoenix.LiveView.JS
   use Gettext, backend: InkfishWeb.Gettext
+
+  @doc """
+  Renders a modal.
+
+  ## Examples
+
+      <.modal id="confirm-modal">
+        Are you sure?
+        <:confirm>OK</:confirm>
+        <:cancel>Cancel</:cancel>
+      </.modal>
+
+  JS commands may be passed to the `:on_cancel` and `on_confirm` attributes
+  for the caller to react to each button press, for example:
+
+      <.modal id="confirm" on_confirm={JS.push("delete")} on_cancel={JS.navigate(~p"/posts")}>
+        Are you sure you?
+        <:confirm>OK</:confirm>
+        <:cancel>Cancel</:cancel>
+      </.modal>
+  """
+  attr :id, :string, required: true
+  attr :title, :string, default: nil
+  attr :size, :string, default: "lg"
+  attr :show, :boolean, default: false
+  attr :on_cancel, JS, default: %JS{}
+  attr :width, :string, default: "80"
+  slot :inner_block, required: true
+  slot :modal_footer
+
+  def modal(assigns) do
+    ~H"""
+    <div id={@id} class="phx-modal fade-in">
+      <div
+        id="modal-content"
+        class="phx-modal-content fade-in-scale"
+        phx-click-away={hide_modal(@on_cancel, @id)}
+        phx-window-keydown={hide_modal(@on_cancel, @id)}
+        phx-key="escape"
+        style={"width: #{@width}%;"}
+      >
+        <p id="close" class="phx-modal-close" phx-click={hide_modal(@on_cancel, @id)}>
+          ✖
+        </p>
+
+        <.focus_wrap id={"#{@id}-container"}>
+          <%= render_slot(@inner_block) %>
+        </.focus_wrap>
+      </div>
+    </div>
+    """
+  end
 
   @doc """
   Renders flash notices.
@@ -24,7 +73,11 @@ defmodule InkfishWeb.CoreComponents do
   attr :id, :string, default: "flash", doc: "the optional id of flash container"
   attr :flash, :map, default: %{}, doc: "the map of flash messages to display"
   attr :title, :string, default: nil
-  attr :kind, :atom, values: [:info, :error], doc: "used for styling and flash lookup"
+
+  attr :kind, :atom,
+    values: [:success, :info, :warning, :error],
+    doc: "used for styling and flash lookup"
+
   attr :autoshow, :boolean, default: true, doc: "whether to auto show the flash on mount"
   attr :close, :boolean, default: true, doc: "whether the flash can be closed"
   attr :rest, :global, doc: "the arbitrary HTML attributes to add to the flash container"
@@ -34,20 +87,45 @@ defmodule InkfishWeb.CoreComponents do
   def flash(assigns) do
     ~H"""
     <div
-      :if={render_slot(@inner_block) || Phoenix.Flash.get(@flash, @kind)}
+      :if={msg = render_slot(@inner_block) || Phoenix.Flash.get(@flash, @kind)}
+      id={@id}
+      phx-mounted={@autoshow && show("##{@id}")}
+      data-bs-dismiss="alert"
       role="alert"
       class={[
-        "alert alert-dismissible fade show",
-        @kind == :info && "alert-primary",
+        "position-fixed top-1 end-0 w-25 rounded p-3 shadow mx-3 my-3",
+        "alert",
+        @kind == :success && "alert-success",
+        @kind == :info && "alert-info",
+        @kind == :warning && "alert-warning",
         @kind == :error && "alert-danger"
       ]}
+      style="z-index: 1000;"
+      {@rest}
     >
-      <div :if={@title}>
-        <bold><%= @title %></bold>
+      <div class="row">
+        <div class="col-10">
+          <p :if={@title} class="d-flex align-items-center gap-1.5 fw-semibold">
+            <i class={[
+              "px-2 fa-solid",
+              @kind == :success && "fa-check-circle",
+              @kind == :info && "fa-info-circle",
+              @kind in [:warning, :error] && "fa-exclamation-circle"
+            ]} />
+            <%= @title %>
+          </p>
+        </div>
+        <div class="col-2 d-flex align-items-start">
+          <button
+            :if={@close}
+            type="button"
+            class="btn-close d-inline text-end"
+            aria-label={gettext("Close")}
+          >
+          </button>
+        </div>
       </div>
-      <div><%= render_slot(@inner_block) || Phoenix.Flash.get(@flash, @kind) %></div>
-      <button :if={@close} type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close">
-      </button>
+      <p class="mb-0"><%= msg %></p>
     </div>
     """
   end
@@ -64,18 +142,49 @@ defmodule InkfishWeb.CoreComponents do
   def flash_group(assigns) do
     ~H"""
     <.flash kind={:info} title="Success!" flash={@flash} />
+    <.flash kind={:success} title="Success!" flash={@flash} />
     <.flash kind={:error} title="Error!" flash={@flash} />
+    <.flash kind={:warning} title="Warning!" flash={@flash} />
     <.flash
       id="disconnected"
       kind={:error}
       title="We can't find the internet"
-      close={false}
-      autoshow={false}
       phx-disconnected={show("#disconnected")}
       phx-connected={hide("#disconnected")}
     >
-      Attempting to reconnect <.icon name="hero-arrow-path" class="ml-1 w-3 h-3 animate-spin" />
+      Attempting to reconnect <i class="fa-solid fa-rotate fa-spin"></i>
     </.flash>
+    """
+  end
+
+  @doc """
+  A simple alert component
+  """
+  attr :kind, :atom, values: [:success, :info, :warning, :danger, :error], default: :info
+  attr :show, :boolean, default: false
+  slot :inner_block, required: true
+
+  def alert(assigns) do
+    ~H"""
+    <div
+      :if={@show}
+      class={[
+        "alert",
+        @kind == :info && "bg-gradient-primary",
+        @kind == :success && "bg-gradient-success",
+        @kind == :warning && "bg-gradient-warning",
+        @kind in [:danger, :error] && "bg-gradient-danger",
+        "alert-dismissible text-sm text-white fade show"
+      ]}
+      data-bs-dismiss="alert"
+      role="alert"
+    >
+      <%!-- <span class="alert-icon"><i class="ni ni-like-2"></i></span> --%>
+      <span class="alert-text"><%= render_slot(@inner_block) %></span>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close">
+        <i class="fa-solid fa-times"></i>
+      </button>
+    </div>
     """
   end
 
@@ -102,13 +211,23 @@ defmodule InkfishWeb.CoreComponents do
   slot :inner_block, required: true
   slot :actions, doc: "the slot for form actions, such as a submit button"
 
+  slot :extra_block,
+    required: false,
+    doc: "the optional extra block that renders extra form fields"
+
   def simple_form(assigns) do
     ~H"""
     <.form :let={f} for={@for} as={@as} {@rest}>
       <div>
         <%= render_slot(@inner_block, f) %>
-        <div :for={action <- @actions} class="mb-3">
+        <div
+          :for={action <- @actions}
+          class="mt-2 d-flexflex align-items-center justify-content-between gap-3"
+        >
           <%= render_slot(action, f) %>
+        </div>
+        <div :if={@extra_block != []}>
+          <%= render_slot(@extra_block, f) %>
         </div>
       </div>
     </.form>
@@ -123,15 +242,47 @@ defmodule InkfishWeb.CoreComponents do
       <.button>Send!</.button>
       <.button phx-click="go" class="ml-2">Send!</.button>
   """
+  attr :kind, :atom,
+    values: [
+      :primary,
+      :secondary,
+      :tertiary,
+      :info,
+      :success,
+      :warning,
+      :danger,
+      :dark,
+      :gray,
+      :light
+    ],
+    default: :dark
+
   attr :type, :string, default: nil
-  attr :class, :string, default: "btn btn-default"
-  attr :rest, :global, include: ~w(disabled class form name value)
+  attr :class, :string, default: nil
+  attr :rest, :global, include: ~w(disabled form name value)
 
   slot :inner_block, required: true
 
   def button(assigns) do
     ~H"""
-    <button type={@type} class={@class} {@rest}>
+    <button
+      type={@type}
+      class={[
+        "btn",
+        @kind == :primary && "btn-primary",
+        @kind == :secondary && "btn-secondary",
+        @kind == :tertiary && "btn-tertiary",
+        @kind == :info && "btn-info",
+        @kind == :success && "btn-success",
+        @kind == :warning && "btn-warning",
+        @kind == :danger && "btn-danger",
+        @kind == :dark && "btn-dark btn-md",
+        @kind == :gray && "btn-gray-200",
+        @kind == :light && "btn-gray-50",
+        @class
+      ]}
+      {@rest}
+    >
       <%= render_slot(@inner_block) %>
     </button>
     """
@@ -157,7 +308,7 @@ defmodule InkfishWeb.CoreComponents do
   attr :type, :string,
     default: "text",
     values: ~w(checkbox color date datetime-local email file hidden month number password
-               range radio search select tel text textarea codearea time url week)
+               range radio search select tel text textarea time url week)
 
   attr :field, Phoenix.HTML.FormField,
     doc: "a form field struct retrieved from the form, for example: @form[:email]"
@@ -185,9 +336,8 @@ defmodule InkfishWeb.CoreComponents do
       assign_new(assigns, :checked, fn -> Phoenix.HTML.Form.normalize_value("checkbox", value) end)
 
     ~H"""
-    <div phx-feedback-for={@name} class="mb-3">
-      <label for={@name}><%= @label %></label>
-      <div class="form-check">
+    <div phx-feedback-for={@name}>
+      <label class="form-label">
         <input type="hidden" name={@name} value="false" />
         <input
           type="checkbox"
@@ -195,10 +345,11 @@ defmodule InkfishWeb.CoreComponents do
           name={@name}
           value="true"
           checked={@checked}
-          class={input_class("form-check-input", @errors)}
+          class="form-check-input"
           {@rest}
         />
-      </div>
+        <%= @label %>
+      </label>
       <.error :for={msg <- @errors}><%= msg %></.error>
     </div>
     """
@@ -206,15 +357,9 @@ defmodule InkfishWeb.CoreComponents do
 
   def input(%{type: "select"} = assigns) do
     ~H"""
-    <div phx-feedback-for={@name} class="mb-3">
+    <div phx-feedback-for={@name}>
       <.label for={@id}><%= @label %></.label>
-      <select
-        id={@id}
-        name={@name}
-        multiple={@multiple}
-        class={input_class("form-control", @errors)}
-        {@rest}
-      >
+      <select id={@id} name={@name} class="form-select" , multiple={@multiple} {@rest}>
         <option :if={@prompt} value=""><%= @prompt %></option>
         <%= Phoenix.HTML.Form.options_for_select(@options, @value) %>
       </select>
@@ -223,31 +368,33 @@ defmodule InkfishWeb.CoreComponents do
     """
   end
 
-  def input(%{type: "textarea"} = assigns) do
+  def input(%{type: "radio"} = assigns) do
     ~H"""
-    <div phx-feedback-for={@name} class="mb-3">
-      <.label for={@id}><%= @label %></.label>
-      <textarea
-        id={@id || @name}
+    <div phx-feedback-for={@name} class="form-check">
+      <input
+        class="form-check-input"
+        type="radio"
         name={@name}
-        class={input_class("form-control", @errors)}
-        style="margin-bottom: 1ex"
-        {@rest}
-      ><%= Phoenix.HTML.Form.normalize_value("textarea", @value) %></textarea>
+        value={@value}
+        id={@id}
+        checked={@checked}
+      />
+      <label class="form-check-label" for={@id}>
+        <%= @label %>
+      </label>
       <.error :for={msg <- @errors}><%= msg %></.error>
     </div>
     """
   end
 
-  def input(%{type: "codearea"} = assigns) do
+  def input(%{type: "textarea"} = assigns) do
     ~H"""
-    <div phx-feedback-for={@name} class="mb-3">
+    <div phx-feedback-for={@name}>
       <.label for={@id}><%= @label %></.label>
       <textarea
         id={@id || @name}
         name={@name}
-        class={input_class("form-control", @errors)}
-        style="margin-bottom: 1em; font-family: monospace, fixed; min-height: 16em"
+        class={["form-control", @errors != [] && "is-invalid"]}
         {@rest}
       ><%= Phoenix.HTML.Form.normalize_value("textarea", @value) %></textarea>
       <.error :for={msg <- @errors}><%= msg %></.error>
@@ -257,14 +404,17 @@ defmodule InkfishWeb.CoreComponents do
 
   def input(assigns) do
     ~H"""
-    <div phx-feedback-for={@name} class="mb-3">
+    <div phx-feedback-for={@name}>
       <.label for={@id}><%= @label %></.label>
       <input
         type={@type}
         name={@name}
         id={@id || @name}
         value={Phoenix.HTML.Form.normalize_value(@type, @value)}
-        class={input_class("form-control", @errors)}
+        class={[
+          "form-control",
+          @errors != [] && "is-invalid"
+        ]}
         {@rest}
       />
       <.error :for={msg <- @errors}><%= msg %></.error>
@@ -272,12 +422,20 @@ defmodule InkfishWeb.CoreComponents do
     """
   end
 
-  def input_class(base, errors) do
-    if length(errors) == 0 do
-      base
-    else
-      "#{base} is-invalid"
-    end
+  attr :ref, :string, required: true
+  attr :label, :string, required: true
+  attr :upload, :map, required: true
+  attr :width, :string, default: "w-full"
+  slot :input_title, required: false
+  slot :upload_description, required: false
+
+  def upload_input(assigns) do
+    ~H"""
+    <div class="mb-3" phx-drop-target={@ref}>
+      <.label for={@ref}><%= @label %></.label>
+      <.live_file_input upload={@upload} class="form-control" />
+    </div>
+    """
   end
 
   @doc """
@@ -295,6 +453,30 @@ defmodule InkfishWeb.CoreComponents do
   end
 
   @doc """
+  A progress bar component
+  """
+  attr :progress, :integer, default: 0
+
+  def progress_bar(assigns) do
+    ~H"""
+    <div
+      class="progress"
+      role="progressbar"
+      aria-label="Animated striped example"
+      aria-valuenow={@progress}
+      aria-valuemin="0"
+      aria-valuemax="100"
+    >
+      <div
+        class="progress-bar progress-bar-striped progress-bar-animated"
+        style={"width: #{@progress}%"}
+      >
+      </div>
+    </div>
+    """
+  end
+
+  @doc """
   Generates a generic error message.
   """
   slot :inner_block, required: true
@@ -302,7 +484,7 @@ defmodule InkfishWeb.CoreComponents do
   def error(assigns) do
     ~H"""
     <p class="invalid-feedback">
-      <.icon name="hero-exclamation-circle-mini" class="mt-0.5 w-5 h-5 flex-none" />
+      <i class="fas fa-exclamation-circle mr-2"></i>
       <%= render_slot(@inner_block) %>
     </p>
     """
@@ -358,6 +540,66 @@ defmodule InkfishWeb.CoreComponents do
 
   slot :action, doc: "the slot for showing user actions in the last table column"
 
+  def table_2(assigns) do
+    assigns =
+      with %{rows: %Phoenix.LiveView.LiveStream{}} <- assigns do
+        assign(assigns, row_id: assigns.row_id || fn {id, _item} -> id end)
+      end
+
+    ~H"""
+    <table class="table table-hover align-items-center">
+      <thead>
+        <tr>
+          <th :for={col <- @col} class="border-bottom"><%= col[:label] %></th>
+          <th class="border-bottom"><span><%= gettext("Actions") %></span></th>
+        </tr>
+      </thead>
+      <tbody id={@id} phx-update={match?(%Phoenix.LiveView.LiveStream{}, @rows) && "stream"}>
+        <tr :for={row <- @rows} id={@row_id && @row_id.(row)}>
+          <td
+            :for={{col, _i} <- Enum.with_index(@col)}
+            phx-click={@row_click && @row_click.(row)}
+            class={[@row_click && "pe-auto"]}
+          >
+            <%= render_slot(col, @row_item.(row)) %>
+          </td>
+          <td :if={@action != []}>
+            <span :for={action <- @action}>
+              <%= render_slot(action, @row_item.(row)) %>
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    """
+  end
+
+  @doc ~S"""
+  Renders a table with generic styling.
+
+  ## Examples
+
+      <.table id="users" rows={@users}>
+        <:col :let={user} label="id"><%= user.id %></:col>
+        <:col :let={user} label="username"><%= user.username %></:col>
+      </.table>
+  """
+  attr :id, :string, required: true
+  attr :rows, :list, required: true
+  attr :row_id, :any, default: nil, doc: "the function for generating the row id"
+  attr :row_click, :any, default: nil, doc: "the function for handling phx-click on each row"
+
+  attr :row_item, :any,
+    default: &Function.identity/1,
+    doc: "the function for mapping each row before calling the :col and :action slots"
+
+  slot :col, required: true do
+    attr :label, :string
+    attr :style, :string
+  end
+
+  slot :action, doc: "the slot for showing user actions in the last table column"
+
   def table(assigns) do
     assigns =
       with %{rows: %Phoenix.LiveView.LiveStream{}} <- assigns do
@@ -365,47 +607,30 @@ defmodule InkfishWeb.CoreComponents do
       end
 
     ~H"""
-    <div class="py-2">
-      <table class="table table-striped">
-        <thead>
-          <tr>
-            <th :for={col <- @col} class="p-2"><%= col[:label] %></th>
-            <th class="p-2"><span class="sr-only"><%= gettext("Actions") %></span></th>
-          </tr>
-        </thead>
-        <tbody
-          id={@id}
-          phx-update={match?(%Phoenix.LiveView.LiveStream{}, @rows) && "stream"}
-          class="relative divide-y divide-zinc-100 border-t border-zinc-200 text-sm leading-6 text-zinc-700"
-        >
-          <tr :for={row <- @rows} id={@row_id && @row_id.(row)} class="group hover:bg-zinc-50">
-            <td
-              :for={{col, i} <- Enum.with_index(@col)}
-              phx-click={@row_click && @row_click.(row)}
-              class="p-2"
-            >
-              <div class="block py-4 pr-6">
-                <span class="absolute -inset-y-px right-0 -left-4 group-hover:bg-zinc-50 sm:rounded-l-xl" />
-                <span class={["relative", i == 0 && "font-semibold text-zinc-900"]}>
-                  <%= render_slot(col, @row_item.(row)) %>
-                </span>
-              </div>
-            </td>
-            <td :if={@action != []} class="relative p-0 w-14">
-              <div class="relative whitespace-nowrap py-4 text-right text-sm font-medium">
-                <span class="absolute -inset-y-px -right-4 left-0 group-hover:bg-zinc-50 sm:rounded-r-xl" />
-                <span
-                  :for={action <- @action}
-                  class="relative ml-4 font-semibold leading-6 text-zinc-900 hover:text-zinc-700"
-                >
-                  <%= render_slot(action, @row_item.(row)) %>
-                </span>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <table class="table table-flush">
+      <thead class="thead-light">
+        <tr>
+          <th :for={col <- @col} style={col[:style]} class="text-xs"><%= col[:label] %></th>
+          <th class="text-xs"><span><%= gettext("Actions") %></span></th>
+        </tr>
+      </thead>
+      <tbody id={@id} phx-update={match?(%Phoenix.LiveView.LiveStream{}, @rows) && "stream"}>
+        <tr :for={row <- @rows} id={@row_id && @row_id.(row)}>
+          <td
+            :for={{col, _i} <- Enum.with_index(@col)}
+            phx-click={@row_click && @row_click.(row)}
+            class={[@row_click && "text-sm"]}
+          >
+            <%= render_slot(col, @row_item.(row)) %>
+          </td>
+          <td :if={@action != []}>
+            <span :for={action <- @action}>
+              <%= render_slot(action, @row_item.(row)) %>
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
     """
   end
 
@@ -453,39 +678,48 @@ defmodule InkfishWeb.CoreComponents do
         navigate={@navigate}
         class="text-sm font-semibold leading-6 text-zinc-900 hover:text-zinc-700"
       >
-        <.icon name="hero-arrow-left-solid" class="w-3 h-3" />
+        <Heroicons.arrow_left solid class="w-3 h-3 stroke-current inline" />
         <%= render_slot(@inner_block) %>
       </.link>
     </div>
     """
   end
 
-  @doc """
-  Renders a [Hero Icon](https://heroicons.com).
+  attr :id, :string, default: "accordionExample"
+  attr :rest, :global
 
-  Hero icons come in three styles – outline, solid, and mini.
-  By default, the outline style is used, but solid an mini may
-  be applied by using the `-solid` and `-mini` suffix.
+  slot :item, required: true do
+    attr :id, :string, required: true
+    attr :heading, :string, required: true
+    attr :class, :string
+  end
 
-  You can customize the size and colors of the icons by setting
-  width, height, and background color classes.
-
-  Icons are extracted from your `priv/hero_icons` directory and bundled
-  within your compiled app.css by the plugin in your `assets/tailwind.config.js`.
-
-  ## Examples
-
-      <.icon name="hero-cake" />
-      <.icon name="hero-cake-solid" />
-      <.icon name="hero-cake-mini" />
-      <.icon name="hero-bolt" class="bg-blue-500 w-10 h-10" />
-  """
-  attr :name, :string, required: true
-  attr :class, :string, default: nil
-
-  def icon(%{name: "hero-" <> _} = assigns) do
+  def accordion(assigns) do
     ~H"""
-    <i class="bi-balloon" />
+    <div class="accordion" id={@id}>
+      <div :for={accordion_item <- @item} class="accordion-item">
+        <h2 class="accordion-header">
+          <button
+            class="accordion-button"
+            type="button"
+            data-bs-toggle={accordion_item[:id]}
+            data-bs-target={"##{accordion_item[:id]}"}
+            aria-controls={accordion_item[:id]}
+          >
+            <%= accordion_item[:heading] %>
+          </button>
+        </h2>
+        <div
+          id={accordion_item[:id]}
+          class={["accordion-collapse", accordion_item[:class]]}
+          data-bs-parent={@id}
+        >
+          <div class="accordion-body">
+            <%= render_slot(accordion_item) %>
+          </div>
+        </div>
+      </div>
+    </div>
     """
   end
 
@@ -526,13 +760,9 @@ defmodule InkfishWeb.CoreComponents do
 
   def hide_modal(js \\ %JS{}, id) do
     js
-    |> JS.hide(
-      to: "##{id}-bg",
-      transition: {"transition-all transform ease-in duration-200", "opacity-100", "opacity-0"}
-    )
     |> hide("##{id}-container")
-    |> JS.hide(to: "##{id}", transition: {"block", "block", "hidden"})
-    |> JS.remove_class("overflow-hidden", to: "body")
+    |> JS.hide(to: "##{id}", transition: "fade-out")
+    |> JS.hide(to: "#modal-content", transition: "fade-out-scale")
     |> JS.pop_focus()
   end
 
@@ -558,9 +788,9 @@ defmodule InkfishWeb.CoreComponents do
     # should be written to the errors.po file. The :count option is
     # set by Ecto and indicates we should also apply plural rules.
     if count = opts[:count] do
-      Gettext.dngettext(InkfishWeb.Gettext, "errors", msg, msg, count, opts)
+      Gettext.dngettext(FmsWeb.Gettext, "errors", msg, msg, count, opts)
     else
-      Gettext.dgettext(InkfishWeb.Gettext, "errors", msg, opts)
+      Gettext.dgettext(FmsWeb.Gettext, "errors", msg, opts)
     end
   end
 

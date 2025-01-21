@@ -55,7 +55,7 @@ export function upload_file(file, token, prog_fn) {
   return [req, source];
 }
 
-export function create_line_comment(grade_id, path, line) {
+export function create_line_comment(grade_id, path, line, points, text) {
   console.log("create comment", grade_id, path, line);
   let post_path = `/staff/grades/${grade_id}/line_comments`;
   let body = {
@@ -63,8 +63,8 @@ export function create_line_comment(grade_id, path, line) {
       grade_id: grade_id,
       path: path,
       line: line,
-      text: "",
-      points: "0",
+      points: points,
+      text: text,
     },
   };
   return post(post_path, body);

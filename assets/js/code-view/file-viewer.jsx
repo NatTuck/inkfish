@@ -1,100 +1,178 @@
-import React, { useEffect, useRef, useMemo } from 'react';
+import React, { useEffect, useRef, useMemo, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { createRoot } from 'react-dom/client';
 import { Card } from 'react-bootstrap';
 import _ from 'lodash';
 
-import CodeMirror from 'codemirror';
-import 'codemirror-mode-elixir';
-import 'codemirror/mode/markdown/markdown';
-import 'codemirror/mode/clike/clike';
-import 'codemirror/mode/gas/gas';
-import 'codemirror/mode/htmlmixed/htmlmixed';
-import 'codemirror/mode/javascript/javascript';
-import 'codemirror/mode/jsx/jsx';
-import 'codemirror/mode/css/css';
-import 'codemirror/mode/sass/sass';
+import CodeMirror from '@uiw/react-codemirror';
+import { lineNumbers, highlightSpecialChars, scrollPastEnd } from '@codemirror/view';
+import { foldGutter, syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language';
 
 import LineComment from './line-comment';
+import { detectLangModes } from './langs';
 
+import { make_lc, same_lc, lcs_del, lcs_put } from './lc-utils';
 import { create_line_comment } from '../ajax';
+
+import { EditorView, WidgetType, Decoration,
+         ViewUpdate, ViewPlugin } from '@codemirror/view';
+import { EditorState, Range, RangeSet,
+         StateField, StateEffect } from '@codemirror/state';
+
+const lcSetState = StateEffect.define({});
+
+const lcState = StateField.define({
+  create(state) {
+    return [];
+  },
+  update(lcs0, tx) {
+    for (let eff of tx.effects) {
+      if (eff.is(lcSetState)) {
+        return eff.value;
+      }
+    }
+    return lcs0;
+  }
+});
+
+class LineCommentWidget extends WidgetType {
+  constructor(lc, edit, actions) {
+    super();
+    this.lc = lc;
+    this.edit = edit;
+    this.actions = actions;
+  }
+
+  eq(that) {
+    return same_lc(this.lc, that.lc);
+  }
+
+  toDOM(view) {
+    let this_lc = this.lc;
+
+    function removeThisComment() {
+      let lcs = view.state.field(lcState);
+      lcs = lcs_del(lcs, this_lc);
+      view.dispatch({effects: [lcSetState.of(lcs)]});
+      
+      actions.delComment(this_lc);
+    }
+
+    function updateThisComment(updated_lc) {
+      let lcs = view.state.field(lcState);
+      lcs = lcs_del(lcs, this_lc);
+      lcs = lcs_put(lcs, updated_lc);
+      view.dispatch({effects: [lcSetState.of(lcs)]});
+
+      actions.delComment(this_lc);
+      actions.putComment(updated_lc);
+    }
+
+    let actions = {...this.actions, removeThisComment, updateThisComment};
+
+    let lc_div = document.createElement("div");
+    let lc_root = createRoot(lc_div);
+    lc_root.render(
+      <LineComment
+        data={this.lc}
+        edit={this.edit}
+        actions={actions}
+      />
+    );
+    return lc_div;
+  }
+}
 
 export default function FileViewer({path, data, grade, setGrade}) {
   const texts = useMemo(() => build_texts_map(data.files), [data.files]);
-  const editor = useRef(null);
+  const text = texts.get(path) || "(missing)";
 
-  //console.log("grade", grade);
+  const [comments, setComments] = useState(data.grade.line_comments);
 
-  function gutter_click(_cm, line, _class, ev) {
-    ev.preventDefault();
-    _.debounce(() => {
-      console.log(line, ev);
-      create_line_comment(grade.id, path, line)
-        .then((resp) => {
-          console.log("resp", resp);
-          setGrade(resp.data.grade);
-        });
-    }, 100, {leading: true})();
+  let pathComments = comments.filter((lc) => lc.path == path);
+  data = {...data, text, path, grade, comments: pathComments};
+
+  function putComment(lc) {
+    setComments(lcs_put(comments, lc));
   }
 
-  useEffect(() => {
-    let cm = CodeMirror(editor.current, {
-      readOnly: true,
-      lineNumbers: true,
-      lineWrapping: true,
-      value: texts.get(path) || "(missing)",
-    });
-
-    if (data.edit) {
-      cm.on("gutterClick", gutter_click);
-    }
-
-    for (let lc of grade.line_comments) {
-      if (lc.path != path) {
-        continue;
-      }
-
-      if (!cm.lineInfo(lc.line)) {
-        lc.line = 0;
-      }
-
-      //let info = cm.lineInfo(lc.line);
-      //console.log(lc, info);
-
-      let lc_div = document.createElement("div");
-      lc_div.setAttribute('id', `line-comment-${lc.id}`);
-      let lc_root = createRoot(lc_div);
-      let node = cm.addLineWidget(lc.line, lc_div, {above: true});
-      lc_root.render(
-        <LineComment data={lc} setGrade={setGrade}
-                     edit={data.edit} node={node} />
-      );
-    }
-
-    //console.log("insert codemirror");
-
-    return () => {
-      cm.getWrapperElement().remove();
-      //console.log("remove codemirror");
-    };
-  });
-
-  if (path == "") {
-    return (
-      <Card>
-        <Card.Body>
-          <p>Select a file from the list to the left.</p>
-          <p>Click items starting with "+" to expand a directory.</p>
-        </Card.Body>
-      </Card>
-    );
+  function delComment(lc) {
+    setComments(lcs_del(comments, lc));
   }
+  
+  let actions = { setGrade, putComment, delComment };
 
   return (
-    <Card className="vh-100">
-      <Card.Body className="vh-100">
-        <Card.Title>{path}</Card.Title>
-        <div ref={editor} />
+    <OneFile key={path} data={data} actions={actions} />
+  );
+}
+
+function OneFile({data, actions}) {
+  if (data.path == "") {
+    return <NoFile />;
+  }
+
+  function gutter_click(view, info, ev) {
+    ev.preventDefault();
+
+    let line = view.state.doc.lineAt(info.from).number;
+    let new_lc = make_lc(line, data.path, data.grade, data.grader);
+
+    let lcs = view.state.field(lcState);
+    lcs = lcs_put(lcs, new_lc);
+    view.dispatch({effects: [lcSetState.of(lcs)]});
+
+    actions.putComment(new_lc);
+  }
+
+  function makeLcWidgets(state) {
+    let lcs = state.field(lcState);
+
+    let ranges = lcs.map((lc) => {
+      let lcw = new LineCommentWidget(lc, data.edit, actions);
+      let lv = Decoration.widget({widget: lcw, block: true});
+      let line = state.doc.line(lc.line);
+      return lv.range(line.from);
+    });
+
+    return RangeSet.of(ranges, true);
+  }
+  
+  let extensions = detectLangModes(data.path, data.text);
+
+  if (data.edit) {
+    extensions.push(lineNumbers({domEventHandlers: { click: gutter_click } }));
+  }
+  else {
+    extensions.push(lineNumbers());
+  }
+
+  extensions.push(
+    highlightSpecialChars(),
+    scrollPastEnd(),
+    //foldGutter(),
+    syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+    EditorState.readOnly.of(true),
+    lcState.init((_) => data.comments),
+    EditorView.decorations.compute(["doc", lcState], makeLcWidgets),
+  );
+
+  return (
+    <div className="border">
+      <CodeMirror basicSetup={false}
+                  value={data.text}
+                  extensions={extensions}
+      />
+    </div>
+  );
+} 
+
+function NoFile() {
+  return (
+    <Card>
+      <Card.Body>
+        <p>Select a file from the list to the left.</p>
+        <p>Click items starting with "+" to expand a directory.</p>
       </Card.Body>
     </Card>
   );

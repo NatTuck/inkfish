@@ -2,7 +2,6 @@
 
 @import "bootstrap/scss/bootstrap";
 @import "bootswatch/dist/spacelab/bootswatch";
-@import "codemirror/lib/codemirror";
 @import "react-datepicker/dist/react-datepicker";
 
 @import "./console";
@@ -97,7 +96,7 @@ textarea.form-control {
     font-family: monospace;
 }
 
-.CodeMirror {
+.cm-editor {
     height: 90vh;
     max-height: 90vh;
 }

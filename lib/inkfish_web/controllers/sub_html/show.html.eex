@@ -66,6 +66,7 @@
         <%= if grade && !grade_hidden?(@conn, @assignment) do %>
           <%= if grade_column.kind == "feedback" do %>
             <%= link grade_column.name, to: Routes.grade_path(@conn, :show, grade.id) %>
+            (<%= length(grade.line_comments) %> note(s))
           <% else %>
             <%= grade_column.name %>
           <% end %>
