@@ -13,13 +13,17 @@
 
   <div class="mb-3">
     <%= label f, :start_date, class: "form-label" %>
-    <div>
-      <%= text_input(f, :start_date, class: "form-control date-picker") %>
-      <%= checkbox f, :archived, class: "form-check-input form-switch" %>
-      &nbsp;
-      <%= label f, :archived, "archive old course", class: "form-check-label" %>
-      <%= error_tag f, :archived %>
+    <%= text_input(f, :start_date, class: "form-control date-picker") %>
+    <%= error_tag(f, :start_date) %>
+  </div>
+
+  <div class="mb-3">
+    <div class="form-check form-switch"> 
+      <%= checkbox f, :archived, class: "form-check-input" %>
     </div>
+    &nbsp;
+    <%= label f, :archived, "archive old course", class: "form-check-label" %>
+    <%= error_tag f, :archived %>
   </div>
 
   <div class="mb-3">
