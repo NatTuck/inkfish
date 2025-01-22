@@ -33,10 +33,10 @@ untar("/var/tmp/sub.tar.gz");
 
 chdir("/home/student");
 
-if (-f "Makefile") {
-    say("\nFound Makefile, build:\n");
-    run(qq{make});
-}
+#if (-f "Makefile") {
+#    say("\nFound Makefile, build:\n");
+#    run(qq{make});
+#}
 
 say("\nUnpack grading archive again:");
 untar("/var/tmp/gra.tar.gz");
