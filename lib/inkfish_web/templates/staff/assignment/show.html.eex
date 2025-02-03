@@ -67,7 +67,8 @@
     <strong>Starter:</strong>
     <%= if @assignment.starter_upload do %>
       <%= link(@assignment.starter_upload.name,
-            to: Routes.upload_path(@conn, :show, @assignment.starter_upload)) %>
+        to: Routes.upload_path(@conn, :download,
+        @assignment.starter_upload, @assignment.starter_upload.name)) %>
     <% else %>
       ∅
     <% end %>

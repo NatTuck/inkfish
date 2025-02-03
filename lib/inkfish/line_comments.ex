@@ -90,9 +90,7 @@ defmodule Inkfish.LineComments do
       {:ok, lc} ->
         {:ok, grade} = Inkfish.Grades.update_feedback_score(lc.grade_id)
         grade = Grades.get_grade!(grade.id)
-
         lc = Repo.preload(lc, :user)
-        grade = Grades.get_grade!(lc.grade_id)
         {:ok, %{lc | grade: grade}}
 
       error ->
