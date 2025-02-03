@@ -111,7 +111,7 @@ export default function LineComment({data, edit, actions}) {
   }
 
   return (
-    <Card className="comment-card">
+    <Card className="comment-card" style={{maxWidth: "50vw"}}>
       <Card.Body className={color}>
         <Row>
           <Col sm={6}>

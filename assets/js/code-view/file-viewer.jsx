@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useMemo, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { createRoot } from 'react-dom/client';
-import { Card } from 'react-bootstrap';
+import { Card, Button } from 'react-bootstrap';
 import _ from 'lodash';
 
 import CodeMirror from '@uiw/react-codemirror';
@@ -83,6 +83,32 @@ class LineCommentWidget extends WidgetType {
   }
 }
 
+function QuickSave({data, actions}) {
+  function saveGrade(ev) {
+    ev.preventDefault();
+
+    let path = "Ω_grading_extra.txt";
+    create_line_comment(data.grade.id, path, 1, 0, "okay")
+      .then((resp) => {
+        console.log("create resp", resp);
+        actions.setGrade(resp.data.grade);
+        window.location.reload();
+      })
+      .catch((resp) => {
+        console.log("error creating", resp);
+        let msg = JSON.stringify(resp);
+        setStatus(msg);
+      });
+  }
+  
+  return (
+    <p>
+      <Button variant="info"
+              onClick={saveGrade}>Full Credit</Button>
+    </p>
+  );
+}
+
 export default function FileViewer({path, data, grade, setGrade}) {
   const texts = useMemo(() => build_texts_map(data.files), [data.files]);
   const text = texts.get(path) || "(missing)";
@@ -102,8 +128,18 @@ export default function FileViewer({path, data, grade, setGrade}) {
   
   let actions = { setGrade, putComment, delComment };
 
+  let qs = null;
+  if (grade.score == null) {
+    qs = <QuickSave data={data} actions={actions} />;
+  }
+  
+  console.log(grade);
+
   return (
-    <OneFile key={path} data={data} actions={actions} />
+    <div>
+      { qs }
+      <OneFile key={path} data={data} actions={actions} />
+    </div>
   );
 }
 
