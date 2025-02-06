@@ -34,7 +34,8 @@ function SectionSuggestions({data, active, section}) {
   let names = Map();
   let students = [];
   for (let reg of data.course.regs) {
-    if (reg.is_student && !busy.has(reg.user_id) && reg.section == section) {
+    if (reg.is_student && !busy.has(reg.user_id) &&
+        (reg.section == section || section == "default")) {
       let user = reg.user;
       names = names.set(user.id, user.name);
       students.push(user.id);
