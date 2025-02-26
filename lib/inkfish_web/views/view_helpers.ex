@@ -67,9 +67,14 @@ defmodule InkfishWeb.ViewHelpers do
     end
   end
 
+  def user_name_and_email(%User{} = user) do
+    name = user_display_name(user)
+    "#{name} [#{user.email}]"
+  end
+
   def show_team_members(%Team{} = team) do
     team.team_members
-    |> Enum.map(&user_display_name(&1.reg.user))
+    |> Enum.map(&user_name_and_email(&1.reg.user))
     |> Enum.join(", ")
   end
 
