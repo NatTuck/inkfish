@@ -12,6 +12,13 @@ my $SUB = $ENV{'SUB'} or die "Need $ENV{'SUB'}";
 my $GRA = $ENV{'GRA'} or die "Need $ENV{'SUB'}";
 my $COOKIE = $ENV{'COOKIE'} or die "Need $ENV{'COOKIE'}";
 
+my @FUSE_FLAGS = (
+    "--device /dev/fuse",
+    "--cap-add SYS_ADMIN",
+    "--security-opt apparmor:unconfined",
+    #"--privileged",
+);
+
 sub tar_up($tarball, $path) {
     say "Tar up $path";
     system(qq{(cd "$path" && tar czf "$tarball" .)});
@@ -19,6 +26,7 @@ sub tar_up($tarball, $path) {
 
 sub create($image) {
     my $opts = qq{--label "autobot=1" --env "COOKIE=$COOKIE" --cpus 1 --rm};
+    $opts .= " " . join(' ', @FUSE_FLAGS); 
     my $id = qx{docker create $opts "$image" perl /var/tmp/driver.pl};
     chomp $id;
     say "Created container: $image => $id";
