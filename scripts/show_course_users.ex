@@ -11,7 +11,8 @@ defmodule ShowCourseUsers do
    
     Enum.each users, fn user ->
       login = Regex.replace(~r/@.*$/, user.email, "")
-      IO.puts("#{login}\t#{user.secret}")
+      name = InkfishWeb.ViewHelpers.user_display_name(user)
+      IO.puts("#{login}\t#{name}\t#{user.secret}")
     end
   end
 end
