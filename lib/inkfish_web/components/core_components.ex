@@ -788,9 +788,9 @@ defmodule InkfishWeb.CoreComponents do
     # should be written to the errors.po file. The :count option is
     # set by Ecto and indicates we should also apply plural rules.
     if count = opts[:count] do
-      Gettext.dngettext(FmsWeb.Gettext, "errors", msg, msg, count, opts)
+      Gettext.dngettext(InkfishWeb.Gettext, "errors", msg, msg, count, opts)
     else
-      Gettext.dgettext(FmsWeb.Gettext, "errors", msg, opts)
+      Gettext.dgettext(InkfishWeb.Gettext, "errors", msg, opts)
     end
   end
 
