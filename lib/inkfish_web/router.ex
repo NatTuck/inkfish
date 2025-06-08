@@ -78,6 +78,7 @@ defmodule InkfishWeb.Router do
     resources "/grades", GradeController, only: [:show]
 
     get "/queue", QueueController, :list
+    resources "/ag_jobs", AgJobController, only: [:index]
   end
 
   scope "/staff", InkfishWeb.Staff, as: :staff do

@@ -15,6 +15,7 @@ defmodule Inkfish.Factory do
   alias Inkfish.Grades.GradeColumn
   alias Inkfish.Grades.Grade
   alias Inkfish.LineComments.LineComment
+  alias Inkfish.AgJobs.AgJob
 
   def stock_course do
     course_params = %{
@@ -196,6 +197,18 @@ defmodule Inkfish.Factory do
       text: "Don't mix tabs and spaces",
       grade: build(:grade),
       user: build(:user)
+    }
+  end
+
+  def ag_job_factory do
+    sub = insert(:sub)
+    dupkey = "#{sub.assignment_id}/#{sub.reg_id}"
+
+    %AgJob{
+      sub: sub,
+      sub_id: sub.id,
+      dupkey: dupkey,
+      prio: 1
     }
   end
 end

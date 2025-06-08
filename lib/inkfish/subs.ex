@@ -160,12 +160,24 @@ defmodule Inkfish.Subs do
     case result do
       {:ok, sub} ->
         set_one_sub_active!(sub)
-        autograde!(sub)
+
+        if has_autograders?(sub) do
+          Inkfish.AgJobs.create_ag_job(sub)
+        end
+
         {:ok, sub}
 
       error ->
         error
     end
+  end
+
+  def has_autograders?(sub) do
+    asg = Inkfish.Assignments.get_assignment!(sub.assignment_id)
+
+    Enum.any?(asg.grade_columns, fn gc ->
+      gc.kind == "script"
+    end)
   end
 
   def get_script_grades(sub) do
