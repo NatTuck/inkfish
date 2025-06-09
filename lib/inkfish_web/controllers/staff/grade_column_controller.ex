@@ -23,7 +23,7 @@ defmodule InkfishWeb.Staff.GradeColumnController do
 
   def index(conn, _params) do
     grade_columns = Grades.list_grade_columns()
-    render(conn, "index.html", grade_columns: grade_columns)
+    render(conn, "index.html", page_title: "Grade Columns", grade_columns: grade_columns)
   end
 
   def new(conn, _params) do
@@ -60,7 +60,7 @@ defmodule InkfishWeb.Staff.GradeColumnController do
 
   def show(conn, %{"id" => id}) do
     grade_column = Grades.get_grade_column!(id)
-    render(conn, "show.html", grade_column: grade_column)
+    render(conn, "show.html", page_title: "Show Grade Column", grade_column: grade_column)
   end
 
   def edit(conn, %{"id" => id}) do

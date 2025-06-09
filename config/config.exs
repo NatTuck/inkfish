@@ -17,6 +17,8 @@ config :inkfish,
 
 config :inkfish, Inkfish.Repo, migration_timestamps: [type: :utc_datetime]
 
+config :inkfish, Inkfish.AgJobs, resources: [cores: 4, megs: 8192]
+
 # Configures the endpoint
 config :inkfish, InkfishWeb.Endpoint,
   url: [host: "localhost"],

@@ -2,6 +2,12 @@
   Autograding Jobs
 </.header>
 
+<div class="mb-3">
+  <.form for={%{}} action={~p"/ag_jobs/poll"} method="post">
+    <p><button class="btn btn-primary">Poll</button></p>
+  </.form>
+</div>
+
 <.table id="ag_jobs" rows={@ag_jobs}>
   <:col :let={ag_job} label="Sub">
     <a href={~p"/subs/#{ag_job.sub_id}"}>{ag_job.sub_id}</a>

@@ -79,6 +79,7 @@ defmodule InkfishWeb.Router do
 
     get "/queue", QueueController, :list
     resources "/ag_jobs", AgJobController, only: [:index]
+    post "/ag_jobs/poll", AgJobController, :poll
   end
 
   scope "/staff", InkfishWeb.Staff, as: :staff do
