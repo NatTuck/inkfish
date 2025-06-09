@@ -22,6 +22,13 @@ defmodule Inkfish.AgJobs do
     Repo.all(AgJob)
   end
 
+  def list_ag_jobs_for_display do
+    Repo.all(
+      from ag in AgJob,
+        preload: [sub: [reg: [:user, :course], assignment: []]]
+    )
+  end
+
   def count_user_jobs(user_id) do
     query =
       from ag in AgJob,
@@ -103,7 +110,7 @@ defmodule Inkfish.AgJobs do
   end
 
   @doc """
-  Deletes a ag_job.
+  Deletes an ag_job.
 
   ## Examples
 
@@ -119,7 +126,7 @@ defmodule Inkfish.AgJobs do
   end
 
   def delete_jobs_by_dupkey(dupkey) do
-    Repo.delete(
+    Repo.delete_all(
       from ag in AgJob,
         where: ag.dupkey == ^dupkey
     )

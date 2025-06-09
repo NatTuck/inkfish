@@ -2,8 +2,12 @@
   Autograding Jobs
 </.header>
 
-<.table id="ag_jobs" rows={@ag_jobs} row_click={&JS.navigate(~p"/subs/#{&1.sub_id}")}>
-  <:col :let={ag_job} label="Dupkey">{ag_job.dupkey}</:col>
+<.table id="ag_jobs" rows={@ag_jobs}>
+  <:col :let={ag_job} label="Sub">
+    <a href={~p"/subs/#{ag_job.sub_id}"}>{ag_job.sub_id}</a>
+  </:col>
+  <:col :let={ag_job} label="User">{user_display_name(ag_job.sub.reg.user)}</:col>
+  <:col :let={ag_job} label="Assignment">{ag_job.sub.assignment.name}</:col>
   <:col :let={ag_job} label="Prio">{ag_job.prio}</:col>
   <:col :let={ag_job} label="Started at">{ag_job.started_at}</:col>
 </.table>
