@@ -74,7 +74,8 @@ defmodule Inkfish.MixProject do
       {:ex_machina, "~> 2.7", only: :test},
       {:phoenix_integration, "~> 0.9", only: :test},
       {:hound, "~> 1.1", only: :test},
-      {:floki, ">= 0.30.0", only: :test}
+      {:floki, ">= 0.30.0", only: :test},
+      {:mimic, "~> 1.12", only: :test}
     ]
   end
 

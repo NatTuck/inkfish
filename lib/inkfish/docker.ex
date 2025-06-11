@@ -80,6 +80,13 @@ defmodule Inkfish.Docker do
 
     RUN apt-get -y install maven openjdk-17-jdk libxml-parser-perl 
 
+    RUN apt-get -y install libbsd-dev clang-tools valgrind \\
+        libexpect-perl qemu-system-x86 qemu-utils \\
+        libfuse-dev fuse3
+
+    RUN apt-get -y install python-is-python3 python3-pyglet \\ 
+        python3-pytest python3-pygame
+
     RUN adduser student --disabled-password --gecos "Student,,,,"
     """
   end

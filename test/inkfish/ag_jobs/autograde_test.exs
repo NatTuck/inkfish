@@ -7,12 +7,12 @@ defmodule Inkfish.AgJobs.AutogradeTest do
   alias Inkfish.Itty.Task
   alias Inkfish.Repo
 
-  # Use this setup to run a per-test Mimic agent, allowing async tests.
-  # It also automatically verifies expectations on exit.
-  setup :verify_mimic_on_exit!
+  import Inkfish.Factory
 
   describe "autograde/1" do
     test "constructs a task and passes it to Itty.start/1" do
+      Mimic.copy(Inkfish.Itty)
+
       # Setup: Create the necessary database records.
       # A grade needs a submission and a grade_column, which in turn
       # need uploads.
@@ -44,7 +44,7 @@ defmodule Inkfish.AgJobs.AutogradeTest do
       # Execution: Call the function under test.
       Autograde.autograde(grade)
 
-      # Verification is handled automatically by `verify_mimic_on_exit!`
+      verify!()
     end
   end
 end
