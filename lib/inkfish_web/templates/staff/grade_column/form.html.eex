@@ -34,6 +34,20 @@
     <%= text_input f, :params, class: "form-control" %>
     <%= error_tag f, :params %>
   </div>
+  
+  <div class="mb-3">
+    <%= label f, :limits, class: "form-label" %> <br>
+    <div id="gcol-limits-root" class="mb-2">
+      React component loading...
+    </div>
+
+    <div class="mx-4 text-center">
+      <%= text_input(f, :limits, id: "gcol-limits", 
+            class: "form-control form-control-sm", 
+            readonly: true) %>
+    </div>
+    <%= error_tag f, :limits %>
+  </div>
 
   <div class="mb-3">
     <%= label f, :upload_id, class: "form-label" %>

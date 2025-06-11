@@ -40,7 +40,11 @@ defmodule InkfishWeb.Staff.SubController do
         {grade, token, log}
       end)
 
-    render(conn, "show.html", sub: sub, sub_data: sub_data, autogrades: autogrades)
+    render(conn, "show.html",
+      sub: sub,
+      sub_data: sub_data,
+      autogrades: autogrades
+    )
   end
 
   def update(conn, %{"id" => _id, "sub" => params}) do

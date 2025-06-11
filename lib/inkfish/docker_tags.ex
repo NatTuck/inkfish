@@ -123,7 +123,9 @@ defmodule Inkfish.DockerTags do
     Path.join(dir, "Dockerfile")
     |> File.write!(dt.dockerfile)
 
-    Itty.run(~s[(cd "#{dir}" && DOCKER_BUILDKIT=1 docker build -t "#{dt.name}" .)])
+    Itty.run(
+      ~s[(cd "#{dir}" && DOCKER_BUILDKIT=1 docker build -t "#{dt.name}" .)]
+    )
   end
 
   def start_clean(%DockerTag{} = dt) do

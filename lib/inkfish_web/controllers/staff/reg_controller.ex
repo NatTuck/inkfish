@@ -67,7 +67,12 @@ defmodule InkfishWeb.Staff.RegController do
     reg = Users.get_reg!(id)
     changeset = Users.change_reg(reg)
     sections = ["" | Courses.Course.list_sections(reg.course)]
-    render(conn, "edit.html", reg: reg, sections: sections, changeset: changeset)
+
+    render(conn, "edit.html",
+      reg: reg,
+      sections: sections,
+      changeset: changeset
+    )
   end
 
   def update(conn, %{"id" => id, "reg" => reg_params}) do
@@ -81,7 +86,12 @@ defmodule InkfishWeb.Staff.RegController do
 
       {:error, %Ecto.Changeset{} = changeset} ->
         sections = ["" | Courses.Course.list_sections(reg.course)]
-        render(conn, "edit.html", reg: reg, changeset: changeset, sections: sections)
+
+        render(conn, "edit.html",
+          reg: reg,
+          changeset: changeset,
+          sections: sections
+        )
     end
   end
 

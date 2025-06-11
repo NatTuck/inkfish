@@ -28,7 +28,11 @@ defmodule InkfishWeb.Staff.RegControllerTest do
   describe "create reg" do
     test "redirects to show when data is valid", %{conn: conn, course: course} do
       params = params_with_assocs(:reg)
-      conn = post(conn, Routes.staff_course_reg_path(conn, :create, course), reg: params)
+
+      conn =
+        post(conn, Routes.staff_course_reg_path(conn, :create, course),
+          reg: params
+        )
 
       assert %{id: id} = redirected_params(conn)
       assert redirected_to(conn) == Routes.staff_reg_path(conn, :show, id)
@@ -40,7 +44,11 @@ defmodule InkfishWeb.Staff.RegControllerTest do
     test "renders errors when data is invalid", %{conn: conn, course: course} do
       params = %{is_student: true, is_staff: true}
 
-      conn = post(conn, Routes.staff_course_reg_path(conn, :create, course), reg: params)
+      conn =
+        post(conn, Routes.staff_course_reg_path(conn, :create, course),
+          reg: params
+        )
+
       assert html_response(conn, 200) =~ "New Reg"
     end
   end
@@ -72,7 +80,9 @@ defmodule InkfishWeb.Staff.RegControllerTest do
   describe "delete reg" do
     test "deletes chosen reg", %{conn: conn, reg: reg} do
       conn = delete(conn, Routes.staff_reg_path(conn, :delete, reg))
-      assert redirected_to(conn) == Routes.staff_course_reg_path(conn, :index, reg.course_id)
+
+      assert redirected_to(conn) ==
+               Routes.staff_course_reg_path(conn, :index, reg.course_id)
 
       assert_error_sent 404, fn ->
         get(conn, Routes.staff_reg_path(conn, :show, reg))

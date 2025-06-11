@@ -23,18 +23,25 @@ defmodule Inkfish.DockerTagsTest do
     test "create_docker_tag/1 with valid data creates a docker_tag" do
       valid_attrs = %{dockerfile: "some dockerfile", name: "some name"}
 
-      assert {:ok, %DockerTag{} = docker_tag} = DockerTags.create_docker_tag(valid_attrs)
+      assert {:ok, %DockerTag{} = docker_tag} =
+               DockerTags.create_docker_tag(valid_attrs)
+
       assert docker_tag.dockerfile == "some dockerfile"
       assert docker_tag.name == "some name"
     end
 
     test "create_docker_tag/1 with invalid data returns error changeset" do
-      assert {:error, %Ecto.Changeset{}} = DockerTags.create_docker_tag(@invalid_attrs)
+      assert {:error, %Ecto.Changeset{}} =
+               DockerTags.create_docker_tag(@invalid_attrs)
     end
 
     test "update_docker_tag/2 with valid data updates the docker_tag" do
       docker_tag = docker_tag_fixture()
-      update_attrs = %{dockerfile: "some updated dockerfile", name: "some updated name"}
+
+      update_attrs = %{
+        dockerfile: "some updated dockerfile",
+        name: "some updated name"
+      }
 
       assert {:ok, %DockerTag{} = docker_tag} =
                DockerTags.update_docker_tag(docker_tag, update_attrs)
@@ -55,7 +62,10 @@ defmodule Inkfish.DockerTagsTest do
     test "delete_docker_tag/1 deletes the docker_tag" do
       docker_tag = docker_tag_fixture()
       assert {:ok, %DockerTag{}} = DockerTags.delete_docker_tag(docker_tag)
-      assert_raise Ecto.NoResultsError, fn -> DockerTags.get_docker_tag!(docker_tag.id) end
+
+      assert_raise Ecto.NoResultsError, fn ->
+        DockerTags.get_docker_tag!(docker_tag.id)
+      end
     end
 
     test "change_docker_tag/1 returns a docker_tag changeset" do

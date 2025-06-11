@@ -51,6 +51,6 @@
     "@babel/runtime": "^7.26.10",
     "jest": "^29.7.0"
   },
-  "packageManager": "pnpm@9.12.3+sha512.cce0f9de9c5a7c95bef944169cc5dfe8741abfb145078c0d508b868056848a87c81e626246cb60967cbd7fd29a6c062ef73ff840d96b3c86c40ac92cf4a813ee",
+  "packageManager": "pnpm@10.11.1+sha256.211e9990148495c9fc30b7e58396f7eeda83d9243eb75407ea4f8650fb161f7c",
   "browserslist": "> 0.25%, not dead"
 }

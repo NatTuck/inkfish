@@ -12,8 +12,10 @@ defmodule InkfishWeb.Staff.GradeView do
       sub_id: grade.sub_id,
       sub: render_one(sub, InkfishWeb.Staff.SubView, "sub.json"),
       grade_column_id: grade.grade_column_id,
-      grade_column: render_one(gc, InkfishWeb.GradeColumnView, "grade_column.json"),
-      line_comments: render_many(lcs, InkfishWeb.Staff.LineCommentView, "line_comment.json")
+      grade_column:
+        render_one(gc, InkfishWeb.GradeColumnView, "grade_column.json"),
+      line_comments:
+        render_many(lcs, InkfishWeb.Staff.LineCommentView, "line_comment.json")
     }
   end
 end

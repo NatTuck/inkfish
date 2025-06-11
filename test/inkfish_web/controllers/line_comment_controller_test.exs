@@ -20,7 +20,11 @@ defmodule InkfishWeb.LineCommentControllerTest do
   end
 
   describe "create line_comment" do
-    test "renders line_comment when data is valid", %{conn: conn, staff: staff, grade: grade} do
+    test "renders line_comment when data is valid", %{
+      conn: conn,
+      staff: staff,
+      grade: grade
+    } do
       params = params_for(:line_comment, user: staff, grade: grade)
 
       conn =
@@ -42,7 +46,11 @@ defmodule InkfishWeb.LineCommentControllerTest do
              } = json_response(conn, 200)["data"]
     end
 
-    test "renders errors when data is invalid", %{conn: conn, staff: staff, grade: grade} do
+    test "renders errors when data is invalid", %{
+      conn: conn,
+      staff: staff,
+      grade: grade
+    } do
       params = %{points: nil}
 
       conn =
@@ -97,16 +105,25 @@ defmodule InkfishWeb.LineCommentControllerTest do
   end
 
   describe "delete line_comment" do
-    test "deletes chosen line_comment", %{conn: conn, line_comment: line_comment, staff: staff} do
+    test "deletes chosen line_comment", %{
+      conn: conn,
+      line_comment: line_comment,
+      staff: staff
+    } do
       conn =
         conn
         |> login(staff)
-        |> delete(Routes.ajax_staff_line_comment_path(conn, :delete, line_comment))
+        |> delete(
+          Routes.ajax_staff_line_comment_path(conn, :delete, line_comment)
+        )
 
       assert response(conn, 200)
 
       assert_error_sent 404, fn ->
-        get(conn, Routes.ajax_staff_line_comment_path(conn, :show, line_comment))
+        get(
+          conn,
+          Routes.ajax_staff_line_comment_path(conn, :show, line_comment)
+        )
       end
     end
   end

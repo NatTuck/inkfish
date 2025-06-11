@@ -32,16 +32,16 @@ defmodule Inkfish.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:argon2_elixir, "~> 3.0"},
+      {:argon2_elixir, "~> 4.0"},
       {:phoenix, "~> 1.7.10"},
       {:phoenix_ecto, "~> 4.4"},
       {:ecto_sql, "~> 3.12"},
       {:postgrex, ">= 0.0.0"},
-      {:phoenix_html, "~> 3.3"},
+      {:phoenix_html, "~> 3.0"},
       {:phoenix_view, "~> 2.0"},
-      {:phoenix_live_view, "~> 0.20.1"},
+      {:phoenix_live_view, "~> 1.0"},
       {:phoenix_live_dashboard, "~> 0.8.2"},
-      {:telemetry_metrics, "~> 0.6"},
+      {:telemetry_metrics, "~> 1.1"},
       {:telemetry_poller, "~> 1.0"},
       {:ecto_psql_extras, "~> 0.6"},
       {:gettext, "~> 0.26 and >= 0.26.1"},
@@ -60,19 +60,22 @@ defmodule Inkfish.MixProject do
       {:gen_smtp, "~> 1.2"},
       {:httpoison, "~> 2.0"},
       {:ok, "~> 2.3"},
-      {:briefly, "~> 0.4.0"},
+      {:briefly, "~> 0.5.0"},
       {:igniter, "~> 0.1"},
       {:csv, "~> 3.2"},
       {:local_time, "~> 0.1.1"},
+      {:methods, "~> 0.1.0"},
       {:heroicons, "~> 0.5.5"},
+      {:cpu_info, "~> 0.2.1"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_copy, "~> 0.1.3", runtime: Mix.env() == :dev},
       {:esbuild, "~> 0.8", runtime: Mix.env() == :dev},
       {:dart_sass, "~> 0.6", runtime: Mix.env() == :dev},
       {:ex_machina, "~> 2.7", only: :test},
-      {:phoenix_integration, "~> 0.8", only: :test},
+      {:phoenix_integration, "~> 0.9", only: :test},
       {:hound, "~> 1.1", only: :test},
-      {:floki, ">= 0.30.0", only: :test}
+      {:floki, ">= 0.30.0", only: :test},
+      {:mimic, "~> 1.12", only: :test}
     ]
   end
 
@@ -84,8 +87,14 @@ defmodule Inkfish.MixProject do
   # See the documentation for `Mix` for more info on aliases.
   defp aliases do
     [
-      deps: ["deps.get", "cmd npm install --prefix assets", "esbuild.install", "sass.install"],
-      setup: ["deps.get", "ecto.setup", "cmd npm install --prefix assets"],
+      deps: [
+        "deps.get",
+        "cmd npm install --prefix assets",
+        "esbuild.install",
+        "sass.install"
+      ],
+      setup: ["deps.get", "ecto.setup", "assets.install"],
+      "assets.install": ["cmd pnpm install --dir assets"],
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],

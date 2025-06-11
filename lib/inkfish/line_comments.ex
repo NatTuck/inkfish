@@ -64,7 +64,11 @@ defmodule Inkfish.LineComments do
         inner_join: as in assoc(sub, :assignment),
         inner_join: bucket in assoc(as, :bucket),
         inner_join: course in assoc(bucket, :course),
-        preload: [grade: {grade, sub: {sub, assignment: {as, bucket: {bucket, course: course}}}}]
+        preload: [
+          grade:
+            {grade,
+             sub: {sub, assignment: {as, bucket: {bucket, course: course}}}}
+        ]
     )
   end
 

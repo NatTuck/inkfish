@@ -184,7 +184,9 @@ defmodule Inkfish.Users do
 
     Repo.all(
       from uu in User,
-        where: ilike(uu.email, ^qq) or ilike(uu.given_name, ^qq) or ilike(uu.surname, ^qq)
+        where:
+          ilike(uu.email, ^qq) or ilike(uu.given_name, ^qq) or
+            ilike(uu.surname, ^qq)
     )
   end
 

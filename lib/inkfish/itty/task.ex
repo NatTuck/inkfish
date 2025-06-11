@@ -33,12 +33,12 @@ defmodule Inkfish.Itty.Task do
 
   def view_task(%Task{} = task) do
     grade = Grades.preload_for_task_view(task.grade)
-    
+
     %{
       state: task.state,
       queued_at: task.queued_at,
       started_at: task.started_at,
-      grade: grade,
+      grade: grade
     }
   end
 end

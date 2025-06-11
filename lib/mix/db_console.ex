@@ -10,7 +10,12 @@ defmodule Mix.Tasks.Db.Console do
       [_, user, pass, host, db] = cs
       show_cmd(user, pass, host, db)
     else
-      show_cmd(conf[:username], conf[:password], conf[:hostname], conf[:database])
+      show_cmd(
+        conf[:username],
+        conf[:password],
+        conf[:hostname],
+        conf[:database]
+      )
     end
   end
 

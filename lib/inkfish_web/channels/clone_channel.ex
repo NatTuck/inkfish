@@ -5,7 +5,9 @@ defmodule InkfishWeb.CloneChannel do
   alias Inkfish.Itty
 
   def join("clone:" <> nonce, %{"token" => token}, socket) do
-    case Phoenix.Token.verify(InkfishWeb.Endpoint, "upload", token, max_age: 8640) do
+    case Phoenix.Token.verify(InkfishWeb.Endpoint, "upload", token,
+           max_age: 8640
+         ) do
       {:ok, %{kind: kind, nonce: ^nonce}} ->
         socket =
           socket

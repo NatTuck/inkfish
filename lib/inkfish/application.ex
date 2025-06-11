@@ -18,9 +18,12 @@ defmodule Inkfish.Application do
       # 
       # Start the Endpoint (http/https)
       InkfishWeb.Endpoint,
+
       # Live console output
       Inkfish.Itty.Sup,
-      Inkfish.Itty.Queue
+
+      # Autograding Jobs
+      Inkfish.AgJobs.Server
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

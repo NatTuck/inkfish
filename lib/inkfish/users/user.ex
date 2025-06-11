@@ -38,7 +38,14 @@ defmodule Inkfish.Users.User do
   @doc false
   def admin_edit_changeset(user, attrs) do
     user
-    |> cast(attrs, [:email, :given_name, :surname, :nickname, :photo_upload_id, :is_admin])
+    |> cast(attrs, [
+      :email,
+      :given_name,
+      :surname,
+      :nickname,
+      :photo_upload_id,
+      :is_admin
+    ])
     |> validate_required([:email, :given_name, :surname])
     |> validate_email()
   end

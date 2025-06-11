@@ -14,7 +14,9 @@ defmodule Inkfish.JoinReqsTest do
 
     test "get_join_req!/1 returns the join_req with given id" do
       join_req = insert(:join_req)
-      assert drop_assocs(JoinReqs.get_join_req!(join_req.id)) == drop_assocs(join_req)
+
+      assert drop_assocs(JoinReqs.get_join_req!(join_req.id)) ==
+               drop_assocs(join_req)
     end
 
     test "create_join_req/1 with valid data creates a join_req" do
@@ -35,7 +37,10 @@ defmodule Inkfish.JoinReqsTest do
     test "delete_join_req/1 deletes the join_req" do
       join_req = insert(:join_req)
       assert {:ok, %JoinReq{}} = JoinReqs.delete_join_req(join_req)
-      assert_raise Ecto.NoResultsError, fn -> JoinReqs.get_join_req!(join_req.id) end
+
+      assert_raise Ecto.NoResultsError, fn ->
+        JoinReqs.get_join_req!(join_req.id)
+      end
     end
 
     test "change_join_req/1 returns a join_req changeset" do

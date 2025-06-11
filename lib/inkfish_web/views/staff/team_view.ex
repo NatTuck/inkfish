@@ -21,7 +21,8 @@ defmodule InkfishWeb.Staff.TeamView do
       id: team.id,
       active: team.active,
       regs: render_many(regs, InkfishWeb.Staff.RegView, "reg.json"),
-      teamset: render_one(teamset, InkfishWeb.Staff.TeamsetView, "teamset.json"),
+      teamset:
+        render_one(teamset, InkfishWeb.Staff.TeamsetView, "teamset.json"),
       subs: render_many(subs, InkfishWeb.Staff.SubView, "sub.json")
     }
   end

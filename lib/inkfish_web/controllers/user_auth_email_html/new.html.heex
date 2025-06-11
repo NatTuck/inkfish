@@ -4,7 +4,12 @@
     <:subtitle>We'll send a new confirmation link to your inbox</:subtitle>
   </.header>
 
-  <.simple_form :let={f} for={@conn.params["user"]} as={:user} action={~p"/users/confirm"}>
+  <.simple_form
+    :let={f}
+    for={@conn.params["user"]}
+    as={:user}
+    action={~p"/users/confirm"}
+  >
     <.input field={f[:email]} type="email" placeholder="Email" required />
     <:actions>
       <.button phx-disable-with="Sending..." class="w-full">

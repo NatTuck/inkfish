@@ -1,4 +1,4 @@
-defmodule Inkfish.Autobots.Tap do
+defmodule Inkfish.AgJobs.Tap do
   @doc """
   Parses TAP as output by Perl's Test::Simple or Python's tappy.
 

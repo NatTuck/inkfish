@@ -27,7 +27,10 @@ defmodule Inkfish.LineCommentsTest do
 
     test "create_line_comment/1 with valid data creates a line_comment" do
       params = params_with_assocs(:line_comment)
-      assert {:ok, %LineComment{} = line_comment} = LineComments.create_line_comment(params)
+
+      assert {:ok, %LineComment{} = line_comment} =
+               LineComments.create_line_comment(params)
+
       assert line_comment.line == 10
       assert line_comment.path == "hw03/main.c"
       assert line_comment.points == Decimal.new("-5.0")
@@ -41,7 +44,10 @@ defmodule Inkfish.LineCommentsTest do
     test "update_line_comment/2 with valid data updates the line_comment" do
       line_comment = line_comment_fixture()
       attrs = %{line: 43, points: "25.0"}
-      assert {:ok, %LineComment{} = lc} = LineComments.update_line_comment(line_comment, attrs)
+
+      assert {:ok, %LineComment{} = lc} =
+               LineComments.update_line_comment(line_comment, attrs)
+
       assert lc.line == 43
       assert lc.path == line_comment.path
       assert lc.points == Decimal.new("25.0")
@@ -51,7 +57,9 @@ defmodule Inkfish.LineCommentsTest do
     test "update_line_comment/2 with invalid data returns error changeset" do
       line_comment = line_comment_fixture()
       params = %{grade_id: nil}
-      assert {:error, %Ecto.Changeset{}} = LineComments.update_line_comment(line_comment, params)
+
+      assert {:error, %Ecto.Changeset{}} =
+               LineComments.update_line_comment(line_comment, params)
 
       assert drop_assocs(line_comment) ==
                drop_assocs(LineComments.get_line_comment!(line_comment.id))
@@ -59,8 +67,13 @@ defmodule Inkfish.LineCommentsTest do
 
     test "delete_line_comment/1 deletes the line_comment" do
       line_comment = line_comment_fixture()
-      assert {:ok, %LineComment{}} = LineComments.delete_line_comment(line_comment)
-      assert_raise Ecto.NoResultsError, fn -> LineComments.get_line_comment!(line_comment.id) end
+
+      assert {:ok, %LineComment{}} =
+               LineComments.delete_line_comment(line_comment)
+
+      assert_raise Ecto.NoResultsError, fn ->
+        LineComments.get_line_comment!(line_comment.id)
+      end
     end
 
     test "change_line_comment/1 returns a line_comment changeset" do

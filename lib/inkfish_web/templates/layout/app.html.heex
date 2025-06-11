@@ -3,10 +3,18 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title><%= page_title(@conn) %> · Inkfish</title>
+    <title>{page_title(@conn)} · Inkfish</title>
     <link rel="stylesheet" href={Routes.static_path(@conn, "/assets/app.css")} />
-    <link rel="icon" type="image/png" href={Routes.static_path(@conn, "/images/inkfish.png")} />
-    <script type="text/javascript" defer src={Routes.static_path(@conn, "/assets/app.js")}>
+    <link
+      rel="icon"
+      type="image/png"
+      href={Routes.static_path(@conn, "/images/inkfish.png")}
+    />
+    <script
+      type="text/javascript"
+      defer
+      src={Routes.static_path(@conn, "/assets/app.js")}
+    >
     </script>
     <script>
       window.user_token = "<%= @current_user_token %>";
@@ -20,37 +28,37 @@
       <header>
         <div class="row">
           <div class="col-md-2">
-            <%= link(
+            {link(
               img_tag(Routes.static_path(@conn, "/images/inkfish.png"),
                 class: "header-logo"
               ),
               to: Routes.page_path(@conn, :index)
-            ) %>
+            )}
           </div>
           <div class="col-md-5">
             <%= if @current_user && @current_user.is_admin do %>
-              <%= render(InkfishWeb.LayoutView, "admin_nav.html", assigns) %> |
+              {render(InkfishWeb.LayoutView, "admin_nav.html", assigns)} |
             <% else %>
               &nbsp;
             <% end %>
 
-            <%= link("Queue", to: ~p"/queue") %>
+            {link("Queue", to: ~p"/ag_jobs")}
           </div>
           <div class="col-md-5">
             <%= if @current_user do %>
-              User: <%= @current_user.email %> | <%= link("Profile",
+              User: {@current_user.email} | {link("Profile",
                 to: Routes.user_path(@conn, :show, @current_user)
-              ) %> |
+              )} |
               <%= if @current_ruid do %>
-                <%= link("Resume",
+                {link("Resume",
                   to: Routes.session_path(@conn, :resume),
                   method: :post
-                ) %>
+                )}
               <% else %>
-                <%= link("Logout",
+                {link("Logout",
                   to: Routes.session_path(@conn, :delete),
                   method: :delete
-                ) %>
+                )}
               <% end %>
             <% else %>
               <p>no session</p>
@@ -59,7 +67,7 @@
         </div>
         <div class="row">
           <div class="col">
-            <%= breadcrumb(@conn) %>
+            {breadcrumb(@conn)}
           </div>
         </div>
       </header>
@@ -76,14 +84,14 @@
       end
     }>
       <div class="inkfish-main">
-        <%= @inner_content %>
+        {@inner_content}
       </div>
     </div>
 
     <div class="container">
       <div class="course-footer">
         <%= if assigns[:course] do %>
-          <%= render(InkfishWeb.LayoutView, "course_footer.html", assigns) %>
+          {render(InkfishWeb.LayoutView, "course_footer.html", assigns)}
         <% end %>
       </div>
       <div class="inkfish-footer">
