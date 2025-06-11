@@ -16,21 +16,8 @@ defmodule Inkfish.Itty.Server do
     {:via, Registry, {Inkfish.Itty.Reg, uuid}}
   end
 
-  def start(%Task{uuid: uuid, script: script, env: env, on_exit: on_exit}) do
-    cookie = Inkfish.Text.gen_uuid()
-
-    env =
-      env
-      |> Map.update("COOKIE", cookie, & &1)
-
-    state0 = %{
-      done: false,
-      uuid: uuid,
-      cmd: script,
-      cookie: cookie,
-      env: env,
-      on_exit: on_exit
-    }
+  def start(%Task{} = task) do
+    state0 = Map.delete(task, :__struct__)
 
     spec = %{
       id: __MODULE__,
@@ -45,7 +32,7 @@ defmodule Inkfish.Itty.Server do
     if !Enum.empty?(Registry.lookup(Inkfish.Itty.Reg, uuid)) do
       GenServer.call(reg(uuid), :peek)
     else
-      {:error, "No such task"}
+      {:error, :itty_not_found}
     end
   end
 
@@ -67,11 +54,13 @@ defmodule Inkfish.Itty.Server do
   end
 
   @impl true
-  def init(%{env: env, cmd: cmd, uuid: uuid} = state0) do
+  def init(%{env: env, cookie: cookie, cmd: cmd, uuid: uuid} = state0) do
+    IO.puts("Itty: UUID #{uuid}, cmd '#{cmd}'")
     # Start the process
     env =
       System.get_env()
       |> Map.merge(env)
+      |> Map.put("COOKIE", cookie)
       |> Enum.into([])
 
     opts = [
@@ -84,6 +73,8 @@ defmodule Inkfish.Itty.Server do
 
     IO.puts(" =[Itty]= Run cmd [#{cmd}] for UUID #{uuid}")
     {:ok, _pid, ospid} = :exec.run(cmd, opts, 30)
+
+    IO.puts("Itty: Ran command '#{cmd}'")
 
     block = %{seq: 99, stream: :adm, text: "\nStarting task.\n\n"}
 

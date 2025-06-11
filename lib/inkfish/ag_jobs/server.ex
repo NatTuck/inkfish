@@ -19,6 +19,10 @@ defmodule Inkfish.AgJobs.Server do
     GenServer.cast(__MODULE__, :poll)
   end
 
+  def grade_status(grade_id) do
+    GenServer.call(__MODULE__, {:grade_status, grade_id})
+  end
+
   @impl true
   def init(_) do
     state0 = %{
@@ -36,6 +40,25 @@ defmodule Inkfish.AgJobs.Server do
   def handle_call(:poll, _from, state) do
     state = do_poll(state)
     {:reply, {:ok, state}, state}
+  end
+
+  def handle_call({:grade_status, grade_id}, _from, state) do
+    r_idx = Enum.find_index(state.running, &(&1.id == grade_id))
+    w_idx = Enum.find_index(state.waiting, &(&1.id == grade_id))
+
+    reply =
+      cond do
+        !is_nil(r_idx) ->
+          {:ok, {:running, r_idx}}
+
+        !is_nil(w_idx) ->
+          {:ok, {:waiting, w_idx}}
+
+        true ->
+          :error
+      end
+
+    {:reply, reply, state}
   end
 
   @impl true
@@ -121,7 +144,7 @@ defmodule Inkfish.AgJobs.Server do
       case AgJobs.start_next_ag_job() do
         {:ok, job} ->
           grades =
-            Inkfish.Subs.reset_script_grades(job.sub_id)
+            Inkfish.Subs.get_script_grades(job.sub_id)
             |> Enum.map(&Grades.get_grade_for_autograding!(&1.id))
             |> Enum.map(&%Grade{&1 | ag_job: job})
 
@@ -163,7 +186,7 @@ defmodule Inkfish.AgJobs.Server do
   end
 
   def get_cores_limit(grade) do
-    case Jason.decode(grade.grade_column.limits) do
+    case Jason.decode(grade.grade_column.limits || "") do
       {:ok, %{"cores" => cores}} ->
         max(0.5, cores)
 
