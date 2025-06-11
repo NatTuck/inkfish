@@ -8,6 +8,8 @@ defmodule Inkfish.AgJobs do
 
   alias Inkfish.AgJobs.AgJob
   alias Inkfish.Subs.Sub
+  alias Inkfish.Grades.Grade
+  alias Inkfish.AgJobs.Server
 
   @doc """
   Returns the list of ag_jobs.
@@ -24,8 +26,9 @@ defmodule Inkfish.AgJobs do
 
   def list_ag_jobs_for_display do
     Repo.all(
-      from(ag in AgJob,
-        preload: [sub: [reg: [:user, :course], assignment: []]]
+      from(job in AgJob,
+        preload: [sub: [reg: [:user, :course], assignment: []]],
+        order_by: [job.prio, job.inserted_at]
       )
     )
   end
@@ -50,13 +53,23 @@ defmodule Inkfish.AgJobs do
     Repo.aggregate(query, :count)
   end
 
+  def list_upcoming_ag_jobs() do
+    Repo.all(
+      from(job in AgJob,
+        order_by: [job.prio, job.inserted_at],
+        where: is_nil(job.started_at) and is_nil(job.finished_at)
+      )
+    )
+  end
+
   def start_next_ag_job() do
     Repo.transaction(fn ->
       job0 =
         Repo.one(
           from(job in AgJob,
             order_by: [job.prio, job.inserted_at],
-            where: is_nil(job.started_at) and is_nil(job.finished_at)
+            where: is_nil(job.started_at) and is_nil(job.finished_at),
+            limit: 1
           )
         )
 
@@ -74,6 +87,23 @@ defmodule Inkfish.AgJobs do
 
       job1
     end)
+  end
+
+  def grade_status(%Grade{} = grade) do
+    case Server.grade_status(grade.id) do
+      {:ok, msg} ->
+        msg
+
+      :error ->
+        jobs = list_upcoming_ag_jobs()
+        idx = Enum.find_index(jobs, &(&1.sub_id == grade.sub_id))
+
+        if idx do
+          {:scheduled, idx}
+        else
+          :missing
+        end
+    end
   end
 
   @doc """

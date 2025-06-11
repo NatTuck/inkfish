@@ -186,12 +186,17 @@ defmodule Inkfish.Subs do
     end)
   end
 
-  def get_script_grades(sub) do
+  def get_script_grades(%Sub{} = sub) do
     sub = Repo.preload(sub, grades: :grade_column)
 
     Enum.filter(sub.grades, fn gr ->
       gr.grade_column.kind == "script"
     end)
+  end
+
+  def get_script_grades(sub_id) do
+    Repo.get!(Sub, sub_id)
+    |> get_script_grades()
   end
 
   def reset_script_grades(%Sub{} = sub) do
@@ -207,6 +212,9 @@ defmodule Inkfish.Subs do
     end)
 
     sub.assignment.grade_columns
+    |> Enum.filter(fn gcol ->
+      gcol.kind == "script"
+    end)
     |> Enum.map(fn gcol ->
       {:ok, gr} = Grades.create_autograde(sub.id, gcol.id)
       %Grade{gr | sub: sub}

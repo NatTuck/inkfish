@@ -47,6 +47,9 @@ config :elixir, :time_zone_database, Tzdata.TimeZoneDatabase
 config :inkfish, :time_zone, "America/New_York"
 config :local_time, :time_zone, "America/New_York"
 
+# Nonsense
+config :tesla, disable_deprecated_builder_warning: true
+
 config :esbuild,
   version: "0.17.11",
   default: [

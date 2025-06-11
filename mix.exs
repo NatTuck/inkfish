@@ -67,6 +67,7 @@ defmodule Inkfish.MixProject do
       {:methods, "~> 0.1.0"},
       {:heroicons, "~> 0.5.5"},
       {:cpu_info, "~> 0.2.1"},
+      {:docker, "~> 0.4.0"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_copy, "~> 0.1.3", runtime: Mix.env() == :dev},
       {:esbuild, "~> 0.8", runtime: Mix.env() == :dev},

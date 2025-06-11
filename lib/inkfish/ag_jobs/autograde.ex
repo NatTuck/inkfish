@@ -4,8 +4,11 @@ defmodule Inkfish.AgJobs.Autograde do
   alias Inkfish.Itty
   alias Inkfish.Itty.Task
   alias Inkfish.AgJobs.Tap
+  alias Inkfish.Sandbox.Containers
 
   def autograde(grade) do
+    # IO.inspect({:autograde, grade})
+
     unpacked_sub = Upload.unpacked_path(grade.sub.upload)
     unpacked_gra = Upload.unpacked_path(grade.grade_column.upload)
 
@@ -15,13 +18,7 @@ defmodule Inkfish.AgJobs.Autograde do
 
     grade_script =
       script_dir
-      |> Path.join("simple-grade.pl")
-
-    env = %{
-      "SCR" => script_dir,
-      "SUB" => unpacked_sub,
-      "GRA" => unpacked_gra
-    }
+      |> Path.join("autograde-v3.pl")
 
     on_exit = fn rv ->
       {:ok, {passed, tests}} = Tap.score(rv.result)
@@ -32,10 +29,28 @@ defmodule Inkfish.AgJobs.Autograde do
       Inkfish.AgJobs.Server.cast_poll()
     end
 
+    cookie = Inkfish.Text.gen_uuid()
+
+    cont_id =
+      Containers.create(%{
+        cmd: ["perl", "/var/tmp/driver.pl"],
+        env: ["COOKIE=#{cookie}"],
+        image: "inkfish:latest"
+      })
+
+    IO.puts("created container: #{cont_id} for grade #{grade.id}")
+
+    env = %{
+      "SCR" => script_dir,
+      "SUB" => unpacked_sub,
+      "GRA" => unpacked_gra
+    }
+
     %Task{
       uuid: grade.log_uuid,
-      script: grade_script,
+      cmd: "#{grade_script} #{cont_id}",
       env: env,
+      cookie: cookie,
       on_exit: on_exit,
       grade: grade
     }
