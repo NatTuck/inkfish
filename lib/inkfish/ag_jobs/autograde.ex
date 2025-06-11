@@ -7,7 +7,7 @@ defmodule Inkfish.AgJobs.Autograde do
   alias Inkfish.Sandbox.Containers
 
   def autograde(grade) do
-    IO.inspect({:autograde, grade})
+    # IO.inspect({:autograde, grade})
 
     unpacked_sub = Upload.unpacked_path(grade.sub.upload)
     unpacked_gra = Upload.unpacked_path(grade.grade_column.upload)
