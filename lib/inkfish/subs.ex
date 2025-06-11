@@ -138,8 +138,7 @@ defmodule Inkfish.Subs do
         inner_join: bucket in assoc(as, :bucket),
         inner_join: course in assoc(bucket, :course),
         preload: [
-          assignment:
-            {as, bucket: {bucket, course: course}, grade_columns: grade_columns},
+          assignment: {as, bucket: {bucket, course: course}, grade_columns: grade_columns},
           team: {team, regs: team_regs}
         ]
       )
@@ -169,7 +168,7 @@ defmodule Inkfish.Subs do
         set_one_sub_active!(sub)
 
         if has_autograders?(sub) do
-          Inkfish.AgJobs.create_ag_job(sub)
+          autograde!(sub)
         end
 
         {:ok, sub}
@@ -203,15 +202,14 @@ defmodule Inkfish.Subs do
         upload: []
       )
 
+    Enum.each(get_script_grades(sub), fn gr ->
+      Grades.delete_grade(gr)
+    end)
+
     sub.assignment.grade_columns
     |> Enum.map(fn gcol ->
       {:ok, gr} = Grades.create_autograde(sub.id, gcol.id)
       %Grade{gr | sub: sub}
-    end)
-    |> Enum.map(fn gr ->
-      {:ok, gr} = Grades.update_grade(gr, %{score: nil})
-      Grade.delete_log(gr)
-      gr
     end)
   end
 
@@ -222,6 +220,7 @@ defmodule Inkfish.Subs do
 
   def autograde!(sub) do
     reset_script_grades(sub)
+
     Inkfish.AgJobs.create_ag_job(sub)
     Inkfish.AgJobs.Server.poll()
   end

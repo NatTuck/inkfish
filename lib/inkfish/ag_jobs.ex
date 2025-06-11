@@ -30,6 +30,15 @@ defmodule Inkfish.AgJobs do
     )
   end
 
+  def list_curr_ag_jobs do
+    Repo.all(
+      from(job in AgJob,
+        where: not is_nil(job.started_at) and is_nil(job.finished_at),
+        preload: [sub: [grades: [:grade_column]]]
+      )
+    )
+  end
+
   def count_user_jobs(user_id) do
     query =
       from(ag in AgJob,

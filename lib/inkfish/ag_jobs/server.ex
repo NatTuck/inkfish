@@ -5,6 +5,7 @@ defmodule Inkfish.AgJobs.Server do
   alias Inkfish.Grades
   alias Inkfish.Grades.Grade
   alias Inkfish.Itty
+  alias Inkfish.Subs
 
   def start_link(_) do
     GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
@@ -53,6 +54,7 @@ defmodule Inkfish.AgJobs.Server do
   def do_poll(state) do
     state
     |> reap_tasks()
+    |> mark_jobs()
     |> schedule()
   end
 
@@ -75,6 +77,25 @@ defmodule Inkfish.AgJobs.Server do
       end)
 
     %{state | running: running}
+  end
+
+  def mark_jobs(state) do
+    all_grade_ids =
+      Enum.map(state.waiting ++ state.running, fn job ->
+        job.grade.id
+      end)
+
+    curr_jobs = AgJobs.list_curr_ag_jobs()
+
+    Enum.each(curr_jobs, fn job ->
+      ags = Subs.get_script_grades(job.sub)
+
+      if !Enum.any?(ags, &Enum.member?(all_grade_ids, &1.id)) do
+        AgJobs.update_ag_job(job, %{finished_at: LocalTime.now()})
+      end
+    end)
+
+    state
   end
 
   def time_left(%Grade{} = grade) do
