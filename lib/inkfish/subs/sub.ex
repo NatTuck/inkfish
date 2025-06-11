@@ -2,7 +2,10 @@ defmodule Inkfish.Subs.Sub do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @timestamps_opts [type: :utc_datetime, autogenerate: {Inkfish.LocalTime, :now_utc, []}]
+  @timestamps_opts [
+    type: :utc_datetime,
+    autogenerate: {Inkfish.LocalTime, :now_utc, []}
+  ]
 
   schema "subs" do
     field :active, :boolean, default: false
@@ -33,7 +36,13 @@ defmodule Inkfish.Subs.Sub do
       :note,
       :grader_id
     ])
-    |> validate_required([:assignment_id, :reg_id, :team_id, :upload_id, :hours_spent])
+    |> validate_required([
+      :assignment_id,
+      :reg_id,
+      :team_id,
+      :upload_id,
+      :hours_spent
+    ])
     |> foreign_key_constraint(:upload_id)
   end
 

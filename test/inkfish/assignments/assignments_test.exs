@@ -23,12 +23,17 @@ defmodule Inkfish.AssignmentsTest do
 
     test "get_assignment!/1 returns the assignment with given id" do
       assignment = assignment_fixture()
-      assert drop_assocs(Assignments.get_assignment!(assignment.id)) == drop_assocs(assignment)
+
+      assert drop_assocs(Assignments.get_assignment!(assignment.id)) ==
+               drop_assocs(assignment)
     end
 
     test "create_assignment/1 with valid data creates a assignment" do
       attrs = params_with_assocs(:assignment)
-      assert {:ok, %Assignment{} = assignment} = Assignments.create_assignment(attrs)
+
+      assert {:ok, %Assignment{} = assignment} =
+               Assignments.create_assignment(attrs)
+
       assert assignment.desc == attrs.desc
       assert NaiveDateTime.compare(assignment.due, attrs.due) == :eq
       assert assignment.name == attrs.name
@@ -43,7 +48,10 @@ defmodule Inkfish.AssignmentsTest do
     test "update_assignment/2 with valid data updates the assignment" do
       assignment = assignment_fixture()
       attrs = %{params_for(:assignment) | name: "Updated name"}
-      assert {:ok, %Assignment{} = a1} = Assignments.update_assignment(assignment, attrs)
+
+      assert {:ok, %Assignment{} = a1} =
+               Assignments.update_assignment(assignment, attrs)
+
       assert a1.desc == assignment.desc
       assert NaiveDateTime.compare(a1.due, attrs[:due]) == :eq
       assert a1.name == "Updated name"
@@ -53,14 +61,21 @@ defmodule Inkfish.AssignmentsTest do
     test "update_assignment/2 with invalid data returns error changeset" do
       assignment = assignment_fixture()
       attrs = %{name: ""}
-      assert {:error, %Ecto.Changeset{}} = Assignments.update_assignment(assignment, attrs)
-      assert drop_assocs(assignment) == drop_assocs(Assignments.get_assignment!(assignment.id))
+
+      assert {:error, %Ecto.Changeset{}} =
+               Assignments.update_assignment(assignment, attrs)
+
+      assert drop_assocs(assignment) ==
+               drop_assocs(Assignments.get_assignment!(assignment.id))
     end
 
     test "delete_assignment/1 deletes the assignment" do
       assignment = assignment_fixture()
       assert {:ok, %Assignment{}} = Assignments.delete_assignment(assignment)
-      assert_raise Ecto.NoResultsError, fn -> Assignments.get_assignment!(assignment.id) end
+
+      assert_raise Ecto.NoResultsError, fn ->
+        Assignments.get_assignment!(assignment.id)
+      end
     end
 
     test "change_assignment/1 returns a assignment changeset" do

@@ -25,7 +25,11 @@ defmodule InkfishWeb.Staff.GradingTaskController do
         sub.grader_id == reg.id
       end)
 
-    render(conn, "show.html", graders: graders, tasks: tasks, user_tasks: user_tasks)
+    render(conn, "show.html",
+      graders: graders,
+      tasks: tasks,
+      user_tasks: user_tasks
+    )
   end
 
   def create(conn, _params) do
@@ -51,7 +55,9 @@ defmodule InkfishWeb.Staff.GradingTaskController do
     asg =
       Assignments.get_assignment_for_grading_tasks!(as.id)
       |> (fn arg ->
-            InkfishWeb.Staff.AssignmentView.render("assignment.json", %{assignment: arg})
+            InkfishWeb.Staff.AssignmentView.render("assignment.json", %{
+              assignment: arg
+            })
           end).()
       |> Jason.encode!()
 

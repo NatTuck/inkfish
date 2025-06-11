@@ -14,7 +14,7 @@
 >
   <:col :let={docker_tag} label="Name">
     <.link navigate={~p"/admin/docker_tags/#{docker_tag}"}>
-      <%= docker_tag.name %>
+      {docker_tag.name}
     </.link>
   </:col>
   <:col :let={docker_tag} label="Dockerfile">

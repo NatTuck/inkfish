@@ -91,7 +91,10 @@ defmodule Inkfish.Courses do
              assignments:
                {asgs,
                 grade_columns: gcols,
-                subs: {subs, grades: {grades, grade_column: ggcol}, grader: {grader, user: user}}}}
+                subs:
+                  {subs,
+                   grades: {grades, grade_column: ggcol},
+                   grader: {grader, user: user}}}}
         ]
     )
   end
@@ -229,7 +232,9 @@ defmodule Inkfish.Courses do
         {:error, cset}
 
       {:error, :reg, cset, _} ->
-        cset = Ecto.Changeset.add_error(cset, :instructor, "instructor reg failed")
+        cset =
+          Ecto.Changeset.add_error(cset, :instructor, "instructor reg failed")
+
         {:error, cset}
     end
   end
@@ -241,7 +246,11 @@ defmodule Inkfish.Courses do
     user = Users.get_user_by_email!(email)
 
     op = fn %{course: course} ->
-      Reg.changeset(%Reg{}, %{user_id: user.id, course_id: course.id, is_prof: true})
+      Reg.changeset(%Reg{}, %{
+        user_id: user.id,
+        course_id: course.id,
+        is_prof: true
+      })
     end
 
     Ecto.Multi.insert(tx, :reg, op,
@@ -292,7 +301,9 @@ defmodule Inkfish.Courses do
         {:error, cset}
 
       {:error, :reg, cset, _} ->
-        cset = Ecto.Changeset.add_error(cset, :instructor, "instructor reg failed")
+        cset =
+          Ecto.Changeset.add_error(cset, :instructor, "instructor reg failed")
+
         {:error, cset}
     end
   end

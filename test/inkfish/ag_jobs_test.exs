@@ -44,7 +44,9 @@ defmodule Inkfish.AgJobsTest do
         prio: 43
       }
 
-      assert {:ok, %AgJob{} = ag_job} = AgJobs.update_ag_job(ag_job, update_attrs)
+      assert {:ok, %AgJob{} = ag_job} =
+               AgJobs.update_ag_job(ag_job, update_attrs)
+
       assert ag_job.started_at == ~U[2025-06-08 18:16:00Z]
       assert ag_job.dupkey == "some updated dupkey"
       assert ag_job.prio == 43
@@ -52,7 +54,10 @@ defmodule Inkfish.AgJobsTest do
 
     test "update_ag_job/2 with invalid data returns error changeset" do
       ag_job = ag_job_fixture()
-      assert {:error, %Ecto.Changeset{}} = AgJobs.update_ag_job(ag_job, @invalid_attrs)
+
+      assert {:error, %Ecto.Changeset{}} =
+               AgJobs.update_ag_job(ag_job, @invalid_attrs)
+
       assert ag_job.dupkey == AgJobs.get_ag_job!(ag_job.id).dupkey
     end
 

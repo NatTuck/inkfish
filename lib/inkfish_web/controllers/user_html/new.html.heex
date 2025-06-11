@@ -10,10 +10,26 @@
 
       <input type="hidden" name="token" value={@token} />
 
-      <.input field={f[:email]} type="email" label="Verified Email" readonly required />
+      <.input
+        field={f[:email]}
+        type="email"
+        label="Verified Email"
+        readonly
+        required
+      />
       <.input field={f[:password]} type="password" label="Password" required />
-      <.input field={f[:password_confirmation]} type="password" label="Confirm password" required />
-      <.input field={f[:given_name]} type="text" label="Given Name †" required />
+      <.input
+        field={f[:password_confirmation]}
+        type="password"
+        label="Confirm password"
+        required
+      />
+      <.input
+        field={f[:given_name]}
+        type="text"
+        label="Given Name †"
+        required
+      />
       <.input field={f[:surname]} type="text" label="Surname †" required />
 
       <.input field={f[:nickname]} type="text" label="Nickname" />

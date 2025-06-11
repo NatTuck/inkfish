@@ -55,8 +55,15 @@ defmodule InkfishWeb.Staff.TeamsetController do
   def show(conn, %{"id" => id}) do
     teamset = Teams.get_teamset!(id)
     past_teams = Enum.map(Teams.past_teams(teamset), &TeamView.view_members/1)
-    data = InkfishWeb.Staff.TeamsetView.render("teamset.json", %{teamset: teamset})
-    render(conn, "show.html", teamset: teamset, data: data, past_teams: past_teams)
+
+    data =
+      InkfishWeb.Staff.TeamsetView.render("teamset.json", %{teamset: teamset})
+
+    render(conn, "show.html",
+      teamset: teamset,
+      data: data,
+      past_teams: past_teams
+    )
   end
 
   def edit(conn, %{"id" => id}) do
@@ -85,7 +92,9 @@ defmodule InkfishWeb.Staff.TeamsetController do
 
     conn
     |> put_flash(:info, "Teamset deleted successfully.")
-    |> redirect(to: Routes.staff_course_teamset_path(conn, :index, teamset.course_id))
+    |> redirect(
+      to: Routes.staff_course_teamset_path(conn, :index, teamset.course_id)
+    )
   end
 
   def add_prof_team(conn, %{"id" => id}) do

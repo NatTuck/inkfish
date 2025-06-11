@@ -37,7 +37,9 @@ defmodule InkfishWeb.Admin.UserControllerTest do
       conn =
         conn
         |> login("alice@example.com")
-        |> put(Routes.admin_user_path(conn, :update, user), user: %{"nickname" => "Zach"})
+        |> put(Routes.admin_user_path(conn, :update, user),
+          user: %{"nickname" => "Zach"}
+        )
 
       assert redirected_to(conn) == Routes.admin_user_path(conn, :show, user)
 
@@ -49,7 +51,9 @@ defmodule InkfishWeb.Admin.UserControllerTest do
       conn =
         conn
         |> login("alice@example.com")
-        |> put(Routes.admin_user_path(conn, :update, user), user: %{"email" => "bob"})
+        |> put(Routes.admin_user_path(conn, :update, user),
+          user: %{"email" => "bob"}
+        )
 
       assert html_response(conn, 200) =~ "Edit User"
     end

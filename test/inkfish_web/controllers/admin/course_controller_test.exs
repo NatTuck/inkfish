@@ -80,7 +80,8 @@ defmodule InkfishWeb.Admin.CourseControllerTest do
         |> login("alice@example.com")
         |> put(Routes.admin_course_path(conn, :update, course), course: params)
 
-      assert redirected_to(conn) == Routes.admin_course_path(conn, :show, course)
+      assert redirected_to(conn) ==
+               Routes.admin_course_path(conn, :show, course)
 
       conn = get(conn, Routes.admin_course_path(conn, :show, course))
       assert html_response(conn, 200) =~ "Updated course"

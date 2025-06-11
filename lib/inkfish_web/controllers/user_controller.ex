@@ -29,7 +29,10 @@ defmodule InkfishWeb.UserController do
 
       :error ->
         conn
-        |> put_flash(:error, "Bad token, probably expired. Request another link.")
+        |> put_flash(
+          :error,
+          "Bad token, probably expired. Request another link."
+        )
         |> redirect(to: ~p"/")
     end
   end
@@ -54,7 +57,10 @@ defmodule InkfishWeb.UserController do
 
       :error ->
         conn
-        |> put_flash(:error, "Bad token, probably expired. Request another link.")
+        |> put_flash(
+          :error,
+          "Bad token, probably expired. Request another link."
+        )
         |> redirect(to: ~p"/")
     end
   end

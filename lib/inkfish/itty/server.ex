@@ -74,7 +74,13 @@ defmodule Inkfish.Itty.Server do
       |> Map.merge(env)
       |> Enum.into([])
 
-    opts = [{:stdout, self()}, {:stderr, self()}, {:env, env}, {:kill_timeout, 3600}, :monitor]
+    opts = [
+      {:stdout, self()},
+      {:stderr, self()},
+      {:env, env},
+      {:kill_timeout, 3600},
+      :monitor
+    ]
 
     IO.puts(" =[Itty]= Run cmd [#{cmd}] for UUID #{uuid}")
     {:ok, _pid, ospid} = :exec.run(cmd, opts, 30)
@@ -130,7 +136,12 @@ defmodule Inkfish.Itty.Server do
   def send_block(block, %{uuid: uuid, seq: seq, blocks: blocks} = state) do
     blocks = [block | blocks]
     # IO.puts(" =[Itty]= Send block for UUID #{uuid} #{block.seq}")
-    Phoenix.PubSub.broadcast!(Inkfish.PubSub, "ittys:" <> uuid, {:block, uuid, block})
+    Phoenix.PubSub.broadcast!(
+      Inkfish.PubSub,
+      "ittys:" <> uuid,
+      {:block, uuid, block}
+    )
+
     {:noreply, %{state | seq: seq + 1, blocks: blocks}}
   end
 

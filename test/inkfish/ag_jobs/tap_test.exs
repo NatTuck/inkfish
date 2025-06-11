@@ -1,7 +1,7 @@
-defmodule Inkfish.Autobots.TapTest do
+defmodule Inkfish.AgJobs.TapTest do
   use ExUnit.Case
 
-  alias Inkfish.Autobots.Tap
+  alias Inkfish.AgJobs.Tap
 
   @tap_good """
   1..8

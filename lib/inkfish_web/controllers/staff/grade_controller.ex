@@ -70,7 +70,10 @@ defmodule InkfishWeb.Staff.GradeController do
     grade = Grades.get_grade!(id)
     rubric = Inkfish.Uploads.get_upload(grade.grade_column.upload_id)
     changeset = Grades.change_grade(grade)
-    grade_json = InkfishWeb.Staff.GradeView.render("grade.json", %{grade: grade})
+
+    grade_json =
+      InkfishWeb.Staff.GradeView.render("grade.json", %{grade: grade})
+
     grader = conn.assigns[:current_user]
     grader_json = InkfishWeb.UserView.render("user.json", %{user: grader})
 

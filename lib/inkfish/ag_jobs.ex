@@ -24,19 +24,47 @@ defmodule Inkfish.AgJobs do
 
   def list_ag_jobs_for_display do
     Repo.all(
-      from ag in AgJob,
+      from(ag in AgJob,
         preload: [sub: [reg: [:user, :course], assignment: []]]
+      )
     )
   end
 
   def count_user_jobs(user_id) do
     query =
-      from ag in AgJob,
+      from(ag in AgJob,
         inner_join: sub in assoc(ag, :sub),
         inner_join: reg in assoc(sub, :reg),
         where: reg.user_id == ^user_id
+      )
 
     Repo.aggregate(query, :count)
+  end
+
+  def start_next_ag_job() do
+    Repo.transaction(fn ->
+      job0 =
+        Repo.one(
+          from(job in AgJob,
+            order_by: [job.prio, job.inserted_at],
+            where: is_nil(job.started_at)
+          )
+        )
+
+      if is_nil(job0) do
+        Repo.rollback(:no_more_work)
+      end
+
+      update_ag_job(job0, %{started_at: LocalTime.now()})
+
+      job1 = get_ag_job(job0.id)
+
+      if is_nil(job0) do
+        Repo.rollback(:no_more_work)
+      end
+
+      job1
+    end)
   end
 
   @doc """
@@ -46,27 +74,28 @@ defmodule Inkfish.AgJobs do
 
   ## Examples
 
-      iex> get_ag_job!(123)
-      %AgJob{}
+  iex> get_ag_job!(123)
+  %AgJob{}
 
-      iex> get_ag_job!(456)
-      ** (Ecto.NoResultsError)
+  iex> get_ag_job!(456)
+  ** (Ecto.NoResultsError)
 
   """
   def get_ag_job!(id), do: Repo.get!(AgJob, id)
+  def get_ag_job(id), do: Repo.get(AgJob, id)
 
   @doc """
   Creates a ag_job.
 
   ## Examples
-      iex> create_ag_job(%Sub{...})
-      {:ok, %AgJob{}}
+  iex> create_ag_job(%Sub{...})
+  {:ok, %AgJob{}}
 
-      iex> create_ag_job(%{field: value})
-      {:ok, %AgJob{}}
+  iex> create_ag_job(%{field: value})
+  {:ok, %AgJob{}}
 
-      iex> create_ag_job(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
+  iex> create_ag_job(%{field: bad_value})
+  {:error, %Ecto.Changeset{}}
 
   """
   def create_ag_job(%Sub{} = sub) do
@@ -127,8 +156,9 @@ defmodule Inkfish.AgJobs do
 
   def delete_jobs_by_dupkey(dupkey) do
     Repo.delete_all(
-      from ag in AgJob,
+      from(ag in AgJob,
         where: ag.dupkey == ^dupkey
+      )
     )
   end
 

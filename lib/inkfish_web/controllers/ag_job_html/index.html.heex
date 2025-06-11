@@ -8,12 +8,29 @@
   </.form>
 </div>
 
-<.table id="ag_jobs" rows={@ag_jobs}>
-  <:col :let={ag_job} label="Sub">
-    <a href={~p"/subs/#{ag_job.sub_id}"}>{ag_job.sub_id}</a>
-  </:col>
-  <:col :let={ag_job} label="User">{user_display_name(ag_job.sub.reg.user)}</:col>
-  <:col :let={ag_job} label="Assignment">{ag_job.sub.assignment.name}</:col>
-  <:col :let={ag_job} label="Prio">{ag_job.prio}</:col>
-  <:col :let={ag_job} label="Started at">{ag_job.started_at}</:col>
-</.table>
+<h2>Active</h2>
+
+<h2>Waiting Subs</h2>
+
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>Sub</th>
+      <th>User</th>
+      <th>Assignment</th>
+      <th>Prio</th>
+      <th>Started At</th>
+    </tr>
+  </thead>
+  <tbody>
+    <%= for job <- @ag_jobs do %>
+      <tr>
+        <td><a href={~p"/subs/#{job.sub_id}"}>{job.sub_id}</a></td>
+        <td>{user_display_name(job.sub.reg.user)}</td>
+        <td>{job.sub.assignment.name}</td>
+        <td>{job.prio}</td>
+        <td class="human-date">{job.started_at}</td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

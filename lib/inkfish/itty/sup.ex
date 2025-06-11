@@ -17,7 +17,8 @@ defmodule Inkfish.Itty.Sup do
 
   def poll(qname) do
     alive =
-      Enum.any?(Supervisor.which_children(Inkfish.Itty.DynSup), fn {_, pid, _, _} ->
+      Enum.any?(Supervisor.which_children(Inkfish.Itty.DynSup), fn {_, pid, _,
+                                                                    _} ->
         {:ok, info} = GenServer.call(pid, :peek)
         qname == Map.get(info, :qname) && Map.get(info, :started)
       end)

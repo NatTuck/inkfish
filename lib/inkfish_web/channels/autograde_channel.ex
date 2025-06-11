@@ -4,7 +4,9 @@ defmodule InkfishWeb.AutogradeChannel do
   alias Inkfish.Grades
 
   def join("autograde:" <> uuid, %{"token" => token}, socket) do
-    case Phoenix.Token.verify(InkfishWeb.Endpoint, "autograde", token, max_age: 8640) do
+    case Phoenix.Token.verify(InkfishWeb.Endpoint, "autograde", token,
+           max_age: 8640
+         ) do
       {:ok, %{uuid: ^uuid}} ->
         socket =
           socket
@@ -34,27 +36,13 @@ defmodule InkfishWeb.AutogradeChannel do
         end
 
       {:error, msg} ->
-        push(socket, "block", %{seq: 10, stream: :err, text: "grading job not running\n"})
+        push(socket, "block", %{
+          seq: 10,
+          stream: :err,
+          text: "grading job not running\n"
+        })
+
         push(socket, "block", %{seq: 11, stream: :err, text: "Itty: #{msg}\n"})
-
-        case Inkfish.Itty.status(uuid) do
-          :running ->
-            push(socket, "block", %{seq: 12, stream: :err, text: "Suggestion: Try again.\n"})
-            Process.send_after(self(), {:done, uuid}, 1)
-
-          {:error, msg} ->
-            push(socket, "block", %{seq: 12, stream: :err, text: "Queue: #{msg}\n"})
-            Process.send_after(self(), {:done, uuid}, 1)
-
-          {:ready, idx} ->
-            push(socket, "block", %{seq: 12, stream: :err, text: "In queue at index #{idx}\n"})
-
-            push(socket, "block", %{
-              seq: 13,
-              stream: :err,
-              text: "Your task will start shortly...\n"
-            })
-        end
 
         grade =
           Grades.get_grade_by_log_uuid(uuid)
@@ -62,7 +50,12 @@ defmodule InkfishWeb.AutogradeChannel do
 
         if grade do
           log = Grades.Grade.get_log(grade)
-          push(socket, "block", %{seq: 20, stream: :out, text: Jason.encode!(log)})
+
+          push(socket, "block", %{
+            seq: 20,
+            stream: :out,
+            text: Jason.encode!(log)
+          })
         end
     end
 

@@ -35,6 +35,7 @@ function Limits({target}) {
     <Row className="mx-4">
       <Col>
         Cores 
+
         <Form.Control value={state.cores} onChange={set('cores')} />
       </Col>
       <Col>

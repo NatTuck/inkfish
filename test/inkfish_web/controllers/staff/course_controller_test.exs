@@ -40,14 +40,19 @@ defmodule InkfishWeb.Staff.CourseControllerTest do
           course: %{footer: "some updated footer"}
         )
 
-      assert redirected_to(conn) == Routes.staff_course_path(conn, :show, course)
+      assert redirected_to(conn) ==
+               Routes.staff_course_path(conn, :show, course)
 
       conn = get(conn, Routes.staff_course_path(conn, :show, course))
       assert html_response(conn, 200) =~ "some updated footer"
     end
 
     test "renders errors when data is invalid", %{conn: conn, course: course} do
-      conn = put(conn, Routes.staff_course_path(conn, :update, course), course: %{name: "x"})
+      conn =
+        put(conn, Routes.staff_course_path(conn, :update, course),
+          course: %{name: "x"}
+        )
+
       assert html_response(conn, 200) =~ "Edit Course"
     end
   end

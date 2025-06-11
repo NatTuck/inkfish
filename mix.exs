@@ -64,6 +64,7 @@ defmodule Inkfish.MixProject do
       {:igniter, "~> 0.1"},
       {:csv, "~> 3.2"},
       {:local_time, "~> 0.1.1"},
+      {:methods, "~> 0.1.0"},
       {:heroicons, "~> 0.5.5"},
       {:cpu_info, "~> 0.2.1"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
@@ -85,7 +86,12 @@ defmodule Inkfish.MixProject do
   # See the documentation for `Mix` for more info on aliases.
   defp aliases do
     [
-      deps: ["deps.get", "cmd npm install --prefix assets", "esbuild.install", "sass.install"],
+      deps: [
+        "deps.get",
+        "cmd npm install --prefix assets",
+        "esbuild.install",
+        "sass.install"
+      ],
       setup: ["deps.get", "ecto.setup", "assets.install"],
       "assets.install": ["cmd pnpm install --dir assets"],
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],

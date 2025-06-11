@@ -30,7 +30,9 @@ defmodule InkfishWeb.GradeController do
       |> redirect(to: Routes.sub_path(conn, :show, conn.assigns[:sub]))
     else
       {id, _} = Integer.parse(id)
-      grade_json = InkfishWeb.Staff.GradeView.render("grade.json", %{grade: grade})
+
+      grade_json =
+        InkfishWeb.Staff.GradeView.render("grade.json", %{grade: grade})
 
       data =
         Inkfish.Subs.read_sub_data(grade.sub_id)

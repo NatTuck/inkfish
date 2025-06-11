@@ -21,7 +21,6 @@ defmodule Inkfish.Application do
 
       # Live console output
       Inkfish.Itty.Sup,
-      Inkfish.Itty.Queue,
 
       # Autograding Jobs
       Inkfish.AgJobs.Server

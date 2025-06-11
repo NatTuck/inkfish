@@ -7,11 +7,14 @@ defmodule Inkfish.Grades.Grade do
   @timestamps_opts [type: :utc_datetime]
 
   schema "grades" do
-    field :score, :decimal
-    field :log_uuid, :string
-    belongs_to :sub, Inkfish.Subs.Sub
-    belongs_to :grade_column, Inkfish.Grades.GradeColumn
-    has_many :line_comments, Inkfish.LineComments.LineComment
+    field(:score, :decimal)
+    field(:log_uuid, :string)
+    belongs_to(:sub, Inkfish.Subs.Sub)
+    belongs_to(:grade_column, Inkfish.Grades.GradeColumn)
+    has_many(:line_comments, Inkfish.LineComments.LineComment)
+
+    field(:ag_job, :any, virtual: true)
+    field(:started_at, :any, virtual: true)
 
     timestamps()
   end

@@ -5,7 +5,7 @@
     <div class="clearfix">
       <div class="float-right">
         <p>
-          <%= link("List All Courses", to: Routes.course_path(@conn, :index)) %>
+          {link("List All Courses", to: Routes.course_path(@conn, :index))}
         </p>
       </div>
     </div>
@@ -21,21 +21,21 @@
         <%= for reg <- @regs do %>
           <tr>
             <td>
-              <%= link(reg.course.name,
+              {link(reg.course.name,
                 to: Routes.course_path(@conn, :show, reg.course.id)
-              ) %>
+              )}
               <%= if is_staff?(reg, reg.user) do %>
-                (<%= link("Staff View",
+                ({link("Staff View",
                   to: Routes.staff_course_path(@conn, :show, reg.course)
-                ) %>)
+                )})
               <% end %>
             </td>
-            <td><%= show_reg_role(reg) %></td>
+            <td>{show_reg_role(reg)}</td>
             <td>
               <% next = Map.get(@dues, reg.course_id) %>
               <%= if next do %>
-                <%= next.name %> <br />
-                <span class="human-date"><%= next.due %></span>
+                {next.name} <br />
+                <span class="human-date">{next.due}</span>
               <% else %>
                 ∅
               <% end %>

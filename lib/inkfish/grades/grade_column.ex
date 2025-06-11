@@ -28,7 +28,16 @@ defmodule Inkfish.Grades.GradeColumn do
   @doc false
   def changeset(grade_column, attrs) do
     grade_column
-    |> cast(attrs, [:assignment_id, :name, :kind, :points, :base, :limits, :params, :upload_id])
+    |> cast(attrs, [
+      :assignment_id,
+      :name,
+      :kind,
+      :points,
+      :base,
+      :limits,
+      :params,
+      :upload_id
+    ])
     |> validate_required([:assignment_id, :name, :kind, :points, :base])
   end
 

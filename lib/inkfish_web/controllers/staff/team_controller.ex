@@ -42,7 +42,10 @@ defmodule InkfishWeb.Staff.TeamController do
 
       conn
       |> put_status(:created)
-      |> put_resp_header("location", Routes.ajax_staff_team_path(conn, :show, team))
+      |> put_resp_header(
+        "location",
+        Routes.ajax_staff_team_path(conn, :show, team)
+      )
       |> render("show.json", team: team)
     end
   end

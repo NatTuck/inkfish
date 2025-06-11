@@ -18,7 +18,11 @@ defmodule InkfishWeb.Staff.GradeControllerTest do
   describe "create grade" do
     test "redirects to show when data is valid", %{conn: conn, sub: sub} do
       params = params_with_assocs(:grade)
-      conn = post(conn, Routes.staff_sub_grade_path(conn, :create, sub), grade: params)
+
+      conn =
+        post(conn, Routes.staff_sub_grade_path(conn, :create, sub),
+          grade: params
+        )
 
       assert %{id: id} = redirected_params(conn)
       assert redirected_to(conn) == Routes.staff_grade_path(conn, :edit, id)
@@ -29,8 +33,14 @@ defmodule InkfishWeb.Staff.GradeControllerTest do
 
     test "fails when data is invalid", %{conn: conn, sub: sub} do
       params = %{grade_column_id: nil}
-      conn = post(conn, Routes.staff_sub_grade_path(conn, :create, sub), grade: params)
-      assert Phoenix.Flash.get(conn.assigns[:flash], :error) =~ "Failed to create grade"
+
+      conn =
+        post(conn, Routes.staff_sub_grade_path(conn, :create, sub),
+          grade: params
+        )
+
+      assert Phoenix.Flash.get(conn.assigns[:flash], :error) =~
+               "Failed to create grade"
     end
   end
 

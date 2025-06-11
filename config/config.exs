@@ -22,8 +22,13 @@ config :inkfish, Inkfish.AgJobs, resources: [cores: 4, megs: 8192]
 # Configures the endpoint
 config :inkfish, InkfishWeb.Endpoint,
   url: [host: "localhost"],
-  secret_key_base: "V2mJIKEOJpyjppjtVUT2Zl4Rc24vEyI9FPA0DUQE/UW9ZmPLr/uRsgofj5E3yJnp",
-  render_errors: [view: InkfishWeb.ErrorView, accepts: ~w(html json), layout: false],
+  secret_key_base:
+    "V2mJIKEOJpyjppjtVUT2Zl4Rc24vEyI9FPA0DUQE/UW9ZmPLr/uRsgofj5E3yJnp",
+  render_errors: [
+    view: InkfishWeb.ErrorView,
+    accepts: ~w(html json),
+    layout: false
+  ],
   pubsub_server: Inkfish.PubSub,
   live_view: [signing_salt: "37rUe00e"]
 
@@ -65,7 +70,8 @@ config :phoenix_copy,
     debounce: 100
   ],
   bs_icons: [
-    source: Path.expand("../assets/node_modules/bootstrap-icons/icons/", __DIR__),
+    source:
+      Path.expand("../assets/node_modules/bootstrap-icons/icons/", __DIR__),
     destination: Path.expand("../priv/static/images/icons/", __DIR__),
     debounce: 100
   ]

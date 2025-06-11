@@ -3,26 +3,34 @@ defmodule InkfishWeb.SubController do
 
   alias InkfishWeb.Plugs
 
-  plug Plugs.FetchItem,
-       [sub: "id"]
-       when action not in [:index, :new, :create]
+  plug(
+    Plugs.FetchItem,
+    [sub: "id"]
+    when action not in [:index, :new, :create]
+  )
 
-  plug Plugs.FetchItem,
-       [assignment: "assignment_id"]
-       when action in [:index, :new, :create]
+  plug(
+    Plugs.FetchItem,
+    [assignment: "assignment_id"]
+    when action in [:index, :new, :create]
+  )
 
-  plug Plugs.RequireReg
+  plug(Plugs.RequireReg)
 
-  plug Plugs.RequireSubmitter
-       when action in [:show]
+  plug(
+    Plugs.RequireSubmitter
+    when action in [:show]
+  )
 
   alias InkfishWeb.Plugs.Breadcrumb
-  plug Breadcrumb, {:show, :course}
-  plug Breadcrumb, {:show, :assignment}
+  plug(Breadcrumb, {:show, :course})
+  plug(Breadcrumb, {:show, :assignment})
 
-  plug Breadcrumb,
-       {:show, :sub}
-       when action in [:files]
+  plug(
+    Breadcrumb,
+    {:show, :sub}
+    when action in [:files]
+  )
 
   alias Inkfish.Subs
   alias Inkfish.Subs.Sub
@@ -38,7 +46,13 @@ defmodule InkfishWeb.SubController do
 
     if team do
       changeset = Subs.change_sub(%Sub{})
-      render(conn, "new.html", changeset: changeset, team: team, nonce: nonce, token: token)
+
+      render(conn, "new.html",
+        changeset: changeset,
+        team: team,
+        nonce: nonce,
+        token: token
+      )
     else
       conn
       |> put_flash(:error, "You need a team to submit.")
@@ -74,7 +88,12 @@ defmodule InkfishWeb.SubController do
         nonce = Base.encode16(:crypto.strong_rand_bytes(32))
         token = Phoenix.Token.sign(conn, "upload", %{kind: "sub", nonce: nonce})
 
-        render(conn, "new.html", changeset: changeset, team: team, nonce: nonce, token: token)
+        render(conn, "new.html",
+          changeset: changeset,
+          team: team,
+          nonce: nonce,
+          token: token
+        )
     end
   end
 
@@ -88,7 +107,7 @@ defmodule InkfishWeb.SubController do
       |> Enum.map(fn grade ->
         grade = %{grade | sub: sub}
         log = Grade.get_log(grade)
-        # IO.inspect({:log, log})
+        IO.inspect({:log, log})
         token = Phoenix.Token.sign(conn, "autograde", %{uuid: grade.log_uuid})
         {grade, token, log}
       end)

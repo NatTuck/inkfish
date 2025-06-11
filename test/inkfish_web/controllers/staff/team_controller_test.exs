@@ -27,7 +27,11 @@ defmodule InkfishWeb.Staff.TeamControllerTest do
   end
 
   describe "create team" do
-    test "returns team when data is valid", %{conn: conn, course: course, teamset: ts} do
+    test "returns team when data is valid", %{
+      conn: conn,
+      course: course,
+      teamset: ts
+    } do
       r1 = insert(:reg, course: course)
       r2 = insert(:reg, course: course)
 
@@ -35,7 +39,10 @@ defmodule InkfishWeb.Staff.TeamControllerTest do
         params_for(:team, teamset: ts)
         |> Map.put(:reg_ids, [r1.id, r2.id])
 
-      conn = post(conn, Routes.ajax_staff_teamset_team_path(conn, :create, ts), team: params)
+      conn =
+        post(conn, Routes.ajax_staff_teamset_team_path(conn, :create, ts),
+          team: params
+        )
 
       data = json_response(conn, 201)["data"]
       assert data["teamset"]["id"] == ts.id
@@ -46,7 +53,12 @@ defmodule InkfishWeb.Staff.TeamControllerTest do
 
     test "renders errors when data is invalid", %{conn: conn, teamset: ts} do
       params = %{}
-      conn = post(conn, Routes.ajax_staff_teamset_team_path(conn, :create, ts), team: params)
+
+      conn =
+        post(conn, Routes.ajax_staff_teamset_team_path(conn, :create, ts),
+          team: params
+        )
+
       assert json_response(conn, 422)["errors"]
     end
   end
@@ -54,7 +66,12 @@ defmodule InkfishWeb.Staff.TeamControllerTest do
   describe "update team" do
     test "redirects when data is valid", %{conn: conn, team: team} do
       params = %{active: false}
-      conn = put(conn, Routes.ajax_staff_team_path(conn, :update, team), team: params)
+
+      conn =
+        put(conn, Routes.ajax_staff_team_path(conn, :update, team),
+          team: params
+        )
+
       assert json_response(conn, 200)["data"]["id"] == team.id
 
       conn = get(conn, Routes.ajax_staff_team_path(conn, :show, team))
@@ -64,7 +81,12 @@ defmodule InkfishWeb.Staff.TeamControllerTest do
 
     test "renders errors when data is invalid", %{conn: conn, team: team} do
       params = %{regs: []}
-      conn = put(conn, Routes.ajax_staff_team_path(conn, :update, team), team: params)
+
+      conn =
+        put(conn, Routes.ajax_staff_team_path(conn, :update, team),
+          team: params
+        )
+
       assert json_response(conn, 422)["errors"]
     end
   end

@@ -17,7 +17,10 @@ defmodule Inkfish.Combos do
     if length(xs) <= 3 do
       [[Enum.sort(xs)]]
     else
-      for aa <- xs, bb <- xs, aa < bb, rest <- all_possible_partners(xs -- [aa, bb]) do
+      for aa <- xs,
+          bb <- xs,
+          aa < bb,
+          rest <- all_possible_partners(xs -- [aa, bb]) do
         [[aa, bb] | rest]
       end
     end

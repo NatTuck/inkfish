@@ -38,12 +38,21 @@ defmodule Inkfish.Factory do
 
     grade_column = insert(:grade_column, assignment: asgn)
     staff = Inkfish.Users.get_user_by_email!("carol@example.com")
-    staff_reg = insert(:reg, course: course, user: staff, is_staff: true, is_grader: true)
+
+    staff_reg =
+      insert(:reg, course: course, user: staff, is_staff: true, is_grader: true)
+
     student = Inkfish.Users.get_user_by_email!("dave@example.com")
     student_reg = insert(:reg, course: course, user: student, is_student: true)
     team = Inkfish.Teams.get_active_team(asgn, student_reg)
     sub = insert(:sub, assignment: asgn, reg: student_reg, team: team)
-    grade = insert(:grade, grade_column: grade_column, sub: sub, score: Decimal.new("25.0"))
+
+    grade =
+      insert(:grade,
+        grade_column: grade_column,
+        sub: sub,
+        score: Decimal.new("25.0")
+      )
 
     %{
       course: course,

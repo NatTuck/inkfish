@@ -3,10 +3,10 @@ defmodule Inkfish.AgJobs.AgJob do
   import Ecto.Changeset
 
   schema "ag_jobs" do
-    field :started_at, :utc_datetime
-    field :dupkey, :string
-    field :prio, :integer
-    belongs_to :sub, Inkfish.Subs.Sub
+    field(:started_at, :utc_datetime)
+    field(:dupkey, :string)
+    field(:prio, :integer)
+    belongs_to(:sub, Inkfish.Subs.Sub)
 
     timestamps(type: :utc_datetime)
   end
@@ -14,7 +14,7 @@ defmodule Inkfish.AgJobs.AgJob do
   @doc false
   def changeset(ag_job, attrs) do
     ag_job
-    |> cast(attrs, [:dupkey, :prio, :started_at, :sub_id])
+    |> cast(attrs, [:dupkey, :prio, :sub_id, :started_at])
     |> validate_required([:dupkey, :prio, :sub_id])
   end
 end
