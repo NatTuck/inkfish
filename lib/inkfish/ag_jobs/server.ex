@@ -27,7 +27,7 @@ defmodule Inkfish.AgJobs.Server do
       waiting: []
     }
 
-    Process.send_after(self(), :do_poll, 60_000)
+    Process.send_after(self(), :do_poll, 10_000)
 
     {:ok, state0}
   end
@@ -46,12 +46,14 @@ defmodule Inkfish.AgJobs.Server do
 
   @impl true
   def handle_info(:do_poll, state) do
-    Process.send_after(self(), :do_poll, 60_000)
+    Process.send_after(self(), :do_poll, 300_000)
     state = do_poll(state)
     {:noreply, state}
   end
 
   def do_poll(state) do
+    AgJobs.delete_old_ag_jobs()
+
     state
     |> reap_tasks()
     |> mark_jobs()
@@ -81,8 +83,8 @@ defmodule Inkfish.AgJobs.Server do
 
   def mark_jobs(state) do
     all_grade_ids =
-      Enum.map(state.waiting ++ state.running, fn job ->
-        job.grade.id
+      Enum.map(state.waiting ++ state.running, fn grade ->
+        grade.id
       end)
 
     curr_jobs = AgJobs.list_curr_ag_jobs()

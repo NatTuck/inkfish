@@ -56,7 +56,7 @@ defmodule Inkfish.AgJobs do
         Repo.one(
           from(job in AgJob,
             order_by: [job.prio, job.inserted_at],
-            where: is_nil(job.started_at)
+            where: is_nil(job.started_at) and is_nil(job.finished_at)
           )
         )
 
@@ -112,7 +112,7 @@ defmodule Inkfish.AgJobs do
 
     dupkey = "#{sub.assignment_id}/#{sub.reg_id}"
 
-    delete_jobs_by_dupkey(dupkey)
+    finish_jobs_by_dupkey(dupkey)
 
     attrs = %{
       sub_id: sub.id,
@@ -147,6 +147,14 @@ defmodule Inkfish.AgJobs do
     |> Repo.update()
   end
 
+  def finish_jobs_by_dupkey(dupkey) do
+    from(ag in AgJob,
+      where: is_nil(ag.finished_at) and ag.dupkey == ^dupkey,
+      update: [set: [finished_at: ^LocalTime.now()]]
+    )
+    |> Repo.update_all([])
+  end
+
   @doc """
   Deletes an ag_job.
 
@@ -163,10 +171,16 @@ defmodule Inkfish.AgJobs do
     Repo.delete(ag_job)
   end
 
-  def delete_jobs_by_dupkey(dupkey) do
+  def delete_old_ag_jobs() do
+    one_day = 60 * 60 * 24
+
+    one_day_ago =
+      LocalTime.now()
+      |> DateTime.add(-one_day)
+
     Repo.delete_all(
-      from(ag in AgJob,
-        where: ag.dupkey == ^dupkey
+      from(job in AgJob,
+        where: not is_nil(job.finished_at) and job.finished_at < ^one_day_ago
       )
     )
   end
