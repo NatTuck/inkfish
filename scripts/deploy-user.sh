@@ -26,7 +26,7 @@ mix ecto.migrate
 export NODEBIN=`pwd`/assets/node_modules/.bin
 export PATH="$PATH:$NODEBIN"
 
-(cd assets && npm install)
+(cd assets && pnpm install)
 # (cd assets && webpack --mode production)
 mix phx.digest
 mix assets.deploy
