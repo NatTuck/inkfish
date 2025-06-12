@@ -16,21 +16,8 @@ defmodule Inkfish.Itty.Server do
     {:via, Registry, {Inkfish.Itty.Reg, uuid}}
   end
 
-  def start(%Task{uuid: uuid, script: script, env: env, on_exit: on_exit}) do
-    cookie = Inkfish.Text.gen_uuid()
-
-    env =
-      env
-      |> Map.update("COOKIE", cookie, & &1)
-
-    state0 = %{
-      done: false,
-      uuid: uuid,
-      cmd: script,
-      cookie: cookie,
-      env: env,
-      on_exit: on_exit
-    }
+  def start(%Task{} = task) do
+    state0 = Map.delete(task, :__struct__)
 
     spec = %{
       id: __MODULE__,
@@ -45,7 +32,7 @@ defmodule Inkfish.Itty.Server do
     if !Enum.empty?(Registry.lookup(Inkfish.Itty.Reg, uuid)) do
       GenServer.call(reg(uuid), :peek)
     else
-      {:error, "No such task"}
+      {:error, :itty_not_found}
     end
   end
 
@@ -67,17 +54,27 @@ defmodule Inkfish.Itty.Server do
   end
 
   @impl true
-  def init(%{env: env, cmd: cmd, uuid: uuid} = state0) do
+  def init(%{env: env, cookie: cookie, cmd: cmd, uuid: uuid} = state0) do
+    IO.puts("Itty: UUID #{uuid}, cmd '#{cmd}'")
     # Start the process
     env =
       System.get_env()
       |> Map.merge(env)
+      |> Map.put("COOKIE", cookie)
       |> Enum.into([])
 
-    opts = [{:stdout, self()}, {:stderr, self()}, {:env, env}, {:kill_timeout, 3600}, :monitor]
+    opts = [
+      {:stdout, self()},
+      {:stderr, self()},
+      {:env, env},
+      {:kill_timeout, 3600},
+      :monitor
+    ]
 
     IO.puts(" =[Itty]= Run cmd [#{cmd}] for UUID #{uuid}")
     {:ok, _pid, ospid} = :exec.run(cmd, opts, 30)
+
+    IO.puts("Itty: Ran command '#{cmd}'")
 
     block = %{seq: 99, stream: :adm, text: "\nStarting task.\n\n"}
 
@@ -130,7 +127,12 @@ defmodule Inkfish.Itty.Server do
   def send_block(block, %{uuid: uuid, seq: seq, blocks: blocks} = state) do
     blocks = [block | blocks]
     # IO.puts(" =[Itty]= Send block for UUID #{uuid} #{block.seq}")
-    Phoenix.PubSub.broadcast!(Inkfish.PubSub, "ittys:" <> uuid, {:block, uuid, block})
+    Phoenix.PubSub.broadcast!(
+      Inkfish.PubSub,
+      "ittys:" <> uuid,
+      {:block, uuid, block}
+    )
+
     {:noreply, %{state | seq: seq + 1, blocks: blocks}}
   end
 

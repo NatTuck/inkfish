@@ -9,7 +9,7 @@ use File::Temp qw(tempdir);
 
 my $SCR = $ENV{'SCR'} or die "Need $ENV{'SCR'}";
 my $SUB = $ENV{'SUB'} or die "Need $ENV{'SUB'}";
-my $GRA = $ENV{'GRA'} or die "Need $ENV{'SUB'}";
+my $GRA = $ENV{'GRA'} or die "Need $ENV{'GRA'}";
 my $COOKIE = $ENV{'COOKIE'} or die "Need $ENV{'COOKIE'}";
 
 my @FUSE_FLAGS = (
@@ -53,4 +53,3 @@ copy($id, "$SCR/simple-driver.pl", "/var/tmp/driver.pl");
 copy($id, "$temp/sub.tar.gz", "/var/tmp/sub.tar.gz");
 copy($id, "$temp/gra.tar.gz", "/var/tmp/gra.tar.gz");
 start($id);
-

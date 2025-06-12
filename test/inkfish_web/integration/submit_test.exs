@@ -61,7 +61,11 @@ defmodule InkfishWeb.SubmitTest do
     click_link("New Submission")
     click_link("Clone Git Repo")
 
-    fill_field({:id, "git-clone-input"}, "https://github.com/NatTuck/pancake.git")
+    fill_field(
+      {:id, "git-clone-input"},
+      "https://github.com/NatTuck/pancake.git"
+    )
+
     click({:id, "git-clone-btn"})
 
     assert wait_for_text("Done. Upload is")

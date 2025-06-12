@@ -50,7 +50,9 @@ defmodule InkfishWeb.Ajax.TeamControllerTest do
       conn =
         conn
         |> login(staff)
-        |> post(Routes.ajax_staff_teamset_team_path(conn, :create, teamset), team: attrs)
+        |> post(Routes.ajax_staff_teamset_team_path(conn, :create, teamset),
+          team: attrs
+        )
 
       assert %{"id" => id} = json_response(conn, 201)["data"]
 
@@ -62,13 +64,19 @@ defmodule InkfishWeb.Ajax.TeamControllerTest do
              } = json_response(conn, 200)["data"]
     end
 
-    test "renders errors when data is invalid", %{conn: conn, teamset: teamset, staff: staff} do
+    test "renders errors when data is invalid", %{
+      conn: conn,
+      teamset: teamset,
+      staff: staff
+    } do
       params = %{teamset_id: -1}
 
       conn =
         conn
         |> login(staff)
-        |> post(Routes.ajax_staff_teamset_team_path(conn, :create, teamset), team: params)
+        |> post(Routes.ajax_staff_teamset_team_path(conn, :create, teamset),
+          team: params
+        )
 
       assert json_response(conn, 422)["errors"] != %{}
     end
@@ -97,7 +105,11 @@ defmodule InkfishWeb.Ajax.TeamControllerTest do
              } = json_response(conn, 200)["data"]
     end
 
-    test "renders errors when data is invalid", %{conn: conn, team: team, staff: staff} do
+    test "renders errors when data is invalid", %{
+      conn: conn,
+      team: team,
+      staff: staff
+    } do
       params = %{teamset_id: -1}
 
       conn =

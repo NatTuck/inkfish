@@ -37,7 +37,9 @@ defmodule InkfishWeb.BucketControllerTest do
       conn =
         conn
         |> login("bob@example.com")
-        |> post(Routes.staff_course_bucket_path(conn, :create, course), bucket: params)
+        |> post(Routes.staff_course_bucket_path(conn, :create, course),
+          bucket: params
+        )
 
       assert %{id: id} = redirected_params(conn)
       assert redirected_to(conn) == Routes.staff_bucket_path(conn, :show, id)
@@ -50,7 +52,9 @@ defmodule InkfishWeb.BucketControllerTest do
       conn =
         conn
         |> login("bob@example.com")
-        |> post(Routes.staff_course_bucket_path(conn, :create, course), bucket: %{})
+        |> post(Routes.staff_course_bucket_path(conn, :create, course),
+          bucket: %{}
+        )
 
       assert html_response(conn, 200) =~ "New Bucket"
     end
@@ -80,7 +84,8 @@ defmodule InkfishWeb.BucketControllerTest do
         |> login("bob@example.com")
         |> put(Routes.staff_bucket_path(conn, :update, bucket), bucket: params)
 
-      assert redirected_to(conn) == Routes.staff_bucket_path(conn, :show, bucket)
+      assert redirected_to(conn) ==
+               Routes.staff_bucket_path(conn, :show, bucket)
 
       conn = get(conn, Routes.staff_bucket_path(conn, :show, bucket))
       assert html_response(conn, 200) =~ "some updated name"
@@ -90,7 +95,9 @@ defmodule InkfishWeb.BucketControllerTest do
       conn =
         conn
         |> login("bob@example.com")
-        |> put(Routes.staff_bucket_path(conn, :update, bucket), bucket: %{"name" => "x"})
+        |> put(Routes.staff_bucket_path(conn, :update, bucket),
+          bucket: %{"name" => "x"}
+        )
 
       assert html_response(conn, 200) =~ "Edit Bucket"
     end
@@ -105,7 +112,8 @@ defmodule InkfishWeb.BucketControllerTest do
         |> login("bob@example.com")
         |> delete(Routes.staff_bucket_path(conn, :delete, bucket))
 
-      assert redirected_to(conn) == Routes.staff_course_bucket_path(conn, :index, course)
+      assert redirected_to(conn) ==
+               Routes.staff_course_bucket_path(conn, :index, course)
 
       assert_error_sent 404, fn ->
         get(conn, Routes.staff_bucket_path(conn, :show, bucket))

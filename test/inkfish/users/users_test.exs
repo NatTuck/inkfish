@@ -126,7 +126,10 @@ defmodule Inkfish.UsersTest do
 
   describe "get_user_by_email_and_password/2" do
     test "does not return the user if the email does not exist" do
-      refute Users.get_user_by_email_and_password("unknown@example.com", "hello world!")
+      refute Users.get_user_by_email_and_password(
+               "unknown@example.com",
+               "hello world!"
+             )
     end
 
     test "does not return the user if the password is not valid" do
@@ -166,18 +169,26 @@ defmodule Inkfish.UsersTest do
     end
 
     test "validates email and password when given" do
-      {:error, changeset} = Users.create_user(%{email: "not valid", password: "not valid"})
+      {:error, changeset} =
+        Users.create_user(%{email: "not valid", password: "not valid"})
 
       assert %{
-               email: ["Email domain must be 'example.com'.", "has invalid format"],
+               email: [
+                 "Email domain must be 'example.com'.",
+                 "has invalid format"
+               ],
                password: ["should be at least 12 character(s)"]
              } = errors_on(changeset)
     end
 
     test "validates maximum values for email and password for security" do
       too_long = String.duplicate("db", 100)
-      {:error, changeset} = Users.create_user(%{email: too_long, password: too_long})
+
+      {:error, changeset} =
+        Users.create_user(%{email: too_long, password: too_long})
+
       assert "should be at most 160 character(s)" in errors_on(changeset).email
+
       assert "should be at most 72 character(s)" in errors_on(changeset).password
     end
 
@@ -246,9 +257,14 @@ defmodule Inkfish.UsersTest do
     end
 
     test "updates the password", %{user: user} do
-      {:ok, user} = Users.update_user_password(user, %{password: "new valid password"})
+      {:ok, user} =
+        Users.update_user_password(user, %{password: "new valid password"})
+
       # assert is_nil(user.password)
-      assert Users.get_user_by_email_and_password(user.email, "new valid password")
+      assert Users.get_user_by_email_and_password(
+               user.email,
+               "new valid password"
+             )
     end
   end
 

@@ -66,17 +66,23 @@ defmodule Inkfish.TeamsTest do
 
     test "list_team_members/0 returns all team_members" do
       team_member = team_member_fixture()
-      assert drop_assocs(Teams.list_team_members()) == drop_assocs([team_member])
+
+      assert drop_assocs(Teams.list_team_members()) ==
+               drop_assocs([team_member])
     end
 
     test "get_team_member!/1 returns the team_member with given id" do
       team_member = team_member_fixture()
-      assert drop_assocs(Teams.get_team_member!(team_member.id)) == drop_assocs(team_member)
+
+      assert drop_assocs(Teams.get_team_member!(team_member.id)) ==
+               drop_assocs(team_member)
     end
 
     test "create_team_member/1 with valid data creates a team_member" do
       params = params_with_assocs(:team_member)
-      assert {:ok, %TeamMember{} = _team_member} = Teams.create_team_member(params)
+
+      assert {:ok, %TeamMember{} = _team_member} =
+               Teams.create_team_member(params)
     end
 
     test "create_team_member/1 with invalid data returns error changeset" do
@@ -98,14 +104,21 @@ defmodule Inkfish.TeamsTest do
     test "update_team_member/2 with invalid data returns error changeset" do
       team_member = team_member_fixture()
       params = %{team_id: -1}
-      assert {:error, %Ecto.Changeset{}} = Teams.update_team_member(team_member, params)
-      assert drop_assocs(team_member) == drop_assocs(Teams.get_team_member!(team_member.id))
+
+      assert {:error, %Ecto.Changeset{}} =
+               Teams.update_team_member(team_member, params)
+
+      assert drop_assocs(team_member) ==
+               drop_assocs(Teams.get_team_member!(team_member.id))
     end
 
     test "delete_team_member/1 deletes the team_member" do
       team_member = team_member_fixture()
       assert {:ok, %TeamMember{}} = Teams.delete_team_member(team_member)
-      assert_raise Ecto.NoResultsError, fn -> Teams.get_team_member!(team_member.id) end
+
+      assert_raise Ecto.NoResultsError, fn ->
+        Teams.get_team_member!(team_member.id)
+      end
     end
 
     test "change_team_member/1 returns a team_member changeset" do

@@ -5,23 +5,36 @@ defmodule Inkfish.Uploads.Upload do
   alias Inkfish.Sandbox
   alias Inkfish.Uploads.Photo
 
+  alias __MODULE__
+
   @primary_key {:id, :binary_id, autogenerate: true}
   @timestamps_opts [type: :utc_datetime]
 
-  @valid_kinds ["user_photo", "grade_column", "sub", "assignment_starter", "assignment_solution"]
+  @valid_kinds [
+    "user_photo",
+    "grade_column",
+    "sub",
+    "assignment_starter",
+    "assignment_solution"
+  ]
 
   schema "uploads" do
-    field :name, :string
-    field :kind, :string
-    field :size, :integer
-    belongs_to :user, Inkfish.Users.User
+    field(:name, :string)
+    field(:kind, :string)
+    field(:size, :integer)
+    belongs_to(:user, Inkfish.Users.User)
 
-    has_one :photo_user, Inkfish.Users.User, foreign_key: :photo_upload_id
-    has_one :starter_assignment, Inkfish.Assignments.Assignment, foreign_key: :starter_upload_id
-    has_one :solution_assignment, Inkfish.Assignments.Assignment, foreign_key: :solution_upload_id
-    has_many :subs, Inkfish.Subs.Sub
+    has_one(:photo_user, Inkfish.Users.User, foreign_key: :photo_upload_id)
 
-    field :upload, :any, virtual: true
+    has_one(:starter_assignment, Inkfish.Assignments.Assignment, foreign_key: :starter_upload_id)
+
+    has_one(:solution_assignment, Inkfish.Assignments.Assignment,
+      foreign_key: :solution_upload_id
+    )
+
+    has_many(:subs, Inkfish.Subs.Sub)
+
+    field(:upload, :any, virtual: true)
 
     timestamps()
   end
@@ -127,7 +140,7 @@ defmodule Inkfish.Uploads.Upload do
     Path.join(udir, name)
   end
 
-  def unpacked_path(upload) do
+  def unpacked_path(%Upload{} = upload) do
     base = upload_dir(upload.id)
     full = Path.join(base, "unpacked")
     File.mkdir_p!(full)

@@ -2,43 +2,30 @@ defmodule Inkfish.Itty.Task do
   alias __MODULE__
 
   defstruct uuid: nil,
-            script: "echo hello, world",
+            cmd: "echo hello, world",
             grade: nil,
             state: nil,
             env: %{},
-            queued_at: nil,
-            started_at: nil,
-            on_exit: &Task.default_on_exit/1
+            cookie: nil,
+            on_exit: &Task.default_on_exit/1,
+            done: false
 
-  def new(script) do
+  def new(cmd) do
     uuid = Inkfish.Text.gen_uuid()
-    %Task{uuid: uuid, script: script}
+    %Task{uuid: uuid, cmd: cmd}
   end
 
-  def new(script, grade) do
+  def new(cmd, grade) do
     uuid = Inkfish.Text.gen_uuid()
-    %Task{uuid: uuid, script: script, grade: grade}
+    %Task{uuid: uuid, cmd: cmd, grade: grade}
   end
 
-  def new_env(script, env) do
+  def new_env(cmd, env) do
     uuid = Inkfish.Text.gen_uuid()
-    %Task{uuid: uuid, script: script, env: env}
+    %Task{uuid: uuid, cmd: cmd, env: env}
   end
 
   def default_on_exit(rv) do
     IO.inspect({:itty_done, rv})
-  end
-
-  alias Inkfish.Grades
-
-  def view_task(%Task{} = task) do
-    grade = Grades.preload_for_task_view(task.grade)
-    
-    %{
-      state: task.state,
-      queued_at: task.queued_at,
-      started_at: task.started_at,
-      grade: grade,
-    }
   end
 end

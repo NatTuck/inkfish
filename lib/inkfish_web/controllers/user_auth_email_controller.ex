@@ -61,7 +61,10 @@ defmodule InkfishWeb.UserAuthEmailController do
         if user do
           conn
           |> put_session(:user_id, user.id)
-          |> put_flash(:info, "Logged in as #{user.email}, don't forget to change your password.")
+          |> put_flash(
+            :info,
+            "Logged in as #{user.email}, don't forget to change your password."
+          )
           |> redirect(to: Routes.page_path(conn, :dashboard))
         else
           conn
@@ -71,7 +74,10 @@ defmodule InkfishWeb.UserAuthEmailController do
 
       {:error, _} ->
         conn
-        |> put_flash(:error, "Bad token, probably expired. Request another link.")
+        |> put_flash(
+          :error,
+          "Bad token, probably expired. Request another link."
+        )
         |> redirect(to: ~p"/")
     end
   end

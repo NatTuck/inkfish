@@ -4,7 +4,12 @@ defmodule InkfishWeb.CloneChannelTest do
   setup do
     user = Inkfish.Users.get_user_by_email!("bob@example.com")
     nonce = Base.encode16(:crypto.strong_rand_bytes(32))
-    token = Phoenix.Token.sign(InkfishWeb.Endpoint, "upload", %{kind: "sub", nonce: nonce})
+
+    token =
+      Phoenix.Token.sign(InkfishWeb.Endpoint, "upload", %{
+        kind: "sub",
+        nonce: nonce
+      })
 
     {:ok, _, socket} =
       socket(InkfishWeb.UserSocket, nil, %{user_id: user.id})

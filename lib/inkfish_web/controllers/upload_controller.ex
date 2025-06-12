@@ -21,7 +21,9 @@ defmodule InkfishWeb.UploadController do
   def create(conn, %{"upload" => upload_params}) do
     upload_params = check_token(conn, upload_params)
 
-    upload_params = Map.put(upload_params, "user_id", conn.assigns[:current_user].id)
+    upload_params =
+      Map.put(upload_params, "user_id", conn.assigns[:current_user].id)
+
     mode = conn.assigns[:client_mode]
 
     case {mode, Uploads.create_upload(upload_params)} do
@@ -74,7 +76,10 @@ defmodule InkfishWeb.UploadController do
       true ->
         conn
         |> put_resp_header("content-type", "application/octet-stream")
-        |> put_resp_header("content-disposition", "attachment; filename=\"#{upload.name}\"")
+        |> put_resp_header(
+          "content-disposition",
+          "attachment; filename=\"#{upload.name}\""
+        )
         |> send_resp(200, File.read!(path))
     end
   end
@@ -91,7 +96,10 @@ defmodule InkfishWeb.UploadController do
 
       conn
       |> put_resp_header("content-type", "application/octet-stream")
-      |> put_resp_header("content-disposition", "attachment; filename=\"#{upload.name}\"")
+      |> put_resp_header(
+        "content-disposition",
+        "attachment; filename=\"#{upload.name}\""
+      )
       |> send_resp(200, File.read!(path))
     else
       conn
@@ -144,7 +152,10 @@ defmodule InkfishWeb.UploadController do
 
       conn
       |> put_resp_header("content-type", ctype)
-      |> put_resp_header("content-disposition", "attachment; filename=\"#{name}\"")
+      |> put_resp_header(
+        "content-disposition",
+        "attachment; filename=\"#{name}\""
+      )
       |> send_resp(200, File.read!(path))
     end
   end

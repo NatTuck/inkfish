@@ -1,0 +1,85 @@
+<.header>
+  Autograding Jobs
+</.header>
+
+<div class="mb-3">
+  <.form for={%{}} action={~p"/ag_jobs/poll"} method="post">
+    <p><button class="btn btn-primary">Poll</button></p>
+  </.form>
+</div>
+
+<h2>Active Subs</h2>
+
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>Sub</th>
+      <th>User</th>
+      <th>Assignment</th>
+      <th>Prio</th>
+      <th>Started At</th>
+    </tr>
+  </thead>
+  <tbody>
+    <%= for job <- @curr_jobs do %>
+      <tr>
+        <td><a href={~p"/subs/#{job.sub_id}"}>{job.sub_id}</a></td>
+        <td>{user_display_name(job.sub.reg.user)}</td>
+        <td>{job.sub.assignment.name}</td>
+        <td>{job.prio}</td>
+        <td class="human-date">{job.inserted_at}</td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<h2>Waiting Subs</h2>
+
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>Sub</th>
+      <th>User</th>
+      <th>Assignment</th>
+      <th>Prio</th>
+      <th>Created At</th>
+    </tr>
+  </thead>
+  <tbody>
+    <%= for job <- @wait_jobs do %>
+      <tr>
+        <td><a href={~p"/subs/#{job.sub_id}"}>{job.sub_id}</a></td>
+        <td>{user_display_name(job.sub.reg.user)}</td>
+        <td>{job.sub.assignment.name}</td>
+        <td>{job.prio}</td>
+        <td class="human-date">{job.inserted_at}</td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<h2>Done Subs</h2>
+
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>Sub</th>
+      <th>User</th>
+      <th>Assignment</th>
+      <th>Prio</th>
+      <th>Finished At</th>
+    </tr>
+  </thead>
+  <tbody>
+    <%= for job <- @done_jobs do %>
+      <tr>
+        <td><a href={~p"/subs/#{job.sub_id}"}>{job.sub_id}</a></td>
+        <td>{user_display_name(job.sub.reg.user)}</td>
+        <td>{job.sub.assignment.name}</td>
+        <td>{job.prio}</td>
+        <td class="human-date">{job.finished_at}</td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+

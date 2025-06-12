@@ -28,10 +28,14 @@ defmodule InkfishWeb.Staff.LineCommentController do
       lc_params
       |> Map.put("user_id", conn.assigns[:current_user].id)
 
-    with {:ok, %LineComment{} = lc} <- LineComments.create_line_comment(lc_params) do
+    with {:ok, %LineComment{} = lc} <-
+           LineComments.create_line_comment(lc_params) do
       conn
       |> put_status(:created)
-      |> put_resp_header("location", Routes.ajax_staff_line_comment_path(conn, :show, lc))
+      |> put_resp_header(
+        "location",
+        Routes.ajax_staff_line_comment_path(conn, :show, lc)
+      )
       |> render("show.json", line_comment: lc)
     end
   end

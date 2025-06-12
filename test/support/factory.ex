@@ -15,6 +15,7 @@ defmodule Inkfish.Factory do
   alias Inkfish.Grades.GradeColumn
   alias Inkfish.Grades.Grade
   alias Inkfish.LineComments.LineComment
+  alias Inkfish.AgJobs.AgJob
 
   def stock_course do
     course_params = %{
@@ -37,12 +38,21 @@ defmodule Inkfish.Factory do
 
     grade_column = insert(:grade_column, assignment: asgn)
     staff = Inkfish.Users.get_user_by_email!("carol@example.com")
-    staff_reg = insert(:reg, course: course, user: staff, is_staff: true, is_grader: true)
+
+    staff_reg =
+      insert(:reg, course: course, user: staff, is_staff: true, is_grader: true)
+
     student = Inkfish.Users.get_user_by_email!("dave@example.com")
     student_reg = insert(:reg, course: course, user: student, is_student: true)
     team = Inkfish.Teams.get_active_team(asgn, student_reg)
     sub = insert(:sub, assignment: asgn, reg: student_reg, team: team)
-    grade = insert(:grade, grade_column: grade_column, sub: sub, score: Decimal.new("25.0"))
+
+    grade =
+      insert(:grade,
+        grade_column: grade_column,
+        sub: sub,
+        score: Decimal.new("25.0")
+      )
 
     %{
       course: course,
@@ -196,6 +206,18 @@ defmodule Inkfish.Factory do
       text: "Don't mix tabs and spaces",
       grade: build(:grade),
       user: build(:user)
+    }
+  end
+
+  def ag_job_factory do
+    sub = insert(:sub)
+    dupkey = "#{sub.assignment_id}/#{sub.reg_id}"
+
+    %AgJob{
+      sub: sub,
+      sub_id: sub.id,
+      dupkey: dupkey,
+      prio: 1
     }
   end
 end

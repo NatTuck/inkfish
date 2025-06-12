@@ -1,7 +1,7 @@
 defmodule InkfishWeb.Admin.DockerTagController do
   use InkfishWeb, :controller1
 
-  alias Inkfish.Docker
+  alias Inkfish.Sandbox.Containers
   alias Inkfish.DockerTags
   alias Inkfish.DockerTags.DockerTag
 
@@ -31,7 +31,7 @@ defmodule InkfishWeb.Admin.DockerTagController do
   def show(conn, %{"id" => id}) do
     docker_tag = DockerTags.get_docker_tag!(id)
 
-    case Docker.get_image_by_tag(docker_tag.name) do
+    case Containers.get_image_by_tag(docker_tag.name) do
       {:error, ee} ->
         conn
         |> put_flash(:error, inspect(ee))

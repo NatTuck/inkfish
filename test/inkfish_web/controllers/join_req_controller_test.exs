@@ -33,7 +33,9 @@ defmodule InkfishWeb.JoinReqControllerTest do
       conn =
         conn
         |> login("erin@example.com")
-        |> post(Routes.course_join_req_path(conn, :create, course), join_req: params)
+        |> post(Routes.course_join_req_path(conn, :create, course),
+          join_req: params
+        )
 
       assert redirected_to(conn) == Routes.course_path(conn, :index)
     end

@@ -23,7 +23,11 @@ defmodule InkfishWeb.Staff.GradeColumnController do
 
   def index(conn, _params) do
     grade_columns = Grades.list_grade_columns()
-    render(conn, "index.html", grade_columns: grade_columns)
+
+    render(conn, "index.html",
+      page_title: "Grade Columns",
+      grade_columns: grade_columns
+    )
   end
 
   def new(conn, _params) do
@@ -51,7 +55,9 @@ defmodule InkfishWeb.Staff.GradeColumnController do
       {:ok, grade_column} ->
         conn
         |> put_flash(:info, "Grade_Column created successfully.")
-        |> redirect(to: Routes.staff_grade_column_path(conn, :show, grade_column))
+        |> redirect(
+          to: Routes.staff_grade_column_path(conn, :show, grade_column)
+        )
 
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, "new.html", changeset: changeset)
@@ -60,7 +66,11 @@ defmodule InkfishWeb.Staff.GradeColumnController do
 
   def show(conn, %{"id" => id}) do
     grade_column = Grades.get_grade_column!(id)
-    render(conn, "show.html", grade_column: grade_column)
+
+    render(conn, "show.html",
+      page_title: "Show Grade Column",
+      grade_column: grade_column
+    )
   end
 
   def edit(conn, %{"id" => id}) do
@@ -76,10 +86,15 @@ defmodule InkfishWeb.Staff.GradeColumnController do
       {:ok, grade_column} ->
         conn
         |> put_flash(:info, "Grade_Column updated successfully.")
-        |> redirect(to: Routes.staff_grade_column_path(conn, :show, grade_column))
+        |> redirect(
+          to: Routes.staff_grade_column_path(conn, :show, grade_column)
+        )
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        render(conn, "edit.html", grade_column: grade_column, changeset: changeset)
+        render(conn, "edit.html",
+          grade_column: grade_column,
+          changeset: changeset
+        )
     end
   end
 
@@ -89,6 +104,8 @@ defmodule InkfishWeb.Staff.GradeColumnController do
 
     conn
     |> put_flash(:info, "Grade column deleted successfully.")
-    |> redirect(to: Routes.staff_assignment_path(conn, :show, grade_column.assignment_id))
+    |> redirect(
+      to: Routes.staff_assignment_path(conn, :show, grade_column.assignment_id)
+    )
   end
 end

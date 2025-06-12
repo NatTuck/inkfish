@@ -4,7 +4,10 @@ defmodule InkfishWeb.Admin.DockerTagControllerTest do
   import Inkfish.DockerTagsFixtures
 
   @create_attrs %{dockerfile: "some dockerfile", name: "some name"}
-  @update_attrs %{dockerfile: "some updated dockerfile", name: "some updated name"}
+  @update_attrs %{
+    dockerfile: "some updated dockerfile",
+    name: "some updated name"
+  }
   @invalid_attrs %{dockerfile: nil, name: nil}
 
   describe "index" do
@@ -51,7 +54,10 @@ defmodule InkfishWeb.Admin.DockerTagControllerTest do
   describe "edit docker_tag" do
     setup [:create_docker_tag, :login_admin]
 
-    test "renders form for editing chosen docker_tag", %{conn: conn, docker_tag: docker_tag} do
+    test "renders form for editing chosen docker_tag", %{
+      conn: conn,
+      docker_tag: docker_tag
+    } do
       conn = get(conn, ~p"/admin/docker_tags/#{docker_tag}/edit")
       assert html_response(conn, 200) =~ "Edit Docker tag"
     end
@@ -61,15 +67,26 @@ defmodule InkfishWeb.Admin.DockerTagControllerTest do
     setup [:create_docker_tag, :login_admin]
 
     test "redirects when data is valid", %{conn: conn, docker_tag: docker_tag} do
-      conn = put(conn, ~p"/admin/docker_tags/#{docker_tag}", docker_tag: @update_attrs)
+      conn =
+        put(conn, ~p"/admin/docker_tags/#{docker_tag}",
+          docker_tag: @update_attrs
+        )
+
       assert redirected_to(conn) == ~p"/admin/docker_tags/#{docker_tag}"
 
       conn = get(conn, ~p"/admin/docker_tags/#{docker_tag}")
       assert html_response(conn, 200) =~ "some updated dockerfile"
     end
 
-    test "renders errors when data is invalid", %{conn: conn, docker_tag: docker_tag} do
-      conn = put(conn, ~p"/admin/docker_tags/#{docker_tag}", docker_tag: @invalid_attrs)
+    test "renders errors when data is invalid", %{
+      conn: conn,
+      docker_tag: docker_tag
+    } do
+      conn =
+        put(conn, ~p"/admin/docker_tags/#{docker_tag}",
+          docker_tag: @invalid_attrs
+        )
+
       assert html_response(conn, 200) =~ "Edit Docker tag"
     end
   end

@@ -9,7 +9,9 @@ defmodule Inkfish.LatePolicyTest do
   alias Inkfish.Grades
 
   def create_assignment(hours_due, hd) do
-    asgn = insert(:assignment, due: LocalTime.in_hours(hours_due), hard_deadline: hd)
+    asgn =
+      insert(:assignment, due: LocalTime.in_hours(hours_due), hard_deadline: hd)
+
     _gc = insert(:grade_column, assignment: asgn)
     asgn
   end

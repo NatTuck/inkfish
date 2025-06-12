@@ -27,6 +27,11 @@
     <strong>Params:</strong>
     <%= @grade_column.params %>
   </li>
+  
+  <li>
+    <strong>Limits:</strong>
+    <%= @grade_column.limits %>
+  </li>
 
   <li>
     <strong>Upload:</strong>

@@ -28,7 +28,11 @@ defmodule InkfishWeb.Staff.TeamsetControllerTest do
   describe "create teamset" do
     test "redirects to show when data is valid", %{conn: conn, course: course} do
       params = params_for(:teamset, course: course)
-      conn = post(conn, Routes.staff_course_teamset_path(conn, :create, course), teamset: params)
+
+      conn =
+        post(conn, Routes.staff_course_teamset_path(conn, :create, course),
+          teamset: params
+        )
 
       assert %{id: id} = redirected_params(conn)
       assert redirected_to(conn) == Routes.staff_teamset_path(conn, :show, id)
@@ -39,13 +43,21 @@ defmodule InkfishWeb.Staff.TeamsetControllerTest do
 
     test "renders errors when data is invalid", %{conn: conn, course: course} do
       params = %{name: ""}
-      conn = post(conn, Routes.staff_course_teamset_path(conn, :create, course), teamset: params)
+
+      conn =
+        post(conn, Routes.staff_course_teamset_path(conn, :create, course),
+          teamset: params
+        )
+
       assert html_response(conn, 200) =~ "New Teamset"
     end
   end
 
   describe "edit teamset" do
-    test "renders form for editing chosen teamset", %{conn: conn, teamset: teamset} do
+    test "renders form for editing chosen teamset", %{
+      conn: conn,
+      teamset: teamset
+    } do
       conn = get(conn, Routes.staff_teamset_path(conn, :edit, teamset))
       assert html_response(conn, 200) =~ "Edit Teamset"
     end
@@ -54,8 +66,14 @@ defmodule InkfishWeb.Staff.TeamsetControllerTest do
   describe "update teamset" do
     test "redirects when data is valid", %{conn: conn, teamset: teamset} do
       params = %{name: "new name"}
-      conn = put(conn, Routes.staff_teamset_path(conn, :update, teamset), teamset: params)
-      assert redirected_to(conn) == Routes.staff_teamset_path(conn, :show, teamset)
+
+      conn =
+        put(conn, Routes.staff_teamset_path(conn, :update, teamset),
+          teamset: params
+        )
+
+      assert redirected_to(conn) ==
+               Routes.staff_teamset_path(conn, :show, teamset)
 
       conn = get(conn, Routes.staff_teamset_path(conn, :show, teamset))
       assert html_response(conn, 200) =~ "new name"
@@ -63,7 +81,12 @@ defmodule InkfishWeb.Staff.TeamsetControllerTest do
 
     test "renders errors when data is invalid", %{conn: conn, teamset: teamset} do
       params = %{name: ""}
-      conn = put(conn, Routes.staff_teamset_path(conn, :update, teamset), teamset: params)
+
+      conn =
+        put(conn, Routes.staff_teamset_path(conn, :update, teamset),
+          teamset: params
+        )
+
       assert html_response(conn, 200) =~ "Edit Teamset"
     end
   end

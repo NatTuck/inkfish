@@ -8,7 +8,10 @@ defmodule InkfishWeb.SessionControllerTest do
     }
 
     conn = post(conn, "/session", form_data)
-    assert Phoenix.Flash.get(conn.assigns[:flash], :info) == "Logged in as alice@example.com"
+
+    assert Phoenix.Flash.get(conn.assigns[:flash], :info) ==
+             "Logged in as alice@example.com"
+
     assert redirected_to(conn, 302) == "/dashboard"
   end
 

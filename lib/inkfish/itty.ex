@@ -1,10 +1,9 @@
 defmodule Inkfish.Itty do
   alias Inkfish.Itty.Server
   alias Inkfish.Itty.Task
-  alias Inkfish.Itty.Queue
 
   def start(%Task{} = task) do
-    {:ok, _pid} = Server.start(task)
+    Server.start(task)
     {:ok, task.uuid}
   end
 
@@ -23,10 +22,6 @@ defmodule Inkfish.Itty do
 
     Task.new_env(script, env)
     |> start()
-  end
-
-  def schedule(%Task{} = task) do
-    Queue.schedule(task)
   end
 
   def peek(uuid) do
@@ -53,11 +48,7 @@ defmodule Inkfish.Itty do
     Server.stop(uuid)
   end
 
-  def status(uuid) do
-    Queue.status(uuid)
-  end
-
-  def poll() do
-    Queue.poll()
+  def list() do
+    Registry.select(Inkfish.Itty.Reg, [{{:"$1", :_, :_}, [], [:"$1"]}])
   end
 end

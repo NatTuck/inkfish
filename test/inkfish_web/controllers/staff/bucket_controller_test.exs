@@ -28,7 +28,11 @@ defmodule InkfishWeb.Staff.BucketControllerTest do
   describe "create bucket" do
     test "redirects to show when data is valid", %{conn: conn, course: course} do
       params = params_for(:bucket)
-      conn = post(conn, Routes.staff_course_bucket_path(conn, :create, course), bucket: params)
+
+      conn =
+        post(conn, Routes.staff_course_bucket_path(conn, :create, course),
+          bucket: params
+        )
 
       assert %{id: id} = redirected_params(conn)
       assert redirected_to(conn) == Routes.staff_bucket_path(conn, :show, id)
@@ -39,7 +43,12 @@ defmodule InkfishWeb.Staff.BucketControllerTest do
 
     test "renders errors when data is invalid", %{conn: conn, course: course} do
       params = %{name: ""}
-      conn = post(conn, Routes.staff_course_bucket_path(conn, :create, course), bucket: params)
+
+      conn =
+        post(conn, Routes.staff_course_bucket_path(conn, :create, course),
+          bucket: params
+        )
+
       assert html_response(conn, 200) =~ "New Bucket"
     end
   end
@@ -54,8 +63,14 @@ defmodule InkfishWeb.Staff.BucketControllerTest do
   describe "update bucket" do
     test "redirects when data is valid", %{conn: conn, bucket: bucket} do
       params = %{name: "some updated name"}
-      conn = put(conn, Routes.staff_bucket_path(conn, :update, bucket), bucket: params)
-      assert redirected_to(conn) == Routes.staff_bucket_path(conn, :show, bucket)
+
+      conn =
+        put(conn, Routes.staff_bucket_path(conn, :update, bucket),
+          bucket: params
+        )
+
+      assert redirected_to(conn) ==
+               Routes.staff_bucket_path(conn, :show, bucket)
 
       conn = get(conn, Routes.staff_bucket_path(conn, :show, bucket))
       assert html_response(conn, 200) =~ "some updated name"
@@ -63,7 +78,12 @@ defmodule InkfishWeb.Staff.BucketControllerTest do
 
     test "renders errors when data is invalid", %{conn: conn, bucket: bucket} do
       params = %{name: ""}
-      conn = put(conn, Routes.staff_bucket_path(conn, :update, bucket), bucket: params)
+
+      conn =
+        put(conn, Routes.staff_bucket_path(conn, :update, bucket),
+          bucket: params
+        )
+
       assert html_response(conn, 200) =~ "Edit Bucket"
     end
   end

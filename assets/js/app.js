@@ -14,4 +14,5 @@ import "./uploads/init";
 import "./tasks/init";
 import "./teams/team-manager";
 import "./gcol";
+import "./gcol/limits";
 import "./itty";

@@ -67,17 +67,24 @@ defmodule Inkfish.GradesTest do
 
     test "list_grade_columns/0 returns all grade_columns" do
       grade_column = grade_column_fixture()
-      assert drop_assocs(Grades.list_grade_columns()) == drop_assocs([grade_column])
+
+      assert drop_assocs(Grades.list_grade_columns()) ==
+               drop_assocs([grade_column])
     end
 
     test "get_grade_column!/1 returns the grade_column with given id" do
       grade_column = grade_column_fixture()
-      assert drop_assocs(Grades.get_grade_column!(grade_column.id)) == drop_assocs(grade_column)
+
+      assert drop_assocs(Grades.get_grade_column!(grade_column.id)) ==
+               drop_assocs(grade_column)
     end
 
     test "create_grade_column/1 with valid data creates a grade_column" do
       params = params_with_assocs(:grade_column)
-      assert {:ok, %GradeColumn{} = grade_column} = Grades.create_grade_column(params)
+
+      assert {:ok, %GradeColumn{} = grade_column} =
+               Grades.create_grade_column(params)
+
       assert grade_column.kind == "number"
       assert grade_column.name == "Number Grade"
       assert grade_column.points == Decimal.new("50.0")
@@ -91,7 +98,10 @@ defmodule Inkfish.GradesTest do
     test "update_grade_column/2 with valid data updates the grade_column" do
       grade_column = grade_column_fixture()
       params = %{name: "Updated", base: "30.0"}
-      assert {:ok, %GradeColumn{} = gc1} = Grades.update_grade_column(grade_column, params)
+
+      assert {:ok, %GradeColumn{} = gc1} =
+               Grades.update_grade_column(grade_column, params)
+
       assert gc1.kind == grade_column.kind
       assert gc1.name == "Updated"
       assert gc1.params == grade_column.params
@@ -102,14 +112,21 @@ defmodule Inkfish.GradesTest do
     test "update_grade_column/2 with invalid data returns error changeset" do
       grade_column = grade_column_fixture()
       params = %{points: ""}
-      assert {:error, %Ecto.Changeset{}} = Grades.update_grade_column(grade_column, params)
-      assert drop_assocs(grade_column) == drop_assocs(Grades.get_grade_column!(grade_column.id))
+
+      assert {:error, %Ecto.Changeset{}} =
+               Grades.update_grade_column(grade_column, params)
+
+      assert drop_assocs(grade_column) ==
+               drop_assocs(Grades.get_grade_column!(grade_column.id))
     end
 
     test "delete_grade_column/1 deletes the grade_column" do
       grade_column = grade_column_fixture()
       assert {:ok, %GradeColumn{}} = Grades.delete_grade_column(grade_column)
-      assert_raise Ecto.NoResultsError, fn -> Grades.get_grade_column!(grade_column.id) end
+
+      assert_raise Ecto.NoResultsError, fn ->
+        Grades.get_grade_column!(grade_column.id)
+      end
     end
 
     test "change_grade_column/1 returns a grade_column changeset" do
