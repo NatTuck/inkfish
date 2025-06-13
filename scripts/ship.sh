@@ -1,7 +1,7 @@
 #!/bin/bash
 
 USER="inkfish"
-HOST="homework.quest"
+HOST="gargoyle"
 
 (cd .. && rsync -avz --delete --exclude inkfish/deps --exclude inkfish/assets/node_modules --exclude inkfish/_build inkfish $USER@$HOST:~/)
 
