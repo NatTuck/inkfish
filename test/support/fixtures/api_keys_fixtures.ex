@@ -3,17 +3,20 @@ defmodule Inkfish.ApiKeysFixtures do
   This module defines test helpers for creating
   entities via the `Inkfish.ApiKeys` context.
   """
+  import Inkfish.Factory
 
   @doc """
-  Generate a api_key.
+  Generate an API key.
   """
   def api_key_fixture(attrs \\ %{}) do
-    {:ok, api_key} =
-      attrs
-      |> Enum.into(%{
-        key: "some key"
+    user = Map.get(attrs, :user, user_fixture())
+
+    attrs =
+      Enum.into(attrs, %{
+        key: "some key #{System.unique_integer()}"
       })
-      |> Inkfish.ApiKeys.create_api_key()
+
+    {:ok, api_key} = Inkfish.ApiKeys.create_api_key(user, attrs)
 
     api_key
   end

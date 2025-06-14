@@ -2,17 +2,20 @@ defmodule Inkfish.ApiKeysTest do
   use Inkfish.DataCase
 
   alias Inkfish.ApiKeys
+  alias Inkfish.ApiKeys.ApiKey
+  import Inkfish.ApiKeysFixtures
+  import Inkfish.Factory
 
-  describe "api_key" do
-    alias Inkfish.ApiKeys.ApiKey
+  @invalid_attrs %{key: nil}
 
-    import Inkfish.ApiKeysFixtures
+  describe "apikeys" do
+    test "list_user_apikeys/1 returns all apikeys for a user" do
+      user = user_fixture()
+      api_key1 = api_key_fixture(user: user)
+      api_key2 = api_key_fixture(user: user)
+      api_key_fixture() # for other user
 
-    @invalid_attrs %{key: nil}
-
-    test "list_api_key/0 returns all api_key" do
-      api_key = api_key_fixture()
-      assert ApiKeys.list_api_key() == [api_key]
+      assert ApiKeys.list_user_apikeys(user) |> Enum.map(& &1.id) == [api_key2.id, api_key1.id]
     end
 
     test "get_api_key!/1 returns the api_key with given id" do
@@ -20,15 +23,18 @@ defmodule Inkfish.ApiKeysTest do
       assert ApiKeys.get_api_key!(api_key.id) == api_key
     end
 
-    test "create_api_key/1 with valid data creates a api_key" do
+    test "create_api_key/2 with valid data creates an api_key" do
+      user = user_fixture()
       valid_attrs = %{key: "some key"}
 
-      assert {:ok, %ApiKey{} = api_key} = ApiKeys.create_api_key(valid_attrs)
+      assert {:ok, %ApiKey{} = api_key} = ApiKeys.create_api_key(user, valid_attrs)
       assert api_key.key == "some key"
+      assert api_key.user_id == user.id
     end
 
-    test "create_api_key/1 with invalid data returns error changeset" do
-      assert {:error, %Ecto.Changeset{}} = ApiKeys.create_api_key(@invalid_attrs)
+    test "create_api_key/2 with invalid data returns error changeset" do
+      user = user_fixture()
+      assert {:error, %Ecto.Changeset{}} = ApiKeys.create_api_key(user, @invalid_attrs)
     end
 
     test "update_api_key/2 with valid data updates the api_key" do
@@ -51,7 +57,7 @@ defmodule Inkfish.ApiKeysTest do
       assert_raise Ecto.NoResultsError, fn -> ApiKeys.get_api_key!(api_key.id) end
     end
 
-    test "change_api_key/1 returns a api_key changeset" do
+    test "change_api_key/1 returns an api_key changeset" do
       api_key = api_key_fixture()
       assert %Ecto.Changeset{} = ApiKeys.change_api_key(api_key)
     end

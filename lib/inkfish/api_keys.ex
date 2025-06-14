@@ -7,18 +7,19 @@ defmodule Inkfish.ApiKeys do
   alias Inkfish.Repo
 
   alias Inkfish.ApiKeys.ApiKey
+  alias Inkfish.Users.User
 
   @doc """
-  Returns the list of api_key.
+  Returns the list of API keys for a user.
 
   ## Examples
 
-      iex> list_api_key()
+      iex> list_user_apikeys(user)
       [%ApiKey{}, ...]
 
   """
-  def list_api_key do
-    Repo.all(ApiKey)
+  def list_user_apikeys(%User{} = user) do
+    Repo.all(from(k in ApiKey, where: k.user_id == ^user.id, order_by: [desc: k.inserted_at]))
   end
 
   @doc """
@@ -38,25 +39,25 @@ defmodule Inkfish.ApiKeys do
   def get_api_key!(id), do: Repo.get!(ApiKey, id)
 
   @doc """
-  Creates a api_key.
+  Creates an API key for a user.
 
   ## Examples
 
-      iex> create_api_key(%{field: value})
+      iex> create_api_key(user, %{field: value})
       {:ok, %ApiKey{}}
 
-      iex> create_api_key(%{field: bad_value})
+      iex> create_api_key(user, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_api_key(attrs \\ %{}) do
+  def create_api_key(%User{} = user, attrs \\ %{}) do
     %ApiKey{}
-    |> ApiKey.changeset(attrs)
+    |> ApiKey.changeset(Map.put(attrs, "user_id", user.id))
     |> Repo.insert()
   end
 
   @doc """
-  Updates a api_key.
+  Updates an api_key.
 
   ## Examples
 
@@ -74,7 +75,7 @@ defmodule Inkfish.ApiKeys do
   end
 
   @doc """
-  Deletes a api_key.
+  Deletes an api_key.
 
   ## Examples
 

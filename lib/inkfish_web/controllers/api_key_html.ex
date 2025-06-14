@@ -4,7 +4,7 @@ defmodule InkfishWeb.ApiKeyHTML do
   embed_templates "api_key_html/*"
 
   @doc """
-  Renders a api_key form.
+  Renders an API key form.
   """
   attr :changeset, Ecto.Changeset, required: true
   attr :action, :string, required: true

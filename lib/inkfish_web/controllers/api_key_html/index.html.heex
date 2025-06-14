@@ -1,22 +1,22 @@
 <.header>
-  Listing Api key
+  Listing API Keys
   <:actions>
-    <.link href={~p"/api_key/new"}>
-      <.button>New Api key</.button>
+    <.link href={~p"/apikeys/new"}>
+      <.button>New API Key</.button>
     </.link>
   </:actions>
 </.header>
 
-<.table id="api_key" rows={@api_key_collection} row_click={&JS.navigate(~p"/api_key/#{&1}")}>
+<.table id="apikeys" rows={@apikeys} row_click={&JS.navigate(~p"/apikeys/#{&1}")}>
   <:col :let={api_key} label="Key">{api_key.key}</:col>
   <:action :let={api_key}>
     <div class="sr-only">
-      <.link navigate={~p"/api_key/#{api_key}"}>Show</.link>
+      <.link navigate={~p"/apikeys/#{api_key}"}>Show</.link>
     </div>
-    <.link navigate={~p"/api_key/#{api_key}/edit"}>Edit</.link>
+    <.link navigate={~p"/apikeys/#{api_key}/edit"}>Edit</.link>
   </:action>
   <:action :let={api_key}>
-    <.link href={~p"/api_key/#{api_key}"} method="delete" data-confirm="Are you sure?">
+    <.link href={~p"/apikeys/#{api_key}"} method="delete" data-confirm="Are you sure?">
       Delete
     </.link>
   </:action>
