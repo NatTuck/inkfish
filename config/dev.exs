@@ -49,8 +49,8 @@ config :inkfish, InkfishWeb.Endpoint,
     patterns: [
       ~r"priv/static/.*(js|css|png|jpeg|jpg|gif|svg)$",
       ~r"priv/gettext/.*(po)$",
-      ~r"lib/inkfish_web/(live|views)/.*(ex)$",
-      ~r"lib/inkfish_web/templates/.*(eex)$"
+      ~r"lib/inkfish_web/(live|views|components)/.*(ex)$",
+      ~r"lib/inkfish_web/(views|controllers)/.*(eex|heex)$"
     ]
   ]
 

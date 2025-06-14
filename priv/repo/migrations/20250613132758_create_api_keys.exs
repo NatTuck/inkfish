@@ -11,5 +11,6 @@ defmodule Inkfish.Repo.Migrations.CreateApiKey do
     end
 
     create(index(:api_keys, [:user_id]))
+    create(index(:api_keys, [:key], unique: true))
   end
 end
