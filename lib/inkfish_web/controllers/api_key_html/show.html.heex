@@ -1,0 +1,15 @@
+<.header>
+  Api key {@api_key.id}
+  <:subtitle>This is a api_key record from your database.</:subtitle>
+  <:actions>
+    <.link href={~p"/api_key/#{@api_key}/edit"}>
+      <.button>Edit api_key</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.list>
+  <:item title="Key">{@api_key.key}</:item>
+</.list>
+
+<.back navigate={~p"/api_key"}>Back to api_key</.back>
