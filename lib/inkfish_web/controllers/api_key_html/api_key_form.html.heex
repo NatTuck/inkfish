@@ -2,7 +2,8 @@
   <.error :if={@changeset.action}>
     Oops, something went wrong! Please check the errors below.
   </.error>
-  <.input field={f[:key]} type="text" label="Key" />
+  <.input field={f[:name]} type="text" label="Name" />
+  <.input field={f[:key]} type="text" label="Key" readonly={true} />
   <:actions>
     <.button>Save API Key</.button>
   </:actions>

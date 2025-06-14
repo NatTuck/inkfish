@@ -2,13 +2,11 @@
   API Key {@api_key.id}
   <:subtitle>This is an API key record from your database.</:subtitle>
   <:actions>
-    <.link href={~p"/api_keys/#{@api_key}/edit"}>
-      <.button>Edit API Key</.button>
-    </.link>
   </:actions>
 </.header>
 
 <.list>
+  <:item title="Name">{@api_key.name}</:item>
   <:item title="Key">{@api_key.key}</:item>
 </.list>
 

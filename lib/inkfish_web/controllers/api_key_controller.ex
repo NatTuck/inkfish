@@ -1,5 +1,5 @@
 defmodule InkfishWeb.ApiKeyController do
-  use InkfishWeb, :controller
+  use InkfishWeb, :controller1
 
   alias Inkfish.ApiKeys
   alias Inkfish.ApiKeys.ApiKey
@@ -10,7 +10,7 @@ defmodule InkfishWeb.ApiKeyController do
   end
 
   def new(conn, _params) do
-    changeset = ApiKeys.change_api_key(%ApiKey{})
+    changeset = ApiKeys.change_api_key(%ApiKey{key: Inkfish.Text.gen_uuid()})
     render(conn, :new, changeset: changeset)
   end
 
@@ -31,26 +31,6 @@ defmodule InkfishWeb.ApiKeyController do
     render(conn, :show, api_key: api_key)
   end
 
-  def edit(conn, %{"id" => id}) do
-    api_key = get_and_authorize_key(conn.assigns.current_user, id)
-    changeset = ApiKeys.change_api_key(api_key)
-    render(conn, :edit, api_key: api_key, changeset: changeset)
-  end
-
-  def update(conn, %{"id" => id, "api_key" => api_key_params}) do
-    api_key = get_and_authorize_key(conn.assigns.current_user, id)
-
-    case ApiKeys.update_api_key(api_key, api_key_params) do
-      {:ok, api_key} ->
-        conn
-        |> put_flash(:info, "API key updated successfully.")
-        |> redirect(to: ~p"/api_keys/#{api_key}")
-
-      {:error, %Ecto.Changeset{} = changeset} ->
-        render(conn, :edit, api_key: api_key, changeset: changeset)
-    end
-  end
-
   def delete(conn, %{"id" => id}) do
     api_key = get_and_authorize_key(conn.assigns.current_user, id)
     {:ok, _api_key} = ApiKeys.delete_api_key(api_key)
@@ -66,7 +46,7 @@ defmodule InkfishWeb.ApiKeyController do
     if api_key.user_id == current_user.id do
       api_key
     else
-      raise Phoenix.NotFound, "API key not found"
+      nil
     end
   end
 end

@@ -84,7 +84,7 @@ defmodule InkfishWeb.Router do
     resources("/ag_jobs", AgJobController, only: [:index])
     post("/ag_jobs/poll", AgJobController, :poll)
 
-    resources("/api_keys", ApiKeyController)
+    resources("/api_keys", ApiKeyController, except: [:edit, :update])
   end
 
   scope "/staff", InkfishWeb.Staff, as: :staff do

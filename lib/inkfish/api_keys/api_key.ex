@@ -4,8 +4,9 @@ defmodule Inkfish.ApiKeys.ApiKey do
   alias Inkfish.Users.User
 
   schema "api_keys" do
-    field :key, :string
-    belongs_to :user, User
+    field(:key, :string)
+    field(:name, :string)
+    belongs_to(:user, User)
 
     timestamps(type: :utc_datetime)
   end
@@ -13,8 +14,8 @@ defmodule Inkfish.ApiKeys.ApiKey do
   @doc false
   def changeset(api_key, attrs) do
     api_key
-    |> cast(attrs, [:key, :user_id])
-    |> validate_required([:key, :user_id])
+    |> cast(attrs, [:name, :key, :user_id])
+    |> validate_required([:name, :key, :user_id])
     |> foreign_key_constraint(:user_id)
   end
 end
