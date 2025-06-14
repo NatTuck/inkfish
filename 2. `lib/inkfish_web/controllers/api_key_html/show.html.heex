@@ -2,7 +2,7 @@
   API Key {@api_key.id}
   <:subtitle>This is an API key record from your database.</:subtitle>
   <:actions>
-    <.link href={~p"/api_keys/#{@api_key}/edit"}>
+    <.link href={~p"/apikeys/#{@api_key}/edit"}>
       <.button>Edit API Key</.button>
     </.link>
   </:actions>
@@ -12,4 +12,4 @@
   <:item title="Key">{@api_key.key}</:item>
 </.list>
 
-<.back navigate={~p"/api_keys"}>Back to API Keys</.back>
+<.back navigate={~p"/apikeys"}>Back to API Keys</.back>

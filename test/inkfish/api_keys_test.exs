@@ -8,8 +8,8 @@ defmodule Inkfish.ApiKeysTest do
 
   @invalid_attrs %{key: nil}
 
-  describe "apikeys" do
-    test "list_user_apikeys/1 returns all apikeys for a user" do
+  describe "api_keys" do
+    test "list_user_apikeys/1 returns all api_keys for a user" do
       user = user_fixture()
       api_key1 = api_key_fixture(user: user)
       api_key2 = api_key_fixture(user: user)

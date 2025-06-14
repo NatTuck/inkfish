@@ -3,7 +3,7 @@ defmodule Inkfish.ApiKeys.ApiKey do
   import Ecto.Changeset
   alias Inkfish.Users.User
 
-  schema "apikeys" do
+  schema "api_keys" do
     field :key, :string
     belongs_to :user, User
 
