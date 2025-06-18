@@ -1,5 +1,6 @@
 defmodule InkfishWeb.ApiV1.SubControllerTest do
-  use InkfishWeb.ConnCase # Removed `use Inkfish.DataCase` as ConnCase already includes Factory
+  # Removed `use Inkfish.DataCase` as ConnCase already includes Factory
+  use InkfishWeb.ConnCase
 
   import Inkfish.Factory
 
@@ -36,6 +37,20 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
   end
 
+  def api_key_fixture(attrs \\ %{}) do
+    # Use insert(:user) from Inkfish.Factory instead of user_fixture()
+    user = Map.get(attrs, :user, insert(:user))
+
+    attrs =
+      Enum.into(attrs, %{
+        key: "some key #{System.unique_integer()}"
+      })
+
+    {:ok, api_key} = Inkfish.ApiKeys.create_api_key(user, attrs)
+
+    api_key
+  end
+
   # Helper to create a user with an API key and return a conn with the x-auth header
   defp logged_in_user_with_api_key(
          conn,
@@ -53,7 +68,12 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
     bucket = insert(:bucket, course: course)
     # Create teamset explicitly linked to the course and pass it to assignment
     teamset = insert(:teamset, course: course)
-    assignment = insert(:assignment, Map.merge(assignment_attrs, %{bucket: bucket, teamset: teamset}))
+
+    assignment =
+      insert(
+        :assignment,
+        Map.merge(assignment_attrs, %{bucket: bucket, teamset: teamset})
+      )
 
     # Create a reg for the user in this course
     reg = insert(:reg, user: user, course: course)
