@@ -364,9 +364,21 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
 
   describe "update sub" do
     # Use the common setup
-    setup %{conn: initial_conn} do # Use a different name for the initial conn
-      %{conn: authenticated_conn, sub: sub, user: user, assignment: assignment, reg: reg, team: team, upload: upload, api_key: api_key} = create_sub_for_test(%{conn: initial_conn})
-      %{conn: authenticated_conn, sub: sub, user: user, assignment: assignment, reg: reg, team: team, upload: upload, api_key: api_key}
+    setup %{conn: conn} do # Use a different name for the initial conn
+      %{conn: authenticated_conn, sub: sub, user: user, assignment: assignment, reg: reg, team: team, upload: upload, api_key: api_key} = logged_in_user_with_api_key(conn)
+
+      # Create a sub directly within this setup's transaction
+      course = insert(:course)
+      bucket = insert(:bucket, course: course)
+      teamset = insert(:teamset, course: course)
+      assignment = insert(:assignment, bucket: bucket, teamset: teamset)
+      reg = insert(:reg, user: user, course: course)
+      team = insert(:team, teamset: teamset)
+      insert(:team_member, team: team, reg: reg)
+      upload = insert(:upload, user: user)
+      sub = insert(:sub, assignment: assignment, reg: reg, team: team, upload: upload)
+
+      %{conn: authenticated_conn, sub: sub, api_key: api_key}
     end
 
     test "renders sub when data is valid", %{
