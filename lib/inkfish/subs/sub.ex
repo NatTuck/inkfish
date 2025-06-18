@@ -3,7 +3,7 @@ defmodule Inkfish.Subs.Sub do
   import Ecto.Changeset
   import Ecto.Query, warn: false
 
-  # Do not add a @primary_key annotation in this file.
+  # Removed @primary_key {:id, :integer} as it's redundant when defined in schema block with primary_key: true
 
   @timestamps_opts [
     type: :utc_datetime,
@@ -11,6 +11,9 @@ defmodule Inkfish.Subs.Sub do
   ]
 
   schema "subs" do
+    # Define the primary key field explicitly here for auto-incrementing integer IDs
+    field :id, :integer, primary_key: true, autogenerate: true
+
     field :active, :boolean, default: false
     field :late_penalty, :decimal
     field :score, :decimal
