@@ -1,6 +1,9 @@
 defmodule Inkfish.Subs.Sub do
   use Ecto.Schema
   import Ecto.Changeset
+  import Ecto.Query, warn: false
+
+  alias __MODULE__
 
   @timestamps_opts [
     type: :utc_datetime,
