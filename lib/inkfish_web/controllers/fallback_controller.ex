@@ -9,14 +9,16 @@ defmodule InkfishWeb.FallbackController do
   def call(conn, {:error, %Ecto.Changeset{} = changeset}) do
     conn
     |> put_status(:unprocessable_entity)
-    |> put_view(InkfishWeb.ChangesetView)
-    |> render("error.json", changeset: changeset)
+    |> render(InkfishWeb.ChangesetJSON, :error, changeset: changeset)
   end
 
   def call(conn, {:error, :not_found}) do
     conn
     |> put_status(:not_found)
-    |> put_view(InkfishWeb.ErrorView)
-    |> render(:"404")
+    |> render(InkfishWeb.ErrorJSON, :not_found)
   end
+
+  # Removed the generic {:error, message} clause as it was specifically added
+  # to handle the "We don't delete subs" message, which should no longer be
+  # reachable via the API.
 end

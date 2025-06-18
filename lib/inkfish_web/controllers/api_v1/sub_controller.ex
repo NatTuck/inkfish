@@ -4,14 +4,22 @@ defmodule InkfishWeb.ApiV1.SubController do
   alias Inkfish.Subs
   alias Inkfish.Subs.Sub
   alias Inkfish.Assignments
-  # Removed unused alias: alias Inkfish.Users.Reg
   alias Inkfish.Users
 
   action_fallback InkfishWeb.FallbackController
 
   plug InkfishWeb.Plugs.RequireApiUser
 
-  def index(conn, %{"assignment_id" => asg_id} = params) do
+  def index(conn, params) do
+    # Explicitly check for assignment_id
+    unless Map.has_key?(params, "assignment_id") do
+      # Return a 400 Bad Request if assignment_id is missing
+      conn
+      |> put_status(:bad_request)
+      |> render(InkfishWeb.ErrorJSON, :error, message: "assignment_id is required")
+    end
+
+    asg_id = params["assignment_id"]
     user = conn.assigns[:current_user]
 
     # Fetch the assignment to get its course_id
@@ -64,11 +72,5 @@ defmodule InkfishWeb.ApiV1.SubController do
     end
   end
 
-  def delete(conn, %{"id" => id}) do
-    sub = Subs.get_sub!(id)
-
-    with {:ok, %Sub{}} <- Subs.delete_sub(sub) do
-      send_resp(conn, :no_content, "")
-    end
-  end
+  # Removed the delete/2 function as subs cannot be deleted via the API.
 end

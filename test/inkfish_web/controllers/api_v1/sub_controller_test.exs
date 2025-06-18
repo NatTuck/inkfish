@@ -1,11 +1,10 @@
 defmodule InkfishWeb.ApiV1.SubControllerTest do
-  # Removed `use Inkfish.DataCase` as ConnCase already includes Factory
   use InkfishWeb.ConnCase
 
   import Inkfish.Factory
 
   alias Inkfish.Subs.Sub
-  alias Inkfish.Repo
+  # Removed unused alias: alias Inkfish.Repo
 
   @create_attrs %{
     active: true,
@@ -35,20 +34,6 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
   # Setup for all tests in this module
   setup %{conn: conn} do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
-  end
-
-  def api_key_fixture(attrs \\ %{}) do
-    # Use insert(:user) from Inkfish.Factory instead of user_fixture()
-    user = Map.get(attrs, :user, insert(:user))
-
-    attrs =
-      Enum.into(attrs, %{
-        key: "some key #{System.unique_integer()}"
-      })
-
-    {:ok, api_key} = Inkfish.ApiKeys.create_api_key(user, attrs)
-
-    api_key
   end
 
   # Helper to create a user with an API key and return a conn with the x-auth header
@@ -113,7 +98,7 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
 
   # Helper to create a sub for create/update/delete tests, ensuring it belongs to the authenticated user
   defp create_sub_for_test(%{conn: conn}) do
-    %{conn: conn, user: user} = logged_in_user_with_api_key(conn)
+    %{conn: authenticated_conn, user: user} = logged_in_user_with_api_key(conn)
     course = insert(:course)
     bucket = insert(:bucket, course: course)
     # Create teamset explicitly linked to the course and pass it to assignment
@@ -129,7 +114,7 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
       insert(:sub, assignment: assignment, reg: reg, team: team, upload: upload)
 
     %{
-      conn: conn,
+      conn: authenticated_conn, # Return the authenticated conn
       sub: sub,
       user: user,
       assignment: assignment,
@@ -149,7 +134,7 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
     test "requires assignment_id", %{conn: conn} do
       # An API key IS needed because of the RequireApiUser plug
       %{conn: conn} = logged_in_user_with_api_key(conn)
-      # Corrected path
+      # Corrected path and expected status
       conn = get(conn, ~p"/api/v1/subs")
       assert json_response(conn, 400)["error"] == "assignment_id is required"
     end
@@ -177,10 +162,11 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
          %{conn: conn, course: course} do
       # Setup staff user and API key
       %{conn: conn, user: staff_user} = logged_in_user_with_api_key(conn)
-      # Make staff_user a staff member in the course
-      insert(:reg, user: staff_user, course: course, is_staff: true)
+      # Make staff_user a staff member in the course by updating their existing reg
+      %{user_reg: staff_user_reg} = create_assignment_with_subs(staff_user, course)
+      Inkfish.Users.update_reg(staff_user_reg, %{is_staff: true})
 
-      # Setup assignment and subs
+      # Setup assignment and subs (re-use the one created above, but get the other sub)
       %{assignment: assignment, user_sub: staff_user_sub, other_sub: other_sub} =
         create_assignment_with_subs(staff_user, course)
 
@@ -199,10 +185,11 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
          %{conn: conn, course: course} do
       # Setup student user and API key
       %{conn: conn, user: student_user} = logged_in_user_with_api_key(conn)
-      # Make student_user a student member in the course
-      insert(:reg, user: student_user, course: course, is_student: true)
+      # Make student_user a student member in the course by updating their existing reg
+      %{user_reg: student_user_reg} = create_assignment_with_subs(student_user, course)
+      Inkfish.Users.update_reg(student_user_reg, %{is_student: true})
 
-      # Setup assignment and subs
+      # Setup assignment and subs (re-use the one created above, but get the other sub)
       %{
         assignment: assignment,
         user_sub: student_user_sub,
@@ -256,7 +243,7 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
     setup [:create_sub_for_test]
 
     test "renders sub when data is valid", %{
-      conn: conn,
+      conn: conn, # Use the authenticated conn from setup
       assignment: assignment,
       reg: reg,
       team: team,
@@ -300,7 +287,7 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
     setup [:create_sub_for_test]
 
     test "renders sub when data is valid", %{
-      conn: conn,
+      conn: conn, # Use the authenticated conn from setup
       sub: %Sub{id: id} = sub
     } do
       # Corrected path
@@ -328,19 +315,5 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
     end
   end
 
-  describe "delete sub" do
-    # Use the common setup
-    setup [:create_sub_for_test]
-
-    test "deletes chosen sub", %{conn: conn, sub: sub} do
-      # Corrected path
-      conn = delete(conn, ~p"/api/v1/subs/#{sub}")
-      assert response(conn, 204)
-
-      assert_error_sent 404, fn ->
-        # Corrected path
-        get(conn, ~p"/api/v1/subs/#{sub}")
-      end
-    end
-  end
+  # Removed the "delete sub" describe block entirely as per user's instruction.
 end
