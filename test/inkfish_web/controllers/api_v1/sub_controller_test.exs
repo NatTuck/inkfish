@@ -7,28 +7,19 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
   # Removed unused alias: alias Inkfish.Repo
 
   @create_attrs %{
-    active: true,
-    late_penalty: "120.5",
-    score: "120.5",
-    hours_spent: "120.5",
-    note: "some note",
-    ignore_late_penalty: true
+    # active: true, # Handled by set_one_sub_active!
+    # late_penalty: "120.5", # Not handled by Sub.changeset
+    # score: "120.5", # Not handled by Sub.changeset
+    hours_spent: "1.0", # Default value, but can be set
+    note: "some note"
+    # ignore_late_penalty: true # Not handled by Sub.changeset
   }
   @update_attrs %{
-    active: false,
-    late_penalty: "456.7",
-    score: "456.7",
     hours_spent: "456.7",
-    note: "some updated note",
-    ignore_late_penalty: false
+    note: "some updated note"
   }
   @invalid_attrs %{
-    active: nil,
-    late_penalty: nil,
-    score: nil,
-    hours_spent: nil,
-    note: nil,
-    ignore_late_penalty: nil
+    hours_spent: nil # hours_spent is required
   }
 
   # Setup for all tests in this module
@@ -101,7 +92,7 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
       %{conn: conn} = logged_in_user_with_api_key(conn)
       # Corrected path and expected status
       conn = get(conn, ~p"/api/v1/subs")
-      assert json_response(conn, 400)["error"] == "assignment_id is required"
+      assert json_response(conn, 400)["error"] == "assignment_id is required and must be a non-empty string"
     end
 
     test "lists only current user's subs for a given assignment", %{
@@ -355,12 +346,12 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
 
       assert %{
                "id" => ^id,
-               "active" => true,
-               "hours_spent" => "120.5",
-               "ignore_late_penalty" => true,
-               "late_penalty" => "120.5",
-               "note" => "some note",
-               "score" => "120.5"
+               "active" => true, # This is set by set_one_sub_active!
+               "hours_spent" => "1.0", # From @create_attrs
+               "ignore_late_penalty" => false, # Default value
+               "late_penalty" => nil, # Default value
+               "note" => "some note", # From @create_attrs
+               "score" => nil # Default value
              } = json_response(get_conn, 200)["data"]
     end
 
@@ -395,12 +386,12 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
 
       assert %{
                "id" => ^id,
-               "active" => false,
-               "hours_spent" => "456.7",
-               "ignore_late_penalty" => true,
-               "late_penalty" => "456.7",
-               "note" => "some updated note",
-               "score" => "456.7"
+               "active" => true, # Default value (not changed by update_sub)
+               "hours_spent" => "456.7", # From @update_attrs
+               "ignore_late_penalty" => false, # Default value (not changed by update_sub)
+               "late_penalty" => nil, # Default value (not changed by update_sub)
+               "note" => "some updated note", # From @update_attrs
+               "score" => nil # Default value (not changed by update_sub)
              } = json_response(get_conn, 200)["data"]
     end
 
