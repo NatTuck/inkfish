@@ -4,7 +4,7 @@ defmodule Inkfish.Subs.Sub do
   import Ecto.Query, warn: false
 
   # Explicitly define id as integer
-  @primary_key {:id, :integer, autogenerate: true}
+  @primary_key {:id, :integer} # Removed autogenerate: true
   # Removed @foreign_key_type :binary_id as it's not directly related to the primary key type
   # and other foreign keys will infer their type from the associated schemas.
 
