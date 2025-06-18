@@ -51,4 +51,15 @@ defmodule Inkfish.Users.Reg do
       cset
     end
   end
+
+  @doc """
+  Retrieves a user's registration for a specific course.
+  """
+  def get_by_user_and_course(user_id, course_id) do
+    Inkfish.Repo.one(
+      from(r in __MODULE__,
+        where: r.user_id == ^user_id and r.course_id == ^course_id
+      )
+    )
+  end
 end

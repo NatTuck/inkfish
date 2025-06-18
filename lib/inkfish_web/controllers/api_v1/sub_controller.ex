@@ -4,7 +4,7 @@ defmodule InkfishWeb.ApiV1.SubController do
   alias Inkfish.Subs
   alias Inkfish.Subs.Sub
   alias Inkfish.Assignments
-  alias Inkfish.Users.Reg
+  # Removed unused alias: alias Inkfish.Users.Reg
   alias Inkfish.Users
 
   action_fallback InkfishWeb.FallbackController

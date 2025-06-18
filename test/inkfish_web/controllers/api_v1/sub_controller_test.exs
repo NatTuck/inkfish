@@ -1,5 +1,5 @@
 defmodule InkfishWeb.ApiV1.SubControllerTest do
-  use InkfishWeb.ConnCase
+  use InkfishWeb.ConnCase # Removed `use Inkfish.DataCase` as ConnCase already includes Factory
 
   import Inkfish.Factory
 
@@ -51,15 +51,9 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
   # Helper to create an assignment and associated subs for testing index action
   defp create_assignment_with_subs(user, course, assignment_attrs \\ %{}) do
     bucket = insert(:bucket, course: course)
-    assignment = insert(:assignment, Map.put(assignment_attrs, :bucket, bucket))
-    # Create a teamset explicitly linked to the course
+    # Create teamset explicitly linked to the course and pass it to assignment
     teamset = insert(:teamset, course: course)
-    # Update assignment to use this teamset
-    assignment =
-      Repo.update!(%Inkfish.Assignments.Assignment{
-        assignment
-        | teamset: teamset
-      })
+    assignment = insert(:assignment, Map.merge(assignment_attrs, %{bucket: bucket, teamset: teamset}))
 
     # Create a reg for the user in this course
     reg = insert(:reg, user: user, course: course)
@@ -102,14 +96,9 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
     %{conn: conn, user: user} = logged_in_user_with_api_key(conn)
     course = insert(:course)
     bucket = insert(:bucket, course: course)
-    assignment = insert(:assignment, bucket: bucket)
+    # Create teamset explicitly linked to the course and pass it to assignment
     teamset = insert(:teamset, course: course)
-
-    assignment =
-      Repo.update!(%Inkfish.Assignments.Assignment{
-        assignment
-        | teamset: teamset
-      })
+    assignment = insert(:assignment, bucket: bucket, teamset: teamset)
 
     reg = insert(:reg, user: user, course: course)
     team = insert(:team, teamset: assignment.teamset)
@@ -138,7 +127,8 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
     end
 
     test "requires assignment_id", %{conn: conn} do
-      # No API key needed for this specific test as it should fail before auth
+      # An API key IS needed because of the RequireApiUser plug
+      %{conn: conn} = logged_in_user_with_api_key(conn)
       # Corrected path
       conn = get(conn, ~p"/api/v1/subs")
       assert json_response(conn, 400)["error"] == "assignment_id is required"
@@ -218,13 +208,6 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
       %{conn: conn, user: user} = logged_in_user_with_api_key(conn)
       bucket = insert(:bucket, course: course)
       assignment = insert(:assignment, bucket: bucket)
-      teamset = insert(:teamset, course: course)
-
-      Repo.update!(%Inkfish.Assignments.Assignment{
-        assignment
-        | teamset: teamset
-      })
-
       # User needs to be registered in the course
       insert(:reg, user: user, course: course)
 
@@ -240,13 +223,6 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
       %{conn: conn, user: _user} = logged_in_user_with_api_key(conn)
       bucket = insert(:bucket, course: course)
       assignment = insert(:assignment, bucket: bucket)
-      teamset = insert(:teamset, course: course)
-
-      Repo.update!(%Inkfish.Assignments.Assignment{
-        assignment
-        | teamset: teamset
-      })
-
       # User is NOT registered in the course associated with the assignment
 
       # Corrected path
