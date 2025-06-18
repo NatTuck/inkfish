@@ -3,18 +3,20 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
 
   import Inkfish.Factory
 
+  alias Inkfish.Subs.Sub
+
   @create_attrs %{
-    # active: true, # Handled by set_one_sub_active!
-    # late_penalty: "120.5", # Not handled by Sub.changeset
-    # score: "120.5", # Not handled by Sub.changeset
-    # Default value, but can be set
+    # These are the fields that Sub.changeset actually casts
     hours_spent: "1.0",
     note: "some note"
-    # ignore_late_penalty: true # Not handled by Sub.changeset
+  }
+  @update_attrs %{
+    # These are the fields that Sub.changeset actually casts
+    hours_spent: "456.7",
+    note: "some updated note"
   }
   @invalid_attrs %{
-    # hours_spent is required
-    hours_spent: nil
+    hours_spent: nil # hours_spent is required
   }
 
   # Setup for all tests in this module
@@ -338,51 +340,49 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
 
   describe "create sub" do
     # This setup now provides conn, user, assignment, etc.
-    # Use a different name for the initial conn
     setup %{conn: initial_conn} do
-      %{
-        conn: authenticated_conn,
-        sub: sub,
-        user: user,
-        assignment: assignment,
-        reg: reg,
-        team: team,
-        upload: upload,
-        api_key: api_key
-      } = create_sub_for_test(%{conn: initial_conn})
+      %{conn: authenticated_conn, user: user, api_key: api_key} =
+        logged_in_user_with_api_key(initial_conn)
+
+      course = insert(:course)
+      reg = insert(:reg, user: user, course: course)
+
+      assignment =
+        insert(:assignment,
+          bucket: insert(:bucket, course: course),
+          teamset: insert(:teamset, course: course)
+        )
+
+      # Create a team for the reg and assignment
+      team = insert(:team, teamset: assignment.teamset)
+      insert(:team_member, team: team, reg: reg)
 
       %{
         conn: authenticated_conn,
-        sub: sub,
         user: user,
-        assignment: assignment,
         reg: reg,
-        team: team,
-        upload: upload,
+        assignment: assignment,
         api_key: api_key
       }
     end
 
     test "renders sub when data is valid", %{
-      # Use the authenticated conn from setup
       conn: conn,
-      assignment: assignment,
       reg: reg,
-      team: team,
-      upload: upload,
-      # Get api_key from setup
+      assignment: assignment,
       api_key: api_key
     } do
-      create_attrs =
+      create_params =
         Map.merge(@create_attrs, %{
-          assignment_id: assignment.id,
-          reg_id: reg.id,
-          team_id: team.id,
-          upload_id: upload.id
+          "reg_id" => Integer.to_string(reg.id),
+          "assignment_id" => Integer.to_string(assignment.id),
+          "file_name" => "my_submission.txt",
+          "file_contents" => "print('Hello, World!')",
+          "hours_spent" => "2.5"
         })
 
       # Perform the POST request
-      post_conn = post(conn, ~p"/api/v1/subs", sub: create_attrs)
+      post_conn = post(conn, ~p"/api/v1/subs", create_params)
       assert %{"id" => id} = json_response(post_conn, 201)["data"]
 
       # For the subsequent GET request, build a fresh authenticated conn
@@ -393,24 +393,136 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
 
       assert %{
                "id" => ^id,
-               # This is set by set_one_sub_active!
-               "active" => true,
-               # From @create_attrs
-               "hours_spent" => "1.0",
-               # Default value
-               "ignore_late_penalty" => false,
-               # Default value
-               "late_penalty" => nil,
-               # From @create_attrs
-               "note" => "some note",
-               # Default value
-               "score" => nil
+               "active" => true, # This is set by set_one_sub_active!
+               "hours_spent" => "2.5", # From create_params
+               "ignore_late_penalty" => false, # Default value
+               "late_penalty" => nil, # Default value
+               "note" => "", # Default value (not provided in create_params)
+               "score" => nil # Default value
              } = json_response(get_conn, 200)["data"]
     end
 
-    test "renders errors when data is invalid", %{conn: conn} do
+    test "renders errors when data is invalid", %{conn: conn, reg: reg, assignment: assignment} do
+      invalid_params =
+        Map.merge(@invalid_attrs, %{
+          "reg_id" => Integer.to_string(reg.id),
+          "assignment_id" => Integer.to_string(assignment.id),
+          "file_name" => "my_submission.txt",
+          "file_contents" => "print('Hello, World!')"
+        })
+
+      conn = post(conn, ~p"/api/v1/subs", invalid_params)
+      assert json_response(conn, 422)["errors"] != %{}
+    end
+
+    test "renders errors if reg_id does not belong to current user", %{conn: conn, assignment: assignment} do
+      other_user = insert(:user)
+      other_reg = insert(:reg, user: other_user, course: assignment.bucket.course)
+
+      create_params = %{
+        "reg_id" => Integer.to_string(other_reg.id),
+        "assignment_id" => Integer.to_string(assignment.id),
+        "file_name" => "my_submission.txt",
+        "file_contents" => "print('Hello, World!')",
+        "hours_spent" => "1.0"
+      }
+
+      conn = post(conn, ~p"/api/v1/subs", create_params)
+      assert json_response(conn, 400)["error"] == "Registration not found or does not belong to current user."
+    end
+
+    test "renders errors if assignment_id is not found", %{conn: conn, reg: reg} do
+      create_params = %{
+        "reg_id" => Integer.to_string(reg.id),
+        "assignment_id" => "999999999", # Non-existent assignment ID
+        "file_name" => "my_submission.txt",
+        "file_contents" => "print('Hello, World!')",
+        "hours_spent" => "1.0"
+      }
+
+      conn = post(conn, ~p"/api/v1/subs", create_params)
+      assert json_response(conn, 400)["error"] == "Assignment not found."
+    end
+
+    test "renders errors if file_name is missing", %{conn: conn, reg: reg, assignment: assignment} do
+      create_params = %{
+        "reg_id" => Integer.to_string(reg.id),
+        "assignment_id" => Integer.to_string(assignment.id),
+        # "file_name" => "my_submission.txt", # Missing
+        "file_contents" => "print('Hello, World!')",
+        "hours_spent" => "1.0"
+      }
+
+      conn = post(conn, ~p"/api/v1/subs", create_params)
+      assert json_response(conn, 400)["error"] == "file_name is missing"
+    end
+
+    test "renders errors if file_contents is missing", %{conn: conn, reg: reg, assignment: assignment} do
+      create_params = %{
+        "reg_id" => Integer.to_string(reg.id),
+        "assignment_id" => Integer.to_string(assignment.id),
+        "file_name" => "my_submission.txt",
+        # "file_contents" => "print('Hello, World!')", # Missing
+        "hours_spent" => "1.0"
+      }
+
+      conn = post(conn, ~p"/api/v1/subs", create_params)
+      assert json_response(conn, 400)["error"] == "file_contents is missing"
+    end
+  end
+
+  describe "update sub" do
+    # Use the common setup
+    setup %{conn: conn} do
+      %{conn: authenticated_conn, user: user, api_key: api_key} =
+        logged_in_user_with_api_key(conn)
+
+      # Create a sub directly within this setup's transaction
+      course = insert(:course)
+      bucket = insert(:bucket, course: course)
+      teamset = insert(:teamset, course: course)
+      assignment = insert(:assignment, bucket: bucket, teamset: teamset)
+      reg = insert(:reg, user: user, course: course)
+      team = insert(:team, teamset: teamset)
+      insert(:team_member, team: team, reg: reg)
+      upload = insert(:upload, user: user)
+      sub = insert(:sub, assignment: assignment, reg: reg, team: team, upload: upload)
+
+      %{conn: authenticated_conn, sub: sub, api_key: api_key}
+    end
+
+    test "renders sub when data is valid", %{
+      conn: conn,
+      sub: %{id: id} = _sub,
+      api_key: api_key
+    } do
+      # Perform the PUT request
+      put_conn = put(conn, ~p"/api/v1/subs/#{id}", sub: @update_attrs)
+      assert %{"id" => ^id} = json_response(put_conn, 200)["data"]
+
+      # For the subsequent GET request, build a fresh authenticated conn
+      get_conn = put_req_header(build_conn(), "x-auth", api_key.key)
+
+      # Perform the GET request
+      get_conn = get(get_conn, ~p"/api/v1/subs/#{id}")
+
+      assert %{
+               "id" => ^id,
+               "active" => true, # Default value (not changed by update_sub)
+               "hours_spent" => "456.7", # From @update_attrs
+               "ignore_late_penalty" => false, # Default value (not changed by update_sub)
+               "late_penalty" => nil, # Default value (not changed by update_sub)
+               "note" => "some updated note", # From @update_attrs
+               "score" => nil # Default value (not changed by update_sub)
+             } = json_response(get_conn, 200)["data"]
+    end
+
+    test "renders errors when data is invalid", %{
+      conn: conn,
+      sub: %{id: id} = _sub
+    } do
       # Corrected path
-      conn = post(conn, ~p"/api/v1/subs", sub: @invalid_attrs)
+      conn = put(conn, ~p"/api/v1/subs/#{id}", sub: @invalid_attrs)
       assert json_response(conn, 422)["errors"] != %{}
     end
   end

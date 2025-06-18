@@ -5,6 +5,9 @@ defmodule InkfishWeb.ApiV1.SubController do
   alias Inkfish.Subs.Sub
   alias Inkfish.Assignments
   alias Inkfish.Users
+  alias Inkfish.Uploads
+  alias Inkfish.Teams
+  alias Inkfish.Repo
 
   action_fallback InkfishWeb.FallbackController
 
@@ -63,15 +66,87 @@ defmodule InkfishWeb.ApiV1.SubController do
     end
   end
 
-  def create(conn, %{"sub" => sub_params}) do
-    with {:ok, %Sub{} = sub} <- Subs.create_sub(sub_params) do
-      conn
-      |> put_status(:created)
-      |> put_resp_header("location", ~p"/api/v1/subs/#{sub}")
-      # Use put_view
-      |> put_view(InkfishWeb.ApiV1.SubJSON)
-      # Use render/2
-      |> render(:show, sub: sub)
+  def create(conn, params) do
+    user = conn.assigns[:current_user]
+
+    with {:ok, reg_id} <- parse_and_validate_id(params, "reg_id"),
+         {:ok, assignment_id} <- parse_and_validate_id(params, "assignment_id"),
+         {:ok, hours_spent} <- parse_and_validate_decimal(params, "hours_spent"),
+         {:ok, file_name} <- Map.fetch(params, "file_name"),
+         {:ok, file_contents} <- Map.fetch(params, "file_contents"),
+         {:ok, reg} <- validate_reg_ownership(reg_id, user),
+         {:ok, assignment} <- validate_assignment_exists(assignment_id) do
+      # Create a temporary file for the upload
+      temp_file_path = Path.join(System.tmp_dir!(), "api_upload_#{System.unique_integer()}")
+      File.write!(temp_file_path, file_contents)
+
+      multi =
+        Ecto.Multi.new()
+        |> Ecto.Multi.run(:upload, fn _repo, _changes ->
+          upload_attrs = %{
+            name: file_name,
+            kind: "sub_upload", # Assuming a kind for submission uploads
+            user_id: user.id,
+            upload: %{path: temp_file_path, filename: file_name}
+          }
+          Uploads.create_upload(upload_attrs)
+        end)
+        |> Ecto.Multi.insert(:sub, fn %{upload: upload} ->
+          # Need to get the team for the reg and assignment
+          team = Teams.get_active_team(assignment, reg)
+          if team do
+            sub_attrs = %{
+              assignment_id: assignment.id,
+              reg_id: reg.id,
+              team_id: team.id,
+              upload_id: upload.id,
+              hours_spent: hours_spent,
+              note: Map.get(params, "note", "") # Optional note
+            }
+            Sub.changeset(%Sub{}, sub_attrs)
+          else
+            # If no active team, return an error
+            {:error, "No active team found for this registration and assignment."}
+          end
+        end)
+
+      case Repo.transaction(multi) do
+        {:ok, %{sub: sub}} ->
+          # Clean up temporary file
+          File.rm(temp_file_path)
+          conn
+          |> put_status(:created)
+          |> put_resp_header("location", ~p"/api/v1/subs/#{sub}")
+          |> put_view(InkfishWeb.ApiV1.SubJSON)
+          |> render(:show, sub: sub)
+
+        {:error, _name, changeset_or_error, _changes} ->
+          File.rm(temp_file_path) # Clean up temporary file on error
+          # Handle specific errors from multi
+          case changeset_or_error do
+            %Ecto.Changeset{} = changeset ->
+              conn
+              |> put_status(:unprocessable_entity)
+              |> put_view(InkfishWeb.ChangesetJSON)
+              |> render(:error, changeset: changeset)
+            message when is_binary(message) ->
+              conn
+              |> put_status(:bad_request)
+              |> put_view(InkfishWeb.ErrorJSON)
+              |> render(:error, message: message)
+            _ ->
+              conn
+              |> put_status(:internal_server_error)
+              |> put_view(InkfishWeb.ErrorJSON)
+              |> render(:error, message: "An unexpected error occurred.")
+          end
+      end
+    else
+      {:error, message} ->
+        conn
+        |> put_status(:bad_request)
+        |> put_view(InkfishWeb.ErrorJSON)
+        |> render(:error, message: message)
     end
   end
 
@@ -108,6 +183,45 @@ defmodule InkfishWeb.ApiV1.SubController do
       |> put_view(InkfishWeb.ErrorJSON)
       # Use render/2
       |> render(:not_found)
+    end
+  end
+
+  # Helper functions for parsing and validation
+  defp parse_and_validate_id(params, key) do
+    case Map.fetch(params, key) do
+      {:ok, id_str} when is_binary(id_str) and id_str != "" ->
+        try do
+          {:ok, String.to_integer(id_str)}
+        rescue
+          ArgumentError -> {:error, "#{key} must be a valid integer"}
+        end
+      _ -> {:error, "#{key} is required and must be a non-empty string"}
+    end
+  end
+
+  defp parse_and_validate_decimal(params, key) do
+    case Map.fetch(params, key) do
+      {:ok, val_str} when is_binary(val_str) and val_str != "" ->
+        try do
+          {:ok, Decimal.new(val_str)}
+        rescue
+          ArgumentError -> {:error, "#{key} must be a valid decimal number"}
+        end
+      _ -> {:error, "#{key} is required and must be a non-empty string"}
+    end
+  end
+
+  defp validate_reg_ownership(reg_id, user) do
+    case Users.get_reg(reg_id) do
+      %Users.Reg{user_id: ^(user.id)} = reg -> {:ok, reg}
+      _ -> {:error, "Registration not found or does not belong to current user."}
+    end
+  end
+
+  defp validate_assignment_exists(assignment_id) do
+    case Assignments.get_assignment(assignment_id) do
+      %Assignments.Assignment{} = assignment -> {:ok, assignment}
+      _ -> {:error, "Assignment not found."}
     end
   end
 end
