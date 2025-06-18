@@ -65,29 +65,30 @@ defmodule InkfishWeb.ApiV1.SubController do
   def show(conn, %{"id" => id}) do
     user = conn.assigns[:current_user]
 
-    case Subs.get_sub!(id) do
-      sub ->
-        # Check if the current user is the submitter of this sub
-        is_submitter = sub.reg.user_id == user.id
+    try do
+      sub = Subs.get_sub!(id)
 
-        # Check if the current user is staff/prof in the sub's course
-        course_id = sub.assignment.bucket.course_id
-        user_reg_in_course = Users.get_reg_by_user_and_course(user.id, course_id)
-        is_staff_or_prof = user_reg_in_course && (user_reg_in_course.is_staff || user_reg_in_course.is_prof)
+      # Check if the current user is the submitter of this sub
+      is_submitter = sub.reg.user_id == user.id
 
-        if is_submitter || is_staff_or_prof do
-          conn
-          |> put_view(InkfishWeb.ApiV1.SubJSON) # Use put_view
-          |> render(:show, sub: sub) # Use render/2
-        else
-          # Deny access: return 404 Not Found to avoid leaking information about existing IDs
-          conn
-          |> put_status(:not_found)
-          |> put_view(InkfishWeb.ErrorJSON) # Use put_view
-          |> render(:not_found) # Use render/2
-        end
-    rescue
-      Ecto.NoResultsError ->
+      # Check if the current user is staff/prof in the sub's course
+      course_id = sub.assignment.bucket.course_id
+      user_reg_in_course = Users.get_reg_by_user_and_course(user.id, course_id)
+      is_staff_or_prof = user_reg_in_course && (user_reg_in_course.is_staff || user_reg_in_course.is_prof)
+
+      if is_submitter || is_staff_or_prof do
+        conn
+        |> put_view(InkfishWeb.ApiV1.SubJSON) # Use put_view
+        |> render(:show, sub: sub) # Use render/2
+      else
+        # Deny access: return 404 Not Found to avoid leaking information about existing IDs
+        conn
+        |> put_status(:not_found)
+        |> put_view(InkfishWeb.ErrorJSON) # Use put_view
+        |> render(:not_found) # Use render/2
+      end
+    catch
+      :error, %Ecto.NoResultsError{} ->
         # If get_sub! raises NoResultsError, it means the sub doesn't exist
         conn
         |> put_status(:not_found)
