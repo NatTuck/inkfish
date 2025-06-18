@@ -164,11 +164,13 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
 
       other_user = insert(:user)
       other_reg = insert(:reg, user: other_user, course: course)
+      other_team = insert(:team, teamset: teamset)
+      insert(:team_member, team: other_team, reg: other_reg)
       other_sub =
         insert(:sub,
           assignment: assignment,
           reg: other_reg,
-          team: insert(:team, teamset: teamset),
+          team: other_team,
           upload: insert(:upload, user: other_user)
         )
 
@@ -319,8 +321,8 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
 
   describe "create sub" do
     # This setup now provides conn, user, assignment, etc.
-    setup %{conn: conn} do # Destructure conn here
-      %{conn: authenticated_conn, sub: sub, user: user, assignment: assignment, reg: reg, team: team, upload: upload} = create_sub_for_test(%{conn: conn})
+    setup %{conn: initial_conn} do # Use a different name for the initial conn
+      %{conn: authenticated_conn, sub: sub, user: user, assignment: assignment, reg: reg, team: team, upload: upload} = create_sub_for_test(%{conn: initial_conn})
       %{conn: authenticated_conn, sub: sub, user: user, assignment: assignment, reg: reg, team: team, upload: upload}
     end
 
@@ -366,8 +368,8 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
 
   describe "update sub" do
     # Use the common setup
-    setup %{conn: conn} do # Destructure conn here
-      %{conn: authenticated_conn, sub: sub, user: user, assignment: assignment, reg: reg, team: team, upload: upload} = create_sub_for_test(%{conn: conn})
+    setup %{conn: initial_conn} do # Use a different name for the initial conn
+      %{conn: authenticated_conn, sub: sub, user: user, assignment: assignment, reg: reg, team: team, upload: upload} = create_sub_for_test(%{conn: initial_conn})
       %{conn: authenticated_conn, sub: sub, user: user, assignment: assignment, reg: reg, team: team, upload: upload}
     end
 
