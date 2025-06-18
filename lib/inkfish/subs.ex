@@ -30,7 +30,7 @@ defmodule Inkfish.Subs do
       [%Sub{}, ...]
 
   """
-  def list_subs do
+  def list_subs() do
     Repo.all(Sub)
   end
 
@@ -47,6 +47,29 @@ defmodule Inkfish.Subs do
         order_by: [desc: sub.inserted_at]
       )
     )
+  end
+
+  def list_subs_for_api(asg_id, reg_id \\ nil, page \\ 0) do
+    offset = 100 * page
+
+    query =
+      from(sub in Sub,
+        where: sub.assignment_id == ^asg_id,
+        order_by: [desc: sub.inserted_at],
+        limit: 100,
+        offset: ^offset
+      )
+
+    query =
+      if reg_id do
+        from(sub in query,
+          where: sub.reg_id == ^reg_id
+        )
+      else
+        query
+      end
+
+    Repo.all(query)
   end
 
   def active_sub_for_reg(asg_id, %Reg{} = reg) do
@@ -138,7 +161,8 @@ defmodule Inkfish.Subs do
         inner_join: bucket in assoc(as, :bucket),
         inner_join: course in assoc(bucket, :course),
         preload: [
-          assignment: {as, bucket: {bucket, course: course}, grade_columns: grade_columns},
+          assignment:
+            {as, bucket: {bucket, course: course}, grade_columns: grade_columns},
           team: {team, regs: team_regs}
         ]
       )
