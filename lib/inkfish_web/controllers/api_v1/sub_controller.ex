@@ -3,8 +3,9 @@ defmodule InkfishWeb.ApiV1.SubController do
 
   alias Inkfish.Subs
   alias Inkfish.Subs.Sub
-  alias Inkfish.Assignments # Added alias for Assignments
-  alias Inkfish.Users.Reg # Added alias for Reg
+  alias Inkfish.Assignments
+  alias Inkfish.Users.Reg
+  alias Inkfish.Users
 
   action_fallback InkfishWeb.FallbackController
 
@@ -19,18 +20,22 @@ defmodule InkfishWeb.ApiV1.SubController do
     course_id = assignment.bucket.course_id
 
     # Find the user's registration for this course
-    user_reg = Reg.get_by_user_and_course(user.id, course_id)
+    user_reg = Users.get_reg_by_user_and_course(user.id, course_id)
 
     # Determine reg_id to filter by
     reg_id_filter =
-      if Map.get(params, "all") && user_reg && (user_reg.is_staff || user_reg.is_prof) do
-        nil # Staff/prof with 'all' param sees all subs for the assignment
+      if Map.get(params, "all") && user_reg &&
+           (user_reg.is_staff || user_reg.is_prof) do
+        # Staff/prof with 'all' param sees all subs for the assignment
+        nil
       else
-        user_reg && user_reg.id # Otherwise, filter by current user's reg_id (if they have one for this course)
+        # Otherwise, filter by current user's reg_id (if they have one for this course)
+        user_reg && user_reg.id
       end
 
     # Handle pagination
-    page = Map.get(params, "page", "0") |> String.to_integer() # Default to "0" string, then convert
+    # Default to "0" string, then convert
+    page = Map.get(params, "page", "0") |> String.to_integer()
 
     # Call Subs.list_subs_for_api
     subs = Subs.list_subs_for_api(asg_id, reg_id_filter, page)
