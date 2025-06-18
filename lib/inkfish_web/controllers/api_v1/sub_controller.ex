@@ -3,15 +3,37 @@ defmodule InkfishWeb.ApiV1.SubController do
 
   alias Inkfish.Subs
   alias Inkfish.Subs.Sub
+  alias Inkfish.Assignments # Added alias for Assignments
+  alias Inkfish.Users.Reg # Added alias for Reg
 
   action_fallback InkfishWeb.FallbackController
 
   plug InkfishWeb.Plugs.RequireApiUser
 
-  def index(conn, %{"assignment_id" => asg_id}) do
+  def index(conn, %{"assignment_id" => asg_id} = params) do
     user = conn.assigns[:current_user]
 
-    subs = Subs.list_subs_for_api(limit: 10)
+    # Fetch the assignment to get its course_id
+    # Use get_assignment_path! to ensure associated data (bucket, course) is loaded
+    assignment = Assignments.get_assignment_path!(asg_id)
+    course_id = assignment.bucket.course_id
+
+    # Find the user's registration for this course
+    user_reg = Reg.get_by_user_and_course(user.id, course_id)
+
+    # Determine reg_id to filter by
+    reg_id_filter =
+      if Map.get(params, "all") && user_reg && (user_reg.is_staff || user_reg.is_prof) do
+        nil # Staff/prof with 'all' param sees all subs for the assignment
+      else
+        user_reg && user_reg.id # Otherwise, filter by current user's reg_id (if they have one for this course)
+      end
+
+    # Handle pagination
+    page = Map.get(params, "page", "0") |> String.to_integer() # Default to "0" string, then convert
+
+    # Call Subs.list_subs_for_api
+    subs = Subs.list_subs_for_api(asg_id, reg_id_filter, page)
     render(conn, :index, subs: subs)
   end
 
