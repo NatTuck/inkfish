@@ -309,7 +309,8 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
 
     test "returns 404 for non-existent sub", %{conn: conn} do
       %{conn: conn} = logged_in_user_with_api_key(conn)
-      non_existent_id = Ecto.UUID.generate() # A valid-looking but non-existent UUID
+      # Use a large integer for a non-existent ID
+      non_existent_id = 9_999_999_999
 
       conn = get(conn, ~p"/api/v1/subs/#{non_existent_id}")
       assert json_response(conn, 404)["errors"]["detail"] == "Not Found"

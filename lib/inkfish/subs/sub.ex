@@ -3,9 +3,10 @@ defmodule Inkfish.Subs.Sub do
   import Ecto.Changeset
   import Ecto.Query, warn: false
 
-  # Explicitly define id as binary_id (UUID)
-  @primary_key {:id, :binary_id, autogenerate: true}
-  @foreign_key_type :binary_id
+  # Explicitly define id as integer
+  @primary_key {:id, :integer, autogenerate: true}
+  # Removed @foreign_key_type :binary_id as it's not directly related to the primary key type
+  # and other foreign keys will infer their type from the associated schemas.
 
   @timestamps_opts [
     type: :utc_datetime,
@@ -22,7 +23,7 @@ defmodule Inkfish.Subs.Sub do
     belongs_to :assignment, Inkfish.Assignments.Assignment
     belongs_to :reg, Inkfish.Users.Reg
     belongs_to :team, Inkfish.Teams.Team
-    belongs_to :upload, Inkfish.Uploads.Upload, type: :binary_id
+    belongs_to :upload, Inkfish.Uploads.Upload, type: :binary_id # upload_id remains binary_id
     belongs_to :grader, Inkfish.Users.Reg
     has_many :grades, Inkfish.Grades.Grade
 
