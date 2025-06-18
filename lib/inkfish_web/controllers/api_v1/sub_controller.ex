@@ -10,6 +10,9 @@ defmodule InkfishWeb.ApiV1.SubController do
 
   plug InkfishWeb.Plugs.RequireApiUser
 
+  # There are intentinally no update or delete functions
+  # here; do not add them.
+
   def index(conn, params) do
     case Map.fetch(params, "assignment_id") do
       {:ok, asg_id_param} when is_binary(asg_id_param) and asg_id_param != "" ->
@@ -107,21 +110,4 @@ defmodule InkfishWeb.ApiV1.SubController do
       |> render(:not_found)
     end
   end
-
-  def update(conn, %{"id" => id_str, "sub" => sub_params}) do
-    # Convert ID to integer. This might raise ArgumentError.
-    id = String.to_integer(id_str)
-    # This might raise Ecto.NoResultsError.
-    sub = Subs.get_sub!(id)
-
-    with {:ok, %Sub{} = sub} <- Subs.update_sub(sub, sub_params) do
-      conn
-      # Use put_view
-      |> put_view(InkfishWeb.ApiV1.SubJSON)
-      # Use render/2
-      |> render(:show, sub: sub)
-    end
-  end
-
-  # There is intentionally no update or delete action.
 end
