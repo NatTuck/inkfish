@@ -20,6 +20,14 @@ defmodule InkfishWeb.FallbackController do
     |> render(:not_found) # Use render/2
   end
 
+  # Handle ArgumentError (e.g., from String.to_integer for invalid IDs)
+  def call(conn, {:error, %ArgumentError{message: message}}) do
+    conn
+    |> put_status(:bad_request)
+    |> put_view(InkfishWeb.ErrorJSON)
+    |> render(:error, message: message)
+  end
+
   # Removed the generic {:error, message} clause as it was specifically added
   # to handle the "We don't delete subs" message, which should no longer be
   # reachable via the API.
