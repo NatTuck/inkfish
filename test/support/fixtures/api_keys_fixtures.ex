@@ -9,7 +9,8 @@ defmodule Inkfish.ApiKeysFixtures do
   Generate an API key.
   """
   def api_key_fixture(attrs \\ %{}) do
-    user = Map.get(attrs, :user, user_fixture())
+    # Use insert(:user) from Inkfish.Factory instead of user_fixture()
+    user = Map.get(attrs, :user, insert(:user))
 
     attrs =
       Enum.into(attrs, %{
