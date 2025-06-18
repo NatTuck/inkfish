@@ -48,10 +48,9 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
     %{conn: conn, user: user, api_key: api_key}
   end
 
-  # Helper to create an assignment and associated subs for testing index action
-  defp create_assignment_with_subs(user, course, assignment_attrs \\ %{}) do
+  # Helper to create a sub for a specific user in a given course
+  defp create_sub_for_user(user, course, assignment_attrs \\ %{}) do
     bucket = insert(:bucket, course: course)
-    # Create teamset explicitly linked to the course and pass it to assignment
     teamset = insert(:teamset, course: course)
 
     assignment =
@@ -60,58 +59,23 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
         Map.merge(assignment_attrs, %{bucket: bucket, teamset: teamset})
       )
 
-    # Create a reg for the user in this course
     reg = insert(:reg, user: user, course: course)
-    team = insert(:team, teamset: assignment.teamset)
-    insert(:team_member, team: team, reg: reg)
-
-    # Create a sub for the user
-    user_sub =
-      insert(:sub,
-        assignment: assignment,
-        reg: reg,
-        team: team,
-        upload: insert(:upload, user: user)
-      )
-
-    # Create another user and their sub for the same assignment
-    other_user = insert(:user)
-    other_reg = insert(:reg, user: other_user, course: course)
-    other_team = insert(:team, teamset: assignment.teamset)
-    insert(:team_member, team: other_team, reg: other_reg)
-
-    other_sub =
-      insert(:sub,
-        assignment: assignment,
-        reg: other_reg,
-        team: other_team,
-        upload: insert(:upload, user: other_user)
-      )
-
-    %{
-      assignment: assignment,
-      user_sub: user_sub,
-      other_sub: other_sub,
-      user_reg: reg
-    }
-  end
-
-  # Helper to create a sub for create/update/delete tests, ensuring it belongs to the authenticated user
-  defp create_sub_for_test(%{conn: conn}) do
-    %{conn: authenticated_conn, user: user} = logged_in_user_with_api_key(conn)
-    course = insert(:course)
-    bucket = insert(:bucket, course: course)
-    # Create teamset explicitly linked to the course and pass it to assignment
-    teamset = insert(:teamset, course: course)
-    assignment = insert(:assignment, bucket: bucket, teamset: teamset)
-
-    reg = insert(:reg, user: user, course: course)
-    team = insert(:team, teamset: assignment.teamset)
+    team = insert(:team, teamset: teamset)
     insert(:team_member, team: team, reg: reg)
     upload = insert(:upload, user: user)
 
     sub =
       insert(:sub, assignment: assignment, reg: reg, team: team, upload: upload)
+
+    %{sub: sub, user: user, assignment: assignment, reg: reg, team: team, upload: upload}
+  end
+
+  # Helper to create a sub for create/update tests, ensuring it belongs to the authenticated user
+  defp create_sub_for_test(%{conn: conn}) do
+    %{conn: authenticated_conn, user: user} = logged_in_user_with_api_key(conn)
+    course = insert(:course)
+    %{sub: sub, assignment: assignment, reg: reg, team: team, upload: upload} =
+      create_sub_for_user(user, course)
 
     %{
       conn: authenticated_conn, # Return the authenticated conn
@@ -146,11 +110,33 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
       # Setup user and API key
       %{conn: conn, user: user} = logged_in_user_with_api_key(conn)
 
-      # Setup assignment and subs
-      %{assignment: assignment, user_sub: user_sub, other_sub: _other_sub} =
-        create_assignment_with_subs(user, course)
+      bucket = insert(:bucket, course: course)
+      teamset = insert(:teamset, course: course)
+      assignment = insert(:assignment, bucket: bucket, teamset: teamset)
 
-      # Corrected path
+      reg = insert(:reg, user: user, course: course)
+      team = insert(:team, teamset: teamset)
+      insert(:team_member, team: team, reg: reg)
+      user_sub =
+        insert(:sub,
+          assignment: assignment,
+          reg: reg,
+          team: team,
+          upload: insert(:upload, user: user)
+        )
+
+      other_user = insert(:user)
+      other_reg = insert(:reg, user: other_user, course: course)
+      other_team = insert(:team, teamset: teamset)
+      insert(:team_member, team: other_team, reg: other_reg)
+      _other_sub =
+        insert(:sub,
+          assignment: assignment,
+          reg: other_reg,
+          team: other_team,
+          upload: insert(:upload, user: other_user)
+        )
+
       conn = get(conn, ~p"/api/v1/subs", %{assignment_id: assignment.id})
 
       assert json_response(conn, 200)["data"]
@@ -161,18 +147,33 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
     test "staff/prof user can list all subs for a given assignment with 'all' parameter",
          %{conn: conn, course: course} do
       # Setup staff user and API key
-      %{conn: conn, user: staff_user} = logged_in_user_with_api_key(conn)
-      # Make staff_user a staff member in the course by updating their existing reg
-      %{user_reg: staff_user_reg} = create_assignment_with_subs(staff_user, course)
-      Inkfish.Users.update_reg(staff_user_reg, %{is_staff: true})
+      %{conn: staff_conn, user: staff_user} = logged_in_user_with_api_key(conn)
+      staff_reg = insert(:reg, user: staff_user, course: course, is_staff: true)
 
-      # Setup assignment and subs (re-use the one created above, but get the other sub)
-      %{assignment: assignment, user_sub: staff_user_sub, other_sub: other_sub} =
-        create_assignment_with_subs(staff_user, course)
+      bucket = insert(:bucket, course: course)
+      teamset = insert(:teamset, course: course)
+      assignment = insert(:assignment, bucket: bucket, teamset: teamset)
 
-      # Corrected path
+      staff_user_sub =
+        insert(:sub,
+          assignment: assignment,
+          reg: staff_reg,
+          team: insert(:team, teamset: teamset),
+          upload: insert(:upload, user: staff_user)
+        )
+
+      other_user = insert(:user)
+      other_reg = insert(:reg, user: other_user, course: course)
+      other_sub =
+        insert(:sub,
+          assignment: assignment,
+          reg: other_reg,
+          team: insert(:team, teamset: teamset),
+          upload: insert(:upload, user: other_user)
+        )
+
       conn =
-        get(conn, ~p"/api/v1/subs", %{assignment_id: assignment.id, all: "true"})
+        get(staff_conn, ~p"/api/v1/subs", %{assignment_id: assignment.id, all: "true"})
 
       response_ids =
         json_response(conn, 200)["data"] |> Enum.map(& &1["id"]) |> Enum.sort()
@@ -184,23 +185,34 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
     test "non-staff/prof user cannot list all subs for a given assignment with 'all' parameter",
          %{conn: conn, course: course} do
       # Setup student user and API key
-      %{conn: conn, user: student_user} = logged_in_user_with_api_key(conn)
-      # Make student_user a student member in the course by updating their existing reg
-      %{user_reg: student_user_reg} = create_assignment_with_subs(student_user, course)
-      Inkfish.Users.update_reg(student_user_reg, %{is_student: true})
+      %{conn: student_conn, user: student_user} = logged_in_user_with_api_key(conn)
+      student_reg = insert(:reg, user: student_user, course: course, is_student: true)
 
-      # Setup assignment and subs (re-use the one created above, but get the other sub)
-      %{
-        assignment: assignment,
-        user_sub: student_user_sub,
-        other_sub: _other_sub
-      } = create_assignment_with_subs(student_user, course)
+      bucket = insert(:bucket, course: course)
+      teamset = insert(:teamset, course: course)
+      assignment = insert(:assignment, bucket: bucket, teamset: teamset)
 
-      # Corrected path
+      student_user_sub =
+        insert(:sub,
+          assignment: assignment,
+          reg: student_reg,
+          team: insert(:team, teamset: teamset),
+          upload: insert(:upload, user: student_user)
+        )
+
+      other_user = insert(:user)
+      other_reg = insert(:reg, user: other_user, course: course)
+      _other_sub =
+        insert(:sub,
+          assignment: assignment,
+          reg: other_reg,
+          team: insert(:team, teamset: teamset),
+          upload: insert(:upload, user: other_user)
+        )
+
       conn =
-        get(conn, ~p"/api/v1/subs", %{assignment_id: assignment.id, all: "true"})
+        get(student_conn, ~p"/api/v1/subs", %{assignment_id: assignment.id, all: "true"})
 
-      # The user should still only see their own sub, even if 'all' is specified
       response_ids =
         json_response(conn, 200)["data"] |> Enum.map(& &1["id"]) |> Enum.sort()
 
@@ -213,12 +225,12 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
       course: course
     } do
       %{conn: conn, user: user} = logged_in_user_with_api_key(conn)
-      bucket = insert(:bucket, course: course)
-      assignment = insert(:assignment, bucket: bucket)
-      # User needs to be registered in the course
-      insert(:reg, user: user, course: course)
+      insert(:reg, user: user, course: course) # User needs to be registered in the course
 
-      # Corrected path
+      bucket = insert(:bucket, course: course)
+      teamset = insert(:teamset, course: course)
+      assignment = insert(:assignment, bucket: bucket, teamset: teamset)
+
       conn = get(conn, ~p"/api/v1/subs", %{assignment_id: assignment.id})
       assert json_response(conn, 200)["data"] == []
     end
@@ -228,13 +240,79 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
       course: course
     } do
       %{conn: conn, user: _user} = logged_in_user_with_api_key(conn)
-      bucket = insert(:bucket, course: course)
-      assignment = insert(:assignment, bucket: bucket)
-      # User is NOT registered in the course associated with the assignment
 
-      # Corrected path
+      bucket = insert(:bucket, course: course)
+      teamset = insert(:teamset, course: course)
+      assignment = insert(:assignment, bucket: bucket, teamset: teamset)
+
       conn = get(conn, ~p"/api/v1/subs", %{assignment_id: assignment.id})
       assert json_response(conn, 200)["data"] == []
+    end
+  end
+
+  describe "show sub" do
+    test "user can see their own sub", %{conn: conn} do
+      %{conn: conn, user: user} = logged_in_user_with_api_key(conn)
+      course = insert(:course)
+      %{sub: sub} = create_sub_for_user(user, course)
+
+      conn = get(conn, ~p"/api/v1/subs/#{sub.id}")
+      assert json_response(conn, 200)["data"]["id"] == sub.id
+    end
+
+    test "user cannot see another user's sub", %{conn: conn} do
+      %{conn: user_a_conn, user: _user_a} = logged_in_user_with_api_key(conn)
+      user_b = insert(:user)
+      course = insert(:course)
+      %{sub: sub_b} = create_sub_for_user(user_b, course)
+
+      conn = get(user_a_conn, ~p"/api/v1/subs/#{sub_b.id}")
+      assert json_response(conn, 404)["errors"]["detail"] == "Not Found"
+    end
+
+    test "staff user can see any sub in their course", %{conn: conn} do
+      %{conn: staff_conn, user: staff_user} = logged_in_user_with_api_key(conn)
+      course = insert(:course)
+      insert(:reg, user: staff_user, course: course, is_staff: true)
+
+      student_user = insert(:user)
+      %{sub: student_sub} = create_sub_for_user(student_user, course)
+
+      conn = get(staff_conn, ~p"/api/v1/subs/#{student_sub.id}")
+      assert json_response(conn, 200)["data"]["id"] == student_sub.id
+    end
+
+    test "prof user can see any sub in their course", %{conn: conn} do
+      %{conn: prof_conn, user: prof_user} = logged_in_user_with_api_key(conn)
+      course = insert(:course)
+      insert(:reg, user: prof_user, course: course, is_prof: true)
+
+      student_user = insert(:user)
+      %{sub: student_sub} = create_sub_for_user(student_user, course)
+
+      conn = get(prof_conn, ~p"/api/v1/subs/#{student_sub.id}")
+      assert json_response(conn, 200)["data"]["id"] == student_sub.id
+    end
+
+    test "staff/prof user cannot see a sub in a different course", %{conn: conn} do
+      %{conn: staff_conn, user: staff_user} = logged_in_user_with_api_key(conn)
+      course_a = insert(:course)
+      insert(:reg, user: staff_user, course: course_a, is_staff: true)
+
+      course_b = insert(:course)
+      student_user = insert(:user)
+      %{sub: student_sub_in_course_b} = create_sub_for_user(student_user, course_b)
+
+      conn = get(staff_conn, ~p"/api/v1/subs/#{student_sub_in_course_b.id}")
+      assert json_response(conn, 404)["errors"]["detail"] == "Not Found"
+    end
+
+    test "returns 404 for non-existent sub", %{conn: conn} do
+      %{conn: conn} = logged_in_user_with_api_key(conn)
+      non_existent_id = Ecto.UUID.generate() # A valid-looking but non-existent UUID
+
+      conn = get(conn, ~p"/api/v1/subs/#{non_existent_id}")
+      assert json_response(conn, 404)["errors"]["detail"] == "Not Found"
     end
   end
 

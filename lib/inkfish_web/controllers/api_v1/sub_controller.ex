@@ -60,8 +60,27 @@ defmodule InkfishWeb.ApiV1.SubController do
   end
 
   def show(conn, %{"id" => id}) do
+    user = conn.assigns[:current_user]
+
+    # get_sub! preloads reg, assignment, bucket, and course
     sub = Subs.get_sub!(id)
-    render(conn, :show, sub: sub)
+
+    # Check if the current user is the submitter of this sub
+    is_submitter = sub.reg.user_id == user.id
+
+    # Check if the current user is staff/prof in the sub's course
+    course_id = sub.assignment.bucket.course_id
+    user_reg_in_course = Users.get_reg_by_user_and_course(user.id, course_id)
+    is_staff_or_prof = user_reg_in_course && (user_reg_in_course.is_staff || user_reg_in_course.is_prof)
+
+    if is_submitter || is_staff_or_prof do
+      render(conn, :show, sub: sub)
+    else
+      # Deny access: return 404 Not Found to avoid leaking information about existing IDs
+      conn
+      |> put_status(:not_found)
+      |> render(InkfishWeb.ErrorJSON, :not_found)
+    end
   end
 
   def update(conn, %{"id" => id, "sub" => sub_params}) do

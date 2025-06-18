@@ -133,6 +133,9 @@ defmodule Inkfish.Subs do
         inner_join: reg in assoc(sub, :reg),
         inner_join: user in assoc(reg, :user),
         inner_join: team in assoc(sub, :team),
+        inner_join: as in assoc(sub, :assignment), # Added for show action authorization
+        inner_join: bucket in assoc(as, :bucket), # Added for show action authorization
+        inner_join: course in assoc(bucket, :course), # Added for show action authorization
         left_join: grader in assoc(sub, :grader),
         left_join: gruser in assoc(grader, :user),
         left_join: grades in assoc(sub, :grades),
@@ -143,7 +146,8 @@ defmodule Inkfish.Subs do
           team: team,
           grades: {grades, grade_column: gc, line_comments: lcs},
           reg: {reg, user: user},
-          grader: {grader, user: gruser}
+          grader: {grader, user: gruser},
+          assignment: {as, bucket: {bucket, course: course}} # Preload assignment with bucket and course
         ]
       )
     )
