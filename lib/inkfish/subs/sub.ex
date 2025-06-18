@@ -3,7 +3,9 @@ defmodule Inkfish.Subs.Sub do
   import Ecto.Changeset
   import Ecto.Query, warn: false
 
-  alias __MODULE__
+  # Explicitly define id as binary_id (UUID)
+  @primary_key {:id, :binary_id, autogenerate: true}
+  @foreign_key_type :binary_id
 
   @timestamps_opts [
     type: :utc_datetime,

@@ -9,13 +9,15 @@ defmodule InkfishWeb.FallbackController do
   def call(conn, {:error, %Ecto.Changeset{} = changeset}) do
     conn
     |> put_status(:unprocessable_entity)
-    |> render(InkfishWeb.ChangesetJSON, :error, changeset: changeset)
+    |> put_view(InkfishWeb.ChangesetJSON) # Use put_view
+    |> render(:error, changeset: changeset) # Use render/2
   end
 
   def call(conn, {:error, :not_found}) do
     conn
     |> put_status(:not_found)
-    |> render(InkfishWeb.ErrorJSON, :not_found)
+    |> put_view(InkfishWeb.ErrorJSON) # Use put_view
+    |> render(:not_found) # Use render/2
   end
 
   # Removed the generic {:error, message} clause as it was specifically added

@@ -16,7 +16,9 @@ defmodule InkfishWeb.ApiV1.SubController do
       # Return a 400 Bad Request if assignment_id is missing
       conn
       |> put_status(:bad_request)
-      |> render(InkfishWeb.ErrorJSON, :error, message: "assignment_id is required")
+      |> put_view(InkfishWeb.ErrorJSON) # Use put_view
+      |> render(:error, message: "assignment_id is required") # Use render/2
+      |> halt() # Halt execution
     end
 
     asg_id = params["assignment_id"]
@@ -47,7 +49,9 @@ defmodule InkfishWeb.ApiV1.SubController do
 
     # Call Subs.list_subs_for_api
     subs = Subs.list_subs_for_api(asg_id, reg_id_filter, page)
-    render(conn, :index, subs: subs)
+    conn
+    |> put_view(InkfishWeb.ApiV1.SubJSON) # Use put_view
+    |> render(:index, subs: subs) # Use render/2
   end
 
   def create(conn, %{"sub" => sub_params}) do
@@ -55,7 +59,8 @@ defmodule InkfishWeb.ApiV1.SubController do
       conn
       |> put_status(:created)
       |> put_resp_header("location", ~p"/api/v1/subs/#{sub}")
-      |> render(:show, sub: sub)
+      |> put_view(InkfishWeb.ApiV1.SubJSON) # Use put_view
+      |> render(:show, sub: sub) # Use render/2
     end
   end
 
@@ -74,12 +79,15 @@ defmodule InkfishWeb.ApiV1.SubController do
     is_staff_or_prof = user_reg_in_course && (user_reg_in_course.is_staff || user_reg_in_course.is_prof)
 
     if is_submitter || is_staff_or_prof do
-      render(conn, :show, sub: sub)
+      conn
+      |> put_view(InkfishWeb.ApiV1.SubJSON) # Use put_view
+      |> render(:show, sub: sub) # Use render/2
     else
       # Deny access: return 404 Not Found to avoid leaking information about existing IDs
       conn
       |> put_status(:not_found)
-      |> render(InkfishWeb.ErrorJSON, :not_found)
+      |> put_view(InkfishWeb.ErrorJSON) # Use put_view
+      |> render(:not_found) # Use render/2
     end
   end
 
@@ -87,7 +95,9 @@ defmodule InkfishWeb.ApiV1.SubController do
     sub = Subs.get_sub!(id)
 
     with {:ok, %Sub{} = sub} <- Subs.update_sub(sub, sub_params) do
-      render(conn, :show, sub: sub)
+      conn
+      |> put_view(InkfishWeb.ApiV1.SubJSON) # Use put_view
+      |> render(:show, sub: sub) # Use render/2
     end
   end
 

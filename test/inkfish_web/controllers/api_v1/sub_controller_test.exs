@@ -318,7 +318,10 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
 
   describe "create sub" do
     # This setup now provides conn, user, assignment, etc.
-    setup [:create_sub_for_test]
+    setup %{conn: conn} do # Destructure conn here
+      %{conn: authenticated_conn, sub: sub, user: user, assignment: assignment, reg: reg, team: team, upload: upload} = create_sub_for_test(%{conn: conn})
+      %{conn: authenticated_conn, sub: sub, user: user, assignment: assignment, reg: reg, team: team, upload: upload}
+    end
 
     test "renders sub when data is valid", %{
       conn: conn, # Use the authenticated conn from setup
@@ -362,7 +365,10 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
 
   describe "update sub" do
     # Use the common setup
-    setup [:create_sub_for_test]
+    setup %{conn: conn} do # Destructure conn here
+      %{conn: authenticated_conn, sub: sub, user: user, assignment: assignment, reg: reg, team: team, upload: upload} = create_sub_for_test(%{conn: conn})
+      %{conn: authenticated_conn, sub: sub, user: user, assignment: assignment, reg: reg, team: team, upload: upload}
+    end
 
     test "renders sub when data is valid", %{
       conn: conn, # Use the authenticated conn from setup
