@@ -16,6 +16,7 @@ defmodule Inkfish.Factory do
   alias Inkfish.Grades.Grade
   alias Inkfish.LineComments.LineComment
   alias Inkfish.AgJobs.AgJob
+  alias Inkfish.ApiKeys.ApiKey
 
   def stock_course do
     course_params = %{
@@ -218,6 +219,14 @@ defmodule Inkfish.Factory do
       sub_id: sub.id,
       dupkey: dupkey,
       prio: 1
+    }
+  end
+
+  def api_key_factory do
+    %ApiKey{
+      name: "Some API Key",
+      key: "someapikeyvalue",
+      user: build(:user)
     }
   end
 end
