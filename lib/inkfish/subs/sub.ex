@@ -3,10 +3,7 @@ defmodule Inkfish.Subs.Sub do
   import Ecto.Changeset
   import Ecto.Query, warn: false
 
-  # Explicitly define id as integer
-  @primary_key {:id, :integer}
-  # Removed @foreign_key_type :binary_id as it's not directly related to the primary key type
-  # and other foreign keys will infer their type from the associated schemas.
+  # Do not add a @primary_key annotation in this file.
 
   @timestamps_opts [
     type: :utc_datetime,
