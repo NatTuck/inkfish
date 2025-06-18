@@ -343,15 +343,15 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
           upload_id: upload.id
         })
 
-      # Corrected path
-      conn = post(conn, ~p"/api/v1/subs", sub: create_attrs)
-      assert %{"id" => id} = json_response(conn, 201)["data"]
+      # Perform the POST request
+      post_conn = post(conn, ~p"/api/v1/subs", sub: create_attrs)
+      assert %{"id" => id} = json_response(post_conn, 201)["data"]
 
-      # Re-authenticate conn for subsequent GET request
-      conn = put_req_header(conn, "x-auth", api_key.key)
+      # For the subsequent GET request, build a fresh authenticated conn
+      get_conn = put_req_header(build_conn(), "x-auth", api_key.key)
 
-      # Corrected path
-      conn = get(conn, ~p"/api/v1/subs/#{id}")
+      # Perform the GET request
+      get_conn = get(get_conn, ~p"/api/v1/subs/#{id}")
 
       assert %{
                "id" => ^id,
@@ -361,7 +361,7 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
                "late_penalty" => "120.5",
                "note" => "some note",
                "score" => "120.5"
-             } = json_response(conn, 200)["data"]
+             } = json_response(get_conn, 200)["data"]
     end
 
     test "renders errors when data is invalid", %{conn: conn} do
@@ -380,18 +380,18 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
 
     test "renders sub when data is valid", %{
       conn: conn, # Use the authenticated conn from setup
-      sub: %Sub{id: id} = sub,
+      sub: %Sub{id: id} = _sub, # Use _sub to mark as unused
       api_key: api_key # Get api_key from setup
     } do
-      # Corrected path
-      conn = put(conn, ~p"/api/v1/subs/#{id}", sub: @update_attrs) # Use id directly
-      assert %{"id" => ^id} = json_response(conn, 200)["data"]
+      # Perform the PUT request
+      put_conn = put(conn, ~p"/api/v1/subs/#{id}", sub: @update_attrs) # Use id directly
+      assert %{"id" => ^id} = json_response(put_conn, 200)["data"]
 
-      # Re-authenticate conn for subsequent GET request
-      conn = put_req_header(conn, "x-auth", api_key.key)
+      # For the subsequent GET request, build a fresh authenticated conn
+      get_conn = put_req_header(build_conn(), "x-auth", api_key.key)
 
-      # Corrected path
-      conn = get(conn, ~p"/api/v1/subs/#{id}")
+      # Perform the GET request
+      get_conn = get(get_conn, ~p"/api/v1/subs/#{id}")
 
       assert %{
                "id" => ^id,
@@ -401,12 +401,12 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
                "late_penalty" => "456.7",
                "note" => "some updated note",
                "score" => "456.7"
-             } = json_response(conn, 200)["data"]
+             } = json_response(get_conn, 200)["data"]
     end
 
     test "renders errors when data is invalid", %{
       conn: conn,
-      sub: %Sub{id: id} = _sub # Use id directly
+      sub: %Sub{id: id} = _sub # Use _sub to mark as unused
     } do
       # Corrected path
       conn = put(conn, ~p"/api/v1/subs/#{id}", sub: @invalid_attrs) # Use id directly

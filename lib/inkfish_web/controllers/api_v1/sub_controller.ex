@@ -11,53 +11,62 @@ defmodule InkfishWeb.ApiV1.SubController do
   plug InkfishWeb.Plugs.RequireApiUser
 
   def index(conn, params) do
-    if Map.has_key?(params, "assignment_id") do
-      asg_id = params["assignment_id"]
+    case Map.fetch(params, "assignment_id") do
+      {:ok, asg_id_param} when is_binary(asg_id_param) and asg_id_param != "" ->
+        # Valid assignment_id provided
+        try do
+          asg_id = String.to_integer(asg_id_param) # Convert to integer for lookup
 
-      # Add explicit check for nil assignment_id
-      if is_nil(asg_id) do
+          user = conn.assigns[:current_user]
+
+          # Fetch the assignment to get its course_id
+          # Use get_assignment_path! to ensure associated data (bucket, course) is loaded
+          assignment = Assignments.get_assignment_path!(asg_id)
+          course_id = assignment.bucket.course_id
+
+          # Find the user's registration for this course
+          user_reg = Users.get_reg_by_user_and_course(user.id, course_id)
+
+          # Determine reg_id to filter by
+          reg_id_filter =
+            if Map.get(params, "all") && user_reg &&
+                 (user_reg.is_staff || user_reg.is_prof) do
+              # Staff/prof with 'all' param sees all subs for the assignment
+              nil
+            else
+              # Otherwise, filter by current user's reg_id (if they have one for this course)
+              user_reg && user_reg.id
+            end
+
+          # Handle pagination
+          # Default to "0" string, then convert
+          page = Map.get(params, "page", "0") |> String.to_integer()
+
+          # Call Subs.list_subs_for_api
+          subs = Subs.list_subs_for_api(asg_id, reg_id_filter, page)
+          conn
+          |> put_view(InkfishWeb.ApiV1.SubJSON) # Use put_view
+          |> render(:index, subs: subs) # Use render/2
+        rescue
+          # Catch if String.to_integer fails for non-numeric string
+          ArgumentError ->
+            conn
+            |> put_status(:bad_request)
+            |> put_view(InkfishWeb.ErrorJSON)
+            |> render(:error, message: "assignment_id must be a valid integer")
+          # Catch if Assignments.get_assignment_path! raises NoResultsError
+          Ecto.NoResultsError ->
+            conn
+            |> put_status(:not_found)
+            |> put_view(InkfishWeb.ErrorJSON)
+            |> render(:not_found)
+        end
+
+      _ -> # assignment_id is missing, empty string, or not a binary
         conn
         |> put_status(:bad_request)
         |> put_view(InkfishWeb.ErrorJSON)
-        |> render(:error, message: "assignment_id cannot be nil")
-      else
-        user = conn.assigns[:current_user]
-
-        # Fetch the assignment to get its course_id
-        # Use get_assignment_path! to ensure associated data (bucket, course) is loaded
-        assignment = Assignments.get_assignment_path!(asg_id)
-        course_id = assignment.bucket.course_id
-
-        # Find the user's registration for this course
-        user_reg = Users.get_reg_by_user_and_course(user.id, course_id)
-
-        # Determine reg_id to filter by
-        reg_id_filter =
-          if Map.get(params, "all") && user_reg &&
-               (user_reg.is_staff || user_reg.is_prof) do
-            # Staff/prof with 'all' param sees all subs for the assignment
-            nil
-          else
-            # Otherwise, filter by current user's reg_id (if they have one for this course)
-            user_reg && user_reg.id
-          end
-
-        # Handle pagination
-        # Default to "0" string, then convert
-        page = Map.get(params, "page", "0") |> String.to_integer()
-
-        # Call Subs.list_subs_for_api
-        subs = Subs.list_subs_for_api(asg_id, reg_id_filter, page)
-        conn
-        |> put_view(InkfishWeb.ApiV1.SubJSON) # Use put_view
-        |> render(:index, subs: subs) # Use render/2
-      end
-    else
-      # Return a 400 Bad Request if assignment_id is missing
-      conn
-      |> put_status(:bad_request)
-      |> put_view(InkfishWeb.ErrorJSON) # Use put_view
-      |> render(:error, message: "assignment_id is required") # Use render/2
+        |> render(:error, message: "assignment_id is required and must be a non-empty string")
     end
   end
 
@@ -97,24 +106,45 @@ defmodule InkfishWeb.ApiV1.SubController do
         |> put_view(InkfishWeb.ErrorJSON) # Use put_view
         |> render(:not_found) # Use render/2
       end
-    catch
-      :error, %Ecto.NoResultsError{} ->
-        # If get_sub! raises NoResultsError, it means the sub doesn't exist
+    rescue
+      # If get_sub! raises NoResultsError, it means the sub doesn't exist
+      Ecto.NoResultsError ->
         conn
         |> put_status(:not_found)
         |> put_view(InkfishWeb.ErrorJSON)
         |> render(:not_found)
+      # Catch if String.to_integer fails for non-numeric string
+      ArgumentError ->
+        conn
+        |> put_status(:bad_request)
+        |> put_view(InkfishWeb.ErrorJSON)
+        |> render(:error, message: "Sub ID must be a valid integer")
     end
   end
 
   def update(conn, %{"id" => id_str, "sub" => sub_params}) do
-    id = String.to_integer(id_str) # Convert ID to integer
-    sub = Subs.get_sub!(id) # This might still raise Ecto.NoResultsError if ID is not found
+    try do
+      id = String.to_integer(id_str) # Convert ID to integer
+      sub = Subs.get_sub!(id) # This might still raise Ecto.NoResultsError if ID is not found
 
-    with {:ok, %Sub{} = sub} <- Subs.update_sub(sub, sub_params) do
-      conn
-      |> put_view(InkfishWeb.ApiV1.SubJSON) # Use put_view
-      |> render(:show, sub: sub) # Use render/2
+      with {:ok, %Sub{} = sub} <- Subs.update_sub(sub, sub_params) do
+        conn
+        |> put_view(InkfishWeb.ApiV1.SubJSON) # Use put_view
+        |> render(:show, sub: sub) # Use render/2
+      end
+    rescue
+      # If get_sub! raises NoResultsError, it means the sub doesn't exist
+      Ecto.NoResultsError ->
+        conn
+        |> put_status(:not_found)
+        |> put_view(InkfishWeb.ErrorJSON)
+        |> render(:not_found)
+      # Catch if String.to_integer fails for non-numeric string
+      ArgumentError ->
+        conn
+        |> put_status(:bad_request)
+        |> put_view(InkfishWeb.ErrorJSON)
+        |> render(:error, message: "Sub ID must be a valid integer")
     end
   end
 
