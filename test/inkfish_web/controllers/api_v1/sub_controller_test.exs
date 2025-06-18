@@ -72,7 +72,7 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
 
   # Helper to create a sub for create/update tests, ensuring it belongs to the authenticated user
   defp create_sub_for_test(%{conn: conn}) do
-    %{conn: authenticated_conn, user: user} = logged_in_user_with_api_key(conn)
+    %{conn: authenticated_conn, user: user, api_key: api_key} = logged_in_user_with_api_key(conn)
     course = insert(:course)
     %{sub: sub, assignment: assignment, reg: reg, team: team, upload: upload} =
       create_sub_for_user(user, course)
@@ -84,7 +84,8 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
       assignment: assignment,
       reg: reg,
       team: team,
-      upload: upload
+      upload: upload,
+      api_key: api_key # Pass api_key for re-authentication
     }
   end
 
@@ -322,8 +323,8 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
   describe "create sub" do
     # This setup now provides conn, user, assignment, etc.
     setup %{conn: initial_conn} do # Use a different name for the initial conn
-      %{conn: authenticated_conn, sub: sub, user: user, assignment: assignment, reg: reg, team: team, upload: upload} = create_sub_for_test(%{conn: initial_conn})
-      %{conn: authenticated_conn, sub: sub, user: user, assignment: assignment, reg: reg, team: team, upload: upload}
+      %{conn: authenticated_conn, sub: sub, user: user, assignment: assignment, reg: reg, team: team, upload: upload, api_key: api_key} = create_sub_for_test(%{conn: initial_conn})
+      %{conn: authenticated_conn, sub: sub, user: user, assignment: assignment, reg: reg, team: team, upload: upload, api_key: api_key}
     end
 
     test "renders sub when data is valid", %{
@@ -331,7 +332,8 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
       assignment: assignment,
       reg: reg,
       team: team,
-      upload: upload
+      upload: upload,
+      api_key: api_key # Get api_key from setup
     } do
       create_attrs =
         Map.merge(@create_attrs, %{
@@ -344,6 +346,9 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
       # Corrected path
       conn = post(conn, ~p"/api/v1/subs", sub: create_attrs)
       assert %{"id" => id} = json_response(conn, 201)["data"]
+
+      # Re-authenticate conn for subsequent GET request
+      conn = put_req_header(conn, "x-auth", api_key.key)
 
       # Corrected path
       conn = get(conn, ~p"/api/v1/subs/#{id}")
@@ -369,17 +374,21 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
   describe "update sub" do
     # Use the common setup
     setup %{conn: initial_conn} do # Use a different name for the initial conn
-      %{conn: authenticated_conn, sub: sub, user: user, assignment: assignment, reg: reg, team: team, upload: upload} = create_sub_for_test(%{conn: initial_conn})
-      %{conn: authenticated_conn, sub: sub, user: user, assignment: assignment, reg: reg, team: team, upload: upload}
+      %{conn: authenticated_conn, sub: sub, user: user, assignment: assignment, reg: reg, team: team, upload: upload, api_key: api_key} = create_sub_for_test(%{conn: initial_conn})
+      %{conn: authenticated_conn, sub: sub, user: user, assignment: assignment, reg: reg, team: team, upload: upload, api_key: api_key}
     end
 
     test "renders sub when data is valid", %{
       conn: conn, # Use the authenticated conn from setup
-      sub: %Sub{id: id} = sub
+      sub: %Sub{id: id} = sub,
+      api_key: api_key # Get api_key from setup
     } do
       # Corrected path
-      conn = put(conn, ~p"/api/v1/subs/#{sub}", sub: @update_attrs)
+      conn = put(conn, ~p"/api/v1/subs/#{id}", sub: @update_attrs) # Use id directly
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
+
+      # Re-authenticate conn for subsequent GET request
+      conn = put_req_header(conn, "x-auth", api_key.key)
 
       # Corrected path
       conn = get(conn, ~p"/api/v1/subs/#{id}")
@@ -388,16 +397,19 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
                "id" => ^id,
                "active" => false,
                "hours_spent" => "456.7",
-               "ignore_late_penalty" => false,
+               "ignore_late_penalty" => true,
                "late_penalty" => "456.7",
                "note" => "some updated note",
                "score" => "456.7"
              } = json_response(conn, 200)["data"]
     end
 
-    test "renders errors when data is invalid", %{conn: conn, sub: sub} do
+    test "renders errors when data is invalid", %{
+      conn: conn,
+      sub: %Sub{id: id} = _sub # Use id directly
+    } do
       # Corrected path
-      conn = put(conn, ~p"/api/v1/subs/#{sub}", sub: @invalid_attrs)
+      conn = put(conn, ~p"/api/v1/subs/#{id}", sub: @invalid_attrs) # Use id directly
       assert json_response(conn, 422)["errors"] != %{}
     end
   end

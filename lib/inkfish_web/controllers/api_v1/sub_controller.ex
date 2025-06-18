@@ -13,36 +13,45 @@ defmodule InkfishWeb.ApiV1.SubController do
   def index(conn, params) do
     if Map.has_key?(params, "assignment_id") do
       asg_id = params["assignment_id"]
-      user = conn.assigns[:current_user]
 
-      # Fetch the assignment to get its course_id
-      # Use get_assignment_path! to ensure associated data (bucket, course) is loaded
-      assignment = Assignments.get_assignment_path!(asg_id)
-      course_id = assignment.bucket.course_id
+      # Add explicit check for nil assignment_id
+      if is_nil(asg_id) do
+        conn
+        |> put_status(:bad_request)
+        |> put_view(InkfishWeb.ErrorJSON)
+        |> render(:error, message: "assignment_id cannot be nil")
+      else
+        user = conn.assigns[:current_user]
 
-      # Find the user's registration for this course
-      user_reg = Users.get_reg_by_user_and_course(user.id, course_id)
+        # Fetch the assignment to get its course_id
+        # Use get_assignment_path! to ensure associated data (bucket, course) is loaded
+        assignment = Assignments.get_assignment_path!(asg_id)
+        course_id = assignment.bucket.course_id
 
-      # Determine reg_id to filter by
-      reg_id_filter =
-        if Map.get(params, "all") && user_reg &&
-             (user_reg.is_staff || user_reg.is_prof) do
-          # Staff/prof with 'all' param sees all subs for the assignment
-          nil
-        else
-          # Otherwise, filter by current user's reg_id (if they have one for this course)
-          user_reg && user_reg.id
-        end
+        # Find the user's registration for this course
+        user_reg = Users.get_reg_by_user_and_course(user.id, course_id)
 
-      # Handle pagination
-      # Default to "0" string, then convert
-      page = Map.get(params, "page", "0") |> String.to_integer()
+        # Determine reg_id to filter by
+        reg_id_filter =
+          if Map.get(params, "all") && user_reg &&
+               (user_reg.is_staff || user_reg.is_prof) do
+            # Staff/prof with 'all' param sees all subs for the assignment
+            nil
+          else
+            # Otherwise, filter by current user's reg_id (if they have one for this course)
+            user_reg && user_reg.id
+          end
 
-      # Call Subs.list_subs_for_api
-      subs = Subs.list_subs_for_api(asg_id, reg_id_filter, page)
-      conn
-      |> put_view(InkfishWeb.ApiV1.SubJSON) # Use put_view
-      |> render(:index, subs: subs) # Use render/2
+        # Handle pagination
+        # Default to "0" string, then convert
+        page = Map.get(params, "page", "0") |> String.to_integer()
+
+        # Call Subs.list_subs_for_api
+        subs = Subs.list_subs_for_api(asg_id, reg_id_filter, page)
+        conn
+        |> put_view(InkfishWeb.ApiV1.SubJSON) # Use put_view
+        |> render(:index, subs: subs) # Use render/2
+      end
     else
       # Return a 400 Bad Request if assignment_id is missing
       conn
@@ -62,8 +71,9 @@ defmodule InkfishWeb.ApiV1.SubController do
     end
   end
 
-  def show(conn, %{"id" => id}) do
+  def show(conn, %{"id" => id_str}) do
     user = conn.assigns[:current_user]
+    id = String.to_integer(id_str) # Convert ID to integer
 
     try do
       sub = Subs.get_sub!(id)
@@ -97,8 +107,9 @@ defmodule InkfishWeb.ApiV1.SubController do
     end
   end
 
-  def update(conn, %{"id" => id, "sub" => sub_params}) do
-    sub = Subs.get_sub!(id)
+  def update(conn, %{"id" => id_str, "sub" => sub_params}) do
+    id = String.to_integer(id_str) # Convert ID to integer
+    sub = Subs.get_sub!(id) # This might still raise Ecto.NoResultsError if ID is not found
 
     with {:ok, %Sub{} = sub} <- Subs.update_sub(sub, sub_params) do
       conn
