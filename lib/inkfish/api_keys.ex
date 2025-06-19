@@ -19,7 +19,12 @@ defmodule Inkfish.ApiKeys do
 
   """
   def list_user_apikeys(%User{} = user) do
-    Repo.all(from(k in ApiKey, where: k.user_id == ^user.id, order_by: [desc: k.inserted_at]))
+    Repo.all(
+      from(k in ApiKey,
+        where: k.user_id == ^user.id,
+        order_by: [desc: k.inserted_at]
+      )
+    )
   end
 
   @doc """
@@ -37,6 +42,18 @@ defmodule Inkfish.ApiKeys do
 
   """
   def get_api_key!(id), do: Repo.get!(ApiKey, id)
+
+  def get_user_by_api_key(key) do
+    key =
+      Repo.get_by(ApiKey, key: key)
+      |> Repo.preload(:user)
+
+    if key do
+      {:ok, key.user}
+    else
+      {:error, "Bad API key."}
+    end
+  end
 
   @doc """
   Creates an API key for a user.

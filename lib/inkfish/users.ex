@@ -275,12 +275,19 @@ defmodule Inkfish.Users do
     )
   end
 
-  def find_reg(%User{} = user, %Course{} = course) do
-    reg =
-      Repo.one(
-        from reg in Reg,
-          where: reg.user_id == ^user.id and reg.course_id == ^course.id
+  @doc """
+  Retrieves a user's registration for a specific course.
+  """
+  def get_reg_by_user_and_course(user_id, course_id) do
+    Repo.one(
+      from(r in Reg,
+        where: r.user_id == ^user_id and r.course_id == ^course_id
       )
+    )
+  end
+
+  def find_reg(%User{} = user, %Course{} = course) do
+    reg = get_reg_by_user_and_course(user.id, course.id)
 
     if user.is_admin && is_nil(reg) do
       # Admins are always registered for every course as no role.

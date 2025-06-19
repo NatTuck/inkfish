@@ -90,7 +90,8 @@ defmodule InkfishWeb.Router do
   scope "/staff", InkfishWeb.Staff, as: :staff do
     pipe_through([:browser, :require_user_session])
 
-    resources "/courses", CourseController, only: [:index, :show, :edit, :update] do
+    resources "/courses", CourseController,
+      only: [:index, :show, :edit, :update] do
       resources("/regs", RegController, only: [:index, :new, :create])
       resources("/join_reqs", JoinReqController, only: [:index])
       resources("/teamsets", TeamsetController, only: [:index, :new, :create])
@@ -110,8 +111,11 @@ defmodule InkfishWeb.Router do
       resources("/assignments", AssignmentController, only: [:new, :create])
     end
 
-    resources "/assignments", AssignmentController, except: [:index, :new, :create] do
-      resources("/grade_columns", GradeColumnController, only: [:index, :new, :create])
+    resources "/assignments", AssignmentController,
+      except: [:index, :new, :create] do
+      resources("/grade_columns", GradeColumnController,
+        only: [:index, :new, :create]
+      )
 
       resources("/grading_tasks", GradingTaskController,
         except: [:new, :delete],
@@ -125,7 +129,9 @@ defmodule InkfishWeb.Router do
       :create_fake_subs
     )
 
-    resources("/grade_columns", GradeColumnController, except: [:index, :new, :create])
+    resources("/grade_columns", GradeColumnController,
+      except: [:index, :new, :create]
+    )
 
     resources "/subs", SubController, only: [:show, :update] do
       resources("/grades", GradeController, only: [:create])
@@ -164,13 +170,21 @@ defmodule InkfishWeb.Router do
       resources("/line_comments", LineCommentController, only: [:create])
     end
 
-    resources("/line_comments", LineCommentController, only: [:show, :update, :delete])
+    resources("/line_comments", LineCommentController,
+      only: [:show, :update, :delete]
+    )
 
     resources "/teamsets", TeamsetController, only: [] do
       resources("/teams", TeamController, only: [:index, :create])
     end
 
     resources("/teams", TeamController, only: [:show, :update, :delete])
+  end
+
+  scope "/api/v1", InkfishWeb.ApiV1, as: :api_v1 do
+    pipe_through :api
+
+    resources "/subs", SubController, only: [:index, :create, :show]
   end
 
   if Mix.env() in [:dev, :test] do

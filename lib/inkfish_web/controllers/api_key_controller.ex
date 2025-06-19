@@ -5,8 +5,8 @@ defmodule InkfishWeb.ApiKeyController do
   alias Inkfish.ApiKeys.ApiKey
 
   def index(conn, _params) do
-    apikeys = ApiKeys.list_user_apikeys(conn.assigns.current_user)
-    render(conn, :index, api_keys: apikeys)
+    api_keys = ApiKeys.list_user_apikeys(conn.assigns.current_user)
+    render(conn, :index, page_title: "Your API Keys", api_keys: api_keys)
   end
 
   def new(conn, _params) do
@@ -28,7 +28,7 @@ defmodule InkfishWeb.ApiKeyController do
 
   def show(conn, %{"id" => id}) do
     api_key = get_and_authorize_key(conn.assigns.current_user, id)
-    render(conn, :show, api_key: api_key)
+    render(conn, :show, page_title: "API Key", api_key: api_key)
   end
 
   def delete(conn, %{"id" => id}) do

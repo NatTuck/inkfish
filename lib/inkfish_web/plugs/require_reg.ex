@@ -21,7 +21,7 @@ defmodule InkfishWeb.Plugs.RequireReg do
       else
         conn
         |> put_resp_content_type("application/json")
-        |> send_resp(403, ~s({error: "Access denied."}))
+        |> send_resp(403, ~s({"error": "Access denied."}))
         |> halt
       end
     else
