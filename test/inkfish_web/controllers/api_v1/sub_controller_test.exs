@@ -366,164 +366,90 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
       }
     end
 
+    @tag :tmp_dir
     test "renders sub when data is valid", %{
       conn: conn,
-      reg: reg,
       assignment: assignment,
-      api_key: api_key
+      api_key: api_key,
+      tmp_dir: tmp_dir
     } do
+      path = Path.join(tmp_dir, "upload.txt")
+      File.write!(path, "some content")
+      upload = %Plug.Upload{path: path, filename: "submission.txt", content_type: "text/plain"}
+
       create_params =
         Map.merge(@create_attrs, %{
-          "reg_id" => Integer.to_string(reg.id),
           "assignment_id" => Integer.to_string(assignment.id),
-          "file_name" => "my_submission.txt",
-          "file_contents" => "print('Hello, World!')",
-          "hours_spent" => "2.5"
+          "upload" => upload
         })
 
       # Perform the POST request
-      post_conn = post(conn, ~p"/api/v1/subs", create_params)
+      post_conn = post(conn, ~p"/api/v1/subs", %{sub: create_params})
       assert %{"id" => id} = json_response(post_conn, 201)["data"]
 
       # For the subsequent GET request, build a fresh authenticated conn
-      get_conn = put_req_header(build_conn(), "x-auth", api_key.key)
+      get_conn =
+        build_conn()
+        |> put_req_header("accept", "application/json")
+        |> put_req_header("x-auth", api_key.key)
 
       # Perform the GET request
       get_conn = get(get_conn, ~p"/api/v1/subs/#{id}")
 
       assert %{
                "id" => ^id,
-               "active" => true, # This is set by set_one_sub_active!
-               "hours_spent" => "2.5", # From create_params
-               "ignore_late_penalty" => false, # Default value
-               "late_penalty" => nil, # Default value
-               "note" => "", # Default value (not provided in create_params)
-               "score" => nil # Default value
+               "active" => true,
+               "hours_spent" => "1.0",
+               "ignore_late_penalty" => false,
+               "late_penalty" => nil,
+               "note" => "some note",
+               "score" => nil
              } = json_response(get_conn, 200)["data"]
     end
 
-    test "renders errors when data is invalid", %{conn: conn, reg: reg, assignment: assignment} do
-      invalid_params =
-        Map.merge(@invalid_attrs, %{
-          "reg_id" => Integer.to_string(reg.id),
-          "assignment_id" => Integer.to_string(assignment.id),
-          "file_name" => "my_submission.txt",
-          "file_contents" => "print('Hello, World!')"
-        })
-
-      conn = post(conn, ~p"/api/v1/subs", invalid_params)
-      assert json_response(conn, 422)["errors"] != %{}
-    end
-
-    test "renders errors if reg_id does not belong to current user", %{conn: conn, assignment: assignment} do
-      other_user = insert(:user)
-      other_reg = insert(:reg, user: other_user, course: assignment.bucket.course)
-
-      create_params = %{
-        "reg_id" => Integer.to_string(other_reg.id),
-        "assignment_id" => Integer.to_string(assignment.id),
-        "file_name" => "my_submission.txt",
-        "file_contents" => "print('Hello, World!')",
-        "hours_spent" => "1.0"
-      }
-
-      conn = post(conn, ~p"/api/v1/subs", create_params)
-      assert json_response(conn, 400)["error"] == "Registration not found or does not belong to current user."
-    end
-
-    test "renders errors if assignment_id is not found", %{conn: conn, reg: reg} do
-      create_params = %{
-        "reg_id" => Integer.to_string(reg.id),
-        "assignment_id" => "999999999", # Non-existent assignment ID
-        "file_name" => "my_submission.txt",
-        "file_contents" => "print('Hello, World!')",
-        "hours_spent" => "1.0"
-      }
-
-      conn = post(conn, ~p"/api/v1/subs", create_params)
-      assert json_response(conn, 400)["error"] == "Assignment not found."
-    end
-
-    test "renders errors if file_name is missing", %{conn: conn, reg: reg, assignment: assignment} do
-      create_params = %{
-        "reg_id" => Integer.to_string(reg.id),
-        "assignment_id" => Integer.to_string(assignment.id),
-        # "file_name" => "my_submission.txt", # Missing
-        "file_contents" => "print('Hello, World!')",
-        "hours_spent" => "1.0"
-      }
-
-      conn = post(conn, ~p"/api/v1/subs", create_params)
-      assert json_response(conn, 400)["error"] == "file_name is missing"
-    end
-
-    test "renders errors if file_contents is missing", %{conn: conn, reg: reg, assignment: assignment} do
-      create_params = %{
-        "reg_id" => Integer.to_string(reg.id),
-        "assignment_id" => Integer.to_string(assignment.id),
-        "file_name" => "my_submission.txt",
-        # "file_contents" => "print('Hello, World!')", # Missing
-        "hours_spent" => "1.0"
-      }
-
-      conn = post(conn, ~p"/api/v1/subs", create_params)
-      assert json_response(conn, 400)["error"] == "file_contents is missing"
-    end
-  end
-
-  describe "update sub" do
-    # Use the common setup
-    setup %{conn: conn} do
-      %{conn: authenticated_conn, user: user, api_key: api_key} =
-        logged_in_user_with_api_key(conn)
-
-      # Create a sub directly within this setup's transaction
-      course = insert(:course)
-      bucket = insert(:bucket, course: course)
-      teamset = insert(:teamset, course: course)
-      assignment = insert(:assignment, bucket: bucket, teamset: teamset)
-      reg = insert(:reg, user: user, course: course)
-      team = insert(:team, teamset: teamset)
-      insert(:team_member, team: team, reg: reg)
-      upload = insert(:upload, user: user)
-      sub = insert(:sub, assignment: assignment, reg: reg, team: team, upload: upload)
-
-      %{conn: authenticated_conn, sub: sub, api_key: api_key}
-    end
-
-    test "renders sub when data is valid", %{
-      conn: conn,
-      sub: %{id: id} = _sub,
-      api_key: api_key
-    } do
-      # Perform the PUT request
-      put_conn = put(conn, ~p"/api/v1/subs/#{id}", sub: @update_attrs)
-      assert %{"id" => ^id} = json_response(put_conn, 200)["data"]
-
-      # For the subsequent GET request, build a fresh authenticated conn
-      get_conn = put_req_header(build_conn(), "x-auth", api_key.key)
-
-      # Perform the GET request
-      get_conn = get(get_conn, ~p"/api/v1/subs/#{id}")
-
-      assert %{
-               "id" => ^id,
-               "active" => true, # Default value (not changed by update_sub)
-               "hours_spent" => "456.7", # From @update_attrs
-               "ignore_late_penalty" => false, # Default value (not changed by update_sub)
-               "late_penalty" => nil, # Default value (not changed by update_sub)
-               "note" => "some updated note", # From @update_attrs
-               "score" => nil # Default value (not changed by update_sub)
-             } = json_response(get_conn, 200)["data"]
-    end
-
+    @tag :tmp_dir
     test "renders errors when data is invalid", %{
       conn: conn,
-      sub: %{id: id} = _sub
+      assignment: assignment,
+      tmp_dir: tmp_dir
     } do
-      # Corrected path
-      conn = put(conn, ~p"/api/v1/subs/#{id}", sub: @invalid_attrs)
+      path = Path.join(tmp_dir, "upload.txt")
+      File.write!(path, "some content")
+      upload = %Plug.Upload{path: path, filename: "submission.txt", content_type: "text/plain"}
+
+      invalid_params =
+        Map.merge(@invalid_attrs, %{
+          "assignment_id" => Integer.to_string(assignment.id),
+          "upload" => upload
+        })
+
+      conn = post(conn, ~p"/api/v1/subs", %{sub: invalid_params})
       assert json_response(conn, 422)["errors"] != %{}
+    end
+
+    @tag :tmp_dir
+    test "renders 404 if assignment_id is not found", %{conn: conn, tmp_dir: tmp_dir} do
+      path = Path.join(tmp_dir, "upload.txt")
+      File.write!(path, "some content")
+      upload = %Plug.Upload{path: path, filename: "submission.txt", content_type: "text/plain"}
+
+      create_params = %{
+        "assignment_id" => "999999999",
+        "upload" => upload
+      }
+
+      conn = post(conn, ~p"/api/v1/subs", %{sub: create_params})
+      assert json_response(conn, 404)["errors"]["detail"] == "Not Found"
+    end
+
+    test "renders error when upload parameter is missing", %{conn: conn, assignment: assignment} do
+      create_params = %{
+        "assignment_id" => Integer.to_string(assignment.id)
+      }
+
+      conn = post(conn, ~p"/api/v1/subs", %{sub: create_params})
+      assert response(conn, 400)
+      assert json_response(conn, 400)["error"] != nil
     end
   end
 
