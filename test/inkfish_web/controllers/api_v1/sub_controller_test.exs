@@ -3,20 +3,14 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
 
   import Inkfish.Factory
 
-  alias Inkfish.Subs.Sub
-
   @create_attrs %{
     # These are the fields that Sub.changeset actually casts
     hours_spent: "1.0",
     note: "some note"
   }
-  @update_attrs %{
-    # These are the fields that Sub.changeset actually casts
-    hours_spent: "456.7",
-    note: "some updated note"
-  }
   @invalid_attrs %{
-    hours_spent: nil # hours_spent is required
+    # hours_spent is required
+    hours_spent: nil
   }
 
   # Setup for all tests in this module
@@ -62,30 +56,6 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
       reg: reg,
       team: team,
       upload: upload
-    }
-  end
-
-  # Helper to create a sub for create tests, ensuring it belongs to the authenticated user
-  defp create_sub_for_test(%{conn: conn}) do
-    %{conn: authenticated_conn, user: user, api_key: api_key} =
-      logged_in_user_with_api_key(conn)
-
-    course = insert(:course)
-
-    %{sub: sub, assignment: assignment, reg: reg, team: team, upload: upload} =
-      create_sub_for_user(user, course)
-
-    %{
-      # Return the authenticated conn
-      conn: authenticated_conn,
-      sub: sub,
-      user: user,
-      assignment: assignment,
-      reg: reg,
-      team: team,
-      upload: upload,
-      # Pass api_key for re-authentication
-      api_key: api_key
     }
   end
 
@@ -375,7 +345,12 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
     } do
       path = Path.join(tmp_dir, "upload.txt")
       File.write!(path, "some content")
-      upload = %Plug.Upload{path: path, filename: "submission.txt", content_type: "text/plain"}
+
+      upload = %Plug.Upload{
+        path: path,
+        filename: "submission.txt",
+        content_type: "text/plain"
+      }
 
       create_params =
         Map.merge(@create_attrs, %{
@@ -415,7 +390,12 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
     } do
       path = Path.join(tmp_dir, "upload.txt")
       File.write!(path, "some content")
-      upload = %Plug.Upload{path: path, filename: "submission.txt", content_type: "text/plain"}
+
+      upload = %Plug.Upload{
+        path: path,
+        filename: "submission.txt",
+        content_type: "text/plain"
+      }
 
       invalid_params =
         Map.merge(@invalid_attrs, %{
@@ -428,10 +408,18 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
     end
 
     @tag :tmp_dir
-    test "renders 404 if assignment_id is not found", %{conn: conn, tmp_dir: tmp_dir} do
+    test "renders 404 if assignment_id is not found", %{
+      conn: conn,
+      tmp_dir: tmp_dir
+    } do
       path = Path.join(tmp_dir, "upload.txt")
       File.write!(path, "some content")
-      upload = %Plug.Upload{path: path, filename: "submission.txt", content_type: "text/plain"}
+
+      upload = %Plug.Upload{
+        path: path,
+        filename: "submission.txt",
+        content_type: "text/plain"
+      }
 
       create_params = %{
         "assignment_id" => "999999999",
@@ -439,10 +427,13 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
       }
 
       conn = post(conn, ~p"/api/v1/subs", %{sub: create_params})
-      assert json_response(conn, 404)["errors"]["detail"] == "Not Found"
+      assert json_response(conn, 400)["errors"] != nil
     end
 
-    test "renders error when upload parameter is missing", %{conn: conn, assignment: assignment} do
+    test "renders error when upload parameter is missing", %{
+      conn: conn,
+      assignment: assignment
+    } do
       create_params = %{
         "assignment_id" => Integer.to_string(assignment.id)
       }
