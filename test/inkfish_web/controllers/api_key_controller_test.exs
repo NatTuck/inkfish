@@ -3,20 +3,19 @@ defmodule InkfishWeb.ApiKeyControllerTest do
 
   import Inkfish.Factory
 
+  alias Inkfish.ApiKeys.ApiKey
+  alias Inkfish.Repo
+
   @create_attrs %{key: "some key"}
   @update_attrs %{key: "some updated key"}
   @invalid_attrs %{key: nil}
 
-  setup %{conn: conn} do
-    user = user_fixture()
-    conn = log_in_user(conn, user)
-    {:ok, conn: conn, user: user}
-  end
+  setup :register_and_log_in_user
 
   describe "index" do
     test "lists all api_keys for the current user", %{conn: conn, user: user} do
-      key = api_key_fixture(user: user)
-      other_user_key = api_key_fixture()
+      key = insert(:api_key, user: user)
+      other_user_key = insert(:api_key)
 
       conn = get(conn, ~p"/api_keys")
       assert html_response(conn, 200) =~ "Listing API Keys"
@@ -42,7 +41,7 @@ defmodule InkfishWeb.ApiKeyControllerTest do
       conn = get(conn, ~p"/api_keys/#{id}")
       assert html_response(conn, 200) =~ "API Key"
       assert html_response(conn, 200) =~ @create_attrs.key
-      assert Repo.get_by!(Inkfish.ApiKeys.ApiKey, id: id).user_id == user.id
+      assert Repo.get_by!(ApiKey, id: id).user_id == user.id
     end
 
     test "renders errors when data is invalid", %{conn: conn} do
@@ -63,7 +62,7 @@ defmodule InkfishWeb.ApiKeyControllerTest do
     end
 
     test "does not render for other user's key", %{conn: conn} do
-      other_users_key = api_key_fixture()
+      other_users_key = insert(:api_key)
 
       assert_error_sent 404, fn ->
         get(conn, ~p"/api_keys/#{other_users_key}/edit")
@@ -88,7 +87,7 @@ defmodule InkfishWeb.ApiKeyControllerTest do
     end
 
     test "does not update other user's key", %{conn: conn} do
-      other_users_key = api_key_fixture()
+      other_users_key = insert(:api_key)
 
       assert_error_sent 404, fn ->
         put(conn, ~p"/api_keys/#{other_users_key}", api_key: @update_attrs)
@@ -109,7 +108,7 @@ defmodule InkfishWeb.ApiKeyControllerTest do
     end
 
     test "does not delete other user's key", %{conn: conn} do
-      other_users_key = api_key_fixture()
+      other_users_key = insert(:api_key)
 
       assert_error_sent 404, fn ->
         delete(conn, ~p"/api_keys/#{other_users_key}")
@@ -118,7 +117,7 @@ defmodule InkfishWeb.ApiKeyControllerTest do
   end
 
   defp create_api_key(%{user: user}) do
-    api_key = api_key_fixture(user: user)
+    api_key = insert(:api_key, user: user)
     %{api_key: api_key}
   end
 end
