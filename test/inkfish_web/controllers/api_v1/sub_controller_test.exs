@@ -408,7 +408,7 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
     end
 
     @tag :tmp_dir
-    test "renders 404 if assignment_id is not found", %{
+    test "renders 400 if assignment_id is not found", %{
       conn: conn,
       tmp_dir: tmp_dir
     } do
@@ -427,7 +427,7 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
       }
 
       conn = post(conn, ~p"/api/v1/subs", %{sub: create_params})
-      assert json_response(conn, 400)["errors"] != nil
+      assert json_response(conn, 400)["error"] == "assignment_id not found"
     end
 
     test "renders error when upload parameter is missing", %{
@@ -440,7 +440,7 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
 
       conn = post(conn, ~p"/api/v1/subs", %{sub: create_params})
       assert response(conn, 400)
-      assert json_response(conn, 400)["error"] != nil
+      assert json_response(conn, 400)["error"] == "upload is required"
     end
   end
 
