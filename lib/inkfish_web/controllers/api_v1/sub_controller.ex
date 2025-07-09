@@ -2,12 +2,9 @@ defmodule InkfishWeb.ApiV1.SubController do
   use InkfishWeb, :controller1
 
   alias Inkfish.Subs
-  alias Inkfish.Subs.Sub
   alias Inkfish.Assignments
   alias Inkfish.Users
-  alias Inkfish.Uploads
   alias Inkfish.Teams
-  alias Inkfish.Repo
 
   action_fallback InkfishWeb.FallbackController
 
@@ -80,50 +77,57 @@ defmodule InkfishWeb.ApiV1.SubController do
     user = conn.assigns[:current_user]
 
     with {:ok, asg_id} <- Map.fetch(sub_params, "assignment_id"),
-         asg <- Assignments.get_assignment_path!(asg_id),
-         reg <- Users.find_reg(user, asg.bucket.course),
-         team = Teams.get_active_team(asg, reg),
-         {:ok, upload_params} <- Map.fetch(sub_params, "upload"),
-         {:ok, sub} <- Subs.create_sub_and_upload(sub_params, upload_params) do
-      conn
-      |> put_status(:created)
-      |> put_view(InkfishWeb.ApiV1.SubJSON)
-      |> render(:show, sub: sub)
+         {:ok, upload} <- Map.fetch(sub_params, "upload"),
+         asg when not is_nil(asg) <- Assignments.get_assignment_path(asg_id) do
+      reg = Users.find_reg(user, asg.bucket.course)
+      team = Teams.get_active_team(asg, reg)
+
+      sub_params =
+        sub_params
+        |> Map.put("team_id", team.id)
+        |> Map.put("reg_id", reg.id)
+
+      upload_params = %{
+        "upload" => upload,
+        "user_id" => user.id
+      }
+
+      with {:ok, sub} = Subs.create_sub_with_upload(sub_params, upload_params) do
+        conn
+        |> put_status(:created)
+        |> put_view(InkfishWeb.ApiV1.SubJSON)
+        |> render(:show, sub: sub)
+      end
     end
   end
 
-  def show(conn, %{"id" => id_str}) do
+  def show(conn, %{"id" => id}) do
     user = conn.assigns[:current_user]
-    # Convert ID to integer. This might raise ArgumentError.
-    id = String.to_integer(id_str)
 
-    # This might raise Ecto.NoResultsError.
-    sub = Subs.get_sub!(id)
+    if sub = Subs.get_sub(id) do
+      is_submitter = sub.reg.user_id == user.id
 
-    # Check if the current user is the submitter of this sub
-    is_submitter = sub.reg.user_id == user.id
+      course_id = sub.assignment.bucket.course_id
+      user_reg_in_course = Users.get_reg_by_user_and_course(user.id, course_id)
 
-    # Check if the current user is staff/prof in the sub's course
-    course_id = sub.assignment.bucket.course_id
-    user_reg_in_course = Users.get_reg_by_user_and_course(user.id, course_id)
+      is_staff_or_prof =
+        user_reg_in_course &&
+          (user_reg_in_course.is_staff || user_reg_in_course.is_prof)
 
-    is_staff_or_prof =
-      user_reg_in_course &&
-        (user_reg_in_course.is_staff || user_reg_in_course.is_prof)
-
-    if is_submitter || is_staff_or_prof do
-      conn
-      # Use put_view
-      |> put_view(InkfishWeb.ApiV1.SubJSON)
-      # Use render/2
-      |> render(:show, sub: sub)
+      if is_submitter || is_staff_or_prof do
+        conn
+        |> put_view(InkfishWeb.ApiV1.SubJSON)
+        |> render(:show, sub: sub)
+      else
+        conn
+        |> put_status(:not_found)
+        |> put_view(InkfishWeb.ErrorJSON)
+        |> render(:not_found)
+      end
     else
-      # Deny access: return 404 Not Found to avoid leaking information about existing IDs
       conn
       |> put_status(:not_found)
-      # Use put_view
       |> put_view(InkfishWeb.ErrorJSON)
-      # Use render/2
       |> render(:not_found)
     end
   end
