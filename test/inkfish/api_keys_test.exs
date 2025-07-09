@@ -24,8 +24,15 @@ defmodule Inkfish.ApiKeysTest do
 
     test "get_api_key!/1 returns the api_key with given id" do
       api_key = insert(:api_key)
-      fetched_key = ApiKeys.get_api_key!(api_key.id) |> Repo.preload(:user)
-      assert fetched_key == api_key
+      fetched_key = ApiKeys.get_api_key!(api_key.id)
+
+      # We can't compare the structs directly because the factory-inserted
+      # struct will have virtual password fields on its user association,
+      # while the one fetched from the DB will not.
+      assert fetched_key.id == api_key.id
+      assert fetched_key.name == api_key.name
+      assert fetched_key.key == api_key.key
+      assert fetched_key.user_id == api_key.user_id
     end
 
     test "create_api_key/2 with valid data creates an api_key" do
