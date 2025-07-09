@@ -6,9 +6,10 @@ defmodule InkfishWeb.ApiKeyControllerTest do
   alias Inkfish.ApiKeys.ApiKey
   alias Inkfish.Repo
 
-  @create_attrs %{key: "some key"}
-  @update_attrs %{key: "some updated key"}
+  @create_attrs %{key: "create-test-key"}
   @invalid_attrs %{key: nil}
+
+  # Note: There are no edit or update actions for API keys.
 
   setup :register_and_log_in_user
 
@@ -47,51 +48,6 @@ defmodule InkfishWeb.ApiKeyControllerTest do
     test "renders errors when data is invalid", %{conn: conn} do
       conn = post(conn, ~p"/api_keys", api_key: @invalid_attrs)
       assert html_response(conn, 200) =~ "New API Key"
-    end
-  end
-
-  describe "edit API key" do
-    setup [:create_api_key]
-
-    test "renders form for editing chosen api_key", %{
-      conn: conn,
-      api_key: api_key
-    } do
-      conn = get(conn, ~p"/api_keys/#{api_key}/edit")
-      assert html_response(conn, 200) =~ "Edit API Key"
-    end
-
-    test "does not render for other user's key", %{conn: conn} do
-      other_users_key = insert(:api_key)
-
-      assert_error_sent 404, fn ->
-        get(conn, ~p"/api_keys/#{other_users_key}/edit")
-      end
-    end
-  end
-
-  describe "update API key" do
-    setup [:create_api_key]
-
-    test "redirects when data is valid", %{conn: conn, api_key: api_key} do
-      conn = put(conn, ~p"/api_keys/#{api_key}", api_key: @update_attrs)
-      assert redirected_to(conn) == ~p"/api_keys/#{api_key}"
-
-      conn = get(conn, ~p"/api_keys/#{api_key}")
-      assert html_response(conn, 200) =~ "some updated key"
-    end
-
-    test "renders errors when data is invalid", %{conn: conn, api_key: api_key} do
-      conn = put(conn, ~p"/api_keys/#{api_key}", api_key: @invalid_attrs)
-      assert html_response(conn, 200) =~ "Edit API Key"
-    end
-
-    test "does not update other user's key", %{conn: conn} do
-      other_users_key = insert(:api_key)
-
-      assert_error_sent 404, fn ->
-        put(conn, ~p"/api_keys/#{other_users_key}", api_key: @update_attrs)
-      end
     end
   end
 
