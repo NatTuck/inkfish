@@ -6,7 +6,7 @@ defmodule InkfishWeb.ApiKeyControllerTest do
   alias Inkfish.ApiKeys.ApiKey
   alias Inkfish.Repo
 
-  @create_attrs %{key: "deadbeefdeadbeefdeadbeefdeadbeef"}
+  @create_attrs %{name: "My Test Key", key: "deadbeefdeadbeefdeadbeefdeadbeef"}
   @invalid_attrs %{key: nil}
 
   # Note: There are no edit or update actions for API keys.
