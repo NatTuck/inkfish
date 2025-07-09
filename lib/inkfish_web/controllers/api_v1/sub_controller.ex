@@ -92,17 +92,37 @@ defmodule InkfishWeb.ApiV1.SubController do
         "user_id" => user.id
       }
 
-      with {:ok, sub} = Subs.create_sub_with_upload(sub_params, upload_params) do
-        conn
-        |> put_status(:created)
-        |> put_view(InkfishWeb.ApiV1.SubJSON)
-        |> render(:show, sub: sub)
+      case Subs.create_sub_with_upload(sub_params, upload_params) do
+        {:ok, sub} ->
+          conn
+          |> put_status(:created)
+          |> put_view(InkfishWeb.ApiV1.SubJSON)
+          |> render(:show, sub: sub)
+
+        {:error, changeset} ->
+          conn
+          |> put_status(:unprocessable_entity)
+          |> put_view(InkfishWeb.ChangesetJSON)
+          |> render(:error, changeset: changeset)
       end
+    else
+      nil ->
+        conn
+        |> put_status(:bad_request)
+        |> put_view(InkfishWeb.ErrorJSON)
+        |> render(:error, message: "assignment_id not found")
+
+      {:error, key} ->
+        conn
+        |> put_status(:bad_request)
+        |> put_view(InkfishWeb.ErrorJSON)
+        |> render(:error, message: "#{key} is required")
     end
   end
 
-  def show(conn, %{"id" => id}) do
+  def show(conn, %{"id" => id_str}) do
     user = conn.assigns[:current_user]
+    id = String.to_integer(id_str)
 
     if sub = Subs.get_sub(id) do
       is_submitter = sub.reg.user_id == user.id
