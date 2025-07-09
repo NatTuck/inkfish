@@ -1,7 +1,6 @@
 defmodule InkfishWeb.ApiKeyControllerTest do
   use InkfishWeb.ConnCase
 
-  import Inkfish.ApiKeysFixtures
   import Inkfish.Factory
 
   @create_attrs %{key: "some key"}
@@ -55,7 +54,10 @@ defmodule InkfishWeb.ApiKeyControllerTest do
   describe "edit API key" do
     setup [:create_api_key]
 
-    test "renders form for editing chosen api_key", %{conn: conn, api_key: api_key} do
+    test "renders form for editing chosen api_key", %{
+      conn: conn,
+      api_key: api_key
+    } do
       conn = get(conn, ~p"/api_keys/#{api_key}/edit")
       assert html_response(conn, 200) =~ "Edit API Key"
     end
