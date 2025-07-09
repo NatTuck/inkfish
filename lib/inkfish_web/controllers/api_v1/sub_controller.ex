@@ -76,8 +76,8 @@ defmodule InkfishWeb.ApiV1.SubController do
   def create(conn, %{"sub" => sub_params}) do
     user = conn.assigns[:current_user]
 
-    with {:ok, asg_id} <- Map.fetch(sub_params, "assignment_id"),
-         {:ok, upload} <- Map.fetch(sub_params, "upload"),
+    with {:ok, asg_id} <- fetch_key(sub_params, "assignment_id"),
+         {:ok, upload} <- fetch_key(sub_params, "upload"),
          asg when not is_nil(asg) <- Assignments.get_assignment_path(asg_id) do
       reg = Users.find_reg(user, asg.bucket.course)
       team = Teams.get_active_team(asg, reg)
@@ -149,6 +149,13 @@ defmodule InkfishWeb.ApiV1.SubController do
       |> put_status(:not_found)
       |> put_view(InkfishWeb.ErrorJSON)
       |> render(:not_found)
+    end
+  end
+
+  defp fetch_key(map, key) do
+    case Map.fetch(map, key) do
+      {:ok, val} -> {:ok, val}
+      :error -> {:error, key}
     end
   end
 end
