@@ -30,5 +30,8 @@ config :hound,
   browser: "firefox",
   port: 4444
 
+config :ex_unit,
+  tmp_dir: "/tmp/ex_unit"
+
 # Print only warnings and errors during test
 config :logger, level: :warning

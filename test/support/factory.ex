@@ -223,9 +223,11 @@ defmodule Inkfish.Factory do
   end
 
   def api_key_factory do
+    key = sequence(:key, &"api-key-#{&1}")
+
     %ApiKey{
       name: "Some API Key",
-      key: "someapikeyvalue",
+      key: key,
       user: build(:user)
     }
   end

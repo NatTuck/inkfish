@@ -138,7 +138,7 @@ defmodule InkfishWeb.Staff.AssignmentControllerTest do
       assert redirected_to(conn) ==
                Routes.staff_course_path(conn, :show, conn.assigns[:course])
 
-      assert_error_sent 404, fn ->
+      assert_error_sent 500, fn ->
         get(conn, Routes.staff_assignment_path(conn, :show, assignment))
       end
     end

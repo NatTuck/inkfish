@@ -12,6 +12,7 @@ defmodule Inkfish.Subs do
   alias Inkfish.Teams.Team
   alias Inkfish.Grades
   alias Inkfish.Grades.Grade
+  alias Inkfish.Uploads
 
   def make_zero_sub(as) do
     %Sub{
@@ -57,7 +58,8 @@ defmodule Inkfish.Subs do
         where: sub.assignment_id == ^asg_id,
         order_by: [desc: sub.inserted_at],
         limit: 100,
-        offset: ^offset
+        offset: ^offset,
+        preload: [:upload]
       )
 
     query =
@@ -125,17 +127,20 @@ defmodule Inkfish.Subs do
       ** (Ecto.NoResultsError)
 
   """
-  def get_sub!(id) do
-    Repo.one!(
+  def get_sub(id) do
+    Repo.one(
       from(sub in Sub,
         where: sub.id == ^id,
         inner_join: upload in assoc(sub, :upload),
         inner_join: reg in assoc(sub, :reg),
         inner_join: user in assoc(reg, :user),
         inner_join: team in assoc(sub, :team),
-        inner_join: as in assoc(sub, :assignment), # Added for show action authorization
-        inner_join: bucket in assoc(as, :bucket), # Added for show action authorization
-        inner_join: course in assoc(bucket, :course), # Added for show action authorization
+        # Added for show action authorization
+        inner_join: as in assoc(sub, :assignment),
+        # Added for show action authorization
+        inner_join: bucket in assoc(as, :bucket),
+        # Added for show action authorization
+        inner_join: course in assoc(bucket, :course),
         left_join: grader in assoc(sub, :grader),
         left_join: gruser in assoc(grader, :user),
         left_join: grades in assoc(sub, :grades),
@@ -147,10 +152,19 @@ defmodule Inkfish.Subs do
           grades: {grades, grade_column: gc, line_comments: lcs},
           reg: {reg, user: user},
           grader: {grader, user: gruser},
-          assignment: {as, bucket: {bucket, course: course}} # Preload assignment with bucket and course
+          # Preload assignment with bucket and course
+          assignment: {as, bucket: {bucket, course: course}}
         ]
       )
     )
+  end
+
+  def get_sub!(id) do
+    if sub = get_sub(id) do
+      sub
+    else
+      raise "Sub not found"
+    end
   end
 
   def get_sub_path!(id) do
@@ -204,6 +218,18 @@ defmodule Inkfish.Subs do
       error ->
         error
     end
+  end
+
+  def create_sub_with_upload(sub_attrs, upload_attrs) do
+    upload_attrs = Map.put(upload_attrs, "kind", "sub")
+
+    Repo.transact(fn ->
+      with {:ok, upload} = Uploads.create_upload(upload_attrs) do
+        sub_attrs
+        |> Map.put("upload_id", upload.id)
+        |> create_sub()
+      end
+    end)
   end
 
   def has_autograders?(sub) do

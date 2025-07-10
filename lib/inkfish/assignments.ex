@@ -111,8 +111,8 @@ defmodule Inkfish.Assignments do
     )
   end
 
-  def get_assignment_path!(id) do
-    Repo.one!(
+  def get_assignment_path(id) do
+    Repo.one(
       from as in Assignment,
         where: as.id == ^id,
         inner_join: bucket in assoc(as, :bucket),
@@ -127,6 +127,14 @@ defmodule Inkfish.Assignments do
           starter_upload: starter
         ]
     )
+  end
+
+  def get_assignment_path!(id) do
+    if asg = get_assignment_path(id) do
+      asg
+    else
+      raise "Assignment not found."
+    end
   end
 
   def get_assignment_for_grading_tasks!(id) do

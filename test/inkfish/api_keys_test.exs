@@ -3,7 +3,6 @@ defmodule Inkfish.ApiKeysTest do
 
   alias Inkfish.ApiKeys
   alias Inkfish.ApiKeys.ApiKey
-  alias Inkfish.Repo
   import Inkfish.Factory
 
   @invalid_attrs %{"key" => nil}

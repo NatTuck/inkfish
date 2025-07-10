@@ -1,5 +1,6 @@
 defmodule InkfishWeb.ApiV1.SubJSON do
   alias Inkfish.Subs.Sub
+  alias Inkfish.Uploads.Upload
 
   @doc """
   Renders a list of subs.
@@ -23,7 +24,8 @@ defmodule InkfishWeb.ApiV1.SubJSON do
       score: sub.score,
       hours_spent: sub.hours_spent,
       note: sub.note,
-      ignore_late_penalty: sub.ignore_late_penalty
+      ignore_late_penalty: sub.ignore_late_penalty,
+      upload: Upload.upload_url(sub.upload)
     }
   end
 end
