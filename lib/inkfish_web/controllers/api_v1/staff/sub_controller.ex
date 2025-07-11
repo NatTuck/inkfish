@@ -16,7 +16,7 @@ defmodule InkfishWeb.ApiV1.Staff.SubController do
        [assignment: "assignment_id"]
        when action in [:index]
 
-  plug Plugs.RequireReg, staff: true when action in [:index, :show]
+  plug Plugs.RequireReg, staff: true when not is_nil(conn.assigns.course)
 
   def index(conn, params) do
     case Map.fetch(params, "assignment_id") do
