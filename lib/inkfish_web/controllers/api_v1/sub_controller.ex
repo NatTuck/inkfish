@@ -127,14 +127,7 @@ defmodule InkfishWeb.ApiV1.SubController do
     if sub = Subs.get_sub(id) do
       is_submitter = sub.reg.user_id == user.id
 
-      course_id = sub.assignment.bucket.course_id
-      user_reg_in_course = Users.get_reg_by_user_and_course(user.id, course_id)
-
-      is_staff_or_prof =
-        user_reg_in_course &&
-          (user_reg_in_course.is_staff || user_reg_in_course.is_prof)
-
-      if is_submitter || is_staff_or_prof do
+      if is_submitter do
         conn
         |> put_view(InkfishWeb.ApiV1.SubJSON)
         |> render(:show, sub: sub)
