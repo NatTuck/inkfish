@@ -9,6 +9,7 @@ defmodule InkfishWeb.CoreComponents do
 
   alias Phoenix.LiveView.JS
   use Gettext, backend: InkfishWeb.Gettext
+  import Phoenix.HTML
 
   @doc """
   Renders a modal.
@@ -468,7 +469,7 @@ defmodule InkfishWeb.CoreComponents do
   attr :ref, :string, required: true
   attr :label, :string, required: true
   attr :upload, :map, required: true
-  attr :width, :string, default:keyboard: "w-full"
+  attr :width, :string, default: "w-full"
   slot :input_title, required: false
   slot :upload_description, required: false
 
@@ -1024,54 +1025,23 @@ defmodule InkfishWeb.CoreComponents do
     "∅"
   end
 
-  def show_score(_conn, nil) do
-    show_score(nil)
-  end
-
-  def show_score(conn, %Sub{} = sub) do
-    asgn = conn.assigns[:assignment]
-    show_score(conn, asgn, sub.score)
-  end
-
-  def show_score(conn, %Grade{} = grade) do
-    asgn = conn.assigns[:assignment]
-
-    if grade.grade_column.kind == "script" do
-      show_score(grade.score)
-    else
-      show_score(conn, asgn, grade.score)
-    end
-  end
-
-  def show_score(_conn, %GradeColumn{} = gcol) do
+  def show_score(%GradeColumn{} = gcol) do
     show_score(gcol.points)
   end
 
-  def show_score(conn, %Assignment{} = asgn) do
-    sub = Enum.find(asgn.subs, & &1.active)
-    show_score(conn, asgn, sub && sub.score)
-  end
-
-  def show_score(conn, %Grade{} = grade, %GradeColumn{} = gcol) do
-    show_score(conn, %Grade{grade | grade_column: gcol})
-  end
-
-  def show_score(_conn, %Assignment{} = _a, nil) do
+  def show_score(asgn, nil, _reg, _user) do
     show_score(nil)
   end
 
-  def show_score(_conn, nil, _gc) do
+  def show_score(nil, _gcol, _reg, _user) do
     show_score(nil)
   end
 
-  def show_score(conn, %Assignment{} = asgn, %Decimal{} = score) do
-    user = conn.assigns[:current_user]
-    reg = conn.assigns[:current_reg]
-
+  def show_score(%Assignment{} = asgn, %Decimal{} = score, reg, user) do
     if is_staff?(reg, user) do
       show_score(score)
     else
-      if grade_hidden?(conn, asgn) do
+      if grade_hidden?(asgn) do
         # Hourglass with Flowing Sand
         raw("&#9203;")
       else
@@ -1080,48 +1050,45 @@ defmodule InkfishWeb.CoreComponents do
     end
   end
 
-  def grades_show_date(conn, %Assignment{} = asgn) do
+  def show_score(%Sub{} = sub, reg, user) do
+    show_score(sub.assignment, sub.score, reg, user)
+  end
+
+  def show_score(%Grade{} = grade, reg, user) do
+    if grade.grade_column.kind == "script" do
+      show_score(grade.score)
+    else
+      show_score(grade.sub.assignment, grade.score, reg, user)
+    end
+  end
+
+  def show_score(%Assignment{} = asgn, reg, user) do
+    sub = Enum.find(asgn.subs, & &1.active)
+    show_score(asgn, sub && sub.score, reg, user)
+  end
+
+  def show_score(%Grade{} = grade, %GradeColumn{} = gcol, reg, user) do
+    show_score(%Grade{grade | grade_column: gcol}, reg, user)
+  end
+
+  def grades_show_date(%Assignment{} = asgn) do
     if asgn.force_show_grades do
       asgn.due
     else
-      course = conn.assigns[:course]
+      course = asgn.bucket.course
       grade_hide_secs = 86400 * course.grade_hide_days
       NaiveDateTime.add(asgn.due, grade_hide_secs)
     end
   end
 
-  def grade_hidden?(conn, %Assignment{} = asgn) do
-    show_at = grades_show_date(conn, asgn)
+  def grade_hidden?(%Assignment{} = asgn) do
+    show_at = grades_show_date(asgn)
     now = Inkfish.LocalTime.now()
     NaiveDateTime.compare(show_at, now) != :lt
   end
 
   def assignment_total_points(as) do
     Inkfish.Assignments.Assignment.assignment_total_points(as)
-  end
-
-  def trusted_markdown(nil), do: "∅"
-
-  def trusted_markdown(code) do
-    case Earmark.as_html(code) do
-      {:ok, html, []} ->
-        raw(html)
-
-      {:error, _html, _msgs} ->
-        raw("error rendering markdown")
-    end
-  end
-
-  def sanitize_markdown(nil), do: "∅"
-
-  def sanitize_markdown(code) do
-    case Earmark.as_html(code) do
-      {:ok, html, []} ->
-        raw(HtmlSanitizeEx.basic_html(html))
-
-      {:error, _html, _msgs} ->
-        raw("error rendering markdown")
-    end
   end
 
   def ajax_upload_field(kind, _exts, target) do
@@ -1177,23 +1144,29 @@ defmodule InkfishWeb.CoreComponents do
 
   attr :code, :string, required: true
   def trusted_markdown(assigns) do
-    case Earmark.as_html(assigns.code) do
-      {:ok, html, []} ->
-        ~H"<%= raw(html) %>"
-
-      {:error, _html, _msgs} ->
-        ~H"error rendering markdown"
-    end
+    {html, _} =
+      case Earmark.as_html(assigns.code) do
+        {:ok, html, []} -> {html, []}
+        {:error, html, _msgs} -> {html, []}
+      end
+    ~H"""
+    <div class="markdown">
+      {raw(html)}
+    </div>
+    """
   end
 
   attr :code, :string, required: true
   def sanitize_markdown(assigns) do
-    case Earmark.as_html(assigns.code) do
-      {:ok, html, []} ->
-        ~H"<%= raw(HtmlSanitizeEx.basic_html(html)) %>"
-
-      {:error, _html, _msgs} ->
-        ~H"error rendering markdown"
-    end
+    {html, _} =
+      case Earmark.as_html(assigns.code) do
+        {:ok, html, []} -> {html, []}
+        {:error, html, _msgs} -> {html, []}
+      end
+    ~H"""
+    <div class="markdown">
+      {raw(HtmlSanitizeEx.basic_html(html))}
+    </div>
+    """
   end
 end

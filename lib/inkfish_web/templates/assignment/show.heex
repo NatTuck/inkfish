@@ -2,8 +2,9 @@
 
 <%= if is_staff?(@current_reg, @current_user) do %>
   <p>
-    <%= link("Staff View",
-      to: ~p"/staff/assignments/#{@assignment}") %>
+    <.link navigate={~p"/staff/assignments/#{@assignment}"}>
+      Staff View
+    </.link>
   </p>
 <% end %>
 
@@ -36,7 +37,7 @@
     <% else %>
       After 
       <span class="human-date">
-        {show_timestamp(grades_show_date(@conn, @assignment))}
+        {show_timestamp(grades_show_date(@assignment))}
       </span>
     <% end %>
   </li>
@@ -49,8 +50,9 @@
   <li>
     <strong>Starter:</strong>
     <%= if @assignment.starter_upload do %>
-      <%= link(@assignment.starter_upload.name,
-        to: ~p"/uploads/#{@assignment.starter_upload}/download?name=#{@assignment.starter_upload.name}") %>
+      <.link navigate={~p"/uploads/#{@assignment.starter_upload}/download?name=#{@assignment.starter_upload.name}"}>
+        {@assignment.starter_upload.name}
+      </.link>
     <% else %>
       ∅
     <% end %>
@@ -67,7 +69,7 @@
 
 <p>
   Your Team: {show_team(@team)} <br>
-  <%= link "New Submission", to: ~p"/assignments/#{@assignment}/subs/new" %>
+  <.link navigate={~p"/assignments/#{@assignment}/subs/new"}>New Submission</.link>
 </p>
 
 <table class="table table-striped">
@@ -88,13 +90,15 @@
         <%= for gcol <- @assignment.grade_columns do %>
           <% grade = Enum.find(sub.grades, &(&1.grade_column_id == gcol.id)) %>
           <td>
-            {show_score(@conn, grade, gcol)}
+            {show_score(grade, gcol, @current_reg, @current_user)}
             /
             {gcol.points}
           </td>
         <% end %>
-        <td>{show_score(@conn, sub)} / {assignment_total_points(@assignment)}</td>
-        <td><%= link "View", to: ~p"/subs/#{sub}" %></td>
+        <td>{show_score(sub, @current_reg, @current_user)} / {assignment_total_points(@assignment)}</td>
+        <td>
+          <.link navigate={~p"/subs/#{sub}"}>View</.link>
+        </td>
       </tr>
     <% end %>
   </tbody>
