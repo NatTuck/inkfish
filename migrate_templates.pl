@@ -101,7 +101,7 @@ sub process_template {
 defmodule $module_name do
   use $web_module, :html
 
-  embed_templates "#{@controller_name_part}_html/*"
+  embed_templates "${controller_name_part}_html/*"
 end
 EOF
 
