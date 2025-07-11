@@ -16,7 +16,7 @@ defmodule InkfishWeb.ApiV1.Staff.SubController do
        [assignment: "assignment_id"]
        when action in [:index]
 
-  plug Plugs.RequireReg, staff: true
+  plug Plugs.RequireReg, staff: true, when: "action in [:index, :show]"
 
   def index(conn, params) do
     case Map.fetch(params, "assignment_id") do
@@ -26,7 +26,7 @@ defmodule InkfishWeb.ApiV1.Staff.SubController do
         subs = Subs.list_subs_for_api(asg_id, nil, page)
 
         conn
-        |> put_view(InkfishWeb.ApiV1.SubJSON)
+        |> put_view(InkfishWeb.ApiV1.Staff.SubJSON)
         |> render(:index, subs: subs)
 
       _ ->
@@ -40,10 +40,10 @@ defmodule InkfishWeb.ApiV1.Staff.SubController do
   end
 
   def show(conn, _params) do
-    sub = Subs.get_sub!(conn.assigns.sub.id)
+    sub = conn.assigns.sub
 
     conn
-    |> put_view(InkfishWeb.ApiV1.SubJSON)
+    |> put_view(InkfishWeb.ApiV1.Staff.SubJSON)
     |> render(:show, sub: sub)
   end
 end

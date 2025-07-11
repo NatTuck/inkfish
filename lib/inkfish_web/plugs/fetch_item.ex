@@ -5,11 +5,14 @@ defmodule InkfishWeb.Plugs.FetchItem do
 
   def call(conn, [{target, param}]) do
     id = conn.params[to_string(param)]
-    fetch(conn, target, id)
-  end
 
-  def fetch(_, target, nil) do
-    raise "Can't fetch nil #{target}"
+    if id do
+      fetch(conn, target, id)
+    else
+      # Let the controller action handle the missing parameter,
+      # as it might have more specific logic or error messages.
+      conn
+    end
   end
 
   def fetch(conn, :user, id) do
@@ -65,12 +68,20 @@ defmodule InkfishWeb.Plugs.FetchItem do
   end
 
   def fetch(conn, :assignment, id) do
-    as = Inkfish.Assignments.get_assignment_path!(id)
+    case Inkfish.Assignments.get_assignment_path(id) do
+      nil ->
+        conn
+        |> put_status(:not_found)
+        |> put_view(InkfishWeb.ErrorJSON)
+        |> render(:not_found)
+        |> halt()
 
-    conn
-    |> assign(:assignment, as)
-    |> assign(:bucket, as.bucket)
-    |> assign(:course, as.bucket.course)
+      as ->
+        conn
+        |> assign(:assignment, as)
+        |> assign(:bucket, as.bucket)
+        |> assign(:course, as.bucket.course)
+    end
   end
 
   def fetch(conn, :grade_column, id) do
@@ -84,13 +95,21 @@ defmodule InkfishWeb.Plugs.FetchItem do
   end
 
   def fetch(conn, :sub, id) do
-    sub = Inkfish.Subs.get_sub_path!(id)
+    case Inkfish.Subs.get_sub_path(id) do
+      nil ->
+        conn
+        |> put_status(:not_found)
+        |> put_view(InkfishWeb.ErrorJSON)
+        |> render(:not_found)
+        |> halt()
 
-    conn
-    |> assign(:sub, sub)
-    |> assign(:assignment, sub.assignment)
-    |> assign(:bucket, sub.assignment.bucket)
-    |> assign(:course, sub.assignment.bucket.course)
+      sub ->
+        conn
+        |> assign(:sub, sub)
+        |> assign(:assignment, sub.assignment)
+        |> assign(:bucket, sub.assignment.bucket)
+        |> assign(:course, sub.assignment.bucket.course)
+    end
   end
 
   def fetch(conn, :grade, id) do

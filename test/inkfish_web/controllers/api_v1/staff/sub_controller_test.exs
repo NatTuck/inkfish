@@ -57,7 +57,7 @@ defmodule InkfishWeb.ApiV1.Staff.SubControllerTest do
     test "requires assignment_id", %{conn: conn} do
       # An API key IS needed because of the RequireApiUser plug
       %{conn: conn} = logged_in_user_with_api_key(conn)
-      # Corrected path and expected status
+
       conn = get(conn, ~p"/api/v1/staff/subs")
 
       assert json_response(conn, 400)["error"] ==
@@ -128,7 +128,7 @@ defmodule InkfishWeb.ApiV1.Staff.SubControllerTest do
           assignment_id: assignment.id
         })
 
-      assert json_response(conn, 404)
+      assert json_response(conn, 403)["error"] == "Access denied."
     end
   end
 
@@ -167,7 +167,7 @@ defmodule InkfishWeb.ApiV1.Staff.SubControllerTest do
         create_sub_for_user(student_user, course_b)
 
       conn = get(staff_conn, ~p"/api/v1/staff/subs/#{student_sub_in_course_b.id}")
-      assert json_response(conn, 403)["error"] == "You are not authorized for that course."
+      assert json_response(conn, 403)["error"] == "Access denied."
     end
 
     test "returns 404 for non-existent sub", %{conn: conn, course: course} do
@@ -177,7 +177,7 @@ defmodule InkfishWeb.ApiV1.Staff.SubControllerTest do
       non_existent_id = 9_999_999_999
 
       conn = get(conn, ~p"/api/v1/staff/subs/#{non_existent_id}")
-      assert json_response(conn, 404)
+      assert json_response(conn, 404)["errors"]["detail"] == "Not Found"
     end
   end
 end
