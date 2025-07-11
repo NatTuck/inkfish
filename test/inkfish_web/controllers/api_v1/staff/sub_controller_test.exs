@@ -167,16 +167,17 @@ defmodule InkfishWeb.ApiV1.Staff.SubControllerTest do
         create_sub_for_user(student_user, course_b)
 
       conn = get(staff_conn, ~p"/api/v1/staff/subs/#{student_sub_in_course_b.id}")
-      assert json_response(conn, 404)["errors"]["detail"] == "Not Found"
+      assert json_response(conn, 403)["error"] == "You are not authorized for that course."
     end
 
-    test "returns 404 for non-existent sub", %{conn: conn} do
-      %{conn: conn} = logged_in_user_with_api_key(conn)
+    test "returns 404 for non-existent sub", %{conn: conn, course: course} do
+      %{conn: conn, user: user} = logged_in_user_with_api_key(conn)
+      insert(:reg, user: user, course: course, is_staff: true)
       # Use a large integer for a non-existent ID
       non_existent_id = 9_999_999_999
 
       conn = get(conn, ~p"/api/v1/staff/subs/#{non_existent_id}")
-      assert json_response(conn, 404)["errors"]["detail"] == "Not Found"
+      assert json_response(conn, 404)
     end
   end
 end

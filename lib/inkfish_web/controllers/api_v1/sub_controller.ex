@@ -29,15 +29,7 @@ defmodule InkfishWeb.ApiV1.SubController do
         user_reg = Users.get_reg_by_user_and_course(user.id, course_id)
 
         # Determine reg_id to filter by
-        reg_id_filter =
-          if Map.get(params, "all") && user_reg &&
-               (user_reg.is_staff || user_reg.is_prof) do
-            # Staff/prof with 'all' param sees all subs for the assignment
-            nil
-          else
-            # Otherwise, filter by current user's reg_id (if they have one for this course)
-            user_reg && user_reg.id
-          end
+        reg_id_filter = user_reg && user_reg.id
 
         # Handle pagination
         # Default to "0" string, then convert
@@ -117,31 +109,6 @@ defmodule InkfishWeb.ApiV1.SubController do
         |> put_status(:bad_request)
         |> put_view(InkfishWeb.ErrorJSON)
         |> render(:error, message: "#{key} is required")
-    end
-  end
-
-  def show(conn, %{"id" => id_str}) do
-    user = conn.assigns[:current_user]
-    id = String.to_integer(id_str)
-
-    if sub = Subs.get_sub(id) do
-      is_submitter = sub.reg.user_id == user.id
-
-      if is_submitter do
-        conn
-        |> put_view(InkfishWeb.ApiV1.SubJSON)
-        |> render(:show, sub: sub)
-      else
-        conn
-        |> put_status(:not_found)
-        |> put_view(InkfishWeb.ErrorJSON)
-        |> render(:not_found)
-      end
-    else
-      conn
-      |> put_status(:not_found)
-      |> put_view(InkfishWeb.ErrorJSON)
-      |> render(:not_found)
     end
   end
 
