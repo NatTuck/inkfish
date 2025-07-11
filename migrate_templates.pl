@@ -55,33 +55,35 @@ sub process_template {
 
     print "\nProcessing: $template_file_path\n";
 
-    # 1. Calculate the new path for the co-located template
-    my $new_template_path = $template_file_path;
-    $new_template_path =~ s/^$templates_dir/$controllers_dir/;
-    $new_template_path =~ s/\.html\.eex$/.html.heex/;
+    # 1. Deconstruct the old path and construct the new paths
+    my $relative_path_full = $template_file_path;
+    $relative_path_full =~ s/^$templates_dir\///; # e.g., "admin/course/edit.html.eex"
 
-    # Create the destination directory if it doesn't exist
-    my $dest_dir = dirname($new_template_path);
-    make_path($dest_dir) or die "Failed to create directory '$dest_dir': $!"
-        unless -d $dest_dir;
+    my $template_basename = basename($relative_path_full); # e.g., "edit.html.eex"
+    my $template_subdir   = dirname($relative_path_full);  # e.g., "admin/course"
 
-    # 2. Move and rename the template file
+    # New template path, e.g., lib/inkfish_web/controllers/admin/course_html/edit.html.heex
+    my $new_template_dir = catfile($controllers_dir, "${template_subdir}_html");
+    my $new_template_filename = $template_basename;
+    $new_template_filename =~ s/\.html\.eex$/.html.heex/;
+    my $new_template_path = catfile($new_template_dir, $new_template_filename);
+
+    # Path for the corresponding *_html.ex file
+    # e.g., lib/inkfish_web/controllers/admin/course_html.ex
+    my @path_parts = splitdir($template_subdir);
+    my $controller_name_part = pop @path_parts;
+    my $html_module_dir = catfile($controllers_dir, @path_parts);
+    my $html_module_path = catfile($html_module_dir, "${controller_name_part}_html.ex");
+
+    # 2. Create the destination directory for the template
+    make_path($new_template_dir) or die "Failed to create directory '$new_template_dir': $!";
+
+    # 3. Move and rename the template file
     print "  -> Moving to $new_template_path\n";
     move($template_file_path, $new_template_path)
         or die "Failed to move '$template_file_path' to '$new_template_path': $!";
 
-    # 3. Determine the path and module name for the new *_html.ex file
-    my $relative_path = $template_file_path;
-    $relative_path =~ s/^$templates_dir\///;    # e.g., "admin/user/index.html.eex"
-    my $template_subdir = dirname($relative_path); # e.g., "admin/user"
-
-    # From the subdir, determine the controller name and its parent directory
-    my @path_parts = splitdir($template_subdir);
-    my $controller_name_part = pop @path_parts; # e.g., "user"
-    my $html_module_dir = catfile($controllers_dir, @path_parts); # e.g., "lib/inkfish_web/controllers/admin"
-    my $html_module_path = catfile($html_module_dir, "${controller_name_part}_html.ex"); # e.g., ".../admin/user_html.ex"
-
-    # Skip if we've already created this HTML module file
+    # Skip if we've already created this HTML module file for this controller
     return if $created_html_modules{$html_module_path};
 
     # 4. Construct the Elixir module name from the path
@@ -99,7 +101,7 @@ sub process_template {
 defmodule $module_name do
   use $web_module, :html
 
-  embed_templates "*"
+  embed_templates "#{@controller_name_part}_html/*"
 end
 EOF
 
