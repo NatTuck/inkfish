@@ -286,6 +286,10 @@ defmodule Inkfish.Users do
     )
   end
 
+  def find_reg(_user, nil), do: nil
+
+  def find_reg(_user, nil), do: nil
+
   def find_reg(%User{} = user, %Course{} = course) do
     reg = get_reg_by_user_and_course(user.id, course.id)
 
