@@ -21,25 +21,11 @@ defmodule InkfishWeb do
     ~w(assets fonts images favicon.ico robots.txt)
   end
 
-  def controller1 do
-    quote do
-      use Phoenix.Controller,
-        formats: [:html, :json]
-
-      #        layouts: [html: InkfishWeb.Layouts]
-
-      import Plug.Conn
-      use Gettext, backend: InkfishWeb.Gettext
-      import InkfishWeb.ViewHelpers
-      alias InkfishWeb.Router.Helpers, as: Routes
-
-      unquote(verified_routes())
-    end
-  end
-
   def controller do
     quote do
-      use Phoenix.Controller, namespace: InkfishWeb
+      use Phoenix.Controller,
+        formats: [:html, :json],
+        layouts: [html: InkfishWeb.Layouts]
 
       import Plug.Conn
       use Gettext, backend: InkfishWeb.Gettext
@@ -79,30 +65,12 @@ defmodule InkfishWeb do
       # Shortcut for generating JS commands
       alias Phoenix.LiveView.JS
 
-      import InkfishWeb.ViewHelpers
       import InkfishWeb.ErrorHelpers
 
       alias InkfishWeb.Router.Helpers, as: Routes
 
       # Routes generation with the ~p sigil
       unquote(verified_routes())
-    end
-  end
-
-  def view do
-    # FIXME: This should be migrated to be named "html" everywhere
-
-    quote do
-      use Phoenix.View,
-        root: "lib/inkfish_web/templates",
-        namespace: InkfishWeb
-
-      # Import convenience functions from controllers
-      import Phoenix.Controller,
-        only: [view_module: 1, view_template: 1]
-
-      # Include shared imports and aliases for views
-      unquote(view_helpers())
     end
   end
 
