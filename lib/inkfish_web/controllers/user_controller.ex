@@ -1,5 +1,5 @@
 defmodule InkfishWeb.UserController do
-  use InkfishWeb, :controller1
+  use InkfishWeb, :controller
 
   alias Inkfish.Users
   alias Inkfish.Users.User
