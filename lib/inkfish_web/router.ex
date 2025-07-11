@@ -184,11 +184,12 @@ defmodule InkfishWeb.Router do
   scope "/api/v1", InkfishWeb.ApiV1, as: :api_v1 do
     pipe_through :api
 
-    resources "/subs", SubController, only: [:index, :create]
-    resources "/line_comments", LineCommentController, except: [:new, :edit]
+    resources "/subs", SubController, only: [:index, :create, :show]
   end
 
   scope "/api/v1/staff", InkfishWeb.ApiV1.Staff, as: :api_v1_staff do
+    pipe_through :api
+
     resources "/subs", SubController, only: [:index]
   end
 
