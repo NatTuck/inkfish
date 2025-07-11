@@ -1,9 +1,9 @@
-defmodule InkfishWeb.Staff.BucketView do
-  use InkfishWeb, :view
+defmodule InkfishWeb.Staff.BucketJson do
+  use InkfishWeb.ViewHelpers
 
   alias InkfishWeb.Staff.AssignmentView
 
-  def render("bucket.json", %{bucket: bucket}) do
+  def data(%{bucket: bucket}) do
     assignments = get_assoc(bucket, :assignments) || []
 
     %{

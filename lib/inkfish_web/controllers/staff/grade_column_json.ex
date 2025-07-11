@@ -1,7 +1,7 @@
-defmodule InkfishWeb.Staff.GradeColumnView do
-  use InkfishWeb, :view
+defmodule InkfishWeb.Staff.GradeColumnJson do
+  use InkfishWeb.ViewHelpers
 
-  def render("grade_column.json", %{grade_column: grade_column}) do
+  def data(%{grade_column: grade_column}) do
     %{
       kind: grade_column.kind
     }

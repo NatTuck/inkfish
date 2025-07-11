@@ -1,7 +1,7 @@
-defmodule InkfishWeb.Staff.CourseView do
-  use InkfishWeb, :view
+defmodule InkfishWeb.Staff.CourseJson do
+  use InkfishWeb.ViewHelpers
 
-  def render("course.json", %{course: course}) do
+  def show(%{course: course}) do
     regs = get_assoc(course, :regs) || []
     buckets = get_assoc(course, :buckets) || []
 

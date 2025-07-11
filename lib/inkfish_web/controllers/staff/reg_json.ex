@@ -1,7 +1,7 @@
-defmodule InkfishWeb.Staff.RegView do
-  use InkfishWeb, :view
+defmodule InkfishWeb.Staff.RegJson do
+  use InkfishWeb.ViewHelpers
 
-  def render("reg.json", %{reg: reg}) do
+  def data(%{reg: reg}) do
     user = get_assoc(reg, :user)
     course = get_assoc(reg, :course)
 

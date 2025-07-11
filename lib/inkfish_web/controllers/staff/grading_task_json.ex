@@ -1,3 +1,3 @@
-defmodule InkfishWeb.Staff.GradingTaskView do
-  use InkfishWeb, :view
+defmodule InkfishWeb.Staff.GradingTaskJson do
+  use InkfishWeb.ViewHelpers
 end

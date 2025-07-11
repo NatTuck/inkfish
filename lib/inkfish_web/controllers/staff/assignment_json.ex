@@ -1,12 +1,12 @@
-defmodule InkfishWeb.Staff.AssignmentView do
-  use InkfishWeb, :view
+defmodule InkfishWeb.Staff.AssignmentJson do
+  use InkfishWeb.ViewHelpers
 
   alias InkfishWeb.Staff.BucketView
   alias InkfishWeb.Staff.TeamsetView
   alias InkfishWeb.Staff.GradeColumnView
   alias InkfishWeb.Staff.SubView
 
-  def render("assignment.json", %{assignment: assignment}) do
+  def data(%{assignment: assignment}) do
     bucket = get_assoc(assignment, :bucket)
     teamset = get_assoc(assignment, :teamset)
     gcols = get_assoc(assignment, :grade_columns)

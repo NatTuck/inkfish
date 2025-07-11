@@ -1,7 +1,7 @@
-defmodule InkfishWeb.Staff.TeamsetView do
-  use InkfishWeb, :view
+defmodule InkfishWeb.Staff.TeamsetJson do
+  use InkfishWeb.ViewHelpers
 
-  def render("teamset.json", %{teamset: teamset}) do
+  def data(%{teamset: teamset}) do
     course = get_assoc(teamset, :course)
     assigns = get_assoc(teamset, :assignments) || []
     teams = get_assoc(teamset, :teams) || []

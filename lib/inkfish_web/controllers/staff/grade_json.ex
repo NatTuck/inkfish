@@ -1,7 +1,7 @@
-defmodule InkfishWeb.Staff.GradeView do
-  use InkfishWeb, :view
+defmodule InkfishWeb.Staff.GradeJson do
+  use InkfishWeb.ViewHelpers
 
-  def render("grade.json", %{grade: grade}) do
+  def data(%{grade: grade}) do
     gc = get_assoc(grade, :grade_column)
     lcs = get_assoc(grade, :line_comments) || []
     sub = get_assoc(grade, :sub)

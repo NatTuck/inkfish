@@ -1,3 +1,3 @@
-defmodule InkfishWeb.Staff.JoinReqView do
-  use InkfishWeb, :view
+defmodule InkfishWeb.Staff.JoinReqJson do
+  use InkfishWeb.ViewHelpers
 end

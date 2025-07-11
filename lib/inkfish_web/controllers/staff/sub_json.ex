@@ -1,7 +1,7 @@
-defmodule InkfishWeb.Staff.SubView do
-  use InkfishWeb, :view
+defmodule InkfishWeb.Staff.SubJson do
+  use InkfishWeb.ViewHelpers
 
-  def render("sub.json", %{sub: sub}) do
+  def data(%{sub: sub}) do
     reg = get_assoc(sub, :reg)
     team = get_assoc(sub, :team)
     grades = get_assoc(sub, :grades) || []

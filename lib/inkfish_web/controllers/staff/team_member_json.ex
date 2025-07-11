@@ -1,16 +1,16 @@
-defmodule InkfishWeb.Staff.TeamMemberView do
-  use InkfishWeb, :view
-  alias InkfishWeb.TeamMemberView
+defmodule InkfishWeb.Staff.TeamMemberJson do
+  use InkfishWeb.ViewHelpers
+  alias InkfishWeb.Staff.TeamMemberView
 
-  def render("index.json", %{team_members: team_members}) do
+  def index(%{team_members: team_members}) do
     %{data: render_many(team_members, TeamMemberView, "team_member.json")}
   end
 
-  def render("show.json", %{team_member: team_member}) do
+  def show(%{team_member: team_member}) do
     %{data: render_one(team_member, TeamMemberView, "team_member.json")}
   end
 
-  def render("team_member.json", %{team_member: team_member}) do
+  def data(%{team_member: team_member}) do
     %{id: team_member.id}
   end
 end
