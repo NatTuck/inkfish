@@ -9,6 +9,7 @@ defmodule InkfishWeb.ApiV1.SubController do
   action_fallback InkfishWeb.FallbackController
 
   plug InkfishWeb.Plugs.RequireApiUser
+  plug :load_sub when action in [:show]
 
   # There are intentinally no update or delete functions
   # here; do not add them.
@@ -125,5 +126,11 @@ defmodule InkfishWeb.ApiV1.SubController do
       {:ok, val} -> {:ok, val}
       :error -> {:error, key}
     end
+  end
+
+  defp load_sub(conn, _opts) do
+    %{"id" => id} = conn.params
+    sub = Subs.get_sub_path!(id)
+    assign(conn, :sub, sub)
   end
 end
