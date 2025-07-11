@@ -1,25 +1,26 @@
 defmodule InkfishWeb.Staff.LineCommentJson do
-  use InkfishWeb.ViewHelpers
-  alias InkfishWeb.Staff.LineCommentView
+  use InkfishWeb.Json
+  alias InkfishWeb.UserJson
+  alias InkfishWeb.Staff.GradeJson
 
   def render_list(line_comments) do
-    render_many(line_comments, LineCommentView, "line_comment.json")
+    index(%{line_comments: line_comments})
   end
 
   def index(%{line_comments: line_comments}) do
-    %{data: render_many(line_comments, LineCommentView, "line_comment.json")}
+    %{data: Enum.map(line_comments, &data(%{line_comment: &1}))}
   end
 
   def show(%{line_comment: line_comment}) do
-    %{data: render_one(line_comment, LineCommentView, "line_comment.json")}
+    %{data: data(%{line_comment: line_comment})}
   end
 
   def data(%{line_comment: line_comment}) do
     user = get_assoc(line_comment, :user)
-    user_json = render_one(user, InkfishWeb.UserView, "user.json")
+    user_json = UserJson.show(%{user: user})
 
     grade = get_assoc(line_comment, :grade)
-    grade_json = render_one(grade, InkfishWeb.Staff.GradeView, "grade.json")
+    grade_json = GradeJson.show(%{grade: grade})
 
     %{
       id: line_comment.id,

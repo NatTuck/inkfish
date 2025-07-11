@@ -1,13 +1,12 @@
 defmodule InkfishWeb.Staff.TeamMemberJson do
-  use InkfishWeb.ViewHelpers
-  alias InkfishWeb.Staff.TeamMemberView
+  use InkfishWeb.Json
 
   def index(%{team_members: team_members}) do
-    %{data: render_many(team_members, TeamMemberView, "team_member.json")}
+    %{data: Enum.map(team_members, &data(%{team_member: &1}))}
   end
 
   def show(%{team_member: team_member}) do
-    %{data: render_one(team_member, TeamMemberView, "team_member.json")}
+    %{data: data(%{team_member: team_member})}
   end
 
   def data(%{team_member: team_member}) do

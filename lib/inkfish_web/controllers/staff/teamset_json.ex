@@ -1,5 +1,14 @@
 defmodule InkfishWeb.Staff.TeamsetJson do
-  use InkfishWeb.ViewHelpers
+  use InkfishWeb.Json
+  alias InkfishWeb.Staff.CourseJson
+  alias InkfishWeb.Staff.AssignmentJson
+  alias InkfishWeb.Staff.TeamJson
+
+  def show(%{teamset: nil}), do: nil
+
+  def show(%{teamset: teamset}) do
+    %{data: data(%{teamset: teamset})}
+  end
 
   def data(%{teamset: teamset}) do
     course = get_assoc(teamset, :course)
@@ -9,10 +18,9 @@ defmodule InkfishWeb.Staff.TeamsetJson do
     %{
       id: teamset.id,
       name: teamset.name,
-      course: render_one(course, InkfishWeb.Staff.CourseView, "course.json"),
-      assignments:
-        render_many(assigns, InkfishWeb.Staff.AssignmentView, "assignment.json"),
-      teams: render_many(teams, InkfishWeb.Staff.TeamView, "team.json")
+      course: CourseJson.show(%{course: course}),
+      assignments: AssignmentJson.index(%{assignments: assigns}),
+      teams: TeamJson.index(%{teams: teams})
     }
   end
 end

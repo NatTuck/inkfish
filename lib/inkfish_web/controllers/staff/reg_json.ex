@@ -1,5 +1,17 @@
 defmodule InkfishWeb.Staff.RegJson do
-  use InkfishWeb.ViewHelpers
+  use InkfishWeb.Json
+  alias InkfishWeb.UserJson
+  alias InkfishWeb.Staff.CourseJson
+
+  def index(%{regs: regs}) do
+    %{data: Enum.map(regs, &data(%{reg: &1}))}
+  end
+
+  def show(%{reg: nil}), do: nil
+
+  def show(%{reg: reg}) do
+    %{data: data(%{reg: reg})}
+  end
 
   def data(%{reg: reg}) do
     user = get_assoc(reg, :user)
@@ -12,9 +24,9 @@ defmodule InkfishWeb.Staff.RegJson do
       is_prof: reg.is_prof,
       is_student: reg.is_student,
       user_id: reg.user_id,
-      user: render_one(user, InkfishWeb.UserView, "user.json"),
+      user: UserJson.show(%{user: user}),
       course_id: reg.course_id,
-      course: render_one(course, InkfishWeb.Staff.CourseView, "course.json"),
+      course: CourseJson.show(%{course: course}),
       section: reg.section
     }
   end

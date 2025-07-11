@@ -1,10 +1,14 @@
 defmodule InkfishWeb.Staff.AssignmentJson do
-  use InkfishWeb.ViewHelpers
+  use InkfishWeb.Json
 
-  alias InkfishWeb.Staff.BucketView
-  alias InkfishWeb.Staff.TeamsetView
-  alias InkfishWeb.Staff.GradeColumnView
-  alias InkfishWeb.Staff.SubView
+  alias InkfishWeb.Staff.BucketJson
+  alias InkfishWeb.Staff.TeamsetJson
+  alias InkfishWeb.Staff.GradeColumnJson
+  alias InkfishWeb.Staff.SubJson
+
+  def index(%{assignments: assignments}) do
+    Enum.map(assignments, &data(%{assignment: &1}))
+  end
 
   def data(%{assignment: assignment}) do
     bucket = get_assoc(assignment, :bucket)
@@ -15,10 +19,10 @@ defmodule InkfishWeb.Staff.AssignmentJson do
     %{
       name: assignment.name,
       due: assignment.due,
-      bucket: render_one(bucket, BucketView, "bucket.json"),
-      teamset: render_one(teamset, TeamsetView, "teamset.json"),
-      grade_columns: render_many(gcols, GradeColumnView, "grade_column.json"),
-      subs: render_many(subs, SubView, "sub.json")
+      bucket: BucketJson.data(%{bucket: bucket}),
+      teamset: TeamsetJson.show(%{teamset: teamset}),
+      grade_columns: GradeColumnJson.index(%{grade_columns: gcols}),
+      subs: SubJson.index(%{subs: subs})
     }
   end
 end

@@ -1,14 +1,18 @@
 defmodule InkfishWeb.Staff.BucketJson do
-  use InkfishWeb.ViewHelpers
+  use InkfishWeb.Json
 
-  alias InkfishWeb.Staff.AssignmentView
+  alias InkfishWeb.Staff.AssignmentJson
+
+  def index(%{buckets: buckets}) do
+    Enum.map(buckets, &data(%{bucket: &1}))
+  end
 
   def data(%{bucket: bucket}) do
     assignments = get_assoc(bucket, :assignments) || []
 
     %{
       name: bucket.name,
-      assignments: render_many(assignments, AssignmentView, "assignment.json")
+      assignments: AssignmentJson.index(%{assignments: assignments})
     }
   end
 end

@@ -1,5 +1,9 @@
 defmodule InkfishWeb.Staff.CourseJson do
-  use InkfishWeb.ViewHelpers
+  use InkfishWeb.Json
+  alias InkfishWeb.Staff.RegJson
+  alias InkfishWeb.Staff.BucketJson
+
+  def show(%{course: nil}), do: nil
 
   def show(%{course: course}) do
     regs = get_assoc(course, :regs) || []
@@ -8,8 +12,8 @@ defmodule InkfishWeb.Staff.CourseJson do
     %{
       name: course.name,
       start_date: course.start_date,
-      regs: render_many(regs, InkfishWeb.Staff.RegView, "reg.json"),
-      buckets: render_many(buckets, InkfishWeb.Staff.BucketView, "bucket.json"),
+      regs: RegJson.index(%{regs: regs}),
+      buckets: BucketJson.index(%{buckets: buckets}),
       sections: Inkfish.Courses.Course.list_sections(course)
     }
   end
