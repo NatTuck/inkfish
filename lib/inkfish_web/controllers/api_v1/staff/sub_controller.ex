@@ -40,7 +40,7 @@ defmodule InkfishWeb.ApiV1.Staff.SubController do
   end
 
   def show(conn, _params) do
-    sub = conn.assigns.sub
+    sub = Subs.get_sub!(conn.assigns.sub.id)
 
     conn
     |> put_view(InkfishWeb.ApiV1.SubJSON)
