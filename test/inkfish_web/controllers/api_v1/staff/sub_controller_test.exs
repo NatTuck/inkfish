@@ -21,7 +21,14 @@ defmodule InkfishWeb.ApiV1.Staff.SubControllerTest do
     note: "some updated note",
     ignore_late_penalty: false
   }
-  @invalid_attrs %{active: nil, late_penalty: nil, score: nil, hours_spent: nil, note: nil, ignore_late_penalty: nil}
+  @invalid_attrs %{
+    active: nil,
+    late_penalty: nil,
+    score: nil,
+    hours_spent: nil,
+    note: nil,
+    ignore_late_penalty: nil
+  }
 
   setup %{conn: conn} do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
@@ -61,7 +68,10 @@ defmodule InkfishWeb.ApiV1.Staff.SubControllerTest do
   describe "update sub" do
     setup [:create_sub]
 
-    test "renders sub when data is valid", %{conn: conn, sub: %Sub{id: id} = sub} do
+    test "renders sub when data is valid", %{
+      conn: conn,
+      sub: %Sub{id: id} = sub
+    } do
       conn = put(conn, ~p"/api/api_v1/staff/subs/#{sub}", sub: @update_attrs)
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
 
