@@ -1,114 +1,182 @@
 defmodule InkfishWeb.ApiV1.Staff.SubControllerTest do
   use InkfishWeb.ConnCase
 
-  import Inkfish.SubsFixtures
+  import Inkfish.Factory
 
-  alias Inkfish.Subs.Sub
-
-  @create_attrs %{
-    active: true,
-    late_penalty: "120.5",
-    score: "120.5",
-    hours_spent: "120.5",
-    note: "some note",
-    ignore_late_penalty: true
-  }
-  @update_attrs %{
-    active: false,
-    late_penalty: "456.7",
-    score: "456.7",
-    hours_spent: "456.7",
-    note: "some updated note",
-    ignore_late_penalty: false
-  }
-  @invalid_attrs %{
-    active: nil,
-    late_penalty: nil,
-    score: nil,
-    hours_spent: nil,
-    note: nil,
-    ignore_late_penalty: nil
-  }
-
+  # Setup for all tests in this module
   setup %{conn: conn} do
-    {:ok, conn: put_req_header(conn, "accept", "application/json")}
+    course = insert(:course)
+
+    {:ok,
+     conn: put_req_header(conn, "accept", "application/json"),
+     course: course}
+  end
+
+  # Helper to create a user with an API key and return a conn with the x-auth header
+  defp logged_in_user_with_api_key(
+         conn,
+         user_attrs \\ %{},
+         api_key_attrs \\ %{}
+       ) do
+    user = insert(:user, user_attrs)
+    api_key = insert(:api_key, Map.put(api_key_attrs, :user, user))
+    conn = put_req_header(conn, "x-auth", api_key.key)
+    %{conn: conn, user: user, api_key: api_key}
+  end
+
+  # Helper to create a sub for a specific user in a given course
+  defp create_sub_for_user(user, course, assignment_attrs \\ %{}) do
+    bucket = insert(:bucket, course: course)
+    teamset = insert(:teamset, course: course)
+
+    assignment =
+      insert(
+        :assignment,
+        Map.merge(assignment_attrs, %{bucket: bucket, teamset: teamset})
+      )
+
+    reg = insert(:reg, user: user, course: course)
+    team = insert(:team, teamset: teamset)
+    insert(:team_member, team: team, reg: reg)
+    upload = insert(:upload, user: user)
+
+    sub =
+      insert(:sub, assignment: assignment, reg: reg, team: team, upload: upload)
+
+    %{
+      sub: sub,
+      user: user,
+      assignment: assignment,
+      reg: reg,
+      team: team,
+      upload: upload
+    }
   end
 
   describe "index" do
-    test "lists all subs", %{conn: conn} do
-      conn = get(conn, ~p"/api/api_v1/staff/subs")
-      assert json_response(conn, 200)["data"] == []
-    end
-  end
+    test "requires assignment_id", %{conn: conn} do
+      # An API key IS needed because of the RequireApiUser plug
+      %{conn: conn} = logged_in_user_with_api_key(conn)
+      # Corrected path and expected status
+      conn = get(conn, ~p"/api/v1/staff/subs")
 
-  describe "create sub" do
-    test "renders sub when data is valid", %{conn: conn} do
-      conn = post(conn, ~p"/api/api_v1/staff/subs", sub: @create_attrs)
-      assert %{"id" => id} = json_response(conn, 201)["data"]
-
-      conn = get(conn, ~p"/api/api_v1/staff/subs/#{id}")
-
-      assert %{
-               "id" => ^id,
-               "active" => true,
-               "hours_spent" => "120.5",
-               "ignore_late_penalty" => true,
-               "late_penalty" => "120.5",
-               "note" => "some note",
-               "score" => "120.5"
-             } = json_response(conn, 200)["data"]
+      assert json_response(conn, 400)["error"] ==
+               "assignment_id is required and must be a non-empty string"
     end
 
-    test "renders errors when data is invalid", %{conn: conn} do
-      conn = post(conn, ~p"/api/api_v1/staff/subs", sub: @invalid_attrs)
-      assert json_response(conn, 422)["errors"] != %{}
-    end
-  end
-
-  describe "update sub" do
-    setup [:create_sub]
-
-    test "renders sub when data is valid", %{
+    test "staff/prof user can list all subs for a given assignment", %{
       conn: conn,
-      sub: %Sub{id: id} = sub
+      course: course
     } do
-      conn = put(conn, ~p"/api/api_v1/staff/subs/#{sub}", sub: @update_attrs)
-      assert %{"id" => ^id} = json_response(conn, 200)["data"]
+      # Setup staff user and API key
+      %{conn: staff_conn, user: staff_user} = logged_in_user_with_api_key(conn)
+      staff_reg = insert(:reg, user: staff_user, course: course, is_staff: true)
 
-      conn = get(conn, ~p"/api/api_v1/staff/subs/#{id}")
+      bucket = insert(:bucket, course: course)
+      teamset = insert(:teamset, course: course)
+      assignment = insert(:assignment, bucket: bucket, teamset: teamset)
 
-      assert %{
-               "id" => ^id,
-               "active" => false,
-               "hours_spent" => "456.7",
-               "ignore_late_penalty" => false,
-               "late_penalty" => "456.7",
-               "note" => "some updated note",
-               "score" => "456.7"
-             } = json_response(conn, 200)["data"]
+      staff_user_sub =
+        insert(:sub,
+          assignment: assignment,
+          reg: staff_reg,
+          team: insert(:team, teamset: teamset),
+          upload: insert(:upload, user: staff_user)
+        )
+
+      other_user = insert(:user)
+      other_reg = insert(:reg, user: other_user, course: course)
+      other_team = insert(:team, teamset: teamset)
+      insert(:team_member, team: other_team, reg: other_reg)
+
+      other_sub =
+        insert(:sub,
+          assignment: assignment,
+          reg: other_reg,
+          team: other_team,
+          upload: insert(:upload, user: other_user)
+        )
+
+      conn =
+        get(staff_conn, ~p"/api/v1/staff/subs", %{
+          assignment_id: assignment.id
+        })
+
+      response_ids =
+        json_response(conn, 200)["data"] |> Enum.map(& &1["id"]) |> Enum.sort()
+
+      expected_ids = [staff_user_sub.id, other_sub.id] |> Enum.sort()
+      assert response_ids == expected_ids
     end
 
-    test "renders errors when data is invalid", %{conn: conn, sub: sub} do
-      conn = put(conn, ~p"/api/api_v1/staff/subs/#{sub}", sub: @invalid_attrs)
-      assert json_response(conn, 422)["errors"] != %{}
+    test "non-staff/prof user cannot list subs for a given assignment", %{
+      conn: conn,
+      course: course
+    } do
+      # Setup student user and API key
+      %{conn: student_conn, user: student_user} =
+        logged_in_user_with_api_key(conn)
+
+      insert(:reg, user: student_user, course: course, is_student: true)
+
+      bucket = insert(:bucket, course: course)
+      teamset = insert(:teamset, course: course)
+      assignment = insert(:assignment, bucket: bucket, teamset: teamset)
+
+      conn =
+        get(student_conn, ~p"/api/v1/staff/subs", %{
+          assignment_id: assignment.id
+        })
+
+      assert json_response(conn, 404)
     end
   end
 
-  describe "delete sub" do
-    setup [:create_sub]
+  describe "show sub" do
+    test "staff user can see any sub in their course", %{conn: conn, course: course} do
+      %{conn: staff_conn, user: staff_user} = logged_in_user_with_api_key(conn)
+      insert(:reg, user: staff_user, course: course, is_staff: true)
 
-    test "deletes chosen sub", %{conn: conn, sub: sub} do
-      conn = delete(conn, ~p"/api/api_v1/staff/subs/#{sub}")
-      assert response(conn, 204)
+      student_user = insert(:user)
+      %{sub: student_sub} = create_sub_for_user(student_user, course)
 
-      assert_error_sent 404, fn ->
-        get(conn, ~p"/api/api_v1/staff/subs/#{sub}")
-      end
+      conn = get(staff_conn, ~p"/api/v1/staff/subs/#{student_sub.id}")
+      assert json_response(conn, 200)["data"]["id"] == student_sub.id
     end
-  end
 
-  defp create_sub(_) do
-    sub = sub_fixture()
-    %{sub: sub}
+    test "prof user can see any sub in their course", %{conn: conn, course: course} do
+      %{conn: prof_conn, user: prof_user} = logged_in_user_with_api_key(conn)
+      insert(:reg, user: prof_user, course: course, is_prof: true)
+
+      student_user = insert(:user)
+      %{sub: student_sub} = create_sub_for_user(student_user, course)
+
+      conn = get(prof_conn, ~p"/api/v1/staff/subs/#{student_sub.id}")
+      assert json_response(conn, 200)["data"]["id"] == student_sub.id
+    end
+
+    test "staff/prof user cannot see a sub in a different course", %{conn: conn} do
+      %{conn: staff_conn, user: staff_user} = logged_in_user_with_api_key(conn)
+      course_a = insert(:course)
+      insert(:reg, user: staff_user, course: course_a, is_staff: true)
+
+      course_b = insert(:course)
+      student_user = insert(:user)
+
+      %{sub: student_sub_in_course_b} =
+        create_sub_for_user(student_user, course_b)
+
+      conn = get(staff_conn, ~p"/api/v1/staff/subs/#{student_sub_in_course_b.id}")
+      assert json_response(conn, 404)["errors"]["detail"] == "Not Found"
+    end
+
+    test "returns 404 for non-existent sub", %{conn: conn} do
+      %{conn: conn} = logged_in_user_with_api_key(conn)
+      # Use a large integer for a non-existent ID
+      non_existent_id = 9_999_999_999
+
+      conn = get(conn, ~p"/api/v1/staff/subs/#{non_existent_id}")
+      assert json_response(conn, 404)["errors"]["detail"] == "Not Found"
+    end
   end
 end
