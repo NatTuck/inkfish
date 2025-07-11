@@ -55,6 +55,14 @@ defmodule InkfishWeb.ApiV1.SubController do
     end
   end
 
+  def show(conn, _params) do
+    sub = conn.assigns.sub
+
+    conn
+    |> put_view(InkfishWeb.ApiV1.SubJSON)
+    |> render(:show, sub: sub)
+  end
+
   @doc """
   This accepts a request with an x-auth header simulating
   a form like this:
