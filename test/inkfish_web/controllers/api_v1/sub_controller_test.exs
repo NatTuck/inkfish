@@ -30,35 +30,6 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
     %{conn: conn, user: user, api_key: api_key}
   end
 
-  # Helper to create a sub for a specific user in a given course
-  defp create_sub_for_user(user, course, assignment_attrs \\ %{}) do
-    bucket = insert(:bucket, course: course)
-    teamset = insert(:teamset, course: course)
-
-    assignment =
-      insert(
-        :assignment,
-        Map.merge(assignment_attrs, %{bucket: bucket, teamset: teamset})
-      )
-
-    reg = insert(:reg, user: user, course: course)
-    team = insert(:team, teamset: teamset)
-    insert(:team_member, team: team, reg: reg)
-    upload = insert(:upload, user: user)
-
-    sub =
-      insert(:sub, assignment: assignment, reg: reg, team: team, upload: upload)
-
-    %{
-      sub: sub,
-      user: user,
-      assignment: assignment,
-      reg: reg,
-      team: team,
-      upload: upload
-    }
-  end
-
   describe "index" do
     setup %{conn: conn} do
       # Create a course for all index tests
@@ -72,8 +43,7 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
       # Corrected path and expected status
       conn = get(conn, ~p"/api/v1/subs")
 
-      assert json_response(conn, 400)["error"] ==
-               "assignment_id is required and must be a non-empty string"
+      assert json_response(conn, 404)["error"]
     end
 
     test "lists only current user's subs for a given assignment", %{
@@ -119,7 +89,6 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
              |> Enum.sort() == [user_sub.id] |> Enum.sort()
     end
 
-
     test "returns empty list if no subs for assignment", %{
       conn: conn,
       course: course
@@ -136,7 +105,7 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
       assert json_response(conn, 200)["data"] == []
     end
 
-    test "returns empty list if user not registered in course", %{
+    test "returns access denied if user not registered in course", %{
       conn: conn,
       course: course
     } do
@@ -147,10 +116,9 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
       assignment = insert(:assignment, bucket: bucket, teamset: teamset)
 
       conn = get(conn, ~p"/api/v1/subs", %{assignment_id: assignment.id})
-      assert json_response(conn, 200)["data"] == []
+      assert json_response(conn, 403)
     end
   end
-
 
   describe "create sub" do
     # This setup now provides conn, user, assignment, etc.

@@ -8,25 +8,33 @@ defmodule InkfishWeb.Plugs.RequireReg do
   def call(conn, args \\ []) do
     user = conn.assigns[:current_user]
     course = conn.assigns[:course]
-    reg = Users.find_reg(user, course)
 
-    is_staff = reg && (reg.is_staff || reg.is_prof)
+    if is_nil(user) or is_nil(course) do
+      respond_with_error(conn, 404, "Could not find user or course.")
+    else
+      reg = Users.find_reg(user, course)
 
-    if is_nil(reg) || (args[:staff] && !is_staff && !user.is_admin) do
-      if conn.assigns[:client_mode] == :browser do
-        conn
-        |> put_flash(:error, "Access denied.")
-        |> redirect(to: Routes.page_path(conn, :index))
-        |> halt
+      is_staff = reg && (reg.is_staff || reg.is_prof)
+
+      if is_nil(reg) || (args[:staff] && !is_staff && !user.is_admin) do
+        respond_with_error(conn, 403, "Access denied")
       else
-        conn
-        |> put_resp_content_type("application/json")
-        |> send_resp(403, ~s({"error": "Access denied."}))
-        |> halt
+        assign(conn, :current_reg, reg)
       end
+    end
+  end
+
+  def respond_with_error(conn, code, msg) do
+    if conn.assigns[:client_mode] == :browser do
+      conn
+      |> put_flash(:error, msg)
+      |> redirect(to: Routes.page_path(conn, :index))
+      |> halt
     else
       conn
-      |> assign(:current_reg, reg)
+      |> put_resp_content_type("application/json")
+      |> send_resp(code, JSON.encode!(%{error: msg}))
+      |> halt
     end
   end
 end

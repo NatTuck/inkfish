@@ -8,8 +8,7 @@ defmodule InkfishWeb.ApiV1.Staff.SubControllerTest do
     course = insert(:course)
 
     {:ok,
-     conn: put_req_header(conn, "accept", "application/json"),
-     course: course}
+     conn: put_req_header(conn, "accept", "application/json"), course: course}
   end
 
   # Helper to create a user with an API key and return a conn with the x-auth header
@@ -60,8 +59,7 @@ defmodule InkfishWeb.ApiV1.Staff.SubControllerTest do
 
       conn = get(conn, ~p"/api/v1/staff/subs")
 
-      assert json_response(conn, 400)["error"] ==
-               "assignment_id is required and must be a non-empty string"
+      assert json_response(conn, 404)
     end
 
     test "staff/prof user can list all subs for a given assignment", %{
@@ -128,12 +126,15 @@ defmodule InkfishWeb.ApiV1.Staff.SubControllerTest do
           assignment_id: assignment.id
         })
 
-      assert json_response(conn, 403)["error"] == "Access denied."
+      assert json_response(conn, 403)["error"] == "Access denied"
     end
   end
 
   describe "show sub" do
-    test "staff user can see any sub in their course", %{conn: conn, course: course} do
+    test "staff user can see any sub in their course", %{
+      conn: conn,
+      course: course
+    } do
       %{conn: staff_conn, user: staff_user} = logged_in_user_with_api_key(conn)
       insert(:reg, user: staff_user, course: course, is_staff: true)
 
@@ -144,7 +145,10 @@ defmodule InkfishWeb.ApiV1.Staff.SubControllerTest do
       assert json_response(conn, 200)["data"]["id"] == student_sub.id
     end
 
-    test "prof user can see any sub in their course", %{conn: conn, course: course} do
+    test "prof user can see any sub in their course", %{
+      conn: conn,
+      course: course
+    } do
       %{conn: prof_conn, user: prof_user} = logged_in_user_with_api_key(conn)
       insert(:reg, user: prof_user, course: course, is_prof: true)
 
@@ -166,8 +170,10 @@ defmodule InkfishWeb.ApiV1.Staff.SubControllerTest do
       %{sub: student_sub_in_course_b} =
         create_sub_for_user(student_user, course_b)
 
-      conn = get(staff_conn, ~p"/api/v1/staff/subs/#{student_sub_in_course_b.id}")
-      assert json_response(conn, 403)["error"] == "Access denied."
+      conn =
+        get(staff_conn, ~p"/api/v1/staff/subs/#{student_sub_in_course_b.id}")
+
+      assert json_response(conn, 403)["error"] == "Access denied"
     end
 
     test "returns 404 for non-existent sub", %{conn: conn, course: course} do
@@ -176,8 +182,9 @@ defmodule InkfishWeb.ApiV1.Staff.SubControllerTest do
       # Use a large integer for a non-existent ID
       non_existent_id = 9_999_999_999
 
-      conn = get(conn, ~p"/api/v1/staff/subs/#{non_existent_id}")
-      assert json_response(conn, 404)["errors"]["detail"] == "Not Found"
+      assert_raise Ecto.NoResultsError, fn ->
+        get(conn, ~p"/api/v1/staff/subs/#{non_existent_id}")
+      end
     end
   end
 end

@@ -95,21 +95,13 @@ defmodule InkfishWeb.Plugs.FetchItem do
   end
 
   def fetch(conn, :sub, id) do
-    case Inkfish.Subs.get_sub_path(id) do
-      nil ->
-        conn
-        |> put_status(:not_found)
-        |> put_view(InkfishWeb.ErrorJSON)
-        |> render(:not_found)
-        |> halt()
+    sub = Inkfish.Subs.get_sub_path!(id)
 
-      sub ->
-        conn
-        |> assign(:sub, sub)
-        |> assign(:assignment, sub.assignment)
-        |> assign(:bucket, sub.assignment.bucket)
-        |> assign(:course, sub.assignment.bucket.course)
-    end
+    conn
+    |> assign(:sub, sub)
+    |> assign(:assignment, sub.assignment)
+    |> assign(:bucket, sub.assignment.bucket)
+    |> assign(:course, sub.assignment.bucket.course)
   end
 
   def fetch(conn, :grade, id) do

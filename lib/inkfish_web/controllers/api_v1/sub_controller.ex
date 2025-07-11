@@ -8,56 +8,40 @@ defmodule InkfishWeb.ApiV1.SubController do
 
   action_fallback InkfishWeb.FallbackController
 
-  plug InkfishWeb.Plugs.RequireApiUser
-  plug :load_sub when action in [:show]
+  alias InkfishWeb.Plugs
+
+  plug Plugs.RequireApiUser
+
+  plug Plugs.FetchItem,
+       [sub: "id"]
+       when action in [:show]
+
+  plug Plugs.FetchItem,
+       [assignment: "assignment_id"]
+       when action in [:index]
+
+  plug Plugs.RequireReg when action not in [:create]
 
   # There are intentinally no update or delete functions
   # here; do not add them.
 
   def index(conn, params) do
-    case Map.fetch(params, "assignment_id") do
-      {:ok, asg_id_param} when is_binary(asg_id_param) and asg_id_param != "" ->
-        # Convert to integer for lookup. This might raise ArgumentError.
-        asg_id = String.to_integer(asg_id_param)
+    asg = conn.assigns[:assignment]
+    user_reg = conn.assigns[:current_reg]
 
-        user = conn.assigns[:current_user]
+    page = Map.get(params, "page", "0") |> String.to_integer()
 
-        # Fetch the assignment to get its course_id. This might raise Ecto.NoResultsError.
-        assignment = Assignments.get_assignment_path!(asg_id)
-        course_id = assignment.bucket.course_id
+    subs = Subs.list_subs_for_api(asg.id, user_reg.id, page)
 
-        # Find the user's registration for this course
-        user_reg = Users.get_reg_by_user_and_course(user.id, course_id)
-
-        # Determine reg_id to filter by
-        reg_id_filter = user_reg && user_reg.id
-
-        # Handle pagination
-        # Default to "0" string, then convert
-        page = Map.get(params, "page", "0") |> String.to_integer()
-
-        # Call Subs.list_subs_for_api
-        subs = Subs.list_subs_for_api(asg_id, reg_id_filter, page)
-
-        conn
-        # Use put_view
-        |> put_view(InkfishWeb.ApiV1.SubJSON)
-        # Use render/2
-        |> render(:index, subs: subs)
-
-      # assignment_id is missing, empty string, or not a binary
-      _ ->
-        conn
-        |> put_status(:bad_request)
-        |> put_view(InkfishWeb.ErrorJSON)
-        |> render(:error,
-          message: "assignment_id is required and must be a non-empty string"
-        )
-    end
+    conn
+    |> put_view(InkfishWeb.ApiV1.SubJSON)
+    |> render(:index, subs: subs)
   end
 
   def show(conn, _params) do
-    sub = conn.assigns.sub
+    sub =
+      conn.assigns.sub
+      |> Subs.preload_upload()
 
     conn
     |> put_view(InkfishWeb.ApiV1.SubJSON)
@@ -126,11 +110,5 @@ defmodule InkfishWeb.ApiV1.SubController do
       {:ok, val} -> {:ok, val}
       :error -> {:error, key}
     end
-  end
-
-  defp load_sub(conn, _opts) do
-    %{"id" => id} = conn.params
-    sub = Subs.get_sub_path!(id)
-    assign(conn, :sub, sub)
   end
 end

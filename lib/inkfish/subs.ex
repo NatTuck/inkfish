@@ -187,6 +187,10 @@ defmodule Inkfish.Subs do
     )
   end
 
+  def preload_upload(%Sub{} = sub) do
+    Repo.preload(sub, [:upload])
+  end
+
   @doc """
   Creates a sub.
 
@@ -212,6 +216,8 @@ defmodule Inkfish.Subs do
         if has_autograders?(sub) do
           autograde!(sub)
         end
+
+        sub = Repo.preload(sub, [:upload])
 
         {:ok, sub}
 
