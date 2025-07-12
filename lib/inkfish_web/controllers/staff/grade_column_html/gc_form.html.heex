@@ -1,68 +1,68 @@
-<.simple_form for={@changeset} action={@action}>
-  <:inner_block :let={f}>
-    <%= if @changeset.action do %>
-      <div class="alert alert-danger">
-        <p>Oops, something went wrong! Please check the errors below.</p>
-      </div>
-    <% end %>
+<.form for={@changeset} action={@action}>
+  <%= if @changeset.action do %>
+    <div class="alert alert-danger">
+      <p>Oops, something went wrong! Please check the errors below.</p>
+    </div>
+  <% end %>
 
-    <div class="mb-3">
-      <.label for={f[:name].id}>Name</.label>
-      <.text_input field={f[:name]} class="form-control" />
-      <.error_tag form={f} field={:name} />
+  <div class="mb-3">
+    <.label for={@changeset.data.id <> "_name"}>Name</.label>
+    <.text_input field={@changeset[:name]} class="form-control" />
+    <.error_tag form={@changeset} field={:name} />
+  </div>
+
+  <div class="mb-3">
+    <.label for={@changeset.data.id <> "_kind"}>Kind</.label>
+    <.select
+      field={@changeset[:kind]}
+      options={Inkfish.Grades.GradeColumn.grade_column_types()}
+      class="form-control"
+    />
+    <.error_tag form={@changeset} field={:kind} />
+  </div>
+
+  <div class="mb-3">
+    <.label for={@changeset.data.id <> "_points"}>Points</.label>
+    <.number_input field={@changeset[:points]} step="any" class="form-control" />
+    <.error_tag form={@changeset} field={:points} />
+  </div>
+
+  <div class="mb-3">
+    <.label for={@changeset.data.id <> "_base"}>Base</.label>
+    <.number_input field={@changeset[:base]} step="any" class="form-control" />
+    <.error_tag form={@changeset} field={:base} />
+  </div>
+
+  <div class="mb-3">
+    <.label for={@changeset.data.id <> "_params"}>Params</.label>
+    <.text_input field={@changeset[:params]} class="form-control" />
+    <.error_tag form={@changeset} field={:params} />
+  </div>
+
+  <div class="mb-3">
+    <.label for="gcol-limits">Limits</.label> <br />
+    <div id="gcol-limits-root" class="mb-2">
+      React component loading...
     </div>
 
-    <div class="mb-3">
-      <.label for={f[:kind].id}>Kind</.label>
-      <.select field={f[:kind]} options={Inkfish.Grades.GradeColumn.grade_column_types()} class="form-control" />
-      <.error_tag form={f} field={:kind} />
+    <div class="mx-4 text-center">
+      <.text_input
+        field={@changeset[:limits]}
+        id="gcol-limits"
+        class="form-control form-control-sm"
+        readonly={true}
+      />
     </div>
+    <.error_tag form={@changeset} field={:limits} />
+  </div>
 
-    <div class="mb-3">
-      <.label for={f[:points].id}>Points</.label>
-      <.number_input field={f[:points]} step="any" class="form-control" />
-      <.error_tag form={f} field={:points} />
-    </div>
-
-    <div class="mb-3">
-      <.label for={f[:base].id}>Base</.label>
-      <.number_input field={f[:base]} step="any" class="form-control" />
-      <.error_tag form={f} field={:base} />
-    </div>
-
-    <div class="mb-3">
-      <.label for={f[:params].id}>Params</.label>
-      <.text_input field={f[:params]} class="form-control" />
-      <.error_tag form={f} field={:params} />
-    </div>
-
-    <div class="mb-3">
-      <.label for="gcol-limits">Limits</.label> <br />
-      <div id="gcol-limits-root" class="mb-2">
-        React component loading...
-      </div>
-
-      <div class="mx-4 text-center">
-        <.text_input
-          field={f[:limits]}
-          id="gcol-limits"
-          class="form-control form-control-sm"
-          readonly={true}
-        />
-      </div>
-      <.error_tag form={f} field={:limits} />
-    </div>
-
-    <div class="mb-3">
-      <.label for={f[:upload_id].id}>Upload ID</.label>
-      <.text_input field={f[:upload_id]} class="form-control" readonly="readonly" />
-      <.error_tag form={f} field={:upload_id} />
-      <%= ajax_upload_field("grade_column", "", "grade_column_upload_id") %>
-    </div>
-  </:inner_block>
-  <:actions>
-    <div class="mb-3">
-      <.button class="btn btn-primary">Save</.button>
-    </div>
-  </:actions>
-</.simple_form>
+  <div class="mb-3">
+    <.label for={@changeset.data.id <> "_upload_id"}>Upload ID</.label>
+    <.text_input field={@changeset[:upload_id]} class="form-control" readonly="readonly" />
+    <.error_tag form={@changeset} field={:upload_id} />
+    <%= ajax_upload_field("grade_column", "", "grade_column_upload_id") %>
+  </div>
+  <div class="mb-3">
+    <.button class="btn btn-primary">Save</.button>
+  </div>
+</.form>
