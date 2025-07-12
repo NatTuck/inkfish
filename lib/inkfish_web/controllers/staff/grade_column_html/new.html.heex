@@ -1,4 +1,6 @@
 <h1>New Grade Column</h1>
 
-<%= InkfishWeb.Staff.GradeColumnHTML.gc_form(Map.put(assigns, :action,
-      ~p"/staff/assignments/#{@assignment}/grade_columns")) %>
+<.gc_form
+  changeset={@changeset}
+  action={~p"/staff/assignments/#{@assignment}/grade_columns"}
+/>

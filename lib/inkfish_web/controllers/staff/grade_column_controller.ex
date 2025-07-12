@@ -22,7 +22,7 @@ defmodule InkfishWeb.Staff.GradeColumnController do
   alias Inkfish.Grades.GradeColumn
 
   def index(conn, _params) do
-    grade_columns = Grades.list_grade_columns()
+    grade_columns = Grades.list_grade_columns_for_assignment(conn.assigns.assignment)
 
     render(conn, "index.html",
       page_title: "Grade Columns",
