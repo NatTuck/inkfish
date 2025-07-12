@@ -8,9 +8,17 @@ defmodule InkfishWeb.FormComponents do
   def error_tag(assigns) do
     ~H"""
     <%= for error <- Keyword.get_values(@form.errors, @field) do %>
-      <span class="help-block"><%= error %></span>
+      <span class="help-block"><%= translate_error(error) %></span>
     <% end %>
     """
+  end
+
+  defp translate_error({msg, _opts}) do
+    msg
+  end
+
+  defp translate_error(msg) do
+    msg
   end
 
   @doc """
@@ -337,7 +345,7 @@ defmodule InkfishWeb.FormComponents do
   attr :rest, :global
   def hidden_input(assigns) do
     ~H"""
-    <input type="hidden" name={@field.name} id={@field.id} value={@field.value} {@rest} />
+    <input type="hidden" name={@field.name} id={@id} value={@field.value} {@rest} />
     """
   end
 
@@ -345,7 +353,7 @@ defmodule InkfishWeb.FormComponents do
   attr :rest, :global, include: ~w(class placeholder readonly)
   def password_input(assigns) do
     ~H"""
-    <input type="password" name={@field.name} id={@field.id} value={@field.value} {@rest} />
+    <input type="password" name={@field.name} id={@id} value={@field.value} {@rest} />
     """
   end
 
@@ -353,7 +361,7 @@ defmodule InkfishWeb.FormComponents do
   attr :rest, :global, include: ~w(class placeholder readonly rows cols)
   def textarea(assigns) do
     ~H"""
-    <textarea name={@field.name} id={@field.id} {@rest}><%= Phoenix.HTML.Form.normalize_value("textarea", @field.value) %></textarea>
+    <textarea name={@field.name} id={@id} {@rest}><%= Phoenix.HTML.Form.normalize_value("textarea", @field.value) %></textarea>
     """
   end
 
@@ -363,7 +371,7 @@ defmodule InkfishWeb.FormComponents do
     ~H"""
     <span>
       <input type="hidden" name={@field.name} value="false" />
-      <input type="checkbox" name={@field.name} id={@field.id} value="true" checked={@field.value} {@rest} />
+      <input type="checkbox" name={@field.name} id={@id} value="true" checked={@field.value} {@rest} />
     </span>
     """
   end
@@ -374,7 +382,7 @@ defmodule InkfishWeb.FormComponents do
 
   def select(assigns) do
     ~H"""
-    <select name={@field.name} id={@field.id} {@rest}>
+    <select name={@field.name} id={@id} {@rest}>
       <%= Phoenix.HTML.Form.options_for_select(@options, @field.value) %>
     </select>
     """
