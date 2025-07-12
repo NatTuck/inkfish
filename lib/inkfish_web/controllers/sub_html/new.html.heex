@@ -4,7 +4,7 @@
 <p>Assignment: <%= @assignment.name %></p>
 <p>Submitting for: <%= show_team(@team) %></p>
 
-<.form :let={f} for={@changeset} action={Routes.assignment_sub_path(@conn, :create, @assignment)}>
+<.form :let={f} for={@changeset} action={~p"/assignments/#{@assignment}/subs"}>
   <%= if @changeset.action do %>
     <div class="alert alert-danger">
       <p>Oops, something went wrong! Please check the errors below.</p>
