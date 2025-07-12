@@ -1,5 +1,6 @@
 #!/usr/bin/env perl
 
+use 5.30.0;
 use strict;
 use warnings;
 use File::Find;
@@ -29,7 +30,7 @@ die "Error: Please run this script from the root of your Phoenix project.\n" .
 print "Starting template migration from '$templates_dir' to '$controllers_dir'...\n";
 
 # Find all files in the templates directory and process them
-find(\&process_template, $templates_dir);
+find({ wanted => \&process_template, no_chdir => 1}, $templates_dir);
 
 # Clean up empty directories left behind in the templates folder
 print "Cleaning up empty directories in '$templates_dir'...\n";
@@ -76,7 +77,10 @@ sub process_template {
     my $html_module_path = catfile($html_module_dir, "${controller_name_part}_html.ex");
 
     # 2. Create the destination directory for the template
-    make_path($new_template_dir) or die "Failed to create directory '$new_template_dir': $!";
+    say("Creating directory: '$new_template_dir'");
+    say("Current directory: " . `pwd`);
+    system(qq{mkdir -p "$new_template_dir"});
+    die "Dir not created" unless -d $new_template_dir;
 
     # 3. Move and rename the template file
     print "  -> Moving to $new_template_path\n";

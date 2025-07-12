@@ -1,5 +1,5 @@
 defmodule InkfishWeb.ApiV1.SubController do
-  use InkfishWeb, :controller1
+  use InkfishWeb, :controller
 
   alias Inkfish.Subs
   alias Inkfish.Assignments

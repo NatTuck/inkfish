@@ -39,7 +39,7 @@
 <h2>Photo</h2>
 
 <p>
-  <% if @user.photo_upload_id && @user.photo_upload do %>
+  <%= if @user.photo_upload_id && @user.photo_upload do %>
     <img
       src={~p"/uploads/#{@user.photo_upload.id}/#{@user.photo_upload.name}"}
       class="user-photo-full"

@@ -1,5 +1,5 @@
 defmodule InkfishWeb.ApiKeyController do
-  use InkfishWeb, :controller1
+  use InkfishWeb, :controller
 
   alias Inkfish.ApiKeys
   alias Inkfish.ApiKeys.ApiKey

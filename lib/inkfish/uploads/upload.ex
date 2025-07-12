@@ -26,7 +26,9 @@ defmodule Inkfish.Uploads.Upload do
 
     has_one(:photo_user, Inkfish.Users.User, foreign_key: :photo_upload_id)
 
-    has_one(:starter_assignment, Inkfish.Assignments.Assignment, foreign_key: :starter_upload_id)
+    has_one(:starter_assignment, Inkfish.Assignments.Assignment,
+      foreign_key: :starter_upload_id
+    )
 
     has_one(:solution_assignment, Inkfish.Assignments.Assignment,
       foreign_key: :solution_upload_id
@@ -154,8 +156,7 @@ defmodule Inkfish.Uploads.Upload do
     full
   end
 
-  # Would be nicer to pattern match %Upload{...}, but...
-  def upload_dir(%{id: id}) do
+  def upload_dir(%Upload{id: id}) do
     upload_dir(id)
   end
 
@@ -174,6 +175,8 @@ defmodule Inkfish.Uploads.Upload do
   def unpack(upload) do
     Sandbox.extract_archive(upload_path(upload), unpacked_path(upload))
   end
+
+  def upload_url(nil), do: nil
 
   def upload_url(upload) do
     host = Application.get_env(:inkfish, :download_host)

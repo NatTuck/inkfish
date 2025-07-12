@@ -29,8 +29,8 @@ defmodule InkfishWeb do
 
       import Plug.Conn
       use Gettext, backend: InkfishWeb.Gettext
+
       import InkfishWeb.ViewHelpers
-      alias InkfishWeb.Router.Helpers, as: Routes
 
       unquote(verified_routes())
     end
@@ -50,27 +50,28 @@ defmodule InkfishWeb do
 
   defp html_helpers do
     quote do
-      # FIXME: Maybe migrate to Phoenix 1.7 defaults:
-      #  - import Phoenix.HTML rather than use
-      #  - Use only verified routes, not Router.Helpers
-
-      # HTML escaping functionality
-      use Phoenix.HTML
+      import Phoenix.HTML
 
       # Core UI components and translation
       import InkfishWeb.CoreComponents
       import InkfishWeb.FormComponents
+
       use Gettext, backend: InkfishWeb.Gettext
 
       # Shortcut for generating JS commands
       alias Phoenix.LiveView.JS
 
-      import InkfishWeb.ErrorHelpers
-
-      alias InkfishWeb.Router.Helpers, as: Routes
+      import InkfishWeb.ViewHelpers
 
       # Routes generation with the ~p sigil
       unquote(verified_routes())
+    end
+  end
+
+  def json do
+    quote do
+      import InkfishWeb.ViewHelpers
+      import InkfishWeb.JsonHelpers
     end
   end
 
@@ -80,30 +81,13 @@ defmodule InkfishWeb do
 
       import Plug.Conn
       import Phoenix.Controller
+      import Phoenix.LiveView.Router
     end
   end
 
   def channel do
     quote do
       use Phoenix.Channel
-      use Gettext, backend: InkfishWeb.Gettext
-    end
-  end
-
-  defp view_helpers do
-    quote do
-      # Use all HTML functionality (forms, tags, etc)
-      use Phoenix.HTML
-
-      # Import basic rendering functionality (render, render_layout, etc)
-      import Phoenix.View
-
-      import InkfishWeb.ErrorHelpers
-      use Gettext, backend: InkfishWeb.Gettext
-      import InkfishWeb.ViewHelpers
-      alias InkfishWeb.Router.Helpers, as: Routes
-
-      unquote(verified_routes())
     end
   end
 

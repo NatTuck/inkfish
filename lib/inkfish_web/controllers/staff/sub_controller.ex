@@ -1,5 +1,5 @@
 defmodule InkfishWeb.Staff.SubController do
-  use InkfishWeb, :controller1
+  use InkfishWeb, :controller
 
   alias InkfishWeb.Plugs
 

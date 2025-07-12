@@ -325,6 +325,12 @@ defmodule InkfishWeb.FormComponents do
     """
   end
 
+  def hidden_input(assigns) do
+    ~H"""
+    <input type="hidden" name={@field.name} id={@field.id} value={@field.value} {@rest} />
+    """
+  end
+
   def password_input(assigns) do
     ~H"""
     <input type="password" name={@field.name} id={@field.id} value={@field.value} {@rest} />

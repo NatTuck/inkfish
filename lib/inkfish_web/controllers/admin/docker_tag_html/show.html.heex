@@ -20,7 +20,7 @@
 
 <pre><%= inspect(@image, pretty: true) %></pre>
 
-<% if @fresh do %>
+<%= if @fresh do %>
   <p>Image is up to date!</p>
 <% else %>
   <p>Image is stale.</p>

@@ -18,7 +18,7 @@
     </tr>
   </thead>
   <tbody>
-    <% for course <- Enum.filter(@courses, &(!&1.archived)) do %>
+    <%= for course <- Enum.filter(@courses, &(!&1.archived)) do %>
       <% prof = @profs[course.id] %>
       <tr>
         <td><.link href={~p"/admin/courses/#{course}"}><%= course.name %></.link></td>
@@ -28,7 +28,7 @@
         </td>
         <td><%= course.start_date %></td>
         <td>
-          <% if prof do %>
+          <%= if prof do %>
             <.link href={~p"/admin/users/#{prof}"}><%= user_display_name(prof) %></.link>
           <% else %>
             (none)
@@ -65,7 +65,7 @@
     </tr>
   </thead>
   <tbody>
-    <% for course <- Enum.filter(@courses, &(&1.archived)) do %>
+    <%= for course <- Enum.filter(@courses, &(&1.archived)) do %>
       <% prof = @profs[course.id] %>
       <tr>
         <td><.link href={~p"/admin/courses/#{course}"}><%= course.name %></.link></td>
@@ -75,7 +75,7 @@
         </td>
         <td><%= course.start_date %></td>
         <td>
-          <% if prof do %>
+          <%= if prof do %>
             <.link href={~p"/admin/users/#{prof}"}><%= user_display_name(prof) %></.link>
           <% else %>
             (none)
