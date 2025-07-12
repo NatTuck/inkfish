@@ -54,7 +54,7 @@
       <.label field={f[:upload_id]} class="form-label" />
       <.text_input field={f[:upload_id]} class="form-control" readonly="readonly" />
       <.error_tag form={f} field={:upload_id} />
-      <.ajax_upload_field id="grade_column" ext="" target_id="grade_column_upload_id" />
+      <%= ajax_upload_field("grade_column", "", "grade_column_upload_id") %>
     </div>
   </:inner>
   <:actions>
