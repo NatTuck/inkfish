@@ -5,6 +5,10 @@ defmodule InkfishWeb.ErrorJSON do
   See config/config.exs.
   """
 
+  def render("error.json", %{message: message}) do
+    %{error: message}
+  end
+
   # If you want to customize a particular status code,
   # you may add your own clauses, such as:
   #
