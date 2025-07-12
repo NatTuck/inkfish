@@ -2,8 +2,7 @@
 
 <%= if is_staff?(@current_reg, @current_user) do %>
   <p>
-    <%= link("Staff View",
-      to: Routes.staff_sub_path(@conn, :show, @sub)) %>
+    <.link href={Routes.staff_sub_path(@conn, :show, @sub)}>Staff View</.link>
   </p>
 <% end %>
 
@@ -40,9 +39,8 @@
 
   <li>
     <strong>Upload:</strong>
-    <%= link(@sub.upload.name,
-      to: Routes.upload_path(@conn, :download, @sub.upload, @sub.upload.name)) %>
-    (<%= link "View Files", to: Routes.sub_path(@conn, :files, @sub) %>)
+    <.link href={Routes.upload_path(@conn, :download, @sub.upload, @sub.upload.name)}><%= @sub.upload.name %></.link>
+    (<.link href={Routes.sub_path(@conn, :files, @sub)}>View Files</.link>)
   </li>
 </ul>
 
@@ -65,7 +63,7 @@
       <td>
         <%= if grade && !grade_hidden?(@conn, @assignment) do %>
           <%= if grade_column.kind == "feedback" do %>
-            <%= link grade_column.name, to: Routes.grade_path(@conn, :show, grade.id) %>
+            <.link href={Routes.grade_path(@conn, :show, grade.id)}><%= grade_column.name %></.link>
             (<%= length(grade.line_comments) %> note(s))
           <% else %>
             <%= grade_column.name %>
@@ -97,9 +95,9 @@
   <h2>Grading Scripts Output</h2>
     
   <% path = Routes.sub_path(@conn, :rerun_scripts, @sub) %>
-  <%= form_for %{}, path, [method: :post], fn _f -> %>
-    <%= submit "Rerun Scripts", class: "btn btn-secondary" %>
-  <% end %>
+  <.form for={%{}} action={path} method="post">
+    <.button class="btn btn-secondary">Rerun Scripts</.button>
+  </.form>
 
   <%= Enum.map @autogrades, fn {grade, token, log} -> %>
     <h3><%= grade.grade_column.name %> (<%= grade.id %>)</h3>

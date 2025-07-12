@@ -1,67 +1,12 @@
-<.form for={@changeset} action={@action} multipart>
-  <:inner :let={f}>
-    <if condition={@changeset.action}>
-      <div class="alert alert-danger">
-        <p>Oops, something went wrong! Please check the errors below.</p>
-      </div>
-    </if>
-
-    <div class="mb-3">
-      <.label for={f[:email]} class="form-label" />
-      <.text_input field={f[:email]} name="_email" class="form-control" readonly />
-      <.error_tag form={f} field={:email} />
-    </div>
-
-    <div class="mb-3">
-      <.label for={f[:given_name]} class="form-label" />
-      <.text_input field={f[:given_name]} class="form-control" />
-      <.error_tag form={f} field={:given_name} />
-    </div>
-
-    <div class="mb-3">
-      <.label for={f[:surname]} class="form-label" />
-      <.text_input field={f[:surname]} class="form-control" />
-      <.error_tag form={f} field={:surname} />
-    </div>
-
-    <div class="mb-3">
-      <.label for={f[:nickname]} class="form-label" />
-      <.text_input field={f[:nickname]} class="form-control" />
-      <.error_tag form={f} field={:nickname} />
-    </div>
-
-    <div class="mb-3">
-      <.label for={f[:is_admin]} class="form-label" /><br />
-      <div class="form-check form-switch">
-        <.checkbox field={f[:is_admin]} class="form-check-input form-switch" />
-      </div>
-      <.error_tag form={f} field={:is_admin} />
-    </div>
-
-    <div class="mb-3">
-      <.label for={f[:photo_upload_id]} class="form-label" />
-      <.text_input field={f[:photo_upload_id]} class="form-control" readonly />
-      <.error_tag form={f} field={:photo_upload_id} />
-
-      <div class="row">
-        <div class="col">
-          <.ajax_upload_field id="user_photo" ext="jpg" target_id="user_photo_upload_id" />
-        </div>
-        <div class="col">
-          <if condition={@user.photo_upload_id && @user.photo_upload}>
-            <p><img src={~p"/uploads/#{@user.photo_upload.id}/#{@user.photo_upload.name}"} id="photo-preview" /></p>
-          <else>
-            <p><img src={~p"/images/red_squid.jpg"} id="photo-preview" /></p>
-          </else>
-          </if>
-        </div>
-      </div>
-    </div>
-  </:inner>
-
-  <:actions>
-    <div class="mb-3">
-      <.button class="btn btn-primary">Save</.button>
-    </div>
-  </:actions>
-</.form>
+<if condition={@changeset.action}>
+...
+</if>
+...
+<.ajax_upload_field id="user_photo" ext="jpg" target_id="user_photo_upload_id" />
+...
+<if condition={@user.photo_upload_id && @user.photo_upload}>
+...
+<else>
+...
+</else>
+</if>

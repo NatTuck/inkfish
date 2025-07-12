@@ -2,4 +2,4 @@
 
 <p><.link href={~p"/admin/courses/#{@course}"}>Show Course</.link></p>
 
-<%= render "form.html", Map.put(assigns, :action, ~p"/admin/courses/#{@course}") %>
+<.course_form changeset={@changeset} action={~p"/admin/courses/#{@course}"} />

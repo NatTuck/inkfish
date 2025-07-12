@@ -1,3 +1,3 @@
 <h1>New Course</h1>
 
-<%= render "form.html", Map.put(assigns, :action, ~p"/admin/courses") %>
+<.course_form changeset={@changeset} action={~p"/admin/courses"} />
