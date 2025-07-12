@@ -74,7 +74,7 @@
   <li>
     <strong>Solution:</strong>
     <%= if @assignment.solution_upload do %>
-      <.link href={~p"/uploads/#{@assignment.solution_upload}"}>
+      <.link href={~p"/uploads/#{@assignment.solution_upload.id}/#{@assignment.solution_upload.name}"}>
         <%= @assignment.solution_upload.name %>
       </.link>
     <% else %>

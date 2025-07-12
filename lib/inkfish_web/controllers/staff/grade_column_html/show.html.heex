@@ -40,7 +40,7 @@
   <li>
     <strong>Upload:</strong>
     <%= if @grade_column.upload do %>
-      <.link href={~p"/uploads/#{@grade_column.upload}"}>
+      <.link href={~p"/uploads/#{@grade_column.upload.id}/#{@grade_column.upload.name}"}>
         <%= @grade_column.upload.name %>
       </.link>
     <% else %>

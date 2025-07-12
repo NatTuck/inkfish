@@ -23,11 +23,7 @@
   </thead>
   <tbody>
 <%= for join_req <- @join_reqs do %>
-    <%= if join_req.staff_req do %>
-      <tr class="table-warning">
-    <% else %>
-      <tr>
-    <% end %>
+    <tr class="<%= if join_req.staff_req, do: "table-warning" %>">
       <td><%= user_display_name(join_req.user) %></td>
       <td><%= join_req.note %></td>
       <td><%= join_req.staff_req %></td>
