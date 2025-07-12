@@ -1,5 +1,6 @@
 defmodule InkfishWeb.Staff.LineCommentJson do
-  use InkfishWeb.Json
+  import InkfishWeb.ViewHelpers
+
   alias InkfishWeb.UserJson
   alias InkfishWeb.Staff.GradeJson
 

@@ -1,5 +1,5 @@
 defmodule InkfishWeb.Staff.AssignmentJson do
-  use InkfishWeb.Json
+  import InkfishWeb.ViewHelpers
 
   alias InkfishWeb.Staff.BucketJson
   alias InkfishWeb.Staff.TeamsetJson

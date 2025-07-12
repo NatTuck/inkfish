@@ -1,5 +1,5 @@
 defmodule InkfishWeb.Staff.GradeColumnJson do
-  use InkfishWeb.Json
+  import InkfishWeb.ViewHelpers
 
   def index(%{grade_columns: grade_columns}) do
     Enum.map(grade_columns, &data(%{grade_column: &1}))

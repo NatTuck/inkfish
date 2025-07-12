@@ -1,5 +1,6 @@
 defmodule InkfishWeb.Staff.GradeJson do
-  use InkfishWeb.Json
+  import InkfishWeb.ViewHelpers
+
   alias InkfishWeb.Staff.SubJson
   alias InkfishWeb.Staff.GradeColumnJson
   alias InkfishWeb.Staff.LineCommentJson

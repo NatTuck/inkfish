@@ -1,5 +1,5 @@
 defmodule InkfishWeb.Staff.TeamJson do
-  use InkfishWeb.Json
+  use InkfishWeb.ViewHelpers
 
   alias Inkfish.Teams.Team
   alias InkfishWeb.Staff.RegJson

@@ -1,5 +1,6 @@
 defmodule InkfishWeb.Staff.CourseJson do
-  use InkfishWeb.Json
+  import InkfishWeb.ViewHelpers
+
   alias InkfishWeb.Staff.RegJson
   alias InkfishWeb.Staff.BucketJson
 
