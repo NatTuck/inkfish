@@ -207,20 +207,6 @@ defmodule InkfishWeb.CoreComponents do
   end
 
   @doc """
-  Renders a label.
-  """
-  attr :for, :string, default: nil
-  slot :inner_block, required: true
-
-  def label(assigns) do
-    ~H"""
-    <label for={@for} class="form-label">
-      {render_slot(@inner_block)}
-    </label>
-    """
-  end
-
-  @doc """
   A progress bar component
   """
   attr :progress, :integer, default: 0
@@ -241,20 +227,6 @@ defmodule InkfishWeb.CoreComponents do
       >
       </div>
     </div>
-    """
-  end
-
-  @doc """
-  Generates a generic error message.
-  """
-  slot :inner_block, required: true
-
-  def error(assigns) do
-    ~H"""
-    <p class="invalid-feedback">
-      <i class="fas fa-exclamation-circle mr-2"></i>
-      {render_slot(@inner_block)}
-    </p>
     """
   end
 

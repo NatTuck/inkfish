@@ -180,7 +180,7 @@ defmodule InkfishWeb.FormComponents do
 
     ~H"""
     <div phx-feedback-for={@name}>
-      <label class="form-label">
+      <.label for={@id || @name}>
         <input type="hidden" name={@name} value="false" />
         <input
           type="checkbox"
@@ -192,7 +192,7 @@ defmodule InkfishWeb.FormComponents do
           {@rest}
         />
         {@label}
-      </label>
+      </.label>
       <.error :for={msg <- @errors}>{msg}</.error>
     </div>
     """
@@ -206,7 +206,6 @@ defmodule InkfishWeb.FormComponents do
         id={@id}
         name={@name}
         class="form-select"
-        ,
         multiple={@multiple}
         {@rest}
       >
@@ -229,9 +228,9 @@ defmodule InkfishWeb.FormComponents do
         id={@id}
         checked={@checked}
       />
-      <label class="form-check-label" for={@id}>
+      <.label class="form-check-label" for={@id}>
         {@label}
-      </label>
+      </.label>
       <.error :for={msg <- @errors}>{msg}</.error>
     </div>
     """
@@ -269,6 +268,35 @@ defmodule InkfishWeb.FormComponents do
       />
       <.error :for={msg <- @errors}>{msg}</.error>
     </div>
+    """
+  end
+
+  @doc """
+  Renders a label.
+  """
+  attr :for, :string, default: nil
+  attr :class, :string, default: nil
+  slot :inner_block, required: true
+
+  def label(assigns) do
+    ~H"""
+    <label for={@for} class={[@class || "form-label"]}>
+      {render_slot(@inner_block)}
+    </label>
+    """
+  end
+
+  @doc """
+  Generates a generic error message.
+  """
+  slot :inner_block, required: true
+
+  def error(assigns) do
+    ~H"""
+    <p class="invalid-feedback">
+      <i class="fas fa-exclamation-circle mr-2"></i>
+      {render_slot(@inner_block)}
+    </p>
     """
   end
 
