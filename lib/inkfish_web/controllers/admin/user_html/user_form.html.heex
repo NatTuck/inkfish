@@ -41,10 +41,10 @@
         </div>
         <div class="col">
           <%= if @user.photo_upload_id && @user.photo_upload do %>
-            <p><img src={Routes.upload_path(@conn, :download, @user.photo_upload, @user.photo_upload.name)}
+            <p><img src={~p"/uploads/#{@user.photo_upload.id}/#{@user.photo_upload.name}"}
                     id="photo-preview" /></p>
           <% else %>
-            <p><img src={Routes.static_path(@conn, "/images/red_squid.jpg")}
+            <p><img src={~p"/images/red_squid.jpg"}
                     id="photo-preview" /></p>
           <% end %>
         </div>
