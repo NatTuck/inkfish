@@ -1,0 +1,88 @@
+digraph InkfishSchema {
+    rankdir=LR;
+    splines=ortho;
+    node [shape=box, style="rounded,filled", fillcolor="#e0f2fe"];
+    edge [color="#3b82f6"];
+
+    // Define node shapes and colors
+    Course [fillcolor="#fef08a"];
+    User [fillcolor="#fef08a"];
+    Assignment [fillcolor="#dcfce7"];
+    Sub [fillcolor="#dcfce7"];
+    DockerTag [fillcolor="#f3f4f6"];
+
+    // -- Core Hierarchies --
+
+    // Course is a primary root
+    Bucket -> Course;
+    Teamset -> Course;
+    Reg -> Course;
+    JoinReq -> Course;
+
+    // User is a primary root
+    Reg -> User;
+    JoinReq -> User;
+    Upload -> User;
+    ApiKey -> User;
+    LineComment -> User;
+    User -> Upload [label="photo_upload_id", style=dashed, color="#94a3b8", constraint=false];
+
+    // Assignment Hierarchy
+    Assignment -> Bucket;
+    Assignment -> Teamset;
+    Assignment -> Upload [label="starter_upload_id", style=dashed, color="#94a3b8"];
+    Assignment -> Upload [label="solution_upload_id", style=dashed, color="#94a3b8"];
+
+    // Team Hierarchy (via Teamset)
+    Team -> Teamset;
+    TeamMember -> Team;
+    TeamMember -> Reg;
+
+    // Submission & Grading Hierarchy (via Assignment)
+    Sub -> Assignment;
+    Sub -> Team;
+    Sub -> Reg [label="reg_id (submitter)"];
+    Sub -> Reg [label="grader_id", style=dashed, color="#94a3b8", constraint=false];
+    Sub -> Upload;
+
+    GradeColumn -> Assignment;
+    GradeColumn -> Upload [style=dashed, color="#94a3b8"];
+
+    Grade -> Sub;
+    Grade -> GradeColumn;
+
+    LineComment -> Grade;
+
+    // Standalone or loosely coupled
+    AgJob -> Sub;
+
+    // -- Visual Grouping --
+
+    subgraph cluster_course {
+        label = "Course & Team Management";
+        style="filled,rounded";
+        color="#f1f5f9";
+        Course; Bucket; Teamset; Team; TeamMember;
+    }
+
+    subgraph cluster_user {
+        label = "Users & Registrations";
+        style="filled,rounded";
+        color="#f1f5f9";
+        User; Reg; JoinReq; ApiKey;
+    }
+
+    subgraph cluster_assignment {
+        label = "Assignments & Grading";
+        style="filled,rounded";
+        color="#f1f5f9";
+        Assignment; Sub; GradeColumn; Grade; LineComment; AgJob;
+    }
+
+    subgraph cluster_support {
+        label = "Supporting Resources";
+        style="filled,rounded";
+        color="#f1f5f9";
+        Upload; DockerTag;
+    }
+}
