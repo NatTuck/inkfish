@@ -162,7 +162,7 @@
       <th>
         <%= gcol.name %>
         <%= if gcol.kind == "number" do %>
-          <span class="toggle-number-inputs" data-grade-column-id="<%= gcol.id %>">
+          <span class="toggle-number-inputs" data-grade-column-id="#{gcol.id}">
             <!-- react component from gcolade_columns/number-input.jsx -->
             [react]
           </span>
@@ -182,10 +182,10 @@
             <%= case gcol.kind do %>
               <% "number" -> %>
                 <div class="number-grade-cell"
-                     data-score="<%= (grade && grade.score) || 0 %>"
-                     data-points="<%= gcol.points %>"
-                     data-sub-id="<%= sub.id %>"
-                     data-grade-column-id="<%= gcol.id %>">
+                     data-score="#{ (grade && grade.score) || 0 }"
+                     data-points="#{ gcol.points }"
+                     data-sub-id="#{ sub.id }"
+                     data-grade-column-id="#{ gcol.id }">
                   <!-- React component: grade_columns/number-input.jsx -->
                   <%= show_score(@conn, grade) %>
                 </div>
