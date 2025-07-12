@@ -12,20 +12,20 @@
     </div>
 
     <div class="mb-3">
-      <.label field={f[:name]} class="form-label" />
+      <.label for="name" class="form-label">Name</.label>
       <.text_input field={f[:name]} class="form-control" />
       <.error_tag form={f} field={:name} />
     </div>
 
     <div class="mb-3">
-      <.label field={f[:desc]} class="form-label" />
+      <.label for="desc" class="form-label">Desc</.label>
       <.textarea field={f[:desc]} class="form-control" />
       <.error_tag form={f} field={:desc} />
     </div>
 
     <div class="mb-3">
       <div>
-        <.label field={f[:due]} class="form-label" />
+        <.label for="due" class="form-label">Due</.label>
         <div>
           <.text_input field={f[:due]} class="form-control date-time-picker" />
         </div>
@@ -34,12 +34,12 @@
       <div class="px-4">
         <p class="mt-1">TZ: <%= @timezone %></p>
         <div class="form-check form-switch">
-          <.label field={f[:hard_deadline]}>Hard Deadline</.label>
+          <.label for="hard_deadline">Hard Deadline</.label>
           <.checkbox field={f[:hard_deadline]} class="form-check-input" />
           <.error_tag form={f} field={:hard_deadline} />
         </div>
         <div class="form-check form-switch">
-          <.label field={f[:force_show_grades]}>Force Show Grades</.label>
+          <.label for="force_show_grades">Force Show Grades</.label>
           <.checkbox field={f[:force_show_grades]} class="form-check-input" />
           <.error_tag form={f} field={:force_show_grades} />
         </div>
@@ -47,13 +47,13 @@
     </div>
 
     <div class="mb-3">
-      <.label field={f[:weight]} class="form-label" />
+      <.label for="weight" class="form-label">Weight</.label>
       <.number_input field={f[:weight]} step="any" class="form-control" />
       <.error_tag form={f} field={:weight} />
     </div>
 
     <div class="mb-3">
-      <.label field={f[:teamset_id]} class="form-label" />
+      <.label for="teamset_id" class="form-label">Teamset id</.label>
       <.select field={f[:teamset_id]} options={Enum.map(@teamsets, &({&1.name, &1.id}))}
                  class="form-control"/>
       <.error_tag form={f} field={:teamset_id} />
@@ -63,12 +63,12 @@
       <p>Allowed submission methods</p>
       <div class="px-4">
         <div class="form-check form-switch">
-          <.label field={f[:allow_upload]}>File Upload</.label>
+          <.label for="allow_upload">File Upload</.label>
           <.checkbox field={f[:allow_upload]} class="form-check-input" />
           <.error_tag form={f} field={:allow_upload} />
         </div>
         <div class="form-check form-switch">
-          <.label field={f[:allow_git]}>Git Clone</.label>
+          <.label for="allow_git">Git Clone</.label>
           <.checkbox field={f[:allow_git]} class="form-check-input" />
           <.error_tag form={f} field={:allow_git} />
         </div>
@@ -79,7 +79,7 @@
       <p>Hide this assignment from students on the course page?</p>
       <div class="px-4">
         <div class="form-check form-switch">
-          <.label field={f[:hide]}>Hide</.label>
+          <.label for="hide">Hide</.label>
           <.checkbox field={f[:hide]} class="form-check-input" />
           <.error_tag form={f} field={:hide} />
         </div>
@@ -87,7 +87,7 @@
     </div>
 
     <div class="mb-3">
-      <.label field={f[:starter_upload_id]} class="form-label" />
+      <.label for="starter_upload_id" class="form-label">Starter upload id</.label>
       <.text_input field={f[:starter_upload_id]} class="form-control" readonly="readonly" />
       <.error_tag form={f} field={:starter_upload_id} />
       <div class="file-uploader"
@@ -99,7 +99,7 @@
     </div>
 
     <div class="mb-3">
-      <.label field={f[:solution_upload_id]} class="form-label" />
+      <.label for="solution_upload_id" class="form-label">Solution upload id</.label>
       <.text_input field={f[:solution_upload_id]} class="form-control" readonly="readonly" />
       <.error_tag form={f} field={:solution_upload_id} />
       <div class="file-uploader"

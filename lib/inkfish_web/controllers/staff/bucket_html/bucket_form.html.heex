@@ -9,13 +9,13 @@
     <.hidden_input field={f[:course_id]} />
 
     <div class="mb-3">
-      <.label field={f[:name]} class="form-label" />
+      <.label for="name" class="form-label">Name</.label>
       <.text_input field={f[:name]} placeholder="Homework" />
       <.error_tag form={f} field={:name} />
     </div>
 
     <div class="mb-3">
-      <.label field={f[:weight]} class="form-label" />
+      <.label for="weight" class="form-label">Weight</.label>
       <.number_input field={f[:weight]} step="any" />
       <.error_tag form={f} field={:weight} />
     </div>

@@ -7,7 +7,7 @@
     <% end %>
 
     <div class="mb-3">
-      <.label field={f[:score]} class="form-label" />
+      <.label for="score" class="form-label">Score</.label>
       <.number_input field={f[:score]} step="any" />
       <.error_tag form={f} field={:score} />
     </div>

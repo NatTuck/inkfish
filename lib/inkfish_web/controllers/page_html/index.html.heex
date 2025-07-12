@@ -4,12 +4,12 @@
     <.form for={@conn} action={~p"/session"} as={:user}>
       <:inner :let={f}>
         <div class="mb-3">
-          <.label field={f[:email]} class="form-label" />
+          <.label for="email" class="form-label">Email</.label>
           <.text_input field={f[:email]} class="form-control" />
         </div>
 
         <div class="mb-3">
-          <.label field={f[:password]} class="form-label" />
+          <.label for="password" class="form-label">Password</.label>
           <.password_input field={f[:password]} class="form-control" />
         </div>
 
@@ -27,7 +27,7 @@
     <.form for={@conn} action={~p"/users/send_auth_email"} as={:user}>
       <:inner :let={f}>
         <div class="mb-3">
-          <.label field={f[:email]} class="form-label" />
+          <.label for="email" class="form-label">Email</.label>
           <.text_input field={f[:email]} class="form-control" />
         </div>
 

@@ -13,7 +13,7 @@
     </div>
 
     <div class="mb-3">
-      <.label field={f[:user_email]} class="form-label" />
+      <.label for="user_email" class="form-label">User email</.label>
       <.text_input field={f[:user_email]} class="form-control autosearch"
                     data-topic="users" />
       <.error_tag form={f} field={:user_email} />
@@ -25,25 +25,25 @@
     <div class="my-3">
       <div class="form-check">
         <.checkbox field={f[:is_grader]} class="form-check-input" />
-        <.label field={f[:is_grader]} />
+        <.label for="is_grader">Is grader</.label>
         <.error_tag form={f} field={:is_grader} />
       </div>
 
       <div class="form-check">
         <.checkbox field={f[:is_prof]} class="form-check-input" />
-        <.label field={f[:is_prof]} />
+        <.label for="is_prof">Is prof</.label>
         <.error_tag form={f} field={:is_prof} />
       </div>
 
       <div class="form-check">
         <.checkbox field={f[:is_staff]} class="form-check-input" />
-        <.label field={f[:is_staff]} />
+        <.label for="is_staff">Is staff</.label>
         <.error_tag form={f} field={:is_staff} />
       </div>
 
       <div class="form-check">
         <.checkbox field={f[:is_student]} class="form-check-input" />
-        <.label field={f[:is_student]} />
+        <.label for="is_student">Is student</.label>
         <.error_tag form={f} field={:is_student} />
       </div>
     </div>

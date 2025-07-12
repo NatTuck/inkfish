@@ -17,7 +17,7 @@
     </div>
 
     <div class="mb-3">
-      <.label field={f[:note]} class="form-label" />
+      <.label for="note" class="form-label">Note</.label>
       <.textarea field={f[:note]} class="form-control" />
       <.error_tag form={f} field={:note} />
     </div>
@@ -25,7 +25,7 @@
     <div class="mb-3">
       Special role?
       <div>
-        <.label field={f[:staff_req]}>Course staff</.label> &nbsp;
+        <.label for="staff_req">Course staff</.label> &nbsp;
         <.checkbox field={f[:staff_req]} class="form-check-input" />
         <.error_tag form={f} field={:staff_req} />
       </div>

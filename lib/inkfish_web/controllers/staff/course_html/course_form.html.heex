@@ -7,13 +7,13 @@
     <% end %>
 
     <div class="mb-3">
-      <.label field={f[:name]} class="form-label" />
+      <.label for="name" class="form-label">Name</.label>
       <.text_input field={f[:name]} class="form-control" />
       <.error_tag form={f} field={:name} />
     </div>
 
     <div class="mb-3">
-      <.label field={f[:start_date]} text="Start Date" class="form-label" />
+      <.label for="start_date" class="form-label">Start Date</.label>
       <div>
         <.text_input field={f[:start_date]} class="form-control date-picker" />
       </div>
@@ -21,13 +21,13 @@
     </div>
 
     <div class="mb-3">
-      <.label field={f[:sections]} class="form-label" />
+      <.label for="sections" class="form-label">Sections</.label>
       <.text_input field={f[:sections]} class="form-control" />
       <.error_tag form={f} field={:sections} />
     </div>
 
     <div class="mb-3">
-      <.label field={f[:footer]} class="form-label" />
+      <.label for="footer" class="form-label">Footer</.label>
       <.textarea field={f[:footer]} class="form-control" />
       <.error_tag form={f} field={:footer} />
       <div class="text-muted">

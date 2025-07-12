@@ -7,7 +7,7 @@
     <% end %>
 
     <div class="mb-3">
-      <.label field={f[:name]} class="form-label" />
+      <.label for="name" class="form-label">Name</.label>
       <.text_input field={f[:name]} class="form-control" />
       <.error_tag form={f} field={:name} />
     </div>
