@@ -29,7 +29,7 @@ defmodule InkfishWeb.Ajax.TeamControllerTest do
       conn =
         conn
         |> login(staff)
-        |> get(Routes.ajax_staff_teamset_team_path(conn, :index, teamset))
+        |> get(~p"/ajax/staff/teamsets/#{teamset}/teams")
 
       resp = json_response(conn, 200)["data"]
       assert hd(resp)["active"] == true
@@ -50,13 +50,13 @@ defmodule InkfishWeb.Ajax.TeamControllerTest do
       conn =
         conn
         |> login(staff)
-        |> post(Routes.ajax_staff_teamset_team_path(conn, :create, teamset),
+        |> post(~p"/ajax/staff/teamsets/#{teamset}/teams",
           team: attrs
         )
 
       assert %{"id" => id} = json_response(conn, 201)["data"]
 
-      conn = get(conn, Routes.ajax_staff_team_path(conn, :show, id))
+      conn = get(conn, ~p"/ajax/staff/teams/#{id}")
 
       assert %{
                "id" => _id,
@@ -74,7 +74,7 @@ defmodule InkfishWeb.Ajax.TeamControllerTest do
       conn =
         conn
         |> login(staff)
-        |> post(Routes.ajax_staff_teamset_team_path(conn, :create, teamset),
+        |> post(~p"/ajax/staff/teamsets/#{teamset}/teams",
           team: params
         )
 
@@ -93,11 +93,11 @@ defmodule InkfishWeb.Ajax.TeamControllerTest do
       conn =
         conn
         |> login(staff)
-        |> put(Routes.ajax_staff_team_path(conn, :update, team), team: params)
+        |> put(~p"/ajax/staff/teams/#{team}", team: params)
 
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
 
-      conn = get(conn, Routes.ajax_staff_team_path(conn, :show, id))
+      conn = get(conn, ~p"/ajax/staff/teams/#{id}")
 
       assert %{
                "id" => ^id,
@@ -115,7 +115,7 @@ defmodule InkfishWeb.Ajax.TeamControllerTest do
       conn =
         conn
         |> login(staff)
-        |> put(Routes.ajax_staff_team_path(conn, :update, team), team: params)
+        |> put(~p"/ajax/staff/teams/#{team}", team: params)
 
       assert json_response(conn, 422)["errors"] != %{}
     end
@@ -126,12 +126,12 @@ defmodule InkfishWeb.Ajax.TeamControllerTest do
       conn =
         conn
         |> login(staff)
-        |> delete(Routes.ajax_staff_team_path(conn, :delete, team))
+        |> delete(~p"/ajax/staff/teams/#{team}")
 
       assert response(conn, 200)
 
       assert_error_sent 404, fn ->
-        get(conn, Routes.ajax_staff_team_path(conn, :show, team))
+        get(conn, ~p"/ajax/staff/teams/#{team}")
       end
     end
   end

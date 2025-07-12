@@ -13,14 +13,14 @@ defmodule InkfishWeb.Staff.TeamsetControllerTest do
 
   describe "index" do
     test "lists all teamsets", %{conn: conn, course: course} do
-      conn = get(conn, Routes.staff_course_teamset_path(conn, :index, course))
+      conn = get(conn, ~p"/staff/courses/#{course}/teamsets")
       assert html_response(conn, 200) =~ "Listing Teamsets"
     end
   end
 
   describe "new teamset" do
     test "renders form", %{conn: conn, course: course} do
-      conn = get(conn, Routes.staff_course_teamset_path(conn, :new, course))
+      conn = get(conn, ~p"/staff/courses/#{course}/teamsets/new")
       assert html_response(conn, 200) =~ "New Teamset"
     end
   end
@@ -30,14 +30,14 @@ defmodule InkfishWeb.Staff.TeamsetControllerTest do
       params = params_for(:teamset, course: course)
 
       conn =
-        post(conn, Routes.staff_course_teamset_path(conn, :create, course),
+        post(conn, ~p"/staff/courses/#{course}/teamsets",
           teamset: params
         )
 
       assert %{id: id} = redirected_params(conn)
-      assert redirected_to(conn) == Routes.staff_teamset_path(conn, :show, id)
+      assert redirected_to(conn) == ~p"/staff/teamsets/#{id}"
 
-      conn = get(conn, Routes.staff_teamset_path(conn, :show, id))
+      conn = get(conn, ~p"/staff/teamsets/#{id}")
       assert html_response(conn, 200) =~ "Show Teamset"
     end
 
@@ -45,7 +45,7 @@ defmodule InkfishWeb.Staff.TeamsetControllerTest do
       params = %{name: ""}
 
       conn =
-        post(conn, Routes.staff_course_teamset_path(conn, :create, course),
+        post(conn, ~p"/staff/courses/#{course}/teamsets",
           teamset: params
         )
 
@@ -58,7 +58,7 @@ defmodule InkfishWeb.Staff.TeamsetControllerTest do
       conn: conn,
       teamset: teamset
     } do
-      conn = get(conn, Routes.staff_teamset_path(conn, :edit, teamset))
+      conn = get(conn, ~p"/staff/teamsets/#{teamset}/edit")
       assert html_response(conn, 200) =~ "Edit Teamset"
     end
   end
@@ -68,14 +68,14 @@ defmodule InkfishWeb.Staff.TeamsetControllerTest do
       params = %{name: "new name"}
 
       conn =
-        put(conn, Routes.staff_teamset_path(conn, :update, teamset),
+        put(conn, ~p"/staff/teamsets/#{teamset}",
           teamset: params
         )
 
       assert redirected_to(conn) ==
-               Routes.staff_teamset_path(conn, :show, teamset)
+               ~p"/staff/teamsets/#{teamset}"
 
-      conn = get(conn, Routes.staff_teamset_path(conn, :show, teamset))
+      conn = get(conn, ~p"/staff/teamsets/#{teamset}")
       assert html_response(conn, 200) =~ "new name"
     end
 
@@ -83,7 +83,7 @@ defmodule InkfishWeb.Staff.TeamsetControllerTest do
       params = %{name: ""}
 
       conn =
-        put(conn, Routes.staff_teamset_path(conn, :update, teamset),
+        put(conn, ~p"/staff/teamsets/#{teamset}",
           teamset: params
         )
 
@@ -93,17 +93,13 @@ defmodule InkfishWeb.Staff.TeamsetControllerTest do
 
   describe "delete teamset" do
     test "deletes chosen teamset", %{conn: conn, teamset: teamset} do
-      conn = delete(conn, Routes.staff_teamset_path(conn, :delete, teamset))
+      conn = delete(conn, ~p"/staff/teamsets/#{teamset}")
 
       assert redirected_to(conn) ==
-               Routes.staff_course_teamset_path(
-                 conn,
-                 :index,
-                 teamset.course_id
-               )
+               ~p"/staff/courses/#{teamset.course_id}/teamsets"
 
       assert_error_sent 404, fn ->
-        get(conn, Routes.staff_teamset_path(conn, :show, teamset))
+        get(conn, ~p"/staff/teamsets/#{teamset}")
       end
     end
   end
