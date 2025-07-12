@@ -1,20 +1,18 @@
 <div class="row">
   <div class="col">
     <h1>Log In</h1>
-    <.form for={@conn} action={~p"/session"} as={:user}>
-      <:inner :let={f}>
-        <div class="mb-3">
-          <.label for="email" class="form-label">Email</.label>
-          <.text_input field={f[:email]} class="form-control" />
-        </div>
+    <.form :let={f} for={@conn} action={~p"/session"} as={:user}>
+      <div class="mb-3">
+        <.label for="email" class="form-label">Email</.label>
+        <.text_input field={f[:email]} class="form-control" />
+      </div>
 
-        <div class="mb-3">
-          <.label for="password" class="form-label">Password</.label>
-          <.password_input field={f[:password]} class="form-control" />
-        </div>
+      <div class="mb-3">
+        <.label for="password" class="form-label">Password</.label>
+        <.password_input field={f[:password]} class="form-control" />
+      </div>
 
-        <.button class="btn btn-primary">Log In</.button>
-      </:inner>
+      <.button class="btn btn-primary">Log In</.button>
     </.form>
   </div>
 </div>
@@ -24,15 +22,13 @@
     <h1>Get a Password</h1>
     <p>Enter your email to create a new account or reset your password.</p>
 
-    <.form for={@conn} action={~p"/users/send_auth_email"} as={:user}>
-      <:inner :let={f}>
-        <div class="mb-3">
-          <.label for="email" class="form-label">Email</.label>
-          <.text_input field={f[:email]} class="form-control" />
-        </div>
+    <.form :let={f} for={@conn} action={~p"/users/send_auth_email"} as={:user}>
+      <div class="mb-3">
+        <.label for="email" class="form-label">Email</.label>
+        <.text_input field={f[:email]} class="form-control" />
+      </div>
 
-        <.button class="btn btn-primary">Request</.button>
-      </:inner>
+      <.button class="btn btn-primary">Request</.button>
     </.form>
   </div>
 </div>
