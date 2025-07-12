@@ -92,8 +92,8 @@
       <.error_tag form={f} field={:starter_upload_id} />
       <div class="file-uploader"
            data-upload-field="assignment_starter_upload_id"
-           data-nonce="<%= @sta_tok[:nonce] %>"
-           data-token="<%= @sta_tok[:token] %>">
+           data-nonce={@sta_tok[:nonce]}
+           data-token={@sta_tok[:token]}>
         React loading...
       </div>
     </div>
@@ -104,8 +104,8 @@
       <.error_tag form={f} field={:solution_upload_id} />
       <div class="file-uploader"
            data-upload-field="assignment_solution_upload_id"
-           data-nonce="<%= @sol_tok[:nonce] %>"
-           data-token="<%= @sol_tok[:token] %>">
+           data-nonce={@sol_tok[:nonce]}
+           data-token={@sol_tok[:token]}>
         React loading...
       </div>
     </div>
