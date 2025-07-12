@@ -7,19 +7,19 @@ defmodule InkfishWeb.SessionControllerTest do
       "password" => "alicealice"
     }
 
-    conn = post(conn, "/session", form_data)
+    conn = post(conn, ~p"/session", form_data)
 
     assert Phoenix.Flash.get(conn.assigns[:flash], :info) ==
              "Logged in as alice@example.com"
 
-    assert redirected_to(conn, 302) == "/dashboard"
+    assert redirected_to(conn, 302) == ~p"/dashboard"
   end
 
   test "log out", %{conn: conn} do
     conn =
       conn
       |> login("alice@example.com")
-      |> delete("/session")
+      |> delete(~p"/session")
 
     assert Phoenix.Flash.get(conn.assigns[:flash], :info) == "Logged out."
     assert get_session(conn, :user_id) == nil

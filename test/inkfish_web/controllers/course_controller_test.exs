@@ -11,7 +11,7 @@ defmodule InkfishWeb.CourseControllerTest do
       conn =
         conn
         |> login("erin@example.com")
-        |> get(Routes.course_path(conn, :index))
+        |> get(~p"/courses")
 
       assert html_response(conn, 200) =~ "Listing Courses"
     end
@@ -24,7 +24,7 @@ defmodule InkfishWeb.CourseControllerTest do
       conn =
         conn
         |> login("alice@example.com")
-        |> get(Routes.course_path(conn, :show, course))
+        |> get(~p"/courses/#{course}")
 
       assert html_response(conn, 200) =~ course.name
     end

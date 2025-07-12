@@ -10,7 +10,7 @@ defmodule InkfishWeb.SubControllerTest do
 
   describe "new sub" do
     test "renders form", %{conn: conn, assignment: asg} do
-      conn = get(conn, Routes.assignment_sub_path(conn, :new, asg))
+      conn = get(conn, ~p"/assignments/#{asg}/subs/new")
       assert html_response(conn, 200) =~ "New Sub"
     end
   end
@@ -20,12 +20,12 @@ defmodule InkfishWeb.SubControllerTest do
       params = params_with_assocs(:sub, assignment: asg)
 
       conn =
-        post(conn, Routes.assignment_sub_path(conn, :create, asg), sub: params)
+        post(conn, ~p"/assignments/#{asg}/subs", sub: params)
 
       assert %{id: id} = redirected_params(conn)
-      assert redirected_to(conn) == Routes.sub_path(conn, :show, id)
+      assert redirected_to(conn) == ~p"/subs/#{id}"
 
-      conn = get(conn, Routes.sub_path(conn, :show, id))
+      conn = get(conn, ~p"/subs/#{id}")
       assert html_response(conn, 200) =~ "Show Sub"
     end
 
@@ -33,7 +33,7 @@ defmodule InkfishWeb.SubControllerTest do
       params = %{}
 
       conn =
-        post(conn, Routes.assignment_sub_path(conn, :create, asg), sub: params)
+        post(conn, ~p"/assignments/#{asg}/subs", sub: params)
 
       assert html_response(conn, 200) =~ "New Sub"
     end

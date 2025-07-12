@@ -18,7 +18,7 @@ defmodule InkfishWeb.JoinReqControllerTest do
       conn =
         conn
         |> login("erin@example.com")
-        |> get(Routes.course_join_req_path(conn, :new, course))
+        |> get(~p"/courses/#{course}/join_reqs/new")
 
       assert html_response(conn, 200) =~ "New Joinreq"
     end
@@ -33,11 +33,11 @@ defmodule InkfishWeb.JoinReqControllerTest do
       conn =
         conn
         |> login("erin@example.com")
-        |> post(Routes.course_join_req_path(conn, :create, course),
+        |> post(~p"/courses/#{course}/join_reqs",
           join_req: params
         )
 
-      assert redirected_to(conn) == Routes.course_path(conn, :index)
+      assert redirected_to(conn) == ~p"/courses"
     end
   end
 end

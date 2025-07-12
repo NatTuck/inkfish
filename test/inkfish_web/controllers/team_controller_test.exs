@@ -10,7 +10,7 @@ defmodule InkfishWeb.TeamControllerTest do
 
   describe "show" do
     test "shows a team", %{conn: conn, team: team} do
-      conn = get(conn, Routes.team_path(conn, :show, team))
+      conn = get(conn, ~p"/teams/#{team}")
       assert html_response(conn, 200) =~ "Show Team"
     end
   end
