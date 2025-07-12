@@ -1,7 +1,7 @@
 <h1>Show Grade</h1>
 
 <p>
-  <%= link "Edit", to: Routes.staff_grade_path(@conn, :edit, @grade) %>
+  <.link href={~p"/staff/grades/#{@grade}/edit"}>Edit</.link>
 </p>
 
 <ul>
@@ -12,4 +12,3 @@
   </li>
 
 </ul>
-

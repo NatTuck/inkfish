@@ -1,62 +1,65 @@
-<%= form_for @changeset, @action, fn f -> %>
-  <%= if @changeset.action do %>
-    <div class="alert alert-danger">
-      <p>Oops, something went wrong! Please check the errors below.</p>
-    </div>
-  <% end %>
+<.form for={@changeset} action={@action}>
+  <:inner :let={f}>
+    <%= if @changeset.action do %>
+      <div class="alert alert-danger">
+        <p>Oops, something went wrong! Please check the errors below.</p>
+      </div>
+    <% end %>
 
-  <div class="mb-3">
-    <%= label f, :name, class: "form-label" %>
-    <%= text_input f, :name, class: "form-control" %>
-    <%= error_tag f, :name %>
-  </div>
-
-  <div class="mb-3">
-    <%= label f, :kind, class: "form-label" %>
-    <%= select f, :kind, Inkfish.Grades.GradeColumn.grade_column_types(), class: "form-control" %>
-    <%= error_tag f, :kind %>
-  </div>
-
-  <div class="mb-3">
-    <%= label f, :points, class: "form-label" %>
-    <%= number_input f, :points, step: "any", class: "form-control" %>
-    <%= error_tag f, :points %>
-  </div>
-
-  <div class="mb-3">
-    <%= label f, :base, class: "form-label" %>
-    <%= number_input f, :base, step: "any", class: "form-control" %>
-    <%= error_tag f, :base %>
-  </div>
-
-  <div class="mb-3">
-    <%= label f, :params, class: "form-label" %>
-    <%= text_input f, :params, class: "form-control" %>
-    <%= error_tag f, :params %>
-  </div>
-  
-  <div class="mb-3">
-    <%= label f, :limits, class: "form-label" %> <br>
-    <div id="gcol-limits-root" class="mb-2">
-      React component loading...
+    <div class="mb-3">
+      <.label field={f[:name]} class="form-label" />
+      <.text_input field={f[:name]} class="form-control" />
+      <.error_tag form={f} field={:name} />
     </div>
 
-    <div class="mx-4 text-center">
-      <%= text_input(f, :limits, id: "gcol-limits", 
-            class: "form-control form-control-sm", 
-            readonly: true) %>
+    <div class="mb-3">
+      <.label field={f[:kind]} class="form-label" />
+      <.select field={f[:kind]} options={Inkfish.Grades.GradeColumn.grade_column_types()} class="form-control" />
+      <.error_tag form={f} field={:kind} />
     </div>
-    <%= error_tag f, :limits %>
-  </div>
 
-  <div class="mb-3">
-    <%= label f, :upload_id, class: "form-label" %>
-    <%= text_input f, :upload_id, class: "form-control", readonly: "readonly" %>
-    <%= error_tag f, :upload_id %>
-    <%= ajax_upload_field "grade_column", "", "grade_column_upload_id" %>
-  </div>
+    <div class="mb-3">
+      <.label field={f[:points]} class="form-label" />
+      <.number_input field={f[:points]} step="any" class="form-control" />
+      <.error_tag form={f} field={:points} />
+    </div>
 
-  <div class="mb-3">
-    <%= submit "Save", class: "btn btn-primary" %>
-  </div>
-<% end %>
+    <div class="mb-3">
+      <.label field={f[:base]} class="form-label" />
+      <.number_input field={f[:base]} step="any" class="form-control" />
+      <.error_tag form={f} field={:base} />
+    </div>
+
+    <div class="mb-3">
+      <.label field={f[:params]} class="form-label" />
+      <.text_input field={f[:params]} class="form-control" />
+      <.error_tag form={f} field={:params} />
+    </div>
+    
+    <div class="mb-3">
+      <.label field={f[:limits]} class="form-label" /> <br>
+      <div id="gcol-limits-root" class="mb-2">
+        React component loading...
+      </div>
+
+      <div class="mx-4 text-center">
+        <.text_input field={f[:limits]} id="gcol-limits" 
+              class="form-control form-control-sm" 
+              readonly={true} />
+      </div>
+      <.error_tag form={f} field={:limits} />
+    </div>
+
+    <div class="mb-3">
+      <.label field={f[:upload_id]} class="form-label" />
+      <.text_input field={f[:upload_id]} class="form-control" readonly="readonly" />
+      <.error_tag form={f} field={:upload_id} />
+      <.ajax_upload_field id="grade_column" ext="" target_id="grade_column_upload_id" />
+    </div>
+  </:inner>
+  <:actions>
+    <div class="mb-3">
+      <.button class="btn btn-primary">Save</.button>
+    </div>
+  </:actions>
+</.form>

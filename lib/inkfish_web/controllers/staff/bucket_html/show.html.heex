@@ -1,6 +1,6 @@
 <h1>Show Bucket</h1>
 
-<p><%= link "Edit", to: Routes.staff_bucket_path(@conn, :edit, @bucket) %></p>
+<p><.link href={~p"/staff/buckets/#{@bucket}/edit"}>Edit</.link></p>
 
 <ul>
 
@@ -15,4 +15,3 @@
   </li>
 
 </ul>
-

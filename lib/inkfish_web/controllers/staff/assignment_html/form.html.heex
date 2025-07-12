@@ -1,115 +1,118 @@
-<%= form_for @changeset, @action, [multipart: true], fn f -> %>
-  <%= if @changeset.action do %>
-    <div class="alert alert-danger">
-      <p>Oops, something went wrong! Please check the errors below.</p>
+<.form for={@changeset} action={@action} multipart>
+  <:inner :let={f}>
+    <%= if @changeset.action do %>
+      <div class="alert alert-danger">
+        <p>Oops, something went wrong! Please check the errors below.</p>
+      </div>
+    <% end %>
+
+    <div class="mb-3">
+      Bucket: <%= @bucket.name %>
+      <.hidden_input field={f[:bucket_id]} />
     </div>
-  <% end %>
 
-  <div class="mb-3">
-    Bucket: <%= @bucket.name %>
-    <%= hidden_input f, :bucket_id %>
-  </div>
+    <div class="mb-3">
+      <.label field={f[:name]} class="form-label" />
+      <.text_input field={f[:name]} class="form-control" />
+      <.error_tag form={f} field={:name} />
+    </div>
 
-  <div class="mb-3">
-    <%= label f, :name, class: "form-label" %>
-    <%= text_input f, :name, class: "form-control" %>
-    <%= error_tag f, :name %>
-  </div>
+    <div class="mb-3">
+      <.label field={f[:desc]} class="form-label" />
+      <.textarea field={f[:desc]} class="form-control" />
+      <.error_tag form={f} field={:desc} />
+    </div>
 
-  <div class="mb-3">
-    <%= label f, :desc, class: "form-label" %>
-    <%= textarea f, :desc, class: "form-control" %>
-    <%= error_tag f, :desc %>
-  </div>
-
-  <div class="mb-3">
-    <div>
-      <%= label f, :due, class: "form-label" %>
+    <div class="mb-3">
       <div>
-        <%= text_input(f, :due, class: "form-control date-time-picker") %>
+        <.label field={f[:due]} class="form-label" />
+        <div>
+          <.text_input field={f[:due]} class="form-control date-time-picker" />
+        </div>
+        <.error_tag form={f} field={:due} />
       </div>
-      <%= error_tag f, :due %>
-    </div>
-    <div class="px-4">
-      <p class="mt-1">TZ: <%= @timezone %></p>
-      <div class="form-check form-switch">
-        <%= label f, :hard_deadline, "Hard Deadline" %>
-        <%= checkbox f, :hard_deadline, class: "form-check-input" %>
-        <%= error_tag f, :hard_deadline %>
-      </div>
-      <div class="form-check form-switch">
-        <%= label f, :force_show_grades, "Force Show Grades" %>
-        <%= checkbox f, :force_show_grades, class: "form-check-input" %>
-        <%= error_tag f, :force_show_grades %>
-      </div>
-    </div>
-  </div>
-
-  <div class="mb-3">
-    <%= label f, :weight, class: "form-label" %>
-    <%= number_input f, :weight, step: "any", class: "form-control" %>
-    <%= error_tag f, :weight %>
-  </div>
-
-  <div class="mb-3">
-    <%= label f, :teamset_id, class: "form-label" %>
-    <%= select(f, :teamset_id, Enum.map(@teamsets, &({&1.name, &1.id})),
-               class: "form-control")%>
-    <%= error_tag f, :teamset_id %>
-  </div>
-
-  <div class="mb-3">
-    <p>Allowed submission methods</p>
-    <div class="px-4">
-      <div class="form-check form-switch">
-        <%= label f, :allow_upload, "File Upload" %>
-        <%= checkbox f, :allow_upload, class: "form-check-input" %>
-        <%= error_tag f, :allow_upload %>
-      </div>
-      <div class="form-check form-switch">
-        <%= label f, :allow_git, "Git Clone" %>
-        <%= checkbox f, :allow_git, class: "form-check-input" %>
-        <%= error_tag f, :allow_git %>
+      <div class="px-4">
+        <p class="mt-1">TZ: <%= @timezone %></p>
+        <div class="form-check form-switch">
+          <.label field={f[:hard_deadline]}>Hard Deadline</.label>
+          <.checkbox field={f[:hard_deadline]} class="form-check-input" />
+          <.error_tag form={f} field={:hard_deadline} />
+        </div>
+        <div class="form-check form-switch">
+          <.label field={f[:force_show_grades]}>Force Show Grades</.label>
+          <.checkbox field={f[:force_show_grades]} class="form-check-input" />
+          <.error_tag form={f} field={:force_show_grades} />
+        </div>
       </div>
     </div>
-  </div>
 
-  <div class="mb-3">
-    <p>Hide this assignment from students on the course page?</p>
-    <div class="px-4">
-      <div class="form-check form-switch">
-        <%= label f, :hide, "Hide" %>
-        <%= checkbox f, :hide, class: "form-check-input" %>
-        <%= error_tag f, :hide %>
+    <div class="mb-3">
+      <.label field={f[:weight]} class="form-label" />
+      <.number_input field={f[:weight]} step="any" class="form-control" />
+      <.error_tag form={f} field={:weight} />
+    </div>
+
+    <div class="mb-3">
+      <.label field={f[:teamset_id]} class="form-label" />
+      <.select field={f[:teamset_id]} options={Enum.map(@teamsets, &({&1.name, &1.id}))}
+                 class="form-control"/>
+      <.error_tag form={f} field={:teamset_id} />
+    </div>
+
+    <div class="mb-3">
+      <p>Allowed submission methods</p>
+      <div class="px-4">
+        <div class="form-check form-switch">
+          <.label field={f[:allow_upload]}>File Upload</.label>
+          <.checkbox field={f[:allow_upload]} class="form-check-input" />
+          <.error_tag form={f} field={:allow_upload} />
+        </div>
+        <div class="form-check form-switch">
+          <.label field={f[:allow_git]}>Git Clone</.label>
+          <.checkbox field={f[:allow_git]} class="form-check-input" />
+          <.error_tag form={f} field={:allow_git} />
+        </div>
       </div>
     </div>
-  </div>
 
-  <div class="mb-3">
-    <%= label f, :starter_upload_id, class: "form-label" %>
-    <%= text_input f, :starter_upload_id, class: "form-control", readonly: "readonly" %>
-    <%= error_tag f, :starter_upload_id %>
-    <div class="file-uploader"
-         data-upload-field="assignment_starter_upload_id"
-         data-nonce="<%= @sta_tok[:nonce] %>"
-         data-token="<%= @sta_tok[:token] %>">
-      React loading...
+    <div class="mb-3">
+      <p>Hide this assignment from students on the course page?</p>
+      <div class="px-4">
+        <div class="form-check form-switch">
+          <.label field={f[:hide]}>Hide</.label>
+          <.checkbox field={f[:hide]} class="form-check-input" />
+          <.error_tag form={f} field={:hide} />
+        </div>
+      </div>
     </div>
-  </div>
 
-  <div class="mb-3">
-    <%= label f, :solution_upload_id, class: "form-label" %>
-    <%= text_input f, :solution_upload_id, class: "form-control", readonly: "readonly" %>
-    <%= error_tag f, :solution_upload_id %>
-    <div class="file-uploader"
-         data-upload-field="assignment_solution_upload_id"
-         data-nonce="<%= @sol_tok[:nonce] %>"
-         data-token="<%= @sol_tok[:token] %>">
-      React loading...
+    <div class="mb-3">
+      <.label field={f[:starter_upload_id]} class="form-label" />
+      <.text_input field={f[:starter_upload_id]} class="form-control" readonly="readonly" />
+      <.error_tag form={f} field={:starter_upload_id} />
+      <div class="file-uploader"
+           data-upload-field="assignment_starter_upload_id"
+           data-nonce="<%= @sta_tok[:nonce] %>"
+           data-token="<%= @sta_tok[:token] %>">
+        React loading...
+      </div>
     </div>
-  </div>
 
-  <div class="mb-3">
-    <%= submit "Save", class: "btn btn-primary" %>
-  </div>
-<% end %>
+    <div class="mb-3">
+      <.label field={f[:solution_upload_id]} class="form-label" />
+      <.text_input field={f[:solution_upload_id]} class="form-control" readonly="readonly" />
+      <.error_tag form={f} field={:solution_upload_id} />
+      <div class="file-uploader"
+           data-upload-field="assignment_solution_upload_id"
+           data-nonce="<%= @sol_tok[:nonce] %>"
+           data-token="<%= @sol_tok[:token] %>">
+        React loading...
+      </div>
+    </div>
+  </:inner>
+  <:actions>
+    <div class="mb-3">
+      <.button class="btn btn-primary">Save</.button>
+    </div>
+  </:actions>
+</.form>

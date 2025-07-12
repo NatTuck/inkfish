@@ -25,22 +25,24 @@
         <td><%= show_score(@conn, grade) %> / <%= show_score(@conn, gcol) %></td>
         <td>
           <%= if grade do %>
-            <%= link(
-              "Edit",
-              to: Routes.staff_grade_path(@conn, :edit, grade),
-              target: "_blank"
-            ) %>
+            <.link
+              href={~p"/staff/grades/#{grade}/edit"}
+              target="_blank">
+              Edit
+            </.link>
           <% else %>
             <% grade = %Inkfish.Grades.Grade{
               grade_column_id: gcol.id, sub_id: sub.id
             } %>
             <% cset = Inkfish.Grades.change_grade(grade) %>
-            <% action = Routes.staff_sub_grade_path(@conn, :create, sub.id) %>
-            <%= form_for cset, action, fn f -> %>
-              <%= hidden_input f, :sub_id %>
-              <%= hidden_input f, :grade_column_id %>
-              <%= submit "Create", class: "btn btn-secondary btn-sm" %>
-            <% end %>
+            <% action = ~p"/staff/subs/#{sub}/grades" %>
+            <.form for={cset} action={action}>
+              <:inner :let={f}>
+                <.hidden_input field={f[:sub_id]} />
+                <.hidden_input field={f[:grade_column_id]} />
+                <.button class="btn btn-secondary btn-sm">Create</.button>
+              </:inner>
+            </.form>
           <% end %>
         </td>
       </tr>
@@ -51,13 +53,15 @@
 
 <h2>All Manual Grading</h2>
 
-<% path = Routes.staff_assignment_grading_task_path(@conn, :edit, @assignment) %>
-<p><%= link("Edit Grading Tasks", to: path) %></p>
+<% path = ~p"/staff/assignments/#{@assignment}/grading_task/edit" %>
+<p><.link href={path}>Edit Grading Tasks</.link></p>
 
-<% action = Routes.staff_assignment_grading_task_path(@conn, :create, @assignment) %>
-<%= form_for @conn, action, fn _f -> %>
-  <p><%= submit "Assign All Unassigned Tasks", class: "btn btn-primary" %></p>
-<% end %>
+<% action = ~p"/staff/assignments/#{@assignment}/grading_task" %>
+<.form for={@conn} action={action}>
+  <:inner :let={_f}>
+    <p><.button class="btn btn-primary">Assign All Unassigned Tasks</.button></p>
+  </:inner>
+</.form>
 
 <p># of subs: <%= length(@tasks) %></p>
 

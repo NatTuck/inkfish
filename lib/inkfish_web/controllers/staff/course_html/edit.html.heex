@@ -1,5 +1,5 @@
 <h1>Edit Course</h1>
 
-<%= render "form.html", Map.put(assigns, :action, Routes.staff_course_path(@conn, :update, @course)) %>
+<%= render "form.html", Map.put(assigns, :action, ~p"/staff/courses/#{@course}") %>
 
-<span><%= link "Back", to: Routes.staff_course_path(@conn, :index) %></span>
+<span><.link href={~p"/staff/courses"}>Back</.link></span>

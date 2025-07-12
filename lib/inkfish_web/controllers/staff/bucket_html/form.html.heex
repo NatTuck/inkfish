@@ -1,25 +1,28 @@
-<%= form_for @changeset, @action, fn f -> %>
-  <%= if @changeset.action do %>
-    <div class="alert alert-danger">
-      <p>Oops, something went wrong! Please check the errors below.</p>
+<.form for={@changeset} action={@action}>
+  <:inner :let={f}>
+    <%= if @changeset.action do %>
+      <div class="alert alert-danger">
+        <p>Oops, something went wrong! Please check the errors below.</p>
+      </div>
+    <% end %>
+
+    <.hidden_input field={f[:course_id]} />
+
+    <div class="mb-3">
+      <.label field={f[:name]} class="form-label" />
+      <.text_input field={f[:name]} placeholder="Homework" />
+      <.error_tag form={f} field={:name} />
     </div>
-  <% end %>
 
-  <%= hidden_input f, :course_id %>
-
-  <div class="mb-3">
-    <%= label f, :name, class: "form-label" %>
-    <%= text_input f, :name, placeholder: "Homework" %>
-    <%= error_tag f, :name %>
-  </div>
-
-  <div class="mb-3">
-    <%= label f, :weight, class: "form-label" %>
-    <%= number_input f, :weight, step: "any" %>
-    <%= error_tag f, :weight %>
-  </div>
-
-  <div class="mb-3">
-    <%= submit "Save", class: "btn btn-primary" %>
-  </div>
-<% end %>
+    <div class="mb-3">
+      <.label field={f[:weight]} class="form-label" />
+      <.number_input field={f[:weight]} step="any" />
+      <.error_tag form={f} field={:weight} />
+    </div>
+  </:inner>
+  <:actions>
+    <div class="mb-3">
+      <.button>Save</.button>
+    </div>
+  </:actions>
+</.form>

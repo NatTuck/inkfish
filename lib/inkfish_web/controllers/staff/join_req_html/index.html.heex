@@ -3,9 +3,12 @@
 <p>Course: <%= @course.name %></p>
 
 <p>
-  <%= link("Accept All Students",
-           to: Routes.staff_course_join_req_path(@conn, :accept_all, @course),
-           method: :post, class: "btn btn-primary") %>
+  <.link
+    href={~p"/staff/courses/#{@course}/join_reqs/accept_all"}
+    method={:post}
+    class="btn btn-primary">
+    Accept All Students
+  </.link>
 </p>
 
 <table class="table table-striped">
@@ -30,14 +33,21 @@
       <td><%= join_req.staff_req %></td>
 
       <td>
-        <%= link("Accept", to: Routes.staff_join_req_path(@conn, :accept, join_req),
-          method: :post, class: "btn btn-info btn-sm") %>
-        <%= link("Delete", to: Routes.staff_join_req_path(@conn, :delete, join_req),
-          method: :delete, data: [confirm: "Are you sure?"],
-          class: "btn btn-danger btn-sm") %>
+        <.link
+          href={~p"/staff/join_reqs/#{join_req}/accept"}
+          method={:post}
+          class="btn btn-info btn-sm">
+          Accept
+        </.link>
+        <.link
+          href={~p"/staff/join_reqs/#{join_req}"}
+          method={:delete}
+          data-confirm="Are you sure?"
+          class="btn btn-danger btn-sm">
+          Delete
+        </.link>
       </td>
     </tr>
 <% end %>
   </tbody>
 </table>
-

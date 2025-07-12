@@ -1,7 +1,7 @@
 <h1>Listing Buckets for <%= @course.name %></h1>
 
 <p>
-  <%= link "New Bucket", to: Routes.staff_course_bucket_path(@conn, :new, @course) %>
+  <.link href={~p"/staff/courses/#{@course}/buckets/new"}>New Bucket</.link>
 </p>
 
 <table class="table table-striped">
@@ -20,12 +20,15 @@
       <td><%= bucket.weight %></td>
 
       <td>
-        <%= link "Edit", to: Routes.staff_bucket_path(@conn, :edit, bucket) %>
-        <%= link("Delete", to: Routes.staff_bucket_path(@conn, :delete, bucket),
-          method: :delete, data: [confirm: "Are you sure?"]) %>
+        <.link href={~p"/staff/buckets/#{bucket}/edit"}>Edit</.link>
+        <.link
+          href={~p"/staff/buckets/#{bucket}"}
+          method={:delete}
+          data-confirm="Are you sure?">
+          Delete
+        </.link>
       </td>
     </tr>
 <% end %>
   </tbody>
 </table>
-

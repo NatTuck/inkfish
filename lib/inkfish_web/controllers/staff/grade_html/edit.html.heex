@@ -1,8 +1,8 @@
 <h1>Edit Grade</h1>
 
 <%= if @rubric do %>
-  <% path = Routes.upload_path(@conn, :show, @rubric) <> "?show=true" %>
-  <p>Rubric: <%= link @rubric.name, to: path, target: "_blank" %></p>
+  <% path = ~p"/uploads/#{@rubric}?show=true" %>
+  <p>Rubric: <.link href={path} target="_blank"><%= @rubric.name %></.link></p>
 <% else %>
   <p>Rubric: Not available.</p>
 <% end %>
@@ -17,10 +17,11 @@
    "<%= raw(javascript_escape(Jason.encode!(@data))) %>"
  );
  window.upload_unpacked_base = (
-   "<%= Routes.upload_path(@conn, :show, @sub.upload) <> "/_meta/unpacked" %>"
+   "<%= ~p"/uploads/#{@sub.upload}/_meta/unpacked" %>"
  );
+ <% id = "ID" %>
  window.line_comment_paths = {
-   create: "<%= Routes.ajax_staff_grade_line_comment_path(@conn, :create, @grade) %>",
-   update: "<%= Routes.ajax_staff_line_comment_path(@conn, :update, :ID) %>",
+   create: "<%= ~p"/ajax/staff/grades/#{@grade}/line_comments" %>",
+   update: "<%= ~p"/ajax/staff/line_comments/#{id}" %>",
  };
 </script>

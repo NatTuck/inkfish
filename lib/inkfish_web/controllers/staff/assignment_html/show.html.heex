@@ -1,12 +1,9 @@
 <h1>Show Assignment</h1>
 
 <p>
-  <%= link("Student View",
-    to: Routes.assignment_path(@conn, :show, @assignment)) %> |
-  <%= link("Edit Assignment",
-    to: Routes.staff_assignment_path(@conn, :edit, @assignment)) %> |
-  <%= link("Grading Tasks",
-    to: Routes.staff_assignment_grading_task_path(@conn, :show, @assignment)) %>
+  <.link href={~p"/assignments/#{@assignment}"}>Student View</.link> |
+  <.link href={~p"/staff/assignments/#{@assignment}/edit"}>Edit Assignment</.link> |
+  <.link href={~p"/staff/assignments/#{@assignment}/grading_task"}>Grading Tasks</.link>
 </p>
 
 <ul>
@@ -66,9 +63,9 @@
   <li>
     <strong>Starter:</strong>
     <%= if @assignment.starter_upload do %>
-      <%= link(@assignment.starter_upload.name,
-        to: Routes.upload_path(@conn, :download,
-        @assignment.starter_upload, @assignment.starter_upload.name)) %>
+      <.link href={~p"/uploads/#{@assignment.starter_upload.id}/#{@assignment.starter_upload.name}"}>
+        <%= @assignment.starter_upload.name %>
+      </.link>
     <% else %>
       ∅
     <% end %>
@@ -77,8 +74,9 @@
   <li>
     <strong>Solution:</strong>
     <%= if @assignment.solution_upload do %>
-      <%= link(@assignment.solution_upload.name,
-            to: Routes.upload_path(@conn, :show, @assignment.solution_upload)) %>
+      <.link href={~p"/uploads/#{@assignment.solution_upload}"}>
+        <%= @assignment.solution_upload.name %>
+      </.link>
     <% else %>
       ∅
     <% end %>
@@ -111,8 +109,9 @@
 <h2>Grade Columns</h2>
 
 <p>
-  <%= link("New Grade Column",
-    to: Routes.staff_assignment_grade_column_path(@conn, :new, @assignment)) %>
+  <.link href={~p"/staff/assignments/#{@assignment}/grade_columns/new"}>
+    New Grade Column
+  </.link>
 </p>
 
 <table class="table table-striped">
@@ -126,8 +125,7 @@
   <tbody>
     <%= for gcol <- @assignment.grade_columns do %>
       <tr>
-        <td><%= link(gcol.name,
-            to: Routes.staff_grade_column_path(@conn, :show, gcol)) %></td>
+        <td><.link href={~p"/staff/grade_columns/#{gcol}"}><%= gcol.name %></.link></td>
         <td><%= gcol.kind %></td>
         <td><%= gcol.points %></td>
       </tr>
@@ -139,17 +137,20 @@
 
 <%= unless @assignment.allow_git || @assignment.allow_upload do %>
   <div>
-    <% path = Routes.staff_assignment_path(@conn, :create_fake_subs, @assignment) %>
-    <%= form_for @conn, path, fn _f -> %>
-      <%= submit("Create Fake Subs", class: "btn btn-secondary",
-        data: [confirm: "Are you sure?"]) %>
-    <% end %>
+    <.link
+      href={~p"/staff/assignments/#{@assignment}/create_fake_subs"}
+      method="post"
+      class="btn btn-secondary"
+      data-confirm="Are you sure?">
+      Create Fake Subs
+    </.link>
 </div>
 <% end %>
 
 <script>
  function save_grade_path(sub_id) {
-   let path = "<%= Routes.ajax_staff_sub_grade_path(@conn, :create, :SubID) %>";
+   <% path_sub_id = "SubID" %>
+   let path = "<%= ~p"/ajax/staff/subs/#{path_sub_id}/grades" %>";
    return path.replace('SubID', sub_id);
  }
 </script>
@@ -174,8 +175,7 @@
   <tbody>
     <%= for sub <- @assignment.subs do %>
       <tr>
-        <td><%= link(user_display_name(sub.reg.user),
-            to: Routes.staff_reg_path(@conn, :show, sub.reg)) %></td>
+        <td><.link href={~p"/staff/regs/#{sub.reg}"}><%= user_display_name(sub.reg.user) %></.link></td>
         <%= for gcol <- @assignment.grade_columns do %>
           <% grade = Enum.find(sub.grades, &(&1.grade_column_id == gcol.id)) %>
           <td>
@@ -192,18 +192,20 @@
               <% "feedback" -> %>
                 <%= if grade do %>
                   <%= show_score(@conn, grade) %> / <%= gcol.points %>
-                  <%= link("Edit", to: Routes.staff_grade_path(@conn, :edit, grade)) %>
+                  <.link href={~p"/staff/grades/#{grade}/edit"}>Edit</.link>
                 <% else %>
                   <% grade = %Inkfish.Grades.Grade{
                     grade_column_id: gcol.id, sub_id: sub.id
                   } %>
                   <% cset = Inkfish.Grades.change_grade(grade) %>
-                  <% action = Routes.staff_sub_grade_path(@conn, :create, sub.id) %>
-                  <%= form_for cset, action, fn f -> %>
-                    <%= hidden_input f, :sub_id %>
-                    <%= hidden_input f, :grade_column_id %>
-                    <%= submit "Create", class: "btn btn-secondary btn-sm" %>
-                  <% end %>
+                  <% action = ~p"/staff/subs/#{sub}/grades" %>
+                  <.form for={cset} action={action}>
+                    <:inner :let={f}>
+                      <.hidden_input field={f[:sub_id]} />
+                      <.hidden_input field={f[:grade_column_id]} />
+                      <.button class="btn btn-secondary btn-sm">Create</.button>
+                    </:inner>
+                  </.form>
                 <% end %>
               <% _else -> %>
                 <%= show_score(@conn, grade) %> / <%= gcol.points %>
@@ -212,7 +214,7 @@
         <% end %>
         <td><%= show_score(@conn, sub) %> / <%= assignment_total_points(@assignment) %></td>
         <td>
-          <%= link("View", to: Routes.staff_sub_path(@conn, :show, sub)) %>
+          <.link href={~p"/staff/subs/#{sub}"}>View</.link>
         </td>
       </tr>
     <% end %>

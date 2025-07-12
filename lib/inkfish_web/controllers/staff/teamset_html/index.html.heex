@@ -1,7 +1,7 @@
 <h1>Listing Teamsets</h1>
 
 <p>
-  <%= link "New Teamset", to: Routes.staff_course_teamset_path(@conn, :new, @course) %>
+  <.link href={~p"/staff/courses/#{@course}/teamsets/new"}>New Teamset</.link>
 </p>
 
 <table class="table table-striped">
@@ -18,15 +18,17 @@
         <%= teamset.name %>
       </td>
       <td>
-        <%= link "Show", to: Routes.staff_teamset_path(@conn, :show, teamset) %>&nbsp;
-        <%= link "Edit", to: Routes.staff_teamset_path(@conn, :edit, teamset) %>&nbsp;
-        <%= link("Delete",
-          to: Routes.staff_teamset_path(@conn, :delete, teamset),
-          method: :delete, data: [confirm: "Are you sure?"],
-          class: "btn btn-sm btn-danger") %>
+        <.link href={~p"/staff/teamsets/#{teamset}"}>Show</.link>&nbsp;
+        <.link href={~p"/staff/teamsets/#{teamset}/edit"}>Edit</.link>&nbsp;
+        <.link
+          href={~p"/staff/teamsets/#{teamset}"}
+          method={:delete}
+          data-confirm="Are you sure?"
+          class="btn btn-sm btn-danger">
+          Delete
+        </.link>
       </td>
     </tr>
 <% end %>
   </tbody>
 </table>
-

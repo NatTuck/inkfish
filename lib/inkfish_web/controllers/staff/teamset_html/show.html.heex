@@ -13,9 +13,10 @@
 
   <script>
    window.create_team_path =
-     "<%= Routes.ajax_staff_teamset_team_path(@conn, :create, @teamset) %>";
+     "<%= ~p"/ajax/staff/teamsets/#{@teamset}/teams" %>";
+   <% id = "ID" %>
    window.team_path_template =
-     "<%= Routes.ajax_staff_team_path(@conn, :show, :ID) %>";
+     "<%= ~p"/ajax/staff/teams/#{id}" %>";
    window.teamset_data = JSON.parse(`<%= raw(Jason.encode!(@data, pretty: true)) %>`);
    window.past_teams = JSON.parse(`<%= raw(Jason.encode!(@past_teams, pretty: true)) %>`);
     
@@ -25,10 +26,11 @@
 
 <%= if @current_reg.is_prof do %>
 <br>
-<%= link(
-  "Add Prof Team",
-  to: Routes.staff_teamset_path(@conn, :add_prof_team, @teamset),
-  method: "post", class: "btn btn-warning") %>
+<.link
+  href={~p"/staff/teamsets/#{@teamset}/add_prof_team"}
+  method="post" class="btn btn-warning">
+  Add Prof Team
+</.link>
 <br>
 <br>
 <% end %>

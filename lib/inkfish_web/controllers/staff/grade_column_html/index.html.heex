@@ -1,8 +1,9 @@
 <h1>Listing Grade_Columns</h1>
 
 <p>
-  <%= link("New Grade_Column",
-    to: Routes.staff_assignment_grade_column_path(@conn, :new, @assignment)) %>
+  <.link href={~p"/staff/assignments/#{@assignment}/grade_columns/new"}>
+    New Grade_Column
+  </.link>
 </p>
 
 <table>
@@ -25,12 +26,11 @@
       <td><%= grade_column.params %></td>
 
       <td>
-        <%= link "Show", to: Routes.staff_grade_column_path(@conn, :show, grade_column) %>
-        <%= link "Edit", to: Routes.staff_grade_column_path(@conn, :edit, grade_column) %>
-        <%= link "Delete", to: Routes.staff_grade_column_path(@conn, :delete, grade_column), method: :delete, data: [confirm: "Are you sure?"] %>
+        <.link href={~p"/staff/grade_columns/#{grade_column}"}>Show</.link>
+        <.link href={~p"/staff/grade_columns/#{grade_column}/edit"}>Edit</.link>
+        <.link href={~p"/staff/grade_columns/#{grade_column}"} method={:delete} data-confirm="Are you sure?">Delete</.link>
       </td>
     </tr>
 <% end %>
   </tbody>
 </table>
-

@@ -1,17 +1,16 @@
-
 <h1>Course: <%= @course.name %></h1>
 
 <p>
-  <%= link "Student View", to: Routes.course_path(@conn, :show, @course) %> |
-  <%= link "Edit Course", to: Routes.staff_course_path(@conn, :edit, @course) %> |
-  <%= link "Edit Buckets", to: Routes.staff_course_bucket_path(@conn, :index, @course) %> |
-  <%= link "Edit Regs", to: Routes.staff_course_reg_path(@conn, :index, @course) %> |
-  <%= link "View Reqs", to: Routes.staff_course_join_req_path(@conn, :index, @course) %>
+  <.link href={~p"/courses/#{@course}"}>Student View</.link> |
+  <.link href={~p"/staff/courses/#{@course}/edit"}>Edit Course</.link> |
+  <.link href={~p"/staff/courses/#{@course}/buckets"}>Edit Buckets</.link> |
+  <.link href={~p"/staff/courses/#{@course}/regs"}>Edit Regs</.link> |
+  <.link href={~p"/staff/courses/#{@course}/join_reqs"}>View Reqs</.link>
   <%= if length(@course.join_reqs) > 0 do %>
     <span class="badge bg-info"><%= length(@course.join_reqs) %></span>
   <% end %> |
-  <%= link "Gradesheet", to: Routes.staff_course_path(@conn, :gradesheet, @course) %> |
-  <%= link "Tasks", to: Routes.staff_course_path(@conn, :tasks, @course) %>
+  <.link href={~p"/staff/courses/#{@course}/gradesheet"}>Gradesheet</.link> |
+  <.link href={~p"/staff/courses/#{@course}/tasks"}>Tasks</.link>
   <%= if @task_count > 0 do %>
     <span class="badge bg-warning"><%= @task_count %></span>
   <% end %>
@@ -45,8 +44,7 @@
   <h2><%= bucket.name %></h2>
   <p>weight = <%= bucket.weight %></p>
 
-  <p> <%= link("New Assignment", to:
-            Routes.staff_bucket_assignment_path(@conn, :new, bucket)) %></p>
+  <p> <.link href={~p"/staff/buckets/#{bucket}/assignments/new"}>New Assignment</.link></p>
 
   <table class="table table-striped">
     <thead>
@@ -59,7 +57,7 @@
     <tbody>
       <%= for aa <- bucket.assignments do %>
         <tr>
-          <td><%= link aa.name, to: Routes.staff_assignment_path(@conn, :show, aa) %></td>
+          <td><.link href={~p"/staff/assignments/#{aa}"}><%= aa.name %></.link></td>
           <td class="human-date"><%= show_timestamp(aa.due) %></td>
           <td><%= aa.weight %></td>
         </tr>
@@ -71,7 +69,7 @@
 <h2>Teamsets</h2>
 
 <p>
-  <%= link "New Teamset", to: Routes.staff_course_teamset_path(@conn, :new, @course) %>
+  <.link href={~p"/staff/courses/#{@course}/teamsets/new"}>New Teamset</.link>
 </p>
 
 <table class="table table-striped">
@@ -85,7 +83,7 @@
     <%= for ts <- @course.teamsets do %>
     <tr>
       <td>
-        <%= link ts.name, to: Routes.staff_teamset_path(@conn, :show, ts) %>
+        <.link href={~p"/staff/teamsets/#{ts}"}><%= ts.name %></.link>
         (<%= ts.id %>)
       </td>
       <td>

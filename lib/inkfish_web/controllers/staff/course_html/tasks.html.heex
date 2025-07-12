@@ -5,8 +5,8 @@
   <ul>
     <%= for asg <- bucket.assignments do %>
       <li>
-        <% path = Routes.staff_assignment_grading_task_path(@conn, :show, asg) %>
-        <%= link(asg.name, to: path) %>
+        <% path = ~p"/staff/assignments/#{asg}/grading_task" %>
+        <.link href={path}><%= asg.name %></.link>
         <%= if @tasks[asg.id] > 0 do %>
           <span class="badge bg-warning">
             <%= @tasks[asg.id] %>
