@@ -201,7 +201,7 @@ defmodule InkfishWeb.FormComponents do
         />
         {@label}
       </.label>
-      <.error :for={msg <- @errors}>{msg}</.error>
+      <.error :for={msg <- @errors}>{translate_error(msg)}</.error>
     </div>
     """
   end
@@ -220,7 +220,7 @@ defmodule InkfishWeb.FormComponents do
         <option :if={@prompt} value="">{@prompt}</option>
         {Phoenix.HTML.Form.options_for_select(@options, @value)}
       </select>
-      <.error :for={msg <- @errors}>{msg}</.error>
+      <.error :for={msg <- @errors}>{translate_error(msg)}</.error>
     </div>
     """
   end
@@ -239,7 +239,7 @@ defmodule InkfishWeb.FormComponents do
       <.label class="form-check-label" for={@id}>
         {@label}
       </.label>
-      <.error :for={msg <- @errors}>{msg}</.error>
+      <.error :for={msg <- @errors}>{translate_error(msg)}</.error>
     </div>
     """
   end
@@ -254,7 +254,7 @@ defmodule InkfishWeb.FormComponents do
         class={["form-control", @errors != [] && "is-invalid"]}
         {@rest}
       ><%= Phoenix.HTML.Form.normalize_value("textarea", @value) %></textarea>
-      <.error :for={msg <- @errors}>{msg}</.error>
+      <.error :for={msg <- @errors}>{translate_error(msg)}</.error>
     </div>
     """
   end
@@ -274,7 +274,7 @@ defmodule InkfishWeb.FormComponents do
         ]}
         {@rest}
       />
-      <.error :for={msg <- @errors}>{msg}</.error>
+      <.error :for={msg <- @errors}>{translate_error(msg)}</.error>
     </div>
     """
   end
@@ -335,6 +335,7 @@ defmodule InkfishWeb.FormComponents do
 
   attr :field, Phoenix.HTML.FormField, required: true
   attr :rest, :global, include: ~w(class placeholder readonly step min max)
+
   def number_input(assigns) do
     ~H"""
     <input type="number" name={@field.name} id={@field.id} value={@field.value} {@rest} />
@@ -343,6 +344,7 @@ defmodule InkfishWeb.FormComponents do
 
   attr :field, Phoenix.HTML.FormField, required: true
   attr :rest, :global
+
   def hidden_input(assigns) do
     ~H"""
     <input type="hidden" name={@field.name} id={@field.id} value={@field.value} {@rest} />
@@ -351,6 +353,7 @@ defmodule InkfishWeb.FormComponents do
 
   attr :field, Phoenix.HTML.FormField, required: true
   attr :rest, :global, include: ~w(class placeholder readonly)
+
   def password_input(assigns) do
     ~H"""
     <input type="password" name={@field.name} id={@field.id} value={@field.value} {@rest} />
@@ -359,6 +362,7 @@ defmodule InkfishWeb.FormComponents do
 
   attr :field, Phoenix.HTML.FormField, required: true
   attr :rest, :global, include: ~w(class placeholder readonly rows cols)
+
   def textarea(assigns) do
     ~H"""
     <textarea name={@field.name} id={@field.id} {@rest}><%= Phoenix.HTML.Form.normalize_value("textarea", @field.value) %></textarea>
@@ -367,6 +371,7 @@ defmodule InkfishWeb.FormComponents do
 
   attr :field, Phoenix.HTML.FormField, required: true
   attr :rest, :global, include: ~w(class)
+
   def checkbox(assigns) do
     ~H"""
     <span>
