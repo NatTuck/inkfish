@@ -32,7 +32,7 @@ defmodule InkfishWeb.GradeController do
       {id, _} = Integer.parse(id)
 
       grade_json =
-        InkfishWeb.Staff.GradeView.render("grade.json", %{grade: grade})
+        InkfishWeb.Staff.GradeJSON.show(%{grade: grade})
 
       data =
         Inkfish.Subs.read_sub_data(grade.sub_id)

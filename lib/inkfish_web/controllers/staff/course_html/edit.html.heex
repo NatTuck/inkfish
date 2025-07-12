@@ -1,5 +1,6 @@
 <h1>Edit Course</h1>
 
-<%= render "form.html", Map.put(assigns, :action, ~p"/staff/courses/#{@course}") %>
+<%= InkfishWeb.Staff.CourseHTML.course_form(
+  Map.put(assigns, :action, ~p"/staff/courses/#{@course}")) %>
 
 <span><.link href={~p"/staff/courses"}>Back</.link></span>

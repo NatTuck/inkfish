@@ -1,4 +1,4 @@
 <h1>Edit Assignment</h1>
 
-<%= render "form.html", Map.put(assigns, :action,
-  ~p"/staff/assignments/#{@assignment}") %>
+<%= InkfishWeb.Staff.AssignmentHTML.assignment_form(
+  Map.put(assigns, :action, ~p"/staff/assignments/#{@assignment}")) %>

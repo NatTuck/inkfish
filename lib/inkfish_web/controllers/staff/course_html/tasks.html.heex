@@ -5,7 +5,7 @@
   <ul>
     <%= for asg <- bucket.assignments do %>
       <li>
-        <% path = ~p"/staff/assignments/#{asg}/grading_task" %>
+        <% path = ~p"/staff/assignments/#{asg}/grading_tasks" %>
         <.link href={path}><%= asg.name %></.link>
         <%= if @tasks[asg.id] > 0 do %>
           <span class="badge bg-warning">

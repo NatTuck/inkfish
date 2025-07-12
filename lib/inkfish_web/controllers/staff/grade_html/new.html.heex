@@ -1,5 +1,6 @@
 <h1>New Grade</h1>
 
-<%= render "form.html", Map.put(assigns, :action, ~p"/staff/subs/#{@sub}/grades") %>
+<%= InkfishWeb.Staff.GradeHTML.grade_form(
+  Map.put(assigns, :action, ~p"/staff/subs/#{@sub}/grades")) %>
 
 <span><.link href={~p"/staff/subs/#{@sub}"}>Back</.link></span>

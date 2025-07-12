@@ -117,7 +117,7 @@ defmodule InkfishWeb.SubController do
 
   def files(conn, %{"id" => id}) do
     sub = Subs.get_sub!(id)
-    sub_data = InkfishWeb.SubView.render("sub.json", %{sub: sub})
+    sub_data = InkfishWeb.SubJSON.show(%{sub: sub})
     gcol = %{points: 0}
 
     data =

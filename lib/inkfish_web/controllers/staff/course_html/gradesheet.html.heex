@@ -8,7 +8,7 @@
       <th>&nbsp;</th>
       <th>&nbsp;</th>
       <%= for bucket <- Enum.sort_by(@course.buckets, &(&1.name)) do %>
-        <th colspan="<%= length(bucket.assignments) %>">
+        <th colspan={length(bucket.assignments)}>
           <%= bucket.name %>
         </th>
       <th>&nbsp;</th>

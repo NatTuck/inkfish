@@ -31,4 +31,15 @@ defmodule InkfishWeb.Staff.TeamJSON do
       subs: for(sub <- subs, do: SubJSON.data(sub))
     }
   end
+
+  def view_members(%Team{} = team) do
+    %{
+      id: team.id,
+      users:
+        Enum.map(team.regs, fn reg ->
+          user = reg.user
+          %{id: user.id, name: user_display_name(user)}
+        end)
+    }
+  end
 end

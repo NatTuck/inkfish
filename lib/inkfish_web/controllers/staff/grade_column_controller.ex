@@ -22,7 +22,8 @@ defmodule InkfishWeb.Staff.GradeColumnController do
   alias Inkfish.Grades.GradeColumn
 
   def index(conn, _params) do
-    grade_columns = Grades.list_grade_columns_for_assignment(conn.assigns.assignment)
+    asg = conn.assigns[:assignment]
+    grade_columns = asg.grade_columns
 
     render(conn, "index.html",
       page_title: "Grade Columns",
@@ -55,9 +56,7 @@ defmodule InkfishWeb.Staff.GradeColumnController do
       {:ok, grade_column} ->
         conn
         |> put_flash(:info, "Grade_Column created successfully.")
-        |> redirect(
-          to: ~p"/staff/grade_columns/#{grade_column}"
-        )
+        |> redirect(to: ~p"/staff/grade_columns/#{grade_column}")
 
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, "new.html", changeset: changeset)
@@ -86,9 +85,7 @@ defmodule InkfishWeb.Staff.GradeColumnController do
       {:ok, grade_column} ->
         conn
         |> put_flash(:info, "Grade_Column updated successfully.")
-        |> redirect(
-          to: ~p"/staff/grade_columns/#{grade_column}"
-        )
+        |> redirect(to: ~p"/staff/grade_columns/#{grade_column}")
 
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, "edit.html",
@@ -104,8 +101,6 @@ defmodule InkfishWeb.Staff.GradeColumnController do
 
     conn
     |> put_flash(:info, "Grade column deleted successfully.")
-    |> redirect(
-      to: ~p"/staff/assignments/#{grade_column.assignment_id}"
-    )
+    |> redirect(to: ~p"/staff/assignments/#{grade_column.assignment_id}")
   end
 end

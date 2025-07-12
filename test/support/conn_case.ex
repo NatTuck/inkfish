@@ -28,8 +28,6 @@ defmodule InkfishWeb.ConnCase do
       import Plug.Conn
       import Phoenix.ConnTest
       import InkfishWeb.ConnCase
-
-      alias InkfishWeb.Router.Helpers, as: Routes
     end
   end
 

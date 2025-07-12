@@ -68,11 +68,9 @@
             <td>
               <%= unless sub.active do %>
                 <% cset = Inkfish.Subs.change_sub(%{sub | active: true}) %>
-                <.form for={cset} action={~p"/staff/subs/#{sub}"}>
-                  <:inner :let={f}>
-                    <.hidden_input field={f[:active]} />
-                    <.button class="btn btn-secondary">Set Active</.button>
-                  </:inner>
+                <.form :let={f} for={cset} action={~p"/staff/subs/#{sub}"}>
+                  <.hidden_input field={f[:active]} />
+                  <.button class="btn btn-secondary">Set Active</.button>
                 </.form>
               <% end %>
             </td>

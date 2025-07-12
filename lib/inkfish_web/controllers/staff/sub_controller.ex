@@ -28,7 +28,7 @@ defmodule InkfishWeb.Staff.SubController do
   def show(conn, %{"id" => id}) do
     sub = Subs.get_sub!(id)
     sub = %{sub | team: Teams.get_team!(sub.team_id)}
-    sub_data = InkfishWeb.Staff.SubView.render("sub.json", sub: sub)
+    sub_data = InkfishWeb.Staff.SubJSON.show(%{sub: sub})
 
     autogrades =
       sub.grades
@@ -73,7 +73,7 @@ defmodule InkfishWeb.Staff.SubController do
       |> redirect(to: ~p"/staff/subs/#{sub}")
     else
       asg = Assignments.get_assignment_for_grading_tasks!(sub.assignment_id)
-      data = Staff.AssignmentView.render("assignment.json", %{assignment: asg})
+      data = Staff.AssignmentJSON.show(%{assignment: asg})
 
       conn
       |> put_resp_header("content-type", "application/json; charset=UTF-8")

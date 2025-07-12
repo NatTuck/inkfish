@@ -1,4 +1,4 @@
 <h1>Edit Bucket</h1>
 
-<%= render "form.html", Map.put(assigns, :action,
-  ~p"/staff/buckets/#{@bucket}") %>
+<%= InkfishWeb.Staff.BucketHTML.bucket_form(Map.put(assigns, :action,
+  ~p"/staff/buckets/#{@bucket}")) %>

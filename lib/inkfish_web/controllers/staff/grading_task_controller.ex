@@ -48,16 +48,14 @@ defmodule InkfishWeb.Staff.GradingTaskController do
     graders =
       Courses.list_course_graders(course)
       |> Enum.map(fn gdr ->
-        InkfishWeb.Staff.RegView.render("reg.json", %{reg: gdr})
+        InkfishWeb.Staff.RegJSON.show(%{reg: gdr})
       end)
       |> Jason.encode!()
 
     asg =
       Assignments.get_assignment_for_grading_tasks!(as.id)
       |> (fn arg ->
-            InkfishWeb.Staff.AssignmentView.render("assignment.json", %{
-              assignment: arg
-            })
+            InkfishWeb.Staff.AssignmentJSON.show(%{assignment: arg})
           end).()
       |> Jason.encode!()
 

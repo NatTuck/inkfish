@@ -51,10 +51,10 @@
 
 <h2>All Manual Grading</h2>
 
-<% path = ~p"/staff/assignments/#{@assignment}/grading_task/edit" %>
+<% path = ~p"/staff/assignments/#{@assignment}/grading_tasks/edit" %>
 <p><.link href={path}>Edit Grading Tasks</.link></p>
 
-<% action = ~p"/staff/assignments/#{@assignment}/grading_task" %>
+<% action = ~p"/staff/assignments/#{@assignment}/grading_tasks" %>
 <.form :let={_f} for={@conn} action={action}>
   <p><.button class="btn btn-primary">Assign All Unassigned Tasks</.button></p>
 </.form>

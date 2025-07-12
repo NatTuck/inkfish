@@ -72,10 +72,10 @@ defmodule InkfishWeb.Staff.GradeController do
     changeset = Grades.change_grade(grade)
 
     grade_json =
-      InkfishWeb.Staff.GradeView.render("grade.json", %{grade: grade})
+      InkfishWeb.Staff.GradeJSON.show(%{grade: grade})
 
     grader = conn.assigns[:current_user]
-    grader_json = InkfishWeb.UserView.render("user.json", %{user: grader})
+    grader_json = InkfishWeb.UserJSON.show(%{user: grader})
 
     data =
       Inkfish.Subs.read_sub_data(grade.sub_id)
