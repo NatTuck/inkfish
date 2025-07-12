@@ -29,7 +29,7 @@ defmodule InkfishWeb.Admin.UserController do
       {:ok, user} ->
         conn
         |> put_flash(:info, "User updated successfully.")
-        |> redirect(to: Routes.admin_user_path(conn, :show, user))
+        |> redirect(to: ~p"/admin/users/#{user}")
 
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, "edit.html", user: user, changeset: changeset)
@@ -43,12 +43,12 @@ defmodule InkfishWeb.Admin.UserController do
       {:ok, _user} ->
         conn
         |> put_flash(:info, "User deleted successfully.")
-        |> redirect(to: Routes.admin_user_path(conn, :index))
+        |> redirect(to: ~p"/admin/users")
 
       {:error, msg} ->
         conn
         |> put_flash(:error, msg)
-        |> redirect(to: Routes.admin_user_path(conn, :index))
+        |> redirect(to: ~p"/admin/users")
     end
   end
 
@@ -59,6 +59,6 @@ defmodule InkfishWeb.Admin.UserController do
     |> put_flash(:info, "Impersonating #{user.email}")
     |> put_session(:real_uid, conn.assigns[:current_user].id)
     |> put_session(:user_id, user.id)
-    |> redirect(to: Routes.page_path(conn, :index))
+    |> redirect(to: ~p"/")
   end
 end

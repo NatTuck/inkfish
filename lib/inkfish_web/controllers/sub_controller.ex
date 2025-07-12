@@ -56,7 +56,7 @@ defmodule InkfishWeb.SubController do
     else
       conn
       |> put_flash(:error, "You need a team to submit.")
-      |> redirect(to: Routes.assignment_path(conn, :show, asg))
+      |> redirect(to: ~p"/assignments/#{asg}")
     end
   end
 
@@ -81,7 +81,7 @@ defmodule InkfishWeb.SubController do
 
         conn
         |> put_flash(:info, "Sub created successfully.")
-        |> redirect(to: Routes.sub_path(conn, :show, sub))
+        |> redirect(to: ~p"/subs/#{sub}")
 
       {:error, %Ecto.Changeset{} = changeset} ->
         # IO.inspect({:error, changeset})
@@ -135,6 +135,6 @@ defmodule InkfishWeb.SubController do
 
     conn
     |> put_flash(:info, "Rerunning all grading scripts for sub")
-    |> redirect(to: Routes.staff_sub_path(conn, :show, sub))
+    |> redirect(to: ~p"/staff/subs/#{sub}")
   end
 end

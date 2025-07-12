@@ -56,7 +56,7 @@ defmodule InkfishWeb.Staff.GradeColumnController do
         conn
         |> put_flash(:info, "Grade_Column created successfully.")
         |> redirect(
-          to: Routes.staff_grade_column_path(conn, :show, grade_column)
+          to: ~p"/staff/grade_columns/#{grade_column}"
         )
 
       {:error, %Ecto.Changeset{} = changeset} ->
@@ -87,7 +87,7 @@ defmodule InkfishWeb.Staff.GradeColumnController do
         conn
         |> put_flash(:info, "Grade_Column updated successfully.")
         |> redirect(
-          to: Routes.staff_grade_column_path(conn, :show, grade_column)
+          to: ~p"/staff/grade_columns/#{grade_column}"
         )
 
       {:error, %Ecto.Changeset{} = changeset} ->
@@ -105,7 +105,7 @@ defmodule InkfishWeb.Staff.GradeColumnController do
     conn
     |> put_flash(:info, "Grade column deleted successfully.")
     |> redirect(
-      to: Routes.staff_assignment_path(conn, :show, grade_column.assignment_id)
+      to: ~p"/staff/assignments/#{grade_column.assignment_id}"
     )
   end
 end

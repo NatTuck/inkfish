@@ -27,7 +27,7 @@ defmodule InkfishWeb.GradeController do
     if grade_hidden?(conn, conn.assigns[:assignment]) do
       conn
       |> put_flash(:error, "Grade not ready yet.")
-      |> redirect(to: Routes.sub_path(conn, :show, conn.assigns[:sub]))
+      |> redirect(to: ~p"/subs/#{conn.assigns[:sub]}")
     else
       {id, _} = Integer.parse(id)
 

@@ -65,11 +65,11 @@ defmodule InkfishWeb.UserAuthEmailController do
             :info,
             "Logged in as #{user.email}, don't forget to change your password."
           )
-          |> redirect(to: Routes.page_path(conn, :dashboard))
+          |> redirect(to: ~p"/dashboard")
         else
           conn
           |> put_flash(:error, "Login link failed.")
-          |> redirect(to: Routes.page_path(conn, :index))
+          |> redirect(to: ~p"/")
         end
 
       {:error, _} ->

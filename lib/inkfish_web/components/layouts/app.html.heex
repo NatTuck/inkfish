@@ -44,16 +44,16 @@
           <div class="col-md-5">
             <%= if @current_user do %>
               User: {@current_user.email} | {link("Profile",
-                to: Routes.user_path(@conn, :show, @current_user)
+                to: ~p"/users/#{@current_user}"
               )} |
               <%= if @current_ruid do %>
                 {link("Resume",
-                  to: Routes.session_path(@conn, :resume),
+                  to: ~p"/session/resume",
                   method: :post
                 )}
               <% else %>
                 {link("Logout",
-                  to: Routes.session_path(@conn, :delete),
+                  to: ~p"/session",
                   method: :delete
                 )}
               <% end %>

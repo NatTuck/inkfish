@@ -70,7 +70,7 @@ defmodule InkfishWeb.Staff.SubController do
     if conn.assigns[:client_mode] == :browser do
       conn
       |> put_flash(:info, "Updated sub flags: ##{sub.id}.")
-      |> redirect(to: Routes.staff_sub_path(conn, :show, sub))
+      |> redirect(to: ~p"/staff/subs/#{sub}")
     else
       asg = Assignments.get_assignment_for_grading_tasks!(sub.assignment_id)
       data = Staff.AssignmentView.render("assignment.json", %{assignment: asg})

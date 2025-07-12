@@ -28,7 +28,7 @@ defmodule InkfishWeb.Plugs.RequireReg do
     if conn.assigns[:client_mode] == :browser do
       conn
       |> put_flash(:error, msg)
-      |> redirect(to: Routes.page_path(conn, :index))
+      |> redirect(to: ~p"/")
       |> halt
     else
       conn

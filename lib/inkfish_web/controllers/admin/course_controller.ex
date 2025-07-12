@@ -35,7 +35,7 @@ defmodule InkfishWeb.Admin.CourseController do
       {:ok, course} ->
         conn
         |> put_flash(:info, "Course created successfully.")
-        |> redirect(to: Routes.admin_course_path(conn, :show, course))
+        |> redirect(to: ~p"/admin/courses/#{course}")
 
       {:error, %Ecto.Changeset{} = changeset} ->
         # IO.inspect(changeset)
@@ -61,7 +61,7 @@ defmodule InkfishWeb.Admin.CourseController do
       {:ok, course} ->
         conn
         |> put_flash(:info, "Course updated successfully.")
-        |> redirect(to: Routes.admin_course_path(conn, :show, course))
+        |> redirect(to: ~p"/admin/courses/#{course}")
 
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, "edit.html", course: course, changeset: changeset)
@@ -74,6 +74,6 @@ defmodule InkfishWeb.Admin.CourseController do
 
     conn
     |> put_flash(:info, "Course deleted successfully.")
-    |> redirect(to: Routes.admin_course_path(conn, :index))
+    |> redirect(to: ~p"/admin/courses")
   end
 end

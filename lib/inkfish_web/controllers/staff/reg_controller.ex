@@ -43,7 +43,7 @@ defmodule InkfishWeb.Staff.RegController do
       {:ok, reg} ->
         conn
         |> put_flash(:info, "Reg created successfully.")
-        |> redirect(to: Routes.staff_reg_path(conn, :show, reg))
+        |> redirect(to: ~p"/staff/regs/#{reg}")
 
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, "new.html", changeset: changeset)
@@ -82,7 +82,7 @@ defmodule InkfishWeb.Staff.RegController do
       {:ok, reg} ->
         conn
         |> put_flash(:info, "Reg updated successfully.")
-        |> redirect(to: Routes.staff_reg_path(conn, :show, reg))
+        |> redirect(to: ~p"/staff/regs/#{reg}")
 
       {:error, %Ecto.Changeset{} = changeset} ->
         sections = ["" | Courses.Course.list_sections(reg.course)]
@@ -101,6 +101,6 @@ defmodule InkfishWeb.Staff.RegController do
 
     conn
     |> put_flash(:info, "Reg deleted successfully.")
-    |> redirect(to: Routes.staff_course_reg_path(conn, :index, reg.course_id))
+    |> redirect(to: ~p"/staff/courses/#{reg.course_id}/regs")
   end
 end

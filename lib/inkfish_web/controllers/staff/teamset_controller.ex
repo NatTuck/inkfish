@@ -43,7 +43,7 @@ defmodule InkfishWeb.Staff.TeamsetController do
       {:ok, teamset} ->
         conn
         |> put_flash(:info, "Teamset created successfully.")
-        |> redirect(to: Routes.staff_teamset_path(conn, :show, teamset))
+        |> redirect(to: ~p"/staff/teamsets/#{teamset}")
 
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, "new.html", changeset: changeset)
@@ -79,7 +79,7 @@ defmodule InkfishWeb.Staff.TeamsetController do
       {:ok, teamset} ->
         conn
         |> put_flash(:info, "Teamset updated successfully.")
-        |> redirect(to: Routes.staff_teamset_path(conn, :show, teamset))
+        |> redirect(to: ~p"/staff/teamsets/#{teamset}")
 
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, "edit.html", teamset: teamset, changeset: changeset)
@@ -93,7 +93,7 @@ defmodule InkfishWeb.Staff.TeamsetController do
     conn
     |> put_flash(:info, "Teamset deleted successfully.")
     |> redirect(
-      to: Routes.staff_course_teamset_path(conn, :index, teamset.course_id)
+      to: ~p"/staff/courses/#{teamset.course_id}/teamsets"
     )
   end
 
@@ -107,18 +107,18 @@ defmodule InkfishWeb.Staff.TeamsetController do
       if team do
         conn
         |> put_flash(:info, "Prof team exists for ts #{id}")
-        |> redirect(to: Routes.staff_teamset_path(conn, :show, teamset))
+        |> redirect(to: ~p"/staff/teamsets/#{teamset}")
       else
         team = Teams.create_solo_team(teamset, reg)
 
         conn
         |> put_flash(:info, "Added prof team #{team.id} for teamset #{id}")
-        |> redirect(to: Routes.staff_teamset_path(conn, :show, teamset))
+        |> redirect(to: ~p"/staff/teamsets/#{teamset}")
       end
     else
       conn
       |> put_flash(:error, "Must be prof")
-      |> redirect(to: Routes.staff_teamset_path(conn, :show, teamset))
+      |> redirect(to: ~p"/staff/teamsets/#{teamset}")
     end
   end
 end

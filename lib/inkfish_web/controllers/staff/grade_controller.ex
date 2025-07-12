@@ -37,12 +37,12 @@ defmodule InkfishWeb.Staff.GradeController do
       {:ok, grade} ->
         Inkfish.Subs.calc_sub_score!(grade.sub_id)
         save_sub_dump!(grade.sub_id)
-        redirect(conn, to: Routes.staff_grade_path(conn, :edit, grade.id))
+        redirect(conn, to: ~p"/staff/grades/#{grade.id}/edit")
 
       {:error, %Ecto.Changeset{} = _changeset} ->
         conn
         |> put_flash(:error, "Failed to create grade.")
-        |> redirect(to: Routes.page_path(conn, :dashboard))
+        |> redirect(to: ~p"/dashboard")
     end
   end
 
@@ -105,7 +105,7 @@ defmodule InkfishWeb.Staff.GradeController do
 
         conn
         |> put_flash(:info, "Grade updated successfully.")
-        |> redirect(to: Routes.staff_grade_path(conn, :show, grade))
+        |> redirect(to: ~p"/staff/grades/#{grade}")
 
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, "edit.html", grade: grade, changeset: changeset)

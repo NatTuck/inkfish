@@ -1,5 +1,5 @@
 Admin:
-<%= link "Users", to: Routes.admin_user_path(@conn, :index) %> |
-<%= link "Courses", to: Routes.admin_course_path(@conn, :index) %> |
-<%= link "Docker", to: Routes.admin_docker_tag_path(@conn, :index) %> |
+<%= link "Users", to: ~p"/admin/users" %> |
+<%= link "Courses", to: ~p"/admin/courses" %> |
+<%= link "Docker", to: ~p"/admin/docker_tags" %> |
 <%= link "LiveDashboard", to: ~p"/admin/live_dashboard" %>

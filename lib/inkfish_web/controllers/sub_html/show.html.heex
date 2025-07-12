@@ -2,7 +2,7 @@
 
 <%= if is_staff?(@current_reg, @current_user) do %>
   <p>
-    <.link href={Routes.staff_sub_path(@conn, :show, @sub)}>Staff View</.link>
+    <.link href={~p"/staff/subs/#{@sub}"}>Staff View</.link>
   </p>
 <% end %>
 
@@ -39,8 +39,8 @@
 
   <li>
     <strong>Upload:</strong>
-    <.link href={Routes.upload_path(@conn, :download, @sub.upload, @sub.upload.name)}><%= @sub.upload.name %></.link>
-    (<.link href={Routes.sub_path(@conn, :files, @sub)}>View Files</.link>)
+    <.link href={~p"/uploads/#{@sub.upload}/#{@sub.upload.name}"}><%= @sub.upload.name %></.link>
+    (<.link href={~p"/subs/#{@sub}/files"}>View Files</.link>)
   </li>
 </ul>
 
@@ -63,7 +63,7 @@
       <td>
         <%= if grade && !grade_hidden?(@conn, @assignment) do %>
           <%= if grade_column.kind == "feedback" do %>
-            <.link href={Routes.grade_path(@conn, :show, grade.id)}><%= grade_column.name %></.link>
+            <.link href={~p"/grades/#{grade.id}"}><%= grade_column.name %></.link>
             (<%= length(grade.line_comments) %> note(s))
           <% else %>
             <%= grade_column.name %>
@@ -94,7 +94,7 @@
 <%= unless Enum.empty?(@autogrades) do %>
   <h2>Grading Scripts Output</h2>
     
-  <% path = Routes.sub_path(@conn, :rerun_scripts, @sub) %>
+  <% path = ~p"/subs/#{@sub}/rerun_scripts" %>
   <.form for={%{}} action={path} method="post">
     <.button class="btn btn-secondary">Rerun Scripts</.button>
   </.form>

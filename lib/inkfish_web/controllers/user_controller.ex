@@ -14,7 +14,7 @@ defmodule InkfishWeb.UserController do
     if !user.is_admin && user.id != id do
       conn
       |> put_flash(:error, "Access denied.")
-      |> redirect(to: Routes.page_path(conn, :dashboard))
+      |> redirect(to: ~p"/dashboard")
       |> halt
     else
       conn
@@ -87,7 +87,7 @@ defmodule InkfishWeb.UserController do
         conn
         |> put_flash(:info, "Password updated successfully.")
         |> put_session(:user_return_to, ~p"/users/#{user.id}")
-        |> redirect(to: Routes.user_path(conn, :show, user))
+        |> redirect(to: ~p"/users/#{user}")
 
       {:error, pw_changeset} ->
         conn
@@ -105,7 +105,7 @@ defmodule InkfishWeb.UserController do
       {:ok, user} ->
         conn
         |> put_flash(:info, "User updated successfully.")
-        |> redirect(to: Routes.user_path(conn, :show, user))
+        |> redirect(to: ~p"/users/#{user}")
 
       {:error, %Ecto.Changeset{} = changeset} ->
         conn

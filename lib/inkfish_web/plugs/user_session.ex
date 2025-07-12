@@ -9,7 +9,7 @@ defmodule InkfishWeb.Plugs.UserSession do
     if user do
       conn
       |> put_flash(:error, "Expected no user session.")
-      |> redirect(to: Routes.page_path(conn, :dashboard))
+      |> redirect(to: ~p"/dashboard")
       |> halt
     else
       conn
@@ -24,7 +24,7 @@ defmodule InkfishWeb.Plugs.UserSession do
     else
       conn
       |> put_flash(:error, "Please log in.")
-      |> redirect(to: Routes.page_path(conn, :index))
+      |> redirect(to: ~p"/")
       |> halt
     end
   end
@@ -37,7 +37,7 @@ defmodule InkfishWeb.Plugs.UserSession do
     else
       conn
       |> put_flash(:error, "Access denied.")
-      |> redirect(to: Routes.page_path(conn, :index))
+      |> redirect(to: ~p"/")
       |> halt
     end
   end
@@ -53,7 +53,7 @@ defmodule InkfishWeb.Plugs.UserSession do
     else
       conn
       |> put_flash(:error, "Access denied.")
-      |> redirect(to: Routes.page_path(conn, :index))
+      |> redirect(to: ~p"/")
       |> halt
     end
   end
