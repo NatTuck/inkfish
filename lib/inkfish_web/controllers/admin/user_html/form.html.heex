@@ -1,0 +1,65 @@
+<%= form_for @changeset, @action, [multipart: true], fn f -> %>
+  <%= if @changeset.action do %>
+    <div class="alert alert-danger">
+      <p>Oops, something went wrong! Please check the errors below.</p>
+    </div>
+  <% end %>
+
+  <div class="mb-3">
+    <%= label f, :email, class: "form-label" %>
+    <%= text_input(f, :email, name: "_email",
+      class: "form-control", readonly: "readonly") %>
+    <%= error_tag f, :email %>
+  </div>
+
+  <div class="mb-3">
+    <%= label f, :given_name, class: "form-label" %>
+    <%= text_input f, :given_name, class: "form-control" %>
+    <%= error_tag f, :given_name %>
+  </div>
+
+  <div class="mb-3">
+    <%= label f, :surname, class: "form-label" %>
+    <%= text_input f, :surname, class: "form-control" %>
+    <%= error_tag f, :surname %>
+  </div>
+
+  <div class="mb-3">
+    <%= label f, :nickname, class: "form-label" %>
+    <%= text_input f, :nickname, class: "form-control" %>
+    <%= error_tag f, :nickname %>
+  </div>
+
+  <div class="mb-3">
+    <%= label f, :is_admin, class: "form-label" %><br>
+    <div class="form-check form-switch">
+      <%= checkbox f, :is_admin, class: "form-check-input form-switch" %>
+    </div>
+    <%= error_tag f, :is_admin %>
+  </div>
+
+  <div class="mb-3">
+    <%= label f, :photo_upload_id, class: "form-label" %>
+    <%= text_input f, :photo_upload_id, class: "form-control", readonly: "readonly" %>
+    <%= error_tag f, :photo_upload_id %>
+
+    <div class="row">
+      <div class="col">
+        <%= ajax_upload_field "user_photo", "jpg", "user_photo_upload_id" %>
+      </div>
+      <div class="col">
+        <%= if @user.photo_upload_id do %>
+          <p><img src={Routes.upload_path(@conn, :show, @user.photo_upload}
+                  id="photo-preview"></p>
+        <% else %>
+          <p><img src="<%= Routes.static_path(@conn, "/images/red_squid.jpg") %>"
+                  id="photo-preview"></p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+  
+  <div class="mb-3">
+    <%= submit "Save", class: "btn btn-primary" %>
+  </div>
+<% end %>
