@@ -39,12 +39,12 @@
 <h2>Photo</h2>
 
 <p>
-  <.if condition={@user.photo_upload_id && @user.photo_upload}>
+  <% if @user.photo_upload_id && @user.photo_upload do %>
     <img
       src={~p"/uploads/#{@user.photo_upload.id}/#{@user.photo_upload.name}"}
       class="user-photo-full"
     />
-    <:else>
+  <% else %>
     <img src={~p"/images/red_squid.jpg"} class="user-photo-full" />
-  </.if>
+  <% end %>
 </p>

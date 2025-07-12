@@ -20,11 +20,11 @@
 
 <pre><%= inspect(@image, pretty: true) %></pre>
 
-<.if condition={@fresh}>
+<% if @fresh do %>
   <p>Image is up to date!</p>
-  <:else>
+<% else %>
   <p>Image is stale.</p>
-</.if>
+<% end %>
 
 <h2>Dockerfile</h2>
 <pre><%= @docker_tag.dockerfile %></pre>
