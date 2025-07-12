@@ -1,0 +1,47 @@
+<%= form_for @changeset, @action, fn f -> %>
+  <%= if @changeset.action do %>
+    <div class="alert alert-danger">
+      <p>Oops, something went wrong! Please check the errors below.</p>
+    </div>
+  <% end %>
+
+  <div class="mb-3">
+    <%= label f, :name, class: "form-label" %>
+    <%= text_input f, :name, class: "form-control" %>
+    <%= error_tag f, :name %>
+  </div>
+
+  <div class="mb-3">
+    <%= label f, :start_date, class: "form-label" %>
+    <%= text_input(f, :start_date, class: "form-control date-picker") %>
+    <%= error_tag(f, :start_date) %>
+  </div>
+
+  <div class="mb-3">
+    <div class="form-check form-switch"> 
+      <%= checkbox f, :archived, class: "form-check-input" %>
+    </div>
+    &nbsp;
+    <%= label f, :archived, "archive old course", class: "form-check-label" %>
+    <%= error_tag f, :archived %>
+  </div>
+
+  <div class="mb-3">
+    <%= label f, :instructor, class: "form-label" %>
+    <%= text_input(f, :instructor, class: "form-control autosearch",
+      data: [topic: "users"]) %>
+    <%= error_tag f, :instructor %>
+    <div class="text-muted">
+      start typing to search
+    </div>
+  </div>
+
+  <div class="mb-3">
+    <%= label f, :sections, class: "form-label" %>
+    <%= text_input f, :sections, class: "form-control" %>
+  </div>
+
+  <div class="mb-3">
+    <%= submit "Save", class: "btn btn-primary" %>
+  </div>
+<% end %>
