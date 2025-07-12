@@ -1,20 +1,24 @@
-defmodule InkfishWeb.Staff.SubJson do
-  use InkfishWeb.Json
-  alias InkfishWeb.Staff.RegJson
-  alias InkfishWeb.Staff.TeamJson
-  alias InkfishWeb.Staff.GradeJson
+defmodule InkfishWeb.Staff.SubJSON do
+  use InkfishWeb, :json
+
+  alias Inkfish.Subs.Sub
+  alias InkfishWeb.Staff.RegJSON
+  alias InkfishWeb.Staff.TeamJSON
+  alias InkfishWeb.Staff.GradeJSON
 
   def index(%{subs: subs}) do
-    %{data: Enum.map(subs, &data(%{sub: &1}))}
+    %{data: for(sub <- subs, do: data(sub))}
   end
 
-  def show(%{sub: nil}), do: nil
+  def show(%{sub: nil}), do: %{data: nil}
 
   def show(%{sub: sub}) do
-    %{data: data(%{sub: sub})}
+    %{data: data(sub)}
   end
 
-  def data(%{sub: sub}) do
+  def data(nil), do: nil
+
+  def data(%Sub{} = sub) do
     reg = get_assoc(sub, :reg)
     team = get_assoc(sub, :team)
     grades = get_assoc(sub, :grades) || []
@@ -26,12 +30,12 @@ defmodule InkfishWeb.Staff.SubJson do
       assignment_id: sub.assignment_id,
       inserted_at: sub.inserted_at,
       reg_id: sub.reg_id,
-      reg: RegJson.show(%{reg: reg}),
+      reg: RegJSON.data(reg),
       team_id: sub.team_id,
-      team: TeamJson.show(%{team: team}),
-      grades: GradeJson.index(%{grades: grades}),
+      team: TeamJSON.data(team),
+      grades: for(grade <- grades, do: GradeJSON.data(grade)),
       grader_id: sub.grader_id,
-      grader: RegJson.show(%{reg: grader})
+      grader: RegJSON.data(grader)
     }
   end
 end

@@ -1,19 +1,26 @@
-defmodule InkfishWeb.Staff.GradeColumnJson do
-  import InkfishWeb.ViewHelpers
+defmodule InkfishWeb.Staff.GradeColumnJSON do
+  use InkfishWeb, :json
+
+  alias Inkfish.Grades.GradeColumn
 
   def index(%{grade_columns: grade_columns}) do
-    Enum.map(grade_columns, &data(%{grade_column: &1}))
+    %{data: for(gc <- grade_columns, do: data(gc))}
   end
 
-  def show(%{grade_column: nil}), do: nil
+  def show(%{grade_column: nil}), do: %{data: nil}
 
   def show(%{grade_column: grade_column}) do
-    data(%{grade_column: grade_column})
+    %{data: data(grade_column)}
   end
 
-  def data(%{grade_column: grade_column}) do
+  def data(nil), do: nil
+
+  def data(%GradeColumn{} = grade_column) do
     %{
-      kind: grade_column.kind
+      id: grade_column.id,
+      name: grade_column.name,
+      kind: grade_column.kind,
+      points: grade_column.points
     }
   end
 end

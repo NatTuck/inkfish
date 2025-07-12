@@ -1,13 +1,28 @@
-defmodule InkfishWeb.RegView do
-  alias InkfishWeb.UserJson
+defmodule InkfishWeb.RegJSON do
+  use InkfishWeb, :json
 
-  import InkfishWeb.ViewHelpers
+  alias Inkfish.Users.Reg
+  alias InkfishWeb.UserJSON
+
+  def index(%{regs: regs}) do
+    %{data: for(reg <- regs, do: data(reg))}
+  end
+
+  def show(%{reg: nil}), do: %{data: nil}
 
   def show(%{reg: reg}) do
+    %{data: data(reg)}
+  end
+
+  def data(nil), do: nil
+
+  def data(%Reg{} = reg) do
     user = get_assoc(reg, :user)
 
     %{
-      user: UserJson.show(user)
+      id: reg.id,
+      is_student: reg.is_student,
+      user: UserJSON.data(user)
     }
   end
 end

@@ -1,23 +1,24 @@
-defmodule InkfishWeb.Staff.TeamJson do
-  use InkfishWeb.ViewHelpers
+defmodule InkfishWeb.Staff.TeamJSON do
+  use InkfishWeb, :json
 
   alias Inkfish.Teams.Team
-  alias InkfishWeb.Staff.RegJson
-  alias InkfishWeb.Staff.TeamsetJson
-  alias InkfishWeb.Staff.SubJson
-  alias InkfishWeb.CoreComponents
+  alias InkfishWeb.Staff.RegJSON
+  alias InkfishWeb.Staff.TeamsetJSON
+  alias InkfishWeb.Staff.SubJSON
 
   def index(%{teams: teams}) do
-    %{data: Enum.map(teams, &data(%{team: &1}))}
+    %{data: for(team <- teams, do: data(team))}
   end
 
-  def show(%{team: nil}), do: nil
+  def show(%{team: nil}), do: %{data: nil}
 
   def show(%{team: team}) do
-    %{data: data(%{team: team})}
+    %{data: data(team)}
   end
 
-  def data(%{team: %Team{} = team}) do
+  def data(nil), do: nil
+
+  def data(%Team{} = team) do
     regs = get_assoc(team, :regs) || []
     teamset = get_assoc(team, :teamset)
     subs = get_assoc(team, :subs) || []
@@ -25,20 +26,9 @@ defmodule InkfishWeb.Staff.TeamJson do
     %{
       id: team.id,
       active: team.active,
-      regs: RegJson.index(%{regs: regs}),
-      teamset: TeamsetJson.show(%{teamset: teamset}),
-      subs: SubJson.index(%{subs: subs})
-    }
-  end
-
-  def view_members(%Team{} = team) do
-    %{
-      id: team.id,
-      users:
-        Enum.map(team.regs, fn reg ->
-          user = reg.user
-          %{id: user.id, name: CoreComponents.user_display_name(user)}
-        end)
+      regs: for(reg <- regs, do: RegJSON.data(reg)),
+      teamset: TeamsetJSON.data(teamset),
+      subs: for(sub <- subs, do: SubJSON.data(sub))
     }
   end
 end

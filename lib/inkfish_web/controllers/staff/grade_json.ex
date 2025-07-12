@@ -1,21 +1,24 @@
-defmodule InkfishWeb.Staff.GradeJson do
-  import InkfishWeb.ViewHelpers
+defmodule InkfishWeb.Staff.GradeJSON do
+  use InkfishWeb, :json
 
-  alias InkfishWeb.Staff.SubJson
-  alias InkfishWeb.Staff.GradeColumnJson
-  alias InkfishWeb.Staff.LineCommentJson
+  alias Inkfish.Grades.Grade
+  alias InkfishWeb.Staff.SubJSON
+  alias InkfishWeb.Staff.GradeColumnJSON
+  alias InkfishWeb.Staff.LineCommentJSON
 
   def index(%{grades: grades}) do
-    %{data: Enum.map(grades, &data(%{grade: &1}))}
+    %{data: for(grade <- grades, do: data(grade))}
   end
 
-  def show(%{grade: nil}), do: nil
+  def show(%{grade: nil}), do: %{data: nil}
 
   def show(%{grade: grade}) do
-    %{data: data(%{grade: grade})}
+    %{data: data(grade)}
   end
 
-  def data(%{grade: grade}) do
+  def data(nil), do: nil
+
+  def data(%Grade{} = grade) do
     gc = get_assoc(grade, :grade_column)
     lcs = get_assoc(grade, :line_comments) || []
     sub = get_assoc(grade, :sub)
@@ -24,10 +27,10 @@ defmodule InkfishWeb.Staff.GradeJson do
       id: grade.id,
       score: grade.score,
       sub_id: grade.sub_id,
-      sub: SubJson.show(%{sub: sub}),
+      sub: SubJSON.data(sub),
       grade_column_id: grade.grade_column_id,
-      grade_column: GradeColumnJson.show(%{grade_column: gc}),
-      line_comments: LineCommentJson.index(%{line_comments: lcs})
+      grade_column: GradeColumnJSON.data(gc),
+      line_comments: for(lc <- lcs, do: LineCommentJSON.data(lc))
     }
   end
 end

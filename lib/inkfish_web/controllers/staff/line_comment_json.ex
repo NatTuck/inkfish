@@ -1,27 +1,25 @@
-defmodule InkfishWeb.Staff.LineCommentJson do
-  import InkfishWeb.ViewHelpers
+defmodule InkfishWeb.Staff.LineCommentJSON do
+  use InkfishWeb, :json
 
-  alias InkfishWeb.UserJson
-  alias InkfishWeb.Staff.GradeJson
-
-  def render_list(line_comments) do
-    index(%{line_comments: line_comments})
-  end
+  alias Inkfish.LineComments.LineComment
+  alias InkfishWeb.UserJSON
+  alias InkfishWeb.Staff.GradeJSON
 
   def index(%{line_comments: line_comments}) do
-    %{data: Enum.map(line_comments, &data(%{line_comment: &1}))}
+    %{data: for(lc <- line_comments, do: data(lc))}
   end
+
+  def show(%{line_comment: nil}), do: %{data: nil}
 
   def show(%{line_comment: line_comment}) do
-    %{data: data(%{line_comment: line_comment})}
+    %{data: data(line_comment)}
   end
 
-  def data(%{line_comment: line_comment}) do
-    user = get_assoc(line_comment, :user)
-    user_json = UserJson.show(%{user: user})
+  def data(nil), do: nil
 
+  def data(%LineComment{} = line_comment) do
+    user = get_assoc(line_comment, :user)
     grade = get_assoc(line_comment, :grade)
-    grade_json = GradeJson.show(%{grade: grade})
 
     %{
       id: line_comment.id,
@@ -30,9 +28,9 @@ defmodule InkfishWeb.Staff.LineCommentJson do
       points: line_comment.points,
       text: line_comment.text,
       user_id: line_comment.user_id,
-      user: user_json,
+      user: UserJSON.data(user),
       grade_id: line_comment.grade_id,
-      grade: grade_json
+      grade: GradeJSON.data(grade)
     }
   end
 end

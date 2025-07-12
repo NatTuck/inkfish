@@ -1,19 +1,23 @@
-defmodule InkfishWeb.Staff.RegJson do
-  use InkfishWeb.Json
-  alias InkfishWeb.UserJson
-  alias InkfishWeb.Staff.CourseJson
+defmodule InkfishWeb.Staff.RegJSON do
+  use InkfishWeb, :json
+
+  alias Inkfish.Users.Reg
+  alias InkfishWeb.UserJSON
+  alias InkfishWeb.Staff.CourseJSON
 
   def index(%{regs: regs}) do
-    %{data: Enum.map(regs, &data(%{reg: &1}))}
+    %{data: for(reg <- regs, do: data(reg))}
   end
 
-  def show(%{reg: nil}), do: nil
+  def show(%{reg: nil}), do: %{data: nil}
 
   def show(%{reg: reg}) do
-    %{data: data(%{reg: reg})}
+    %{data: data(reg)}
   end
 
-  def data(%{reg: reg}) do
+  def data(nil), do: nil
+
+  def data(%Reg{} = reg) do
     user = get_assoc(reg, :user)
     course = get_assoc(reg, :course)
 
@@ -24,9 +28,9 @@ defmodule InkfishWeb.Staff.RegJson do
       is_prof: reg.is_prof,
       is_student: reg.is_student,
       user_id: reg.user_id,
-      user: UserJson.show(%{user: user}),
+      user: UserJSON.data(user),
       course_id: reg.course_id,
-      course: CourseJson.show(%{course: course}),
+      course: CourseJSON.data(course),
       section: reg.section
     }
   end

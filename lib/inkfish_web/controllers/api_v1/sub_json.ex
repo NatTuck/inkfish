@@ -1,4 +1,6 @@
 defmodule InkfishWeb.ApiV1.SubJSON do
+  use InkfishWeb, :json
+
   alias Inkfish.Subs.Sub
   alias Inkfish.Uploads.Upload
 
@@ -12,11 +14,17 @@ defmodule InkfishWeb.ApiV1.SubJSON do
   @doc """
   Renders a single sub.
   """
+  def show(%{sub: nil}), do: %{data: nil}
+
   def show(%{sub: sub}) do
     %{data: data(sub)}
   end
 
-  defp data(%Sub{} = sub) do
+  def data(nil), do: nil
+
+  def data(%Sub{} = sub) do
+    upload = get_assoc(sub, :upload)
+
     %{
       id: sub.id,
       active: sub.active,
@@ -25,7 +33,7 @@ defmodule InkfishWeb.ApiV1.SubJSON do
       hours_spent: sub.hours_spent,
       note: sub.note,
       ignore_late_penalty: sub.ignore_late_penalty,
-      upload: Upload.upload_url(sub.upload)
+      upload: Upload.upload_url(upload)
     }
   end
 end

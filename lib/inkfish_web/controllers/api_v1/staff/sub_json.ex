@@ -1,4 +1,6 @@
 defmodule InkfishWeb.ApiV1.Staff.SubJSON do
+  use InkfishWeb, :json
+
   alias Inkfish.Subs.Sub
 
   @doc """
@@ -11,11 +13,15 @@ defmodule InkfishWeb.ApiV1.Staff.SubJSON do
   @doc """
   Renders a single sub.
   """
+  def show(%{sub: nil}), do: %{data: nil}
+
   def show(%{sub: sub}) do
     %{data: data(sub)}
   end
 
-  defp data(%Sub{} = sub) do
+  def data(nil), do: nil
+
+  def data(%Sub{} = sub) do
     %{
       id: sub.id,
       active: sub.active,
