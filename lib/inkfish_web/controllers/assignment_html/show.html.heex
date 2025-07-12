@@ -72,13 +72,15 @@
 
 <table class="table table-striped">
   <thead>
-    <td>Active</td>
-    <td>Date</td>
-    <%= for gcol <- @assignment.grade_columns do %>
-      <td><%= gcol.name %></td>
-    <% end %>
-    <td>Total Score</td>
-    <td>Actions</td>
+    <tr>
+      <th>Active</th>
+      <th>Date</th>
+      <%= for gcol <- @assignment.grade_columns do %>
+        <th><%= gcol.name %></th>
+      <% end %>
+      <th>Total Score</th>
+      <th>Actions</th>
+    </tr>
   </thead>
   <tbody>
     <%= for sub <- @subs do %>
