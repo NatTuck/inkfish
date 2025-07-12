@@ -6,13 +6,13 @@
   <% end %>
 
   <div class="mb-3">
-    <.label for={@changeset.data.id <> "_name"}>Name</.label>
+    <.label for={@changeset[:name].id}>Name</.label>
     <.text_input field={@changeset[:name]} class="form-control" />
     <.error_tag form={@changeset} field={:name} />
   </div>
 
   <div class="mb-3">
-    <.label for={@changeset.data.id <> "_kind"}>Kind</.label>
+    <.label for={@changeset[:kind].id}>Kind</.label>
     <.select
       field={@changeset[:kind]}
       options={Inkfish.Grades.GradeColumn.grade_column_types()}
@@ -22,19 +22,19 @@
   </div>
 
   <div class="mb-3">
-    <.label for={@changeset.data.id <> "_points"}>Points</.label>
+    <.label for={@changeset[:points].id}>Points</.label>
     <.number_input field={@changeset[:points]} step="any" class="form-control" />
     <.error_tag form={@changeset} field={:points} />
   </div>
 
   <div class="mb-3">
-    <.label for={@changeset.data.id <> "_base"}>Base</.label>
+    <.label for={@changeset[:base].id}>Base</.label>
     <.number_input field={@changeset[:base]} step="any" class="form-control" />
     <.error_tag form={@changeset} field={:base} />
   </div>
 
   <div class="mb-3">
-    <.label for={@changeset.data.id <> "_params"}>Params</.label>
+    <.label for={@changeset[:params].id}>Params</.label>
     <.text_input field={@changeset[:params]} class="form-control" />
     <.error_tag form={@changeset} field={:params} />
   </div>
@@ -57,7 +57,7 @@
   </div>
 
   <div class="mb-3">
-    <.label for={@changeset.data.id <> "_upload_id"}>Upload ID</.label>
+    <.label for={@changeset[:upload_id].id}>Upload ID</.label>
     <.text_input field={@changeset[:upload_id]} class="form-control" readonly="readonly" />
     <.error_tag form={@changeset} field={:upload_id} />
     <%= ajax_upload_field("grade_column", "", "grade_column_upload_id") %>
