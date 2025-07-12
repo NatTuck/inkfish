@@ -1,47 +1,50 @@
-<%= form_for @changeset, @action, fn f -> %>
-  <%= if @changeset.action do %>
-    <div class="alert alert-danger">
-      <p>Oops, something went wrong! Please check the errors below.</p>
+<.form for={@changeset} action={@action}>
+  <:inner :let={f}>
+    <.if condition={@changeset.action}>
+      <div class="alert alert-danger">
+        <p>Oops, something went wrong! Please check the errors below.</p>
+      </div>
+    </.if>
+
+    <div class="mb-3">
+      <.label for={f[:name]} class="form-label" />
+      <.text_input field={f[:name]} class="form-control" />
+      <.error_tag form={f} field={:name} />
     </div>
-  <% end %>
 
-  <div class="mb-3">
-    <%= label f, :name, class: "form-label" %>
-    <%= text_input f, :name, class: "form-control" %>
-    <%= error_tag f, :name %>
-  </div>
-
-  <div class="mb-3">
-    <%= label f, :start_date, class: "form-label" %>
-    <%= text_input(f, :start_date, class: "form-control date-picker") %>
-    <%= error_tag(f, :start_date) %>
-  </div>
-
-  <div class="mb-3">
-    <div class="form-check form-switch"> 
-      <%= checkbox f, :archived, class: "form-check-input" %>
+    <div class="mb-3">
+      <.label for={f[:start_date]} class="form-label" />
+      <.text_input field={f[:start_date]} class="form-control date-picker" />
+      <.error_tag form={f} field={:start_date} />
     </div>
-    &nbsp;
-    <%= label f, :archived, "archive old course", class: "form-check-label" %>
-    <%= error_tag f, :archived %>
-  </div>
 
-  <div class="mb-3">
-    <%= label f, :instructor, class: "form-label" %>
-    <%= text_input(f, :instructor, class: "form-control autosearch",
-      data: [topic: "users"]) %>
-    <%= error_tag f, :instructor %>
-    <div class="text-muted">
-      start typing to search
+    <div class="mb-3">
+      <div class="form-check form-switch">
+        <.checkbox field={f[:archived]} class="form-check-input" />
+      </div>
+      &nbsp;
+      <.label for={f[:archived]} class="form-check-label">archive old course</.label>
+      <.error_tag form={f} field={:archived} />
     </div>
-  </div>
 
-  <div class="mb-3">
-    <%= label f, :sections, class: "form-label" %>
-    <%= text_input f, :sections, class: "form-control" %>
-  </div>
+    <div class="mb-3">
+      <.label for={f[:instructor]} class="form-label" />
+      <.text_input field={f[:instructor]} class="form-control autosearch" data-topic="users" />
+      <.error_tag form={f} field={:instructor} />
+      <div class="text-muted">
+        start typing to search
+      </div>
+    </div>
 
-  <div class="mb-3">
-    <%= submit "Save", class: "btn btn-primary" %>
-  </div>
-<% end %>
+    <div class="mb-3">
+      <.label for={f[:sections]} class="form-label" />
+      <.text_input field={f[:sections]} class="form-control" />
+    </div>
+  </:inner>
+
+  <:actions>
+    <div class="mb-3">
+      <.button class="btn btn-primary">Save</.button>
+    </div>
+  </:actions>
+</.form>

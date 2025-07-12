@@ -1,6 +1,8 @@
 <h1>Admin: Listing Courses</h1>
 
-<p><span><%= link "New Course", to: Routes.admin_course_path(@conn, :new) %></span></p>
+<p>
+  <span><.link href={~p"/admin/courses/new"}>New Course</.link></span>
+</p>
 
 <h2>Active Courses</h2>
 
@@ -16,34 +18,38 @@
     </tr>
   </thead>
   <tbody>
-  <%= for course <- Enum.filter(@courses, &(!&1.archived)) do %>
-    <% prof = @profs[course.id] %>
-    <tr>
-      <td><%= link course.name, to: Routes.admin_course_path(@conn, :show, course) %></td>
-      <td>
-        <%= link "Student", to: Routes.course_path(@conn, :show, course) %> |
-        <%= link "Staff", to: Routes.staff_course_path(@conn, :show, course) %>
-      </td>
-      <td><%= course.start_date %></td>
-      <td>
-        <%= if prof do %>
-          <%= link(user_display_name(prof), to: Routes.admin_user_path(@conn, :show, prof)) %>
-        <% else %>
-          (none)
-        <% end %>
-      </td>
+    <.for course <- Enum.filter(@courses, &(!&1.archived))>
+      <% prof = @profs[course.id] %>
+      <tr>
+        <td><.link href={~p"/admin/courses/#{course}"}><%= course.name %></.link></td>
+        <td>
+          <.link href={~p"/courses/#{course}"}>Student</.link> |
+          <.link href={~p"/staff/courses/#{course}"}>Staff</.link>
+        </td>
+        <td><%= course.start_date %></td>
+        <td>
+          <.if condition={prof}>
+            <.link href={~p"/admin/users/#{prof}"}><%= user_display_name(prof) %></.link>
+            <:else>
+            (none)
+          </.if>
+        </td>
 
-      <td>
-        <%= link "Edit", to: Routes.admin_course_path(@conn, :edit, course) %>
-        &nbsp;
-        <%= link "Delete", to: Routes.admin_course_path(@conn, :delete, course), method: :delete, data: [confirm: "Are you sure?"] %>
-      </td>
-    </tr>
-  <% end %>
+        <td>
+          <.link href={~p"/admin/courses/#{course}/edit"}>Edit</.link>
+          &nbsp;
+          <.link href={~p"/admin/courses/#{course}"} method="delete" data-confirm="Are you sure?">
+            Delete
+          </.link>
+        </td>
+      </tr>
+    </.for>
   </tbody>
 </table>
 
-<p><span><%= link "New Course", to: Routes.admin_course_path(@conn, :new) %></span></p>
+<p>
+  <span><.link href={~p"/admin/courses/new"}>New Course</.link></span>
+</p>
 
 <h2>Archived Courses</h2>
 
@@ -59,29 +65,31 @@
     </tr>
   </thead>
   <tbody>
-  <%= for course <- Enum.filter(@courses, &(&1.archived)) do %>
-    <% prof = @profs[course.id] %>
-    <tr>
-      <td><%= link course.name, to: Routes.admin_course_path(@conn, :show, course) %></td>
-      <td>
-        <%= link "Student", to: Routes.course_path(@conn, :show, course) %> |
-        <%= link "Staff", to: Routes.staff_course_path(@conn, :show, course) %>
-      </td>
-      <td><%= course.start_date %></td>
-      <td>
-        <%= if prof do %>
-          <%= link(user_display_name(prof), to: Routes.admin_user_path(@conn, :show, prof)) %>
-        <% else %>
-          (none)
-        <% end %>
-      </td>
+    <.for course <- Enum.filter(@courses, &(&1.archived))>
+      <% prof = @profs[course.id] %>
+      <tr>
+        <td><.link href={~p"/admin/courses/#{course}"}><%= course.name %></.link></td>
+        <td>
+          <.link href={~p"/courses/#{course}"}>Student</.link> |
+          <.link href={~p"/staff/courses/#{course}"}>Staff</.link>
+        </td>
+        <td><%= course.start_date %></td>
+        <td>
+          <.if condition={prof}>
+            <.link href={~p"/admin/users/#{prof}"}><%= user_display_name(prof) %></.link>
+            <:else>
+            (none)
+          </.if>
+        </td>
 
-      <td>
-        <%= link "Edit", to: Routes.admin_course_path(@conn, :edit, course) %>
-        &nbsp;
-        <%= link "Delete", to: Routes.admin_course_path(@conn, :delete, course), method: :delete, data: [confirm: "Are you sure?"] %>
-      </td>
-    </tr>
-  <% end %>
+        <td>
+          <.link href={~p"/admin/courses/#{course}/edit"}>Edit</.link>
+          &nbsp;
+          <.link href={~p"/admin/courses/#{course}"} method="delete" data-confirm="Are you sure?">
+            Delete
+          </.link>
+        </td>
+      </tr>
+    </.for>
   </tbody>
 </table>

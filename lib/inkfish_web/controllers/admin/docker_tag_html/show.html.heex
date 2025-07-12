@@ -11,24 +11,20 @@
 
 <div class="row">
   <div class="col">
-    <%= form_for @conn.params, ~p"/admin/docker_tags/#{@docker_tag}/build", fn _f -> %>
-      <button class="btn btn-warning">Build</button>
-    <% end %>
+    <.link href={~p"/admin/docker_tags/#{@docker_tag}/build"} method="post" class="btn btn-warning">Build</.link>
   </div>
   <div class="col">
-    <%= form_for @conn.params, ~p"/admin/docker_tags/#{@docker_tag}/clean", fn _f -> %>
-      <button class="btn btn-danger">Clean</button>
-    <% end %>
+    <.link href={~p"/admin/docker_tags/#{@docker_tag}/clean"} method="post" class="btn btn-danger">Clean</.link>
   </div>
 </div>
 
 <pre><%= inspect(@image, pretty: true) %></pre>
 
-<%= if @fresh do %>
+<.if condition={@fresh}>
   <p>Image is up to date!</p>
-<% else %>
+  <:else>
   <p>Image is stale.</p>
-<% end %>
+</.if>
 
 <h2>Dockerfile</h2>
 <pre><%= @docker_tag.dockerfile %></pre>

@@ -1,24 +1,9 @@
 <h1>Listing Uploads</h1>
 
-<table class="table table-striped">
-  <thead>
-    <tr>
-      <th>Name</th>
-      <th>Kind</th>
-      <th>User</th>
-
-      <th></th>
-    </tr>
-  </thead>
-  <tbody>
-<%= for upload <- @uploads do %>
-    <tr>
-      <td><%= link(upload.name,
-          to: Routes.upload_path(@conn, :download, upload.id, upload.name)) %></td>
-      <td><%= upload.kind %></td>
-      <td><%= user_display_name(upload.user) %></td>
-    </tr>
-<% end %>
-  </tbody>
-</table>
-
+<.table id="uploads" rows={@uploads}>
+  <:col :let={upload} label="Name">
+    <.link href={~p"/uploads/#{upload.id}/#{upload.name}"}><%= upload.name %></.link>
+  </:col>
+  <:col :let={upload} label="Kind"><%= upload.kind %></:col>
+  <:col :let={upload} label="User"><%= user_display_name(upload.user) %></:col>
+</.table>

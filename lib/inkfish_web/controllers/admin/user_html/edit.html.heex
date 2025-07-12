@@ -1,8 +1,7 @@
 <h1>Edit User: <%= user_display_name(@user) %></h1>
 
 <p>
-  <%= link "Show User", to: Routes.admin_user_path(@conn, :show, @user.id) %>
+  <.link href={~p"/admin/users/#{@user}"}>Show User</.link>
 </p>
 
-<%= render "form.html", Map.put(assigns, :action, Routes.admin_user_path(@conn, :update, @user)) %>
-
+<%= render "form.html", Map.put(assigns, :action, ~p"/admin/users/#{@user}") %>

@@ -1,8 +1,8 @@
 <h1>Show Course</h1>
 
 <p>
-  <%= link "Edit", to: Routes.admin_course_path(@conn, :edit, @course) %> |
-  <%= link "Back", to: Routes.admin_course_path(@conn, :index) %>
+  <.link href={~p"/admin/courses/#{@course}/edit"}>Edit</.link> |
+  <.link href={~p"/admin/courses"}>Back</.link>
 </p>
 
 <ul>
