@@ -357,4 +357,16 @@ defmodule InkfishWeb.FormComponents do
     </span>
     """
   end
+
+  attr :field, Phoenix.HTML.FormField, required: true
+  attr :options, :list, required: true
+  attr :rest, :global, include: ~w(class multiple disabled required)
+
+  def select(assigns) do
+    ~H"""
+    <select name={@field.name} id={@field.id} {@rest}>
+      <%= Phoenix.HTML.Form.options_for_select(@options, @field.value) %>
+    </select>
+    """
+  end
 end
