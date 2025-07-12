@@ -17,8 +17,8 @@
    <% id = "ID" %>
    window.team_path_template =
      "<%= ~p"/ajax/staff/teams/#{id}" %>";
-   window.teamset_data = JSON.parse(`<%= raw(Jason.encode!(@data, pretty: true)) %>`);
-   window.past_teams = JSON.parse(`<%= raw(Jason.encode!(@past_teams, pretty: true)) %>`);
+   window.teamset_data = <%= raw(Jason.encode!(@data)) %>;
+   window.past_teams = <%= raw(Jason.encode!(@past_teams)) %>;
     
   </script>
 

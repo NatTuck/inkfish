@@ -7,6 +7,6 @@
 </div>
 
 <script>
-  window.grading_task_graders = JSON.parse("<%= raw(javascript_escape(@graders)) %>");
-  window.grading_task_asg = JSON.parse("<%= raw(javascript_escape(@asg)) %>");
+  window.grading_task_graders = <%= raw(Jason.encode!(@graders)) %>;
+  window.grading_task_asg = <%= raw(Jason.encode!(@asg)) %>;
 </script>
