@@ -325,30 +325,40 @@ defmodule InkfishWeb.FormComponents do
     """
   end
 
+  attr :field, Phoenix.HTML.FormField, required: true
+  attr :rest, :global, include: ~w(class placeholder readonly step min max)
   def number_input(assigns) do
     ~H"""
     <input type="number" name={@field.name} id={@field.id} value={@field.value} {@rest} />
     """
   end
 
+  attr :field, Phoenix.HTML.FormField, required: true
+  attr :rest, :global
   def hidden_input(assigns) do
     ~H"""
     <input type="hidden" name={@field.name} id={@field.id} value={@field.value} {@rest} />
     """
   end
 
+  attr :field, Phoenix.HTML.FormField, required: true
+  attr :rest, :global, include: ~w(class placeholder readonly)
   def password_input(assigns) do
     ~H"""
     <input type="password" name={@field.name} id={@field.id} value={@field.value} {@rest} />
     """
   end
 
+  attr :field, Phoenix.HTML.FormField, required: true
+  attr :rest, :global, include: ~w(class placeholder readonly rows cols)
   def textarea(assigns) do
     ~H"""
     <textarea name={@field.name} id={@field.id} {@rest}><%= Phoenix.HTML.Form.normalize_value("textarea", @field.value) %></textarea>
     """
   end
 
+  attr :field, Phoenix.HTML.FormField, required: true
+  attr :rest, :global, include: ~w(class)
   def checkbox(assigns) do
     ~H"""
     <span>
