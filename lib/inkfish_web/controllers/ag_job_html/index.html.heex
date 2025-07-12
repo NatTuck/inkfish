@@ -4,7 +4,9 @@
 
 <div class="mb-3">
   <.form for={%{}} action={~p"/ag_jobs/poll"} method="post">
-    <p><button class="btn btn-primary">Poll</button></p>
+    <:inner>
+      <p><.button class="btn btn-primary">Poll</.button></p>
+    </:inner>
   </.form>
 </div>
 
@@ -23,11 +25,11 @@
   <tbody>
     <%= for job <- @curr_jobs do %>
       <tr>
-        <td><a href={~p"/subs/#{job.sub_id}"}>{job.sub_id}</a></td>
-        <td>{user_display_name(job.sub.reg.user)}</td>
-        <td>{job.sub.assignment.name}</td>
-        <td>{job.prio}</td>
-        <td class="human-date">{job.inserted_at}</td>
+        <td><.link href={~p"/subs/#{job.sub_id}"}><%= job.sub_id %></.link></td>
+        <td><%= user_display_name(job.sub.reg.user) %></td>
+        <td><%= job.sub.assignment.name %></td>
+        <td><%= job.prio %></td>
+        <td class="human-date"><%= job.inserted_at %></td>
       </tr>
     <% end %>
   </tbody>
@@ -48,11 +50,11 @@
   <tbody>
     <%= for job <- @wait_jobs do %>
       <tr>
-        <td><a href={~p"/subs/#{job.sub_id}"}>{job.sub_id}</a></td>
-        <td>{user_display_name(job.sub.reg.user)}</td>
-        <td>{job.sub.assignment.name}</td>
-        <td>{job.prio}</td>
-        <td class="human-date">{job.inserted_at}</td>
+        <td><.link href={~p"/subs/#{job.sub_id}"}><%= job.sub_id %></.link></td>
+        <td><%= user_display_name(job.sub.reg.user) %></td>
+        <td><%= job.sub.assignment.name %></td>
+        <td><%= job.prio %></td>
+        <td class="human-date"><%= job.inserted_at %></td>
       </tr>
     <% end %>
   </tbody>
@@ -73,13 +75,12 @@
   <tbody>
     <%= for job <- @done_jobs do %>
       <tr>
-        <td><a href={~p"/subs/#{job.sub_id}"}>{job.sub_id}</a></td>
-        <td>{user_display_name(job.sub.reg.user)}</td>
-        <td>{job.sub.assignment.name}</td>
-        <td>{job.prio}</td>
-        <td class="human-date">{job.finished_at}</td>
+        <td><.link href={~p"/subs/#{job.sub_id}"}><%= job.sub_id %></.link></td>
+        <td><%= user_display_name(job.sub.reg.user) %></td>
+        <td><%= job.sub.assignment.name %></td>
+        <td><%= job.prio %></td>
+        <td class="human-date"><%= job.finished_at %></td>
       </tr>
     <% end %>
   </tbody>
 </table>
-

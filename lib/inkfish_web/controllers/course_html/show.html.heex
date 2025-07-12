@@ -1,10 +1,8 @@
-
 <h1>Show Course</h1>
 
 <%= if is_staff?(@current_reg, @current_user) do %>
   <p>
-    <%= link("Staff View",
-      to: Routes.staff_course_path(@conn, :show, @course)) %>
+    <.link href={~p"/staff/courses/#{@course}"}>Staff View</.link>
   </p>
 <% end %>
 
@@ -33,7 +31,7 @@
     <tbody>
       <%= for as <- bucket.assignments, !as.hide do %>
         <tr>
-          <td><%= link as.name, to: Routes.assignment_path(@conn, :show, as) %></td>
+          <td><.link href={~p"/assignments/#{as}"}><%= as.name %></.link></td>
           <td class="human-date"><%= show_timestamp(as.due) %></td>
           <td><%= as.weight %></td>
           <td><%= show_score(@conn, as) %> / <%= as.points %></td>

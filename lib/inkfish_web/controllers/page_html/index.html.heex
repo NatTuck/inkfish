@@ -1,19 +1,21 @@
 <div class="row">
   <div class="col">
     <h1>Log In</h1>
-    <%= form_for @conn, Routes.session_path(@conn, :create), fn f -> %>
-      <div class="mb-3">
-        {label(f, :email, class: "form-label")}
-        {text_input(f, :email, class: "form-control")}
-      </div>
+    <.form for={@conn} action={~p"/session"} as={:user}>
+      <:inner :let={f}>
+        <div class="mb-3">
+          <.label field={f[:email]} class="form-label" />
+          <.text_input field={f[:email]} class="form-control" />
+        </div>
 
-      <div class="mb-3">
-        {label(f, :password, class: "form-label")}
-        {password_input(f, :password, class: "form-control")}
-      </div>
+        <div class="mb-3">
+          <.label field={f[:password]} class="form-label" />
+          <.password_input field={f[:password]} class="form-control" />
+        </div>
 
-      {submit("Log In", class: "btn btn-primary")}
-    <% end %>
+        <.button class="btn btn-primary">Log In</.button>
+      </:inner>
+    </.form>
   </div>
 </div>
 
@@ -22,13 +24,15 @@
     <h1>Get a Password</h1>
     <p>Enter your email to create a new account or reset your password.</p>
 
-    <%= form_for @conn, ~p"/users/send_auth_email", fn f -> %>
-      <div class="mb-3">
-        {label(f, :email, class: "form-label")}
-        {text_input(f, :email, class: "form-control")}
-      </div>
+    <.form for={@conn} action={~p"/users/send_auth_email"} as={:user}>
+      <:inner :let={f}>
+        <div class="mb-3">
+          <.label field={f[:email]} class="form-label" />
+          <.text_input field={f[:email]} class="form-control" />
+        </div>
 
-      {submit("Request", class: "btn btn-primary")}
-    <% end %>
+        <.button class="btn btn-primary">Request</.button>
+      </:inner>
+    </.form>
   </div>
 </div>

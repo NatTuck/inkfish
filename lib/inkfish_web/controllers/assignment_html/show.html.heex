@@ -2,8 +2,7 @@
 
 <%= if is_staff?(@current_reg, @current_user) do %>
   <p>
-    <%= link("Staff View",
-      to: Routes.staff_assignment_path(@conn, :show, @assignment)) %>
+    <.link href={~p"/staff/assignments/#{@assignment}"}>Staff View</.link>
   </p>
 <% end %>
 
@@ -49,9 +48,9 @@
   <li>
     <strong>Starter:</strong>
     <%= if @assignment.starter_upload do %>
-      <%= link(@assignment.starter_upload.name,
-        to: Routes.upload_path(@conn, :download,
-        @assignment.starter_upload, @assignment.starter_upload.name)) %>
+      <.link href={~p"/uploads/#{@assignment.starter_upload.id}/#{@assignment.starter_upload.name}"}>
+        <%= @assignment.starter_upload.name %>
+      </.link>
     <% else %>
       ∅
     <% end %>
@@ -68,7 +67,7 @@
 
 <p>
   Your Team: <%= show_team(@team) %> <br>
-  <%= link "New Submission", to: Routes.assignment_sub_path(@conn, :new, @assignment) %>
+  <.link href={~p"/assignments/#{@assignment}/subs/new"}>New Submission</.link>
 </p>
 
 <table class="table table-striped">
@@ -95,7 +94,7 @@
           </td>
         <% end %>
         <td><%= show_score(@conn, sub) %> / <%= assignment_total_points(@assignment) %></td>
-        <td><%= link "View", to: Routes.sub_path(@conn, :show, sub) %></td>
+        <td><.link href={~p"/subs/#{sub}"}>View</.link></td>
       </tr>
     <% end %>
   </tbody>

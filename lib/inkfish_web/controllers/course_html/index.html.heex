@@ -16,9 +16,9 @@
     <tr>
       <td>
         <%= if reg do %>
-          <%= link course.name, to: Routes.course_path(@conn, :show, course) %>
+          <.link href={~p"/courses/#{course}"}><%= course.name %></.link>
           <%= if is_staff?(reg, reg.user) do %>
-            (<%= link "Staff View", to: Routes.staff_course_path(@conn, :show, course) %>)
+            (<.link href={~p"/staff/courses/#{course}"}>Staff View</.link>)
           <% end %>
         <% else %>
           <%= course.name %>
@@ -33,8 +33,7 @@
           <%= if req do %>
             Waiting for approval
           <% else %>
-            <%= link("Request to Join",
-              to: Routes.course_join_req_path(@conn, :new, course.id)) %>
+            <.link href={~p"/courses/#{course.id}/join_reqs/new"}>Request to Join</.link>
           <% end %>
         <% end %>
       </td>
@@ -59,9 +58,9 @@
     <tr>
       <td>
         <%= if reg do %>
-          <%= link course.name, to: Routes.course_path(@conn, :show, course) %>
+          <.link href={~p"/courses/#{course}"}><%= course.name %></.link>
           <%= if is_staff?(reg, reg.user) do %>
-            (<%= link "Staff View", to: Routes.staff_course_path(@conn, :show, course) %>)
+            (<.link href={~p"/staff/courses/#{course}"}>Staff View</.link>)
           <% end %>
         <% else %>
           <%= course.name %>

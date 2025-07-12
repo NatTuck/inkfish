@@ -1,13 +1,13 @@
 <.header>
-  API Key {@api_key.id}
+  API Key <%= @api_key.id %>
   <:subtitle>Here's an API key</:subtitle>
   <:actions>
   </:actions>
 </.header>
 
 <.list>
-  <:item title="Name">{@api_key.name}</:item>
-  <:item title="Key">{@api_key.key}</:item>
+  <:item title="Name"><%= @api_key.name %></:item>
+  <:item title="Key"><%= @api_key.key %></:item>
 </.list>
 
 <.back navigate={~p"/api_keys"}>Back to API Keys</.back>
