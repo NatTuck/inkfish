@@ -1,4 +1,4 @@
-<.form for={@changeset} action={@action}>
+<.form :let={f} for={@changeset} action={@action}>
   <%= if @changeset.action do %>
     <div class="alert alert-danger">
       <p>Oops, something went wrong! Please check the errors below.</p>
@@ -6,37 +6,37 @@
   <% end %>
 
   <div class="mb-3">
-    <.label for={@changeset[:name].id}>Name</.label>
-    <.text_input field={@changeset[:name]} class="form-control" />
-    <.error_tag form={@changeset} field={:name} />
+    <.label for={f[:name].id}>Name</.label>
+    <.text_input field={f[:name]} class="form-control" />
+    <.error_tag form={f} field={:name} />
   </div>
 
   <div class="mb-3">
-    <.label for={@changeset[:kind].id}>Kind</.label>
+    <.label for={f[:kind].id}>Kind</.label>
     <.select
-      field={@changeset[:kind]}
+      field={f[:kind]}
       options={Inkfish.Grades.GradeColumn.grade_column_types()}
       class="form-control"
     />
-    <.error_tag form={@changeset} field={:kind} />
+    <.error_tag form={f} field={:kind} />
   </div>
 
   <div class="mb-3">
-    <.label for={@changeset[:points].id}>Points</.label>
-    <.number_input field={@changeset[:points]} step="any" class="form-control" />
-    <.error_tag form={@changeset} field={:points} />
+    <.label for={f[:points].id}>Points</.label>
+    <.number_input field={f[:points]} step="any" class="form-control" />
+    <.error_tag form={f} field={:points} />
   </div>
 
   <div class="mb-3">
-    <.label for={@changeset[:base].id}>Base</.label>
-    <.number_input field={@changeset[:base]} step="any" class="form-control" />
-    <.error_tag form={@changeset} field={:base} />
+    <.label for={f[:base].id}>Base</.label>
+    <.number_input field={f[:base]} step="any" class="form-control" />
+    <.error_tag form={f} field={:base} />
   </div>
 
   <div class="mb-3">
-    <.label for={@changeset[:params].id}>Params</.label>
-    <.text_input field={@changeset[:params]} class="form-control" />
-    <.error_tag form={@changeset} field={:params} />
+    <.label for={f[:params].id}>Params</.label>
+    <.text_input field={f[:params]} class="form-control" />
+    <.error_tag form={f} field={:params} />
   </div>
 
   <div class="mb-3">
@@ -47,19 +47,19 @@
 
     <div class="mx-4 text-center">
       <.text_input
-        field={@changeset[:limits]}
+        field={f[:limits]}
         id="gcol-limits"
         class="form-control form-control-sm"
         readonly={true}
       />
     </div>
-    <.error_tag form={@changeset} field={:limits} />
+    <.error_tag form={f} field={:limits} />
   </div>
 
   <div class="mb-3">
-    <.label for={@changeset[:upload_id].id}>Upload ID</.label>
-    <.text_input field={@changeset[:upload_id]} class="form-control" readonly="readonly" />
-    <.error_tag form={@changeset} field={:upload_id} />
+    <.label for={f[:upload_id].id}>Upload ID</.label>
+    <.text_input field={f[:upload_id]} class="form-control" readonly="readonly" />
+    <.error_tag form={f} field={:upload_id} />
     <%= ajax_upload_field("grade_column", "", "grade_column_upload_id") %>
   </div>
   <div class="mb-3">
