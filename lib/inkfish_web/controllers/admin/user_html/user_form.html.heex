@@ -1,60 +1,56 @@
-<.form for={@changeset} action={@action} multipart={true}>
-  <:inner :let={f}>
-    <%= if @changeset.action do %>
-      <div class="alert alert-danger">
-        <p>Oops, something went wrong! Please check the errors below.</p>
+<.form :let={f} for={@changeset} action={@action} multipart={true}>
+  <%= if @changeset.action do %>
+    <div class="alert alert-danger">
+      <p>Oops, something went wrong! Please check the errors below.</p>
+    </div>
+  <% end %>
+
+  <div class="mb-3">
+    <.input field={f[:email]} type="text" label="Email" name="_email" readonly={true} />
+  </div>
+
+  <div class="mb-3">
+    <.input field={f[:given_name]} type="text" label="Given name" />
+  </div>
+
+  <div class="mb-3">
+    <.input field={f[:surname]} type="text" label="Surname" />
+  </div>
+
+  <div class="mb-3">
+    <.input field={f[:nickname]} type="text" label="Nickname" />
+  </div>
+
+  <div class="mb-3">
+    <.label for={f[:is_admin].id}>Is admin</.label><br />
+    <div class="form-check form-switch">
+      <.checkbox field={f[:is_admin]} class="form-check-input form-switch" />
+    </div>
+    <.error_tag form={f} field={:is_admin} />
+  </div>
+
+  <div class="mb-3">
+    <.label for={f[:photo_upload_id].id}>Photo</.label>
+    <.text_input field={f[:photo_upload_id]} class="form-control" readonly={true} />
+    <.error_tag form={f} field={:photo_upload_id} />
+
+    <div class="row">
+      <div class="col">
+        <%= ajax_upload_field("user_photo", f[:photo_upload_id].id) %>
       </div>
-    <% end %>
-
-    <div class="mb-3">
-      <.input field={f[:email]} type="text" label="Email" name="_email" readonly={true} />
-    </div>
-
-    <div class="mb-3">
-      <.input field={f[:given_name]} type="text" label="Given name" />
-    </div>
-
-    <div class="mb-3">
-      <.input field={f[:surname]} type="text" label="Surname" />
-    </div>
-
-    <div class="mb-3">
-      <.input field={f[:nickname]} type="text" label="Nickname" />
-    </div>
-
-    <div class="mb-3">
-      <.label for={f[:is_admin].id}>Is admin</.label><br />
-      <div class="form-check form-switch">
-        <.checkbox field={f[:is_admin]} class="form-check-input form-switch" />
-      </div>
-      <.error_tag form={f} field={:is_admin} />
-    </div>
-
-    <div class="mb-3">
-      <.label for={f[:photo_upload_id].id}>Photo</.label>
-      <.text_input field={f[:photo_upload_id]} class="form-control" readonly={true} />
-      <.error_tag form={f} field={:photo_upload_id} />
-
-      <div class="row">
-        <div class="col">
-          <%= ajax_upload_field("user_photo", f[:photo_upload_id].id) %>
-        </div>
-        <div class="col">
-          <%= if @user.photo_upload_id && @user.photo_upload do %>
-            <p><img src={~p"/uploads/#{@user.photo_upload.id}/#{@user.photo_upload.name}"}
-                    id="photo-preview" /></p>
-          <% else %>
-            <p><img src={~p"/images/red_squid.jpg"}
-                    id="photo-preview" /></p>
-          <% end %>
-        </div>
+      <div class="col">
+        <%= if @user.photo_upload_id && @user.photo_upload do %>
+          <p><img src={~p"/uploads/#{@user.photo_upload.id}/#{@user.photo_upload.name}"}
+                  id="photo-preview" /></p>
+        <% else %>
+          <p><img src={~p"/images/red_squid.jpg"}
+                  id="photo-preview" /></p>
+        <% end %>
       </div>
     </div>
-  </:inner>
+  </div>
 
-  <:actions>
-    <div class="mb-3">
-      <.button kind="primary">Save</.button>
-    </div>
-  </:actions>
+  <div class="mb-3">
+    <.button kind="primary">Save</.button>
+  </div>
 </.form>

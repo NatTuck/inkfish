@@ -199,12 +199,10 @@
                   } %>
                   <% cset = Inkfish.Grades.change_grade(grade) %>
                   <% action = ~p"/staff/subs/#{sub}/grades" %>
-                  <.form for={cset} action={action}>
-                    <:inner :let={f}>
-                      <.hidden_input field={f[:sub_id]} />
-                      <.hidden_input field={f[:grade_column_id]} />
-                      <.button class="btn btn-secondary btn-sm">Create</.button>
-                    </:inner>
+                  <.form :let={f} for={cset} action={action}>
+                    <.hidden_input field={f[:sub_id]} />
+                    <.hidden_input field={f[:grade_column_id]} />
+                    <.button class="btn btn-secondary btn-sm">Create</.button>
                   </.form>
                 <% end %>
               <% _else -> %>

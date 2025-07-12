@@ -30,14 +30,12 @@
     <% cset = Inkfish.Subs.change_sub(
       %{ @sub | ignore_late_penalty: !@sub.ignore_late_penalty }
       ) %>
-    <.form for={cset} action={~p"/staff/subs/#{@sub}"}>
-      <:inner :let={f}>
-        <strong>Ignore Late Penalty:</strong>
-        <%= @sub.ignore_late_penalty %>
-        &nbsp;
-        <.hidden_input field={f[:ignore_late_penalty]} />
-        <.button class="btn btn-secondary btn-sm">Toggle</.button>
-      </:inner>
+    <.form :let={f} for={cset} action={~p"/staff/subs/#{@sub}"}>
+      <strong>Ignore Late Penalty:</strong>
+      <%= @sub.ignore_late_penalty %>
+      &nbsp;
+      <.hidden_input field={f[:ignore_late_penalty]} />
+      <.button class="btn btn-secondary btn-sm">Toggle</.button>
     </.form>
   </li>
 
@@ -91,12 +89,10 @@
               grade_column_id: grade_column.id, sub_id: @sub.id
             } %>
             <% cset = Inkfish.Grades.change_grade(grade) %>
-            <.form for={cset} action={~p"/staff/subs/#{@sub}/grades"}>
-              <:inner :let={f}>
-                <.hidden_input field={f[:sub_id]} />
-                <.hidden_input field={f[:grade_column_id]} />
-                <.button class="btn btn-primary btn-sm">Create Grade</.button>
-              </:inner>
+            <.form :let={f} for={cset} action={~p"/staff/subs/#{@sub}/grades"}>
+              <.hidden_input field={f[:sub_id]} />
+              <.hidden_input field={f[:grade_column_id]} />
+              <.button class="btn btn-primary btn-sm">Create Grade</.button>
             </.form>
           <% end %>
         <% else %>
@@ -112,9 +108,7 @@
   <h2>Grading Script Output</h2>
 
   <.form for={%{}} action={~p"/subs/#{@sub}/rerun_scripts"} method="post">
-    <:inner>
-      <.button class="btn btn-secondary">Rerun Scripts</.button>
-    </:inner>
+    <.button class="btn btn-secondary">Rerun Scripts</.button>
   </.form>
 
   <%= for {grade, token, log} <- @autogrades do %>
