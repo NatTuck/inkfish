@@ -31,6 +31,8 @@ defmodule Inkfish.Assignments.Assignment do
     timestamps()
   end
 
+  def parent, do: :bucket
+
   @doc false
   def changeset(assignment, attrs) do
     assignment
