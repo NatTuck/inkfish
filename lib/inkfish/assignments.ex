@@ -5,6 +5,7 @@ defmodule Inkfish.Assignments do
 
   import Ecto.Query, warn: false
   alias Inkfish.Repo
+  alias Inkfish.Repo.Cache
 
   alias Inkfish.Assignments.Assignment
   alias Inkfish.Subs.Sub
@@ -112,29 +113,7 @@ defmodule Inkfish.Assignments do
   end
 
   def get_assignment_path(id) do
-    Repo.one(
-      from as in Assignment,
-        where: as.id == ^id,
-        inner_join: bucket in assoc(as, :bucket),
-        inner_join: course in assoc(bucket, :course),
-        inner_join: teamset in assoc(as, :teamset),
-        left_join: starter in assoc(as, :starter_upload),
-        left_join: grade_columns in assoc(as, :grade_columns),
-        preload: [
-          bucket: {bucket, course: course},
-          grade_columns: grade_columns,
-          teamset: teamset,
-          starter_upload: starter
-        ]
-    )
-  end
-
-  def get_assignment_path!(id) do
-    if asg = get_assignment_path(id) do
-      asg
-    else
-      raise "Assignment not found."
-    end
+    Cache.get(Assignment, id)
   end
 
   def get_assignment_for_grading_tasks!(id) do
@@ -299,8 +278,8 @@ defmodule Inkfish.Assignments do
     assign_grading_tasks(as.id)
   end
 
-  def assign_grading_tasks(as_id) do
-    _as = get_assignment_path!(as_id)
+  def assign_grading_tasks(_as_id) do
+    # _as = get_assignment_path!(as_id)
     raise "Actually do thing"
 
     # FIXME: Actually do thing

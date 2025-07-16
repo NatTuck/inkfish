@@ -63,7 +63,7 @@ defmodule InkfishWeb.ApiV1.SubController do
 
     with {:ok, asg_id} <- fetch_key(sub_params, "assignment_id"),
          {:ok, upload} <- fetch_key(sub_params, "upload"),
-         asg when not is_nil(asg) <- Assignments.get_assignment_path(asg_id) do
+         {:ok, asg} <- Assignments.get_assignment_path(asg_id) do
       reg = Users.find_reg(user, asg.bucket.course)
       team = Teams.get_active_team(asg, reg)
 

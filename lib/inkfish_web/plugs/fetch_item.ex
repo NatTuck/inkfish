@@ -69,18 +69,18 @@ defmodule InkfishWeb.Plugs.FetchItem do
 
   def fetch(conn, :assignment, id) do
     case Inkfish.Assignments.get_assignment_path(id) do
-      nil ->
+      {:ok, as} ->
+        conn
+        |> assign(:assignment, as)
+        |> assign(:bucket, as.bucket)
+        |> assign(:course, as.bucket.course)
+
+      _else ->
         conn
         |> put_status(:not_found)
         |> put_view(InkfishWeb.ErrorJSON)
         |> render(:not_found)
         |> halt()
-
-      as ->
-        conn
-        |> assign(:assignment, as)
-        |> assign(:bucket, as.bucket)
-        |> assign(:course, as.bucket.course)
     end
   end
 

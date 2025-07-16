@@ -3,9 +3,7 @@ defmodule InkfishWeb.AssignmentController do
 
   alias InkfishWeb.Plugs
 
-  plug Plugs.FetchItem,
-       [assignment: "id"]
-       when action not in [:index, :new, :create]
+  plug Plugs.FetchItem, assignment: "id"
 
   plug Plugs.RequireReg
 
