@@ -43,7 +43,7 @@ defmodule Inkfish.Repo.CacheTest do
     end
 
     test "errors on non-existent item" do
-      assert {:error, _msg} = Cache.get(Assignment, Ecto.UUID.generate())
+      assert {:error, _msg} = Cache.get(Assignment, 999_999)
     end
   end
 
