@@ -1,5 +1,6 @@
 defmodule Inkfish.Repo.CacheTest do
   use Inkfish.DataCase
+  import Inkfish.Factory
 
   alias Inkfish.Repo.Cache
   alias Inkfish.Assignments.Assignment
@@ -53,9 +54,9 @@ defmodule Inkfish.Repo.CacheTest do
       other_bucket = insert(:bucket, course: course)
       insert(:assignment, bucket: other_bucket)
 
-      {:ok, assignments} = Cache.list(Assignment, course_id: course.id)
+      {:ok, assignments} = Cache.list(Assignment, bucket_id: bucket.id)
 
-      assert length(assignments) == 3
+      assert length(assignments) == 2
       assert Enum.all?(assignments, &(&1.bucket.course.id == course.id))
     end
 
@@ -81,13 +82,14 @@ defmodule Inkfish.Repo.CacheTest do
     end
 
     test "flushes all cache" do
-      {:ok, course} = Cache.get(Course, insert(:course).id)
-      {:ok, bucket} = Cache.get(Bucket, insert(:bucket).id)
+      {:ok, _course} = Cache.get(Course, insert(:course).id)
+      {:ok, _bucket} = Cache.get(Bucket, insert(:bucket).id)
 
       :ok = Cache.flush()
 
-      refute Map.has_key?(Process.get({:gen_server, :state}, %{}), Course)
-      refute Map.has_key?(Process.get({:gen_server, :state}, %{}), Bucket)
+      state = :sys.get_state(Cache)
+      refute Map.has_key?(state, Course)
+      refute Map.has_key?(state, Bucket)
     end
   end
 end
