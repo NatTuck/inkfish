@@ -8,7 +8,6 @@ defmodule Inkfish.Repo.CacheTest do
   alias Inkfish.Courses.Course
 
   setup do
-    {:ok, _pid} = Cache.start_link([])
     on_exit(fn -> Cache.flush() end)
 
     course = insert(:course)
