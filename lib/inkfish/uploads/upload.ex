@@ -41,6 +41,8 @@ defmodule Inkfish.Uploads.Upload do
     timestamps()
   end
 
+  def parent(), do: :user
+
   @doc false
   def changeset(upload, attrs) do
     # Uploads are immutable, so all changesets are new inserts.

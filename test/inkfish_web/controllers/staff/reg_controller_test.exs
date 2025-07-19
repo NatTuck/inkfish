@@ -30,9 +30,7 @@ defmodule InkfishWeb.Staff.RegControllerTest do
       params = params_with_assocs(:reg)
 
       conn =
-        post(conn, ~p"/staff/courses/#{course}/regs",
-          reg: params
-        )
+        post(conn, ~p"/staff/courses/#{course}/regs", reg: params)
 
       assert %{id: id} = redirected_params(conn)
       assert redirected_to(conn) == ~p"/staff/regs/#{id}"
@@ -45,9 +43,7 @@ defmodule InkfishWeb.Staff.RegControllerTest do
       params = %{is_student: true, is_staff: true}
 
       conn =
-        post(conn, ~p"/staff/courses/#{course}/regs",
-          reg: params
-        )
+        post(conn, ~p"/staff/courses/#{course}/regs", reg: params)
 
       assert html_response(conn, 200) =~ "New Reg"
     end
@@ -84,9 +80,8 @@ defmodule InkfishWeb.Staff.RegControllerTest do
       assert redirected_to(conn) ==
                ~p"/staff/courses/#{reg.course_id}/regs"
 
-      assert_error_sent 404, fn ->
-        get(conn, ~p"/staff/regs/#{reg}")
-      end
+      conn = get(conn, ~p"/staff/regs/#{reg}")
+      assert redirected_to(conn) == ~p"/"
     end
   end
 end

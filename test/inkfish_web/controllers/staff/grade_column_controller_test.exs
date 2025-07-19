@@ -82,9 +82,7 @@ defmodule InkfishWeb.Staff.GradeColumnControllerTest do
       params = %{name: "some updated name"}
 
       conn =
-        put(conn, ~p"/staff/grade_columns/#{gc}",
-          grade_column: params
-        )
+        put(conn, ~p"/staff/grade_columns/#{gc}", grade_column: params)
 
       assert redirected_to(conn) ==
                ~p"/staff/grade_columns/#{gc}"
@@ -97,9 +95,7 @@ defmodule InkfishWeb.Staff.GradeColumnControllerTest do
       params = %{name: ""}
 
       conn =
-        put(conn, ~p"/staff/grade_columns/#{gc}",
-          grade_column: params
-        )
+        put(conn, ~p"/staff/grade_columns/#{gc}", grade_column: params)
 
       assert html_response(conn, 200) =~ "Edit Grade Column"
     end
@@ -119,9 +115,8 @@ defmodule InkfishWeb.Staff.GradeColumnControllerTest do
       assert redirected_to(conn) ==
                ~p"/staff/assignments/#{grade_column.assignment_id}"
 
-      assert_error_sent 404, fn ->
-        get(conn, ~p"/staff/grade_columns/#{grade_column}")
-      end
+      conn = get(conn, ~p"/staff/grade_columns/#{grade_column}")
+      assert redirected_to(conn) == ~p"/"
     end
   end
 end

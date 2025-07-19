@@ -138,9 +138,8 @@ defmodule InkfishWeb.Staff.AssignmentControllerTest do
       assert redirected_to(conn) ==
                ~p"/staff/courses/#{conn.assigns[:course]}"
 
-      assert_error_sent 500, fn ->
-        get(conn, ~p"/staff/assignments/#{assignment}")
-      end
+      conn = get(conn, ~p"/staff/assignments/#{assignment}")
+      assert redirected_to(conn) == ~p"/"
     end
   end
 end

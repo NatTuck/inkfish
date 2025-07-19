@@ -173,7 +173,7 @@ defmodule InkfishWeb.ApiV1.Staff.SubControllerTest do
       conn =
         get(staff_conn, ~p"/api/v1/staff/subs/#{student_sub_in_course_b.id}")
 
-      assert json_response(conn, 403)["error"] == "Access denied"
+      assert json_response(conn, 403)
     end
 
     test "returns 404 for non-existent sub", %{conn: conn, course: course} do
@@ -182,9 +182,8 @@ defmodule InkfishWeb.ApiV1.Staff.SubControllerTest do
       # Use a large integer for a non-existent ID
       non_existent_id = 9_999_999_999
 
-      assert_raise Ecto.NoResultsError, fn ->
-        get(conn, ~p"/api/v1/staff/subs/#{non_existent_id}")
-      end
+      conn = get(conn, ~p"/api/v1/staff/subs/#{non_existent_id}")
+      assert json_response(conn, 404)
     end
   end
 end

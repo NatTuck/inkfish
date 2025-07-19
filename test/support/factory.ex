@@ -45,7 +45,7 @@ defmodule Inkfish.Factory do
 
     student = Inkfish.Users.get_user_by_email!("dave@example.com")
     student_reg = insert(:reg, course: course, user: student, is_student: true)
-    team = Inkfish.Teams.get_active_team(asgn, student_reg)
+    {:ok, team} = Inkfish.Teams.get_active_team(asgn, student_reg)
     sub = insert(:sub, assignment: asgn, reg: student_reg, team: team)
 
     grade =

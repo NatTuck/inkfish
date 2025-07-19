@@ -96,9 +96,8 @@ defmodule InkfishWeb.Staff.TeamControllerTest do
       conn = delete(conn, ~p"/ajax/staff/teams/#{team}")
       assert json_response(conn, 200)["data"]["id"] == team.id
 
-      assert_error_sent 404, fn ->
-        get(conn, ~p"/ajax/staff/teams/#{team}")
-      end
+      conn = get(conn, ~p"/ajax/staff/teams/#{team}")
+      assert json_response(conn, 404)
     end
   end
 end

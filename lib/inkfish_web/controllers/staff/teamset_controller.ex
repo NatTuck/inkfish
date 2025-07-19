@@ -92,9 +92,7 @@ defmodule InkfishWeb.Staff.TeamsetController do
 
     conn
     |> put_flash(:info, "Teamset deleted successfully.")
-    |> redirect(
-      to: ~p"/staff/courses/#{teamset.course_id}/teamsets"
-    )
+    |> redirect(to: ~p"/staff/courses/#{teamset.course_id}/teamsets")
   end
 
   def add_prof_team(conn, %{"id" => id}) do
@@ -102,18 +100,18 @@ defmodule InkfishWeb.Staff.TeamsetController do
     reg = conn.assigns[:current_reg]
 
     if reg.is_prof do
-      team = Teams.get_active_team(teamset, reg)
+      case Teams.get_active_team(teamset, reg) do
+        {:ok, _} ->
+          conn
+          |> put_flash(:info, "Prof team exists for ts #{id}")
+          |> redirect(to: ~p"/staff/teamsets/#{teamset}")
 
-      if team do
-        conn
-        |> put_flash(:info, "Prof team exists for ts #{id}")
-        |> redirect(to: ~p"/staff/teamsets/#{teamset}")
-      else
-        team = Teams.create_solo_team(teamset, reg)
+        {:error, _} ->
+          team = Teams.create_solo_team(teamset, reg)
 
-        conn
-        |> put_flash(:info, "Added prof team #{team.id} for teamset #{id}")
-        |> redirect(to: ~p"/staff/teamsets/#{teamset}")
+          conn
+          |> put_flash(:info, "Added prof team #{team.id} for teamset #{id}")
+          |> redirect(to: ~p"/staff/teamsets/#{teamset}")
       end
     else
       conn

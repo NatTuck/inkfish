@@ -113,18 +113,12 @@ defmodule InkfishWeb.LineCommentControllerTest do
       conn =
         conn
         |> login(staff)
-        |> delete(
-          ~p"/ajax/staff/line_comments/#{line_comment}"
-        )
+        |> delete(~p"/ajax/staff/line_comments/#{line_comment}")
 
       assert response(conn, 200)
 
-      assert_error_sent 404, fn ->
-        get(
-          conn,
-          ~p"/ajax/staff/line_comments/#{line_comment}"
-        )
-      end
+      conn = get(conn, ~p"/ajax/staff/line_comments/#{line_comment}")
+      assert response(conn, 404)
     end
   end
 end

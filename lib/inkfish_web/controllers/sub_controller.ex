@@ -41,10 +41,10 @@ defmodule InkfishWeb.SubController do
   def new(conn, _params) do
     asg = conn.assigns[:assignment]
     reg = conn.assigns[:current_reg]
-    team = Teams.get_active_team(asg, reg)
-    %{nonce: nonce, token: token} = upload_token(conn, "sub")
 
-    if team do
+    with {:ok, team} <- Teams.get_active_team(asg, reg) do
+      %{nonce: nonce, token: token} = upload_token(conn, "sub")
+
       changeset = Subs.change_sub(%Sub{})
 
       render(conn, "new.html",
@@ -54,16 +54,18 @@ defmodule InkfishWeb.SubController do
         token: token
       )
     else
-      conn
-      |> put_flash(:error, "You need a team to submit.")
-      |> redirect(to: ~p"/assignments/#{asg}")
+      _ ->
+        conn
+        |> put_flash(:error, "You need a team to submit.")
+        |> redirect(to: ~p"/assignments/#{asg}")
     end
   end
 
   def create(conn, %{"sub" => sub_params}) do
     asg = conn.assigns[:assignment]
     reg = conn.assigns[:current_reg]
-    team = Teams.get_active_team(asg, reg)
+
+    {:ok, team} = Teams.get_active_team(asg, reg)
 
     sub_params =
       sub_params

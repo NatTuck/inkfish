@@ -30,9 +30,7 @@ defmodule InkfishWeb.Staff.TeamsetControllerTest do
       params = params_for(:teamset, course: course)
 
       conn =
-        post(conn, ~p"/staff/courses/#{course}/teamsets",
-          teamset: params
-        )
+        post(conn, ~p"/staff/courses/#{course}/teamsets", teamset: params)
 
       assert %{id: id} = redirected_params(conn)
       assert redirected_to(conn) == ~p"/staff/teamsets/#{id}"
@@ -45,9 +43,7 @@ defmodule InkfishWeb.Staff.TeamsetControllerTest do
       params = %{name: ""}
 
       conn =
-        post(conn, ~p"/staff/courses/#{course}/teamsets",
-          teamset: params
-        )
+        post(conn, ~p"/staff/courses/#{course}/teamsets", teamset: params)
 
       assert html_response(conn, 200) =~ "New Teamset"
     end
@@ -68,9 +64,7 @@ defmodule InkfishWeb.Staff.TeamsetControllerTest do
       params = %{name: "new name"}
 
       conn =
-        put(conn, ~p"/staff/teamsets/#{teamset}",
-          teamset: params
-        )
+        put(conn, ~p"/staff/teamsets/#{teamset}", teamset: params)
 
       assert redirected_to(conn) ==
                ~p"/staff/teamsets/#{teamset}"
@@ -83,9 +77,7 @@ defmodule InkfishWeb.Staff.TeamsetControllerTest do
       params = %{name: ""}
 
       conn =
-        put(conn, ~p"/staff/teamsets/#{teamset}",
-          teamset: params
-        )
+        put(conn, ~p"/staff/teamsets/#{teamset}", teamset: params)
 
       assert html_response(conn, 200) =~ "Edit Teamset"
     end
@@ -98,9 +90,8 @@ defmodule InkfishWeb.Staff.TeamsetControllerTest do
       assert redirected_to(conn) ==
                ~p"/staff/courses/#{teamset.course_id}/teamsets"
 
-      assert_error_sent 404, fn ->
-        get(conn, ~p"/staff/teamsets/#{teamset}")
-      end
+      conn = get(conn, ~p"/staff/teamsets/#{teamset}")
+      assert redirected_to(conn) == ~p"/"
     end
   end
 end

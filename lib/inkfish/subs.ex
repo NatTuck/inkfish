@@ -167,26 +167,6 @@ defmodule Inkfish.Subs do
     end
   end
 
-  def get_sub_path!(id) do
-    Repo.one!(
-      from(sub in Sub,
-        where: sub.id == ^id,
-        inner_join: team in assoc(sub, :team),
-        left_join: team_regs in assoc(team, :regs),
-        left_join: grades in assoc(sub, :grades),
-        inner_join: as in assoc(sub, :assignment),
-        left_join: grade_columns in assoc(as, :grade_columns),
-        inner_join: bucket in assoc(as, :bucket),
-        inner_join: course in assoc(bucket, :course),
-        preload: [
-          assignment:
-            {as, bucket: {bucket, course: course}, grade_columns: grade_columns},
-          team: {team, regs: team_regs}
-        ]
-      )
-    )
-  end
-
   def preload_upload(%Sub{} = sub) do
     Repo.preload(sub, [:upload])
   end
@@ -352,12 +332,14 @@ defmodule Inkfish.Subs do
     sub
     |> Sub.changeset(attrs)
     |> Repo.update()
+    |> Repo.Cache.updated()
   end
 
   def update_sub_grader(%Sub{} = sub, grader_id) do
     sub
     |> Sub.change_grader(grader_id)
     |> Repo.update()
+    |> Repo.Cache.updated()
   end
 
   def update_sub_ignore_late(%Sub{} = sub, attrs) do
@@ -365,6 +347,7 @@ defmodule Inkfish.Subs do
       sub
       |> Sub.change_ignore_late(attrs)
       |> Repo.update()
+      |> Repo.Cache.updated()
 
     if sub.ignore_late_penalty do
       set_sub_active!(sub)
@@ -478,6 +461,7 @@ defmodule Inkfish.Subs do
   """
   def delete_sub(%Sub{} = _sub) do
     # Repo.delete(sub)
+    # |> Repo.Cache.updated()
     {:error, "We don't delete subs"}
   end
 

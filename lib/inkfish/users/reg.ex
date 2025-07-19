@@ -23,6 +23,8 @@ defmodule Inkfish.Users.Reg do
     timestamps()
   end
 
+  def parent(), do: :course
+
   @doc false
   def changeset(reg, attrs) do
     reg

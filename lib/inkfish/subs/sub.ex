@@ -26,6 +26,12 @@ defmodule Inkfish.Subs.Sub do
     timestamps()
   end
 
+  def parent(), do: :assignment
+
+  def standard_preloads() do
+    [team: [:regs]]
+  end
+
   @doc false
   def changeset(sub, attrs) do
     sub

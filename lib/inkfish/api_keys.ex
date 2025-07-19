@@ -89,6 +89,7 @@ defmodule Inkfish.ApiKeys do
     api_key
     |> ApiKey.changeset(attrs)
     |> Repo.update()
+    |> Repo.Cache.updated()
   end
 
   @doc """
@@ -105,6 +106,7 @@ defmodule Inkfish.ApiKeys do
   """
   def delete_api_key(%ApiKey{} = api_key) do
     Repo.delete(api_key)
+    |> Repo.Cache.updated()
   end
 
   @doc """

@@ -8,6 +8,8 @@ defmodule Inkfish.Repo.Cache do
 
   use GenServer
 
+  import Inkfish.Repo.Info
+
   ## Public Interface
 
   def start_link(_) do
@@ -41,6 +43,19 @@ defmodule Inkfish.Repo.Cache do
 
   def drop(item) when is_struct(item) do
     drop(item.__struct__, item.id)
+  end
+
+  @doc """
+  Repo.update(changeset)
+  |> Repo.Cache.updated()
+  """
+  def updated({:ok, item}) do
+    :ok = drop(item)
+    {:ok, item}
+  end
+
+  def updated(other) do
+    other
   end
 
   def flush() do
@@ -80,9 +95,23 @@ defmodule Inkfish.Repo.Cache do
     end
   end
 
+  ## FIXME:
+  #
+  # When we drop an item because it's invalid, that means any cached 
+  # item with that item preloaded as a parent or default_preload becomes
+  # invalid too.
+  #
+  # Two solutions:
+  #  - Figure out what items those are and drop them too.
+  #  - Don't include preloads in the cached objects; add the preloads,
+  #    potentially from cache, at get time.
+  #
+  # Solution two is better, but will require rewriting the whole thing.
+
   def handle_call({:drop, mod, id}, _from, state) do
     {_item, state} = pop_in(state, [mod, id])
-    {:reply, :ok, state}
+    # {:reply, :ok, state}
+    {:reply, :ok, %{}}
   end
 
   def handle_call(:flush, _from, _state) do
@@ -91,41 +120,8 @@ defmodule Inkfish.Repo.Cache do
 
   def handle_call({:flush, mod}, _from, state) do
     state = Map.put(state, mod, %{})
-    {:reply, :ok, state}
-  end
-
-  ## Public Support Functions
-
-  def path(mod) do
-    path(mod, [mod])
-  end
-
-  def path(mod, ys) do
-    if {:ok, pmod} = parent_mod(mod) do
-      path(pmod, [pmod | ys])
-    else
-      ys
-    end
-  end
-
-  def parent_field(mod) do
-    if function_exported?(mod, :parent, 0) do
-      {:ok, mod.parent()}
-    else
-      {:error, :no_parent, mod}
-    end
-  end
-
-  def parent_mod(mod) do
-    with {:ok, pfield} <- parent_field(mod) do
-      if pmod = mod.__schema__(:association, pfield).related do
-        {:ok, pmod}
-      else
-        {:error, {:missing_assoc, mod, pfield}}
-      end
-    else
-      _err -> {:error, {:no_parent, mod}}
-    end
+    # {:reply, :ok, state}
+    {:reply, :ok, %{}}
   end
 
   ## Internal Support Functions
@@ -223,9 +219,8 @@ defmodule Inkfish.Repo.Cache do
 
   def _standard_preloads(mod, item) do
     if function_exported?(mod, :standard_preloads, 0) do
-      Enum.reduce(mod.standard_preloads(), item, fn field, item ->
-        Repo.preload(item, field)
-      end)
+      preloads = mod.standard_preloads()
+      Repo.preload(item, preloads)
     else
       item
     end

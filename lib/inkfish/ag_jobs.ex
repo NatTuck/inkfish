@@ -175,6 +175,7 @@ defmodule Inkfish.AgJobs do
     ag_job
     |> AgJob.changeset(attrs)
     |> Repo.update()
+    |> Repo.Cache.updated()
   end
 
   def finish_jobs_by_dupkey(dupkey) do
@@ -199,6 +200,7 @@ defmodule Inkfish.AgJobs do
   """
   def delete_ag_job(%AgJob{} = ag_job) do
     Repo.delete(ag_job)
+    |> Repo.Cache.updated()
   end
 
   def delete_old_ag_jobs() do
@@ -208,11 +210,16 @@ defmodule Inkfish.AgJobs do
       LocalTime.now()
       |> DateTime.add(-one_day)
 
-    Repo.delete_all(
-      from(job in AgJob,
-        where: not is_nil(job.finished_at) and job.finished_at < ^one_day_ago
+    rv =
+      Repo.delete_all(
+        from(job in AgJob,
+          where: not is_nil(job.finished_at) and job.finished_at < ^one_day_ago
+        )
       )
-    )
+
+    Repo.Cache.flush(AgJobs)
+
+    rv
   end
 
   @doc """

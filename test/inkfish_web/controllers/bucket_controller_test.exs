@@ -115,9 +115,8 @@ defmodule InkfishWeb.BucketControllerTest do
       assert redirected_to(conn) ==
                ~p"/staff/courses/#{course}/buckets"
 
-      assert_error_sent 404, fn ->
-        get(conn, ~p"/staff/buckets/#{bucket}")
-      end
+      conn = get(conn, ~p"/staff/buckets/#{bucket}")
+      assert redirected_to(conn) == ~p"/"
     end
   end
 

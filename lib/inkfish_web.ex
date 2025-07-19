@@ -33,6 +33,20 @@ defmodule InkfishWeb do
       import InkfishWeb.ViewHelpers
 
       unquote(verified_routes())
+
+      defp respond_with_error(conn, code, msg) do
+        if conn.assigns[:client_mode] == :browser do
+          conn
+          |> put_flash(:error, msg)
+          |> redirect(to: ~p"/")
+          |> halt()
+        else
+          conn
+          |> put_resp_content_type("application/json")
+          |> send_resp(code, JSON.encode!(%{error: msg}))
+          |> halt()
+        end
+      end
     end
   end
 

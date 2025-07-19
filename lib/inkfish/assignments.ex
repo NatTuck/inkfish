@@ -178,6 +178,7 @@ defmodule Inkfish.Assignments do
     assignment
     |> Assignment.changeset(attrs)
     |> Repo.update()
+    |> Repo.Cache.updated()
   end
 
   def update_assignment_points!(%Assignment{} = as) do
@@ -185,27 +186,32 @@ defmodule Inkfish.Assignments do
   end
 
   def update_assignment_points!(as_id) do
-    Ecto.Multi.new()
-    |> Ecto.Multi.run(:as0, fn _, _ ->
-      as =
-        Repo.one(
-          from as in Assignment,
-            where: as.id == ^as_id,
-            left_join: gcs in assoc(as, :grade_columns),
-            preload: [grade_columns: gcs]
-        )
+    rv =
+      Ecto.Multi.new()
+      |> Ecto.Multi.run(:as0, fn _, _ ->
+        as =
+          Repo.one(
+            from as in Assignment,
+              where: as.id == ^as_id,
+              left_join: gcs in assoc(as, :grade_columns),
+              preload: [grade_columns: gcs]
+          )
 
-      {:ok, as}
-    end)
-    |> Ecto.Multi.update(:as1, fn %{as0: as} ->
-      points =
-        Enum.reduce(as.grade_columns, Decimal.new("0.0"), fn gc, acc ->
-          Decimal.add(acc, gc.points)
-        end)
+        {:ok, as}
+      end)
+      |> Ecto.Multi.update(:as1, fn %{as0: as} ->
+        points =
+          Enum.reduce(as.grade_columns, Decimal.new("0.0"), fn gc, acc ->
+            Decimal.add(acc, gc.points)
+          end)
 
-      Ecto.Changeset.change(as, points: points)
-    end)
-    |> Repo.transaction()
+        Ecto.Changeset.change(as, points: points)
+      end)
+      |> Repo.transaction()
+
+    :ok = Repo.Cache.drop(Assignment, as_id)
+
+    rv
   end
 
   @doc """
@@ -222,6 +228,7 @@ defmodule Inkfish.Assignments do
   """
   def delete_assignment(%Assignment{} = assignment) do
     Repo.delete(assignment)
+    |> Repo.Cache.updated()
   end
 
   @doc """

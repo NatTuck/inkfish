@@ -13,6 +13,8 @@ defmodule Inkfish.Teams.Teamset do
     timestamps()
   end
 
+  def parent(), do: :course
+
   @doc false
   def changeset(teamset, attrs) do
     teamset

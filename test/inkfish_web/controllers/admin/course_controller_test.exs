@@ -110,9 +110,8 @@ defmodule InkfishWeb.Admin.CourseControllerTest do
 
       assert redirected_to(conn) == ~p"/admin/courses"
 
-      assert_error_sent 404, fn ->
-        get(conn, ~p"/admin/courses/#{course}")
-      end
+      conn = get(conn, ~p"/admin/courses/#{course}")
+      assert redirected_to(conn) == ~p"/"
     end
   end
 

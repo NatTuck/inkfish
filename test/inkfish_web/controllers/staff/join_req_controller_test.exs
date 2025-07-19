@@ -24,9 +24,8 @@ defmodule InkfishWeb.Staff.JoinReqControllerTest do
       assert redirected_to(conn) ==
                ~p"/staff/courses/#{join_req.course_id}/join_reqs"
 
-      assert_error_sent 404, fn ->
-        get(conn, ~p"/staff/join_reqs/#{join_req}")
-      end
+      conn = get(conn, ~p"/staff/join_reqs/#{join_req}")
+      assert redirected_to(conn) == ~p"/"
     end
   end
 end

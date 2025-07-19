@@ -25,6 +25,8 @@ defmodule Inkfish.Grades.GradeColumn do
     timestamps()
   end
 
+  def parent(), do: :assignment
+
   @doc false
   def changeset(grade_column, attrs) do
     grade_column

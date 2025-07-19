@@ -72,6 +72,7 @@ defmodule Inkfish.DockerTags do
     docker_tag
     |> DockerTag.changeset(attrs)
     |> Repo.update()
+    |> Repo.Cache.updated()
   end
 
   @doc """
@@ -88,6 +89,7 @@ defmodule Inkfish.DockerTags do
   """
   def delete_docker_tag(%DockerTag{} = docker_tag) do
     Repo.delete(docker_tag)
+    |> Repo.Cache.updated()
   end
 
   @doc """

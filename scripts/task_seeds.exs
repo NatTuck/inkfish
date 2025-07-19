@@ -110,8 +110,8 @@ defmodule Make do
 
   def sub(course, asg, login) do
     usr = Users.get_user_by_login!(login)
-    reg = Users.find_reg(usr, course)
-    team = Teams.get_active_team(asg, reg)
+    {:ok, reg} = Users.find_reg(usr, course)
+    {:ok, team} = Teams.get_active_team(asg, reg)
     {:ok, upl} = Uploads.create_fake_upload(usr)
     attrs = %{
       assignment_id: asg.id,

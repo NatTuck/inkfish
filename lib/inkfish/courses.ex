@@ -296,6 +296,7 @@ defmodule Inkfish.Courses do
     case result do
       {:ok, %{course: course}} ->
         {:ok, course}
+        |> Repo.Cache.updated()
 
       {:error, :course, cset, _} ->
         {:error, cset}
@@ -322,6 +323,7 @@ defmodule Inkfish.Courses do
   """
   def delete_course(%Course{} = course) do
     Repo.delete(course)
+    |> Repo.Cache.updated()
   end
 
   @doc """
@@ -398,15 +400,6 @@ defmodule Inkfish.Courses do
   def get_bucket!(id), do: Repo.get!(Bucket, id)
   def get_bucket(id), do: Repo.get(Bucket, id)
 
-  def get_bucket_path!(id) do
-    Repo.one!(
-      from bb in Bucket,
-        where: bb.id == ^id,
-        inner_join: course in assoc(bb, :course),
-        preload: [course: course]
-    )
-  end
-
   @doc """
   Creates a bucket.
 
@@ -441,6 +434,7 @@ defmodule Inkfish.Courses do
     bucket
     |> Bucket.changeset(attrs)
     |> Repo.update()
+    |> Repo.Cache.updated()
   end
 
   @doc """
@@ -457,6 +451,7 @@ defmodule Inkfish.Courses do
   """
   def delete_bucket(%Bucket{} = bucket) do
     Repo.delete(bucket)
+    |> Repo.Cache.updated()
   end
 
   @doc """

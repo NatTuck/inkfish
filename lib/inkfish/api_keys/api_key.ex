@@ -11,6 +11,8 @@ defmodule Inkfish.ApiKeys.ApiKey do
     timestamps(type: :utc_datetime)
   end
 
+  def parent(), do: :user
+
   @doc false
   def changeset(api_key, attrs) do
     api_key

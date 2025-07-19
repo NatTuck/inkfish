@@ -55,16 +55,6 @@ defmodule Inkfish.JoinReqs do
   """
   def get_join_req!(id), do: Repo.get!(JoinReq, id)
 
-  def get_join_req_path!(id) do
-    Repo.one!(
-      from req in JoinReq,
-        where: req.id == ^id,
-        inner_join: course in assoc(req, :course),
-        inner_join: user in assoc(req, :user),
-        preload: [user: user, course: course]
-    )
-  end
-
   @doc """
   Creates a join_req.
 
@@ -99,6 +89,7 @@ defmodule Inkfish.JoinReqs do
     join_req
     |> JoinReq.changeset(attrs)
     |> Repo.update()
+    |> Repo.Cache.updated()
   end
 
   @doc """
@@ -115,6 +106,7 @@ defmodule Inkfish.JoinReqs do
   """
   def delete_join_req(%JoinReq{} = join_req) do
     Repo.delete(join_req)
+    |> Repo.Cache.updated()
   end
 
   @doc """

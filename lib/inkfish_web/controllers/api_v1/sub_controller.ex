@@ -2,7 +2,7 @@ defmodule InkfishWeb.ApiV1.SubController do
   use InkfishWeb, :controller
 
   alias Inkfish.Subs
-  alias Inkfish.Assignments
+  alias Inkfish.Assignments.Assignment
   alias Inkfish.Users
   alias Inkfish.Teams
 
@@ -61,12 +61,11 @@ defmodule InkfishWeb.ApiV1.SubController do
   def create(conn, %{"sub" => sub_params}) do
     user = conn.assigns[:current_user]
 
-    with {:ok, asg_id} <- fetch_key(sub_params, "assignment_id"),
-         {:ok, upload} <- fetch_key(sub_params, "upload"),
-         {:ok, asg} <- Assignments.get_assignment_path(asg_id) do
-      reg = Users.find_reg(user, asg.bucket.course)
-      team = Teams.get_active_team(asg, reg)
-
+    with {:ok, asg_id} <- fetch_param(sub_params, "assignment_id"),
+         {:ok, upload} <- fetch_param(sub_params, "upload"),
+         {:ok, asg} <- Inkfish.Repo.Cache.get(Assignment, asg_id),
+         {:ok, reg} <- Users.find_reg(user, asg.bucket.course),
+         {:ok, team} <- Teams.get_active_team(asg, reg) do
       sub_params =
         sub_params
         |> Map.put("team_id", team.id)
@@ -91,24 +90,18 @@ defmodule InkfishWeb.ApiV1.SubController do
           |> render(:error, changeset: changeset)
       end
     else
-      nil ->
+      {:error, msg} ->
         conn
         |> put_status(:bad_request)
         |> put_view(InkfishWeb.ErrorJSON)
-        |> render(:error, message: "assignment_id not found")
-
-      {:error, key} ->
-        conn
-        |> put_status(:bad_request)
-        |> put_view(InkfishWeb.ErrorJSON)
-        |> render(:error, message: "#{key} is required")
+        |> render(:error, message: "#{msg}")
     end
   end
 
-  defp fetch_key(map, key) do
+  defp fetch_param(map, key) do
     case Map.fetch(map, key) do
       {:ok, val} -> {:ok, val}
-      :error -> {:error, key}
+      :error -> {:error, "#{key} is required"}
     end
   end
 end

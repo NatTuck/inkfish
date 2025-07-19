@@ -30,9 +30,7 @@ defmodule InkfishWeb.Staff.BucketControllerTest do
       params = params_for(:bucket)
 
       conn =
-        post(conn, ~p"/staff/courses/#{course}/buckets",
-          bucket: params
-        )
+        post(conn, ~p"/staff/courses/#{course}/buckets", bucket: params)
 
       assert %{id: id} = redirected_params(conn)
       assert redirected_to(conn) == ~p"/staff/buckets/#{id}"
@@ -45,9 +43,7 @@ defmodule InkfishWeb.Staff.BucketControllerTest do
       params = %{name: ""}
 
       conn =
-        post(conn, ~p"/staff/courses/#{course}/buckets",
-          bucket: params
-        )
+        post(conn, ~p"/staff/courses/#{course}/buckets", bucket: params)
 
       assert html_response(conn, 200) =~ "New Bucket"
     end
@@ -65,9 +61,7 @@ defmodule InkfishWeb.Staff.BucketControllerTest do
       params = %{name: "some updated name"}
 
       conn =
-        put(conn, ~p"/staff/buckets/#{bucket}",
-          bucket: params
-        )
+        put(conn, ~p"/staff/buckets/#{bucket}", bucket: params)
 
       assert redirected_to(conn) ==
                ~p"/staff/buckets/#{bucket}"
@@ -80,9 +74,7 @@ defmodule InkfishWeb.Staff.BucketControllerTest do
       params = %{name: ""}
 
       conn =
-        put(conn, ~p"/staff/buckets/#{bucket}",
-          bucket: params
-        )
+        put(conn, ~p"/staff/buckets/#{bucket}", bucket: params)
 
       assert html_response(conn, 200) =~ "Edit Bucket"
     end
@@ -95,9 +87,8 @@ defmodule InkfishWeb.Staff.BucketControllerTest do
       assert redirected_to(conn) ==
                ~p"/staff/courses/#{bucket.course_id}/buckets"
 
-      assert_error_sent 404, fn ->
-        get(conn, ~p"/staff/buckets/#{bucket}")
-      end
+      conn = get(conn, ~p"/staff/buckets/#{bucket}")
+      assert redirected_to(conn) == ~p"/"
     end
   end
 end
