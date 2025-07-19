@@ -24,6 +24,7 @@ defmodule Inkfish.Users.Reg do
   end
 
   def parent(), do: :course
+  def standard_preloads(), do: [:user]
 
   @doc false
   def changeset(reg, attrs) do

@@ -31,8 +31,7 @@ defmodule InkfishWeb.Staff.SubController do
     sub_data = InkfishWeb.Staff.SubJSON.show(%{sub: sub})
 
     autogrades =
-      sub.grades
-      |> Enum.filter(&(!is_nil(&1.log_uuid)))
+      Subs.get_or_create_script_grades(sub)
       |> Enum.map(fn grade ->
         grade = %{grade | sub: sub}
         log = Grade.get_log(grade)

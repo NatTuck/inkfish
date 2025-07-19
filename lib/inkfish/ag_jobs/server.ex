@@ -26,7 +26,7 @@ defmodule Inkfish.AgJobs.Server do
   @impl true
   def init(_) do
     state0 = %{
-      # grades, ag_job set, log_uuid set, gcol prloaded
+      # grades, with ag_job set, log_uuid set, gcol preloaded
       running: [],
       waiting: []
     }

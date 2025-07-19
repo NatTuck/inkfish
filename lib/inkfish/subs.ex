@@ -5,12 +5,14 @@ defmodule Inkfish.Subs do
 
   import Ecto.Query, warn: false
   alias Inkfish.Repo
+  alias Inkfish.Repo.Cache
 
   alias Inkfish.Subs.Sub
   alias Inkfish.Users.Reg
   alias Inkfish.Teams
   alias Inkfish.Teams.Team
   alias Inkfish.Grades
+  alias Inkfish.Grades.GradeColumn
   alias Inkfish.Grades.Grade
   alias Inkfish.Uploads
 
@@ -135,11 +137,8 @@ defmodule Inkfish.Subs do
         inner_join: reg in assoc(sub, :reg),
         inner_join: user in assoc(reg, :user),
         inner_join: team in assoc(sub, :team),
-        # Added for show action authorization
         inner_join: as in assoc(sub, :assignment),
-        # Added for show action authorization
         inner_join: bucket in assoc(as, :bucket),
-        # Added for show action authorization
         inner_join: course in assoc(bucket, :course),
         left_join: grader in assoc(sub, :grader),
         left_join: gruser in assoc(grader, :user),
@@ -152,7 +151,6 @@ defmodule Inkfish.Subs do
           grades: {grades, grade_column: gc, line_comments: lcs},
           reg: {reg, user: user},
           grader: {grader, user: gruser},
-          # Preload assignment with bucket and course
           assignment: {as, bucket: {bucket, course: course}}
         ]
       )
@@ -165,6 +163,22 @@ defmodule Inkfish.Subs do
     else
       raise "Sub not found"
     end
+  end
+
+  def get_sub_with_grades!(id) do
+    Repo.one!(
+      from(sub in Sub,
+        where: sub.id == ^id,
+        inner_join: as in assoc(sub, :assignment),
+        left_join: agcols in assoc(as, :grade_columns),
+        left_join: grades in assoc(sub, :grades),
+        left_join: gc in assoc(grades, :grade_column),
+        preload: [
+          grades: {grades, grade_column: gc},
+          assignment: {as, grade_columns: agcols}
+        ]
+      )
+    )
   end
 
   def preload_upload(%Sub{} = sub) do
@@ -251,19 +265,44 @@ defmodule Inkfish.Subs do
       Grades.delete_grade(gr)
     end)
 
-    sub.assignment.grade_columns
-    |> Enum.filter(fn gcol ->
-      gcol.kind == "script"
-    end)
-    |> Enum.map(fn gcol ->
-      {:ok, gr} = Grades.create_autograde(sub.id, gcol.id)
-      %Grade{gr | sub: sub}
-    end)
+    get_or_create_script_grades(sub)
   end
 
   def reset_script_grades(sub_id) do
     Repo.get!(Sub, sub_id)
     |> reset_script_grades()
+  end
+
+  def get_or_create_script_grades(%Sub{} = sub) do
+    sub = get_sub_with_grades!(sub.id)
+
+    script_cols =
+      sub.assignment.grade_columns
+      |> Enum.filter(fn gcol ->
+        gcol.kind == "script"
+      end)
+
+    Enum.map(script_cols, fn gcol ->
+      get_or_create_script_grade(sub, gcol)
+    end)
+  end
+
+  def get_or_create_script_grade(%Sub{} = sub, %GradeColumn{} = gc) do
+    grade1 =
+      Enum.find(sub.grades, fn gr ->
+        gr.grade_column_id == gc.id
+      end)
+
+    if grade1 do
+      if is_nil(grade1.log_uuid) do
+        %Grade{grade1 | sub: sub, grade_column: gc, log_uuid: "HUH?"}
+      else
+        %Grade{grade1 | sub: sub, grade_column: gc}
+      end
+    else
+      {:ok, gr} = Grades.create_autograde(sub.id, gc.id)
+      %Grade{gr | sub: sub, grade_column: gc}
+    end
   end
 
   def autograde!(sub) do

@@ -20,10 +20,7 @@ defmodule Inkfish.Grades.Grade do
   end
 
   def parent(), do: :sub
-
-  def standard_preloads() do
-    [:grade_column]
-  end
+  def standard_preloads(), do: [:grade_column]
 
   @doc false
   def changeset(grade, attrs) do

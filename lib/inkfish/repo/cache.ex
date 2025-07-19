@@ -62,7 +62,7 @@ defmodule Inkfish.Repo.Cache do
     GenServer.call(__MODULE__, :flush)
   end
 
-  def flush(mod) when is_struct(mod) do
+  def flush(mod) do
     GenServer.call(__MODULE__, {:flush, mod})
   end
 
@@ -76,7 +76,7 @@ defmodule Inkfish.Repo.Cache do
 
   @impl true
   def handle_call({:get, mod, id}, _from, state) do
-    case _get_with_path(state, mod, id) do
+    case _get_full(state, mod, id) do
       {:ok, state, item} ->
         {:reply, {:ok, item}, state}
 
@@ -86,7 +86,7 @@ defmodule Inkfish.Repo.Cache do
   end
 
   def handle_call({:list, mod, clauses}, _from, state) do
-    case _list_with_path(state, mod, clauses) do
+    case _list_full(state, mod, clauses) do
       {:ok, state, xs} ->
         {:reply, {:ok, xs}, state}
 
@@ -107,11 +107,17 @@ defmodule Inkfish.Repo.Cache do
   #    potentially from cache, at get time.
   #
   # Solution two is better, but will require rewriting the whole thing.
+  #
+  # Question: What about standard preloads?
+  #  - We want to be able to cache them.
+  #  - Scanning for them would be O(n), which is sub-optimal.
+  #  - Cache them on load, re-get them on get.
+  #
+  # Remaining problem: has_many standard preloads
 
   def handle_call({:drop, mod, id}, _from, state) do
     {_item, state} = pop_in(state, [mod, id])
-    # {:reply, :ok, state}
-    {:reply, :ok, %{}}
+    {:reply, :ok, state}
   end
 
   def handle_call(:flush, _from, _state) do
@@ -120,109 +126,168 @@ defmodule Inkfish.Repo.Cache do
 
   def handle_call({:flush, mod}, _from, state) do
     state = Map.put(state, mod, %{})
-    # {:reply, :ok, state}
-    {:reply, :ok, %{}}
+    {:reply, :ok, state}
   end
 
   ## Internal Support Functions
+  def _put_item(state, mod, item) do
+    state
+    |> Map.put_new(mod, %{})
+    |> put_in([mod, item.id], item)
+  end
 
-  def _db_get(mod, id) do
+  def _get_item(state, mod, id) do
+    case get_in(state, [mod, id]) do
+      nil -> _db_get(state, mod, id)
+      item -> {:ok, state, item}
+    end
+  end
+
+  def _reget_items(state, mod, xs) do
+    Enum.reduce(xs, {:ok, state, []}, fn item, {:ok, state, ys} ->
+      {:ok, state, item} = _get_item(state, mod, item.id)
+      {:ok, state, [item | ys]}
+    end)
+  end
+
+  def _db_get(state, mod, id) when not is_nil(id) do
     if item = Repo.get(mod, id) do
-      {:ok, item}
+      state = _put_item(state, mod, item)
+      {:ok, state, item}
     else
       {:error, "Not Found: #{mod} with id = #{id}"}
     end
   end
 
-  def _db_list(mod, clauses) do
-    _db_list(mod, clauses, mod |> order_by(asc: :id))
+  def _get_full(state, _mod, nil), do: {:ok, state, nil}
+
+  def _get_full(state, mod, id) do
+    with {:ok, state, item} <- _get_item(state, mod, id),
+         {:ok, state, item} <- _add_assocs(state, mod, item) do
+      {:ok, state, item}
+    end
   end
 
-  def _db_list(_mod, [], query) do
-    {:ok, Repo.all(query)}
+  def _add_assocs(state, mod, item) do
+    with {:ok, state, item} <- _add_preloads(state, mod, item),
+         {:ok, state, item} <- _add_path(state, mod, item) do
+      {:ok, state, item}
+    end
   end
 
-  def _db_list(mod, [{:limit, nn} | rest], query) do
-    _db_list(mod, rest, query |> limit(^nn))
+  def _add_preloads(state, mod, item) do
+    fields = standard_preloads(mod)
+
+    Enum.reduce(fields, {:ok, state, item}, fn field, stuff ->
+      case stuff do
+        {:ok, state, item} ->
+          _add_one_preload(state, mod, item, field)
+
+        error ->
+          error
+      end
+    end)
   end
 
-  def _db_list(mod, [{:offset, nn} | rest], query) do
-    _db_list(mod, rest, query |> offset(^nn))
+  alias Ecto.Association, as: Ea
+
+  def _add_one_preload(state, mod, item, field) do
+    assoc = mod.__schema__(:association, field)
+
+    case assoc do
+      %Ea.BelongsTo{related: amod, owner_key: akey} ->
+        _add_belongs_to(state, item, field, amod, akey)
+
+      %Ea.Has{related: amod, related_key: r_key} ->
+        # Can't be _list_full, since that leads to
+        # preload cycles.
+        case _db_list(state, amod, [{r_key, item.id}]) do
+          {:ok, state, ys} ->
+            case assoc.cardinality do
+              :one ->
+                item = Map.put(item, field, hd(ys))
+                {:ok, state, item}
+
+              :many ->
+                item = Map.put(item, field, ys)
+                {:ok, state, item}
+            end
+
+          error ->
+            error
+        end
+
+      %Ea.ManyToMany{} ->
+        {:ok, state, Repo.preload(item, field)}
+    end
   end
 
-  def _db_list(mod, [{field, val} | rest], query) do
+  def _add_belongs_to(state, item, field, amod, akey) do
+    with {:ok, aid} <- Map.fetch(item, akey),
+         {:ok, state, aitem} <- _get_full(state, amod, aid) do
+      item = Map.put(item, field, aitem)
+      {:ok, state, item}
+    else
+      _ ->
+        item = Map.put(item, field, nil)
+        {:ok, state, item}
+    end
+  end
+
+  def _add_path(state, mod, item) do
+    with {:ok, pfield} <- parent_field(mod),
+         {:ok, pmod} <- parent_mod(mod),
+         id_field <- mod.__schema__(:association, pfield).owner_key,
+         {:ok, p_id} <- Map.fetch(item, id_field),
+         {:ok, state, parent} <- _get_full(state, pmod, p_id) do
+      {:ok, state, Map.put(item, pfield, parent)}
+    else
+      _error ->
+        {:ok, state, item}
+    end
+  end
+
+  def _db_list(state, mod, clauses) do
+    _db_list(state, mod, clauses, mod |> order_by(asc: :id))
+  end
+
+  def _db_list(state, mod, [], query) do
+    ys = Repo.all(query)
+
+    state =
+      Enum.reduce(ys, state, fn item, state ->
+        _put_item(state, mod, item)
+      end)
+
+    {:ok, state, ys}
+  end
+
+  def _db_list(state, mod, [{:limit, nn} | rest], query) do
+    _db_list(state, mod, rest, query |> limit(^nn))
+  end
+
+  def _db_list(state, mod, [{:offset, nn} | rest], query) do
+    _db_list(state, mod, rest, query |> offset(^nn))
+  end
+
+  def _db_list(state, mod, [{field, val} | rest], query) do
     if field in mod.__schema__(:fields) do
       filter = [{field, val}]
-      _db_list(mod, rest, query |> where(^filter))
+      _db_list(state, mod, rest, query |> where(^filter))
     else
       {:error, "No field #{field} in #{mod}"}
     end
   end
 
-  def _list_with_path(state, mod, filters) do
-    with {:ok, xs} <- _db_list(mod, filters) do
+  def _list_full(state, mod, filters) do
+    with {:ok, state, xs} <- _db_list(state, mod, filters) do
       {state, ys} =
         Enum.reduce(xs, {state, []}, fn item, {state, ys} ->
-          {:ok, state, item} = _load_path(state, mod, item)
-          {:ok, state, item} = _get_or_preload_and_store(state, mod, item)
-
+          {:ok, state, item} = _add_assocs(state, mod, item)
           {state, [item | ys]}
         end)
 
       {:ok, state, Enum.reverse(ys)}
-    end
-  end
-
-  def _get_with_path(state, mod, id) do
-    if item = get_in(state, [mod, id]) do
-      {:ok, state, item}
-    else
-      with {:ok, item} <- _db_get(mod, id),
-           {:ok, state, item} <- _load_path(state, mod, item) do
-        _get_or_preload_and_store(state, mod, item)
-      else
-        error -> error
-      end
-    end
-  end
-
-  def _load_path(state, mod, item) do
-    with {:ok, pfield} <- parent_field(mod),
-         {:ok, pmod} <- parent_mod(mod),
-         id_field <- mod.__schema__(:association, pfield).owner_key,
-         {:ok, p_id} <- Map.fetch(item, id_field),
-         {:ok, state, parent} <- _get_with_path(state, pmod, p_id) do
-      # IO.inspect({mod, :parent, pmod, parent})
-      item = Map.put(item, pfield, parent)
-      {:ok, state, item}
-    else
-      _err -> {:ok, state, item}
-    end
-  end
-
-  def _get_or_preload_and_store(state, mod, item) do
-    item1 = get_in(state, [mod, item.id])
-
-    if not is_nil(item1) && ts_eq(item.updated_at, item1.updated_at) do
-      {:ok, state, item1}
-    else
-      item = _standard_preloads(mod, item)
-
-      state =
-        state
-        |> Map.put_new(mod, %{})
-        |> put_in([mod, item.id], item)
-
-      {:ok, state, item}
-    end
-  end
-
-  def _standard_preloads(mod, item) do
-    if function_exported?(mod, :standard_preloads, 0) do
-      preloads = mod.standard_preloads()
-      Repo.preload(item, preloads)
-    else
-      item
     end
   end
 

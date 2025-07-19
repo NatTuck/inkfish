@@ -64,4 +64,12 @@ defmodule Inkfish.Repo.Info do
       _err -> {:error, {:no_parent, mod}}
     end
   end
+
+  def standard_preloads(mod) do
+    if function_exported?(mod, :standard_preloads, 0) do
+      mod.standard_preloads()
+    else
+      []
+    end
+  end
 end

@@ -14,10 +14,7 @@ defmodule Inkfish.JoinReqs.JoinReq do
   end
 
   def parent(), do: :course
-
-  def standard_preloads() do
-    [:user]
-  end
+  def standard_preloads(), do: [:user]
 
   @doc false
   def changeset(join_req, attrs) do

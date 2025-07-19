@@ -27,10 +27,7 @@ defmodule Inkfish.Subs.Sub do
   end
 
   def parent(), do: :assignment
-
-  def standard_preloads() do
-    [team: [:regs]]
-  end
+  def standard_preloads(), do: [:team]
 
   @doc false
   def changeset(sub, attrs) do

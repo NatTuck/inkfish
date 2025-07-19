@@ -91,7 +91,9 @@
   </tr>
 </table>
 
-<%= unless Enum.empty?(@autogrades) do %>
+<%= if Enum.empty?(@autogrades) do %>
+  <p>No autogrades.</p>
+<% else %>
   <h2>Grading Scripts Output</h2>
     
   <% path = ~p"/subs/#{@sub}/rerun_scripts" %>

@@ -104,7 +104,9 @@
   <% end %>
 </table>
 
-<%= unless Enum.empty?(@autogrades) do %>
+<%= if Enum.empty?(@autogrades) do %>
+  <p>No autogrades.</p>
+<% else %>
   <h2>Grading Script Output</h2>
 
   <.form for={%{}} action={~p"/subs/#{@sub}/rerun_scripts"} method="post">

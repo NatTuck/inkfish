@@ -104,12 +104,10 @@ defmodule InkfishWeb.SubController do
     sub = %{sub | team: Teams.get_team!(sub.team_id)}
 
     autogrades =
-      sub.grades
-      |> Enum.filter(&(!is_nil(&1.log_uuid)))
+      Subs.get_or_create_script_grades(sub)
       |> Enum.map(fn grade ->
         grade = %{grade | sub: sub}
         log = Grade.get_log(grade)
-        IO.inspect({:log, log})
         token = Phoenix.Token.sign(conn, "autograde", %{uuid: grade.log_uuid})
         {grade, token, log}
       end)

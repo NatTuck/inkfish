@@ -1,14 +1,14 @@
 defmodule InkfishWeb.Plugs.FetchUser do
   use InkfishWeb, :controller
 
-  alias Inkfish.Users
   alias Inkfish.Users.User
+  alias Inkfish.Repo.Cache
 
   def init(args), do: args
 
   def call(conn, _args) do
     user_id = get_session(conn, :user_id)
-    user = Users.get_user(user_id)
+    {:ok, user} = Cache.get(User, user_id)
     token = make_token(conn, user)
     ruid = get_session(conn, :real_uid)
 
