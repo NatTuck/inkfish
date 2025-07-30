@@ -54,22 +54,23 @@ defmodule InkfishWeb.CourseControllerTest do
   defp create_course_with_assignments_and_submissions() do
     # Create course with bucket
     course = insert(:course)
-    bucket = insert(:bucket, course_id: course.id, weight: Decimal.new("1.0"))
+    bucket = insert(:bucket, course: course, weight: Decimal.new("1.0"))
 
     # Create student
     student = insert(:user, email: "student@example.com")
 
     student_reg =
       insert(:reg,
-        user_id: student.id,
-        course_id: course.id,
+        user: student,
+        course: course,
         is_student: true
       )
 
     # Create team for student
-    teamset_id = course.solo_teamset_id
-    team = insert(:team, teamset_id: teamset_id, active: true)
-    insert(:team_member, team_id: team.id, reg_id: student_reg.id)
+    ts = Inkfish.Teams.create_solo_teamset!(course)
+
+    team = insert(:team, teamset: ts, active: true)
+    insert(:team_member, team: team, reg: student_reg)
 
     # Create assignments with grade columns
     assignment1 =
