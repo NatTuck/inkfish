@@ -14,7 +14,7 @@ defmodule InkfishWeb.CourseControllerTest do
   end
 
   describe "show course" do
-    setup [:create_course]
+    setup [:create_course_with_team]
 
     test "shows chosen course", %{conn: conn, course: course} do
       conn =
@@ -26,8 +26,18 @@ defmodule InkfishWeb.CourseControllerTest do
     end
   end
 
-  defp create_course(_) do
+  defp create_course_with_team(_) do
     course = insert(:course)
-    {:ok, course: course}
+    user = insert(:user, email: "alice@example.com")
+    reg = insert(:reg, course: course, user: user)
+    teamset = insert(:teamset, course: course)
+    team = insert(:team, teamset: teamset, active: true)
+    insert(:team_member, team: team, reg: reg)
+    
+    # Reload course and reg to ensure associations are set up
+    course = Inkfish.Repo.preload(course, :teamsets)
+    reg = Inkfish.Repo.preload(reg, :teams)
+    
+    {:ok, course: course, reg: reg}
   end
 end
