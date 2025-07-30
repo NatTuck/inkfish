@@ -54,36 +54,36 @@ defmodule InkfishWeb.CourseControllerTest do
   defp create_course_with_assignments_and_submissions() do
     # Create course with bucket
     course = insert(:course)
-    bucket = insert(:bucket, course: course, weight: Decimal.new("1.0"))
+    bucket = insert(:bucket, course_id: course.id, weight: Decimal.new("1.0"))
 
     # Create student
     student = insert(:user, email: "student@example.com")
 
     student_reg =
       insert(:reg,
-        user: student,
-        course: course,
+        user_id: student.id,
+        course_id: course.id,
         is_student: true
       )
 
     # Create team for student
-    teamset = course.solo_teamset
-    team = insert(:team, teamset_id: teamset.id, active: true)
-    insert(:team_member, team: team, reg: student_reg)
+    teamset_id = course.solo_teamset_id
+    team = insert(:team, teamset_id: teamset_id, active: true)
+    insert(:team_member, team_id: team.id, reg_id: student_reg.id)
 
     # Create assignments with grade columns
     assignment1 =
       insert(:assignment,
-        bucket: bucket,
-        teamset_id: teamset.id,
+        bucket_id: bucket.id,
+        teamset_id: teamset_id,
         weight: Decimal.new("1.0"),
         name: "Assignment 1"
       )
 
     assignment2 =
       insert(:assignment,
-        bucket: bucket,
-        teamset_id: teamset.id,
+        bucket_id: bucket.id,
+        teamset_id: teamset_id,
         weight: Decimal.new("1.0"),
         name: "Assignment 2"
       )
@@ -91,13 +91,13 @@ defmodule InkfishWeb.CourseControllerTest do
     # Create grade columns for assignments
     gcol1 =
       insert(:grade_column,
-        assignment: assignment1,
+        assignment_id: assignment1.id,
         points: Decimal.new("25.0")
       )
 
     gcol2 =
       insert(:grade_column,
-        assignment: assignment2,
+        assignment_id: assignment2.id,
         points: Decimal.new("25.0")
       )
 
