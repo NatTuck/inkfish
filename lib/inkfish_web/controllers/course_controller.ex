@@ -48,11 +48,14 @@ defmodule InkfishWeb.CourseController do
           weight = fix_weight(as.weight)
           points = Assignment.assignment_total_points(as)
           frac = Decimal.div(Decimal.mult(weight, score), fix_weight(points))
+          IO.inspect({as.id, sub.id, frac, points})
           {Decimal.add(s, frac), Decimal.add(p, weight)}
         end)
 
       p = fix_weight(p)
       pct = Decimal.mult(Decimal.div(s, p), Decimal.new("100.0"))
+
+      IO.inspect({:bucket, bucket, s, p})
 
       {bucket.id, pct}
     end

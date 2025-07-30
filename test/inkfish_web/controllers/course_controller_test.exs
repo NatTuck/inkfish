@@ -123,6 +123,16 @@ defmodule InkfishWeb.CourseControllerTest do
         score: Decimal.new("25.0")
       )
 
+    sub3 =
+      insert(:sub,
+        assignment: assignment2,
+        reg: student_reg,
+        team: team,
+        active: false,
+        # 100% of 25
+        score: Decimal.new("25.0")
+      )
+
     # Create grades
     insert(:grade,
       grade_column: gcol1,
@@ -133,6 +143,12 @@ defmodule InkfishWeb.CourseControllerTest do
     insert(:grade,
       grade_column: gcol2,
       sub: sub2,
+      score: Decimal.new("25.0")
+    )
+
+    insert(:grade,
+      grade_column: gcol2,
+      sub: sub3,
       score: Decimal.new("25.0")
     )
 

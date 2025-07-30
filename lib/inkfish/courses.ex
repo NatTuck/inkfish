@@ -158,7 +158,7 @@ defmodule Inkfish.Courses do
         left_join: tm_reg in assoc(team_members, :reg),
         left_join: tm_user in assoc(tm_reg, :user),
         left_join: team_subs in assoc(teams, :subs),
-        on: team_members.reg_id == ^reg.id,
+        where: team_members.reg_id == ^reg.id or is_nil(team_members.id),
         where: teams.active or is_nil(teams.id),
         preload: [
           teamsets:
@@ -186,8 +186,9 @@ defmodule Inkfish.Courses do
         left_join: subs in assoc(assignments, :subs),
         left_join: grades in assoc(subs, :grades),
         left_join: gcols in assoc(assignments, :grade_columns),
-        on: subs.team_id in ^team_ids,
+        where: subs.team_id in ^team_ids or is_nil(subs.id),
         where: subs.active or is_nil(subs.id),
+        order_by: [asc: buckets.name, asc: assignments.due],
         preload: [
           buckets:
             {buckets,
