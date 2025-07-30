@@ -28,16 +28,6 @@ defmodule InkfishWeb.CourseControllerTest do
 
   defp create_course_with_team(_) do
     course = insert(:course)
-    user = insert(:user, email: "alice@example.com")
-    reg = insert(:reg, course: course, user: user)
-    teamset = insert(:teamset, course: course)
-    team = insert(:team, teamset: teamset, active: true)
-    insert(:team_member, team: team, reg: reg)
-    
-    # Reload course and reg to ensure associations are set up
-    course = Inkfish.Repo.preload(course, :teamsets)
-    reg = Inkfish.Repo.preload(reg, :teams)
-    
-    {:ok, course: course, reg: reg}
+    {:ok, course: course}
   end
 end

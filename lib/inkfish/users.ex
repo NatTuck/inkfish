@@ -302,7 +302,7 @@ defmodule Inkfish.Users do
   end
 
   def preload_reg_teams!(%Reg{} = reg) do
-    Repo.preload(reg, teams: :subs)
+    Repo.preload(reg, teams: [:subs, team_members: [reg: :user]])
   end
 
   def get_reg_for_grading_tasks!(reg_id) do

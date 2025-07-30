@@ -5,7 +5,6 @@ defmodule Inkfish.Subs do
 
   import Ecto.Query, warn: false
   alias Inkfish.Repo
-  alias Inkfish.Repo.Cache
 
   alias Inkfish.Subs.Sub
   alias Inkfish.Users.Reg
