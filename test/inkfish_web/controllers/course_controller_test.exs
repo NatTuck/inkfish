@@ -2,10 +2,6 @@ defmodule InkfishWeb.CourseControllerTest do
   use InkfishWeb.ConnCase
   import Inkfish.Factory
 
-  def fixture(:course) do
-    insert(:course)
-  end
-
   describe "index" do
     test "lists all courses", %{conn: conn} do
       conn =
@@ -31,7 +27,7 @@ defmodule InkfishWeb.CourseControllerTest do
   end
 
   defp create_course(_) do
-    course = fixture(:course)
+    course = insert(:course)
     {:ok, course: course}
   end
 end
