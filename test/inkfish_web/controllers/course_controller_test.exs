@@ -75,16 +75,16 @@ defmodule InkfishWeb.CourseControllerTest do
     # Create assignments with grade columns
     assignment1 =
       insert(:assignment,
-        bucket_id: bucket.id,
-        teamset_id: teamset_id,
+        bucket: bucket,
+        teamset: ts,
         weight: Decimal.new("1.0"),
         name: "Assignment 1"
       )
 
     assignment2 =
       insert(:assignment,
-        bucket_id: bucket.id,
-        teamset_id: teamset_id,
+        bucket: bucket,
+        teamset: ts,
         weight: Decimal.new("1.0"),
         name: "Assignment 2"
       )
@@ -92,22 +92,22 @@ defmodule InkfishWeb.CourseControllerTest do
     # Create grade columns for assignments
     gcol1 =
       insert(:grade_column,
-        assignment_id: assignment1.id,
+        assignment: assignment1,
         points: Decimal.new("25.0")
       )
 
     gcol2 =
       insert(:grade_column,
-        assignment_id: assignment2.id,
+        assignment: assignment2,
         points: Decimal.new("25.0")
       )
 
     # Create submissions
     sub1 =
       insert(:sub,
-        assignment_id: assignment1.id,
-        reg_id: student_reg.id,
-        team_id: team.id,
+        assignment: assignment1,
+        reg: student_reg,
+        team: team,
         active: true,
         # 80% of 25
         score: Decimal.new("20.0")
@@ -115,9 +115,9 @@ defmodule InkfishWeb.CourseControllerTest do
 
     sub2 =
       insert(:sub,
-        assignment_id: assignment2.id,
-        reg_id: student_reg.id,
-        team_id: team.id,
+        assignment: assignment2,
+        reg: student_reg,
+        team: team,
         active: true,
         # 100% of 25
         score: Decimal.new("25.0")
@@ -125,14 +125,14 @@ defmodule InkfishWeb.CourseControllerTest do
 
     # Create grades
     insert(:grade,
-      grade_column_id: gcol1.id,
-      sub_id: sub1.id,
+      grade_column: gcol1,
+      sub: sub1,
       score: Decimal.new("20.0")
     )
 
     insert(:grade,
-      grade_column_id: gcol2.id,
-      sub_id: sub2.id,
+      grade_column: gcol2,
+      sub: sub2,
       score: Decimal.new("25.0")
     )
 
