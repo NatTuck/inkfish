@@ -68,14 +68,14 @@ defmodule InkfishWeb.CourseControllerTest do
 
     # Create team for student
     teamset = course.solo_teamset
-    team = insert(:team, teamset: teamset, active: true)
+    team = insert(:team, teamset_id: teamset.id, active: true)
     insert(:team_member, team: team, reg: student_reg)
 
     # Create assignments with grade columns
     assignment1 =
       insert(:assignment,
         bucket: bucket,
-        teamset: teamset,
+        teamset_id: teamset.id,
         weight: Decimal.new("1.0"),
         name: "Assignment 1"
       )
@@ -83,7 +83,7 @@ defmodule InkfishWeb.CourseControllerTest do
     assignment2 =
       insert(:assignment,
         bucket: bucket,
-        teamset: teamset,
+        teamset_id: teamset.id,
         weight: Decimal.new("1.0"),
         name: "Assignment 2"
       )
@@ -104,9 +104,9 @@ defmodule InkfishWeb.CourseControllerTest do
     # Create submissions
     sub1 =
       insert(:sub,
-        assignment: assignment1,
-        reg: student_reg,
-        team: team,
+        assignment_id: assignment1.id,
+        reg_id: student_reg.id,
+        team_id: team.id,
         active: true,
         # 80% of 25
         score: Decimal.new("20.0")
@@ -114,9 +114,9 @@ defmodule InkfishWeb.CourseControllerTest do
 
     sub2 =
       insert(:sub,
-        assignment: assignment2,
-        reg: student_reg,
-        team: team,
+        assignment_id: assignment2.id,
+        reg_id: student_reg.id,
+        team_id: team.id,
         active: true,
         # 100% of 25
         score: Decimal.new("25.0")
@@ -124,14 +124,14 @@ defmodule InkfishWeb.CourseControllerTest do
 
     # Create grades
     insert(:grade,
-      grade_column: gcol1,
-      sub: sub1,
+      grade_column_id: gcol1.id,
+      sub_id: sub1.id,
       score: Decimal.new("20.0")
     )
 
     insert(:grade,
-      grade_column: gcol2,
-      sub: sub2,
+      grade_column_id: gcol2.id,
+      sub_id: sub2.id,
       score: Decimal.new("25.0")
     )
 
