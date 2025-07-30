@@ -204,22 +204,27 @@ defmodule Inkfish.AgJobs do
   end
 
   def delete_old_ag_jobs() do
-    one_day = 60 * 60 * 24
+    # Skip during tests to avoid DB connection conflicts
+    if Application.get_env(:inkfish, :env) == :test do
+      {0, nil}
+    else
+      one_day = 60 * 60 * 24
 
-    one_day_ago =
-      LocalTime.now()
-      |> DateTime.add(-one_day)
+      one_day_ago =
+        LocalTime.now()
+        |> DateTime.add(-one_day)
 
-    rv =
-      Repo.delete_all(
-        from(job in AgJob,
-          where: not is_nil(job.finished_at) and job.finished_at < ^one_day_ago
+      rv =
+        Repo.delete_all(
+          from(job in AgJob,
+            where: not is_nil(job.finished_at) and job.finished_at < ^one_day_ago
+          )
         )
-      )
 
-    Repo.Cache.flush(AgJobs)
+      Repo.Cache.flush(AgJobs)
 
-    rv
+      rv
+    end
   end
 
   @doc """
