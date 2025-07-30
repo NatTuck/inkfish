@@ -45,18 +45,6 @@ defmodule Inkfish.Grades do
     )
   end
 
-  def get_grade_column_path!(id) do
-    Repo.one!(
-      from(gr in GradeColumn,
-        where: gr.id == ^id,
-        inner_join: as in assoc(gr, :assignment),
-        inner_join: bucket in assoc(as, :bucket),
-        inner_join: course in assoc(bucket, :course),
-        preload: [assignment: {as, bucket: {bucket, course: course}}]
-      )
-    )
-  end
-
   @doc """
   If this is an {:ok, gc} pair, update the score
   in the associated assignment.
@@ -105,6 +93,7 @@ defmodule Inkfish.Grades do
     grade_column
     |> GradeColumn.changeset(attrs)
     |> Repo.update()
+    |> Repo.Cache.updated()
     |> gc_update_assignment_points()
   end
 
@@ -122,6 +111,7 @@ defmodule Inkfish.Grades do
   """
   def delete_grade_column(%GradeColumn{} = grade_column) do
     Repo.delete(grade_column)
+    |> Repo.Cache.updated()
     |> gc_update_assignment_points()
   end
 
@@ -187,29 +177,6 @@ defmodule Inkfish.Grades do
             {sub,
              reg: {reg, user: reg_user},
              team: {team, regs: {team_regs, user: team_user}}}
-        ]
-      )
-    )
-  end
-
-  def get_grade_path!(id) do
-    Repo.one!(
-      from(grade in Grade,
-        where: grade.id == ^id,
-        inner_join: sub in assoc(grade, :sub),
-        inner_join: team in assoc(sub, :team),
-        left_join: regs in assoc(team, :regs),
-        left_join: user in assoc(regs, :user),
-        inner_join: as in assoc(sub, :assignment),
-        inner_join: bucket in assoc(as, :bucket),
-        inner_join: course in assoc(bucket, :course),
-        inner_join: gc in assoc(grade, :grade_column),
-        preload: [
-          sub:
-            {sub,
-             assignment: {as, bucket: {bucket, course: course}},
-             team: {team, regs: {regs, user: user}}},
-          grade_column: gc
         ]
       )
     )
@@ -310,6 +277,7 @@ defmodule Inkfish.Grades do
     grade
     |> Grade.changeset(attrs)
     |> Repo.update()
+    |> Repo.Cache.updated()
   end
 
   @doc """
@@ -327,7 +295,9 @@ defmodule Inkfish.Grades do
   def delete_grade(%Grade{} = grade) do
     grade = preload_sub_and_upload(grade)
     Grade.delete_log(grade)
+
     Repo.delete(grade)
+    |> Repo.Cache.updated()
   end
 
   @doc """

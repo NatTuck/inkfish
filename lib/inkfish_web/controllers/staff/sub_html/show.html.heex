@@ -1,0 +1,135 @@
+<h1>Show Sub</h1>
+
+<p>
+  <.link href={~p"/subs/#{@sub}"}>Student View</.link>
+</p>
+
+<ul>
+  <li>
+    <strong>Team:</strong>
+    <%= show_team(@sub.team) %>
+  </li>
+
+  <li>
+    <strong>Submitter:</strong>
+    <%= user_display_name(@sub.reg.user) %>
+    (<%= @sub.reg.user.email %>)
+  </li>
+
+  <li>
+    <strong>Timestamp:</strong>
+    <%= @sub.inserted_at %>
+  </li>
+ 
+  <li>
+    <strong>Active:</strong>
+    <%= @sub.active %>
+  </li>
+
+  <li>
+    <% cset = Inkfish.Subs.change_sub(
+      %{ @sub | ignore_late_penalty: !@sub.ignore_late_penalty }
+      ) %>
+    <.form :let={f} for={cset} action={~p"/staff/subs/#{@sub}"}>
+      <strong>Ignore Late Penalty:</strong>
+      <%= @sub.ignore_late_penalty %>
+      &nbsp;
+      <.hidden_input field={f[:ignore_late_penalty]} />
+      <.button class="btn btn-secondary btn-sm">Toggle</.button>
+    </.form>
+  </li>
+
+  <li>
+    <strong>Score:</strong>
+    <%= @sub.score || "∅" %>
+  </li>
+
+  <li>
+    <strong>Hours Spent:</strong>
+    <%= @sub.hours_spent %>
+  </li>
+
+  <li>
+    <strong>Assigned Grader:</strong>
+    <%= user_display_name(@sub.grader) %>
+  </li>
+
+  <li>
+    <strong>Upload:</strong>
+    <.link href={~p"/uploads/#{@sub.upload.id}/#{@sub.upload.name}"}><%= @sub.upload.name %></.link>
+    (<.link href={~p"/subs/#{@sub}/files"}>View Files</.link>)
+  </li>
+</ul>
+
+<p><strong>Note:</strong></p>
+
+<p><%= sanitize_markdown(@sub.note) %></p>
+
+<h2>Grades</h2>
+
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Score</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <%= for grade_column <- @assignment.grade_columns do %>
+    <% grade = Enum.find(@sub.grades, &(&1.grade_column_id == grade_column.id)) %>
+    <tr>
+      <td><%= grade_column.name %></td>
+      <td><%= show_score(@conn, grade) %> / <%= grade_column.points %></td>
+      <td>
+        <%= if grade_column.kind == "feedback" do %>
+          <%= if grade do %>
+            <.link href={~p"/staff/grades/#{grade}/edit"}>Edit Grade</.link>
+          <% else %>
+            <% grade = %Inkfish.Grades.Grade{
+              grade_column_id: grade_column.id, sub_id: @sub.id
+            } %>
+            <% cset = Inkfish.Grades.change_grade(grade) %>
+            <.form :let={f} for={cset} action={~p"/staff/subs/#{@sub}/grades"}>
+              <.hidden_input field={f[:sub_id]} />
+              <.hidden_input field={f[:grade_column_id]} />
+              <.button class="btn btn-primary btn-sm">Create Grade</.button>
+            </.form>
+          <% end %>
+        <% else %>
+          <!-- FIXME: Add form to edit number grade here. -->
+          (none)
+        <% end %>
+      </td>
+    </tr>
+  <% end %>
+</table>
+
+<%= if Enum.empty?(@autogrades) do %>
+  <p>No autogrades.</p>
+<% else %>
+  <h2>Grading Script Output</h2>
+
+  <.form for={%{}} action={~p"/subs/#{@sub}/rerun_scripts"} method="post">
+    <.button class="btn btn-secondary">Rerun Scripts</.button>
+  </.form>
+
+  <%= for {grade, token, log} <- @autogrades do %>
+  <h3><%= grade.grade_column.name %></h3>
+    <%= if log do %>
+      <p><strong>Sandbox Exit Status</strong></p>
+      <pre><%= log["status"] %></pre>
+      <p><strong>Test Output</strong></p>
+      <pre><%= log["result"] %></pre>
+      <p><strong>Full Log</strong></p>
+      <pre><%= render_autograde_log(log["log"]) %></pre>
+    <% else %>
+      <div id="itty-root"
+          data-token={token}
+          data-chan="autograde"
+          data-uuid={grade.log_uuid}>
+        <!-- React component in js/itty.jsx -->
+        Loading...
+      </div>
+    <% end %>
+  <% end %>
+<% end %>

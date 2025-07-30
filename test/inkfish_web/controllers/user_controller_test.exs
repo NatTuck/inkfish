@@ -9,7 +9,7 @@ defmodule InkfishWeb.UserControllerTest do
       conn =
         conn
         |> login("alice@example.com")
-        |> get(Routes.user_path(conn, :edit, user))
+        |> get(~p"/users/#{user}/edit")
 
       assert html_response(conn, 200) =~ "Edit User"
     end
@@ -22,11 +22,11 @@ defmodule InkfishWeb.UserControllerTest do
       conn =
         conn
         |> login("alice@example.com")
-        |> put(Routes.user_path(conn, :update, user), user: %{nickname: "Rob"})
+        |> put(~p"/users/#{user}", user: %{nickname: "Rob"})
 
-      assert redirected_to(conn) == Routes.user_path(conn, :show, user)
+      assert redirected_to(conn) == ~p"/users/#{user}"
 
-      conn = get(conn, Routes.user_path(conn, :show, user))
+      conn = get(conn, ~p"/users/#{user}")
       assert html_response(conn, 200) =~ "Rob"
     end
   end

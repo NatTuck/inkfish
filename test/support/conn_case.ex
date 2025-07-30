@@ -28,8 +28,6 @@ defmodule InkfishWeb.ConnCase do
       import Plug.Conn
       import Phoenix.ConnTest
       import InkfishWeb.ConnCase
-
-      alias InkfishWeb.Router.Helpers, as: Routes
     end
   end
 
@@ -81,7 +79,6 @@ defmodule InkfishWeb.ConnCase do
   It returns an updated `conn`.
   """
   def log_in_user(conn, user) do
-    IO.inspect({:warn, :log_in_user})
     login(conn, user)
   end
 end

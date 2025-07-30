@@ -12,6 +12,8 @@ defmodule Inkfish.AgJobs.AgJob do
     timestamps(type: :utc_datetime)
   end
 
+  def parent(), do: :sub
+
   @doc false
   def changeset(ag_job, attrs) do
     ag_job

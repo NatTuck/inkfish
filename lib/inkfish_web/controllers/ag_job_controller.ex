@@ -1,5 +1,5 @@
 defmodule InkfishWeb.AgJobController do
-  use InkfishWeb, :controller1
+  use InkfishWeb, :controller
 
   alias Inkfish.AgJobs
   # alias Inkfish.AgJobs.AgJob
@@ -23,7 +23,11 @@ defmodule InkfishWeb.AgJobController do
 
     conn
     |> assign(:page_title, "Autograding Jobs")
-    |> render(:index, wait_jobs: wait_jobs, curr_jobs: curr_jobs, done_jobs: done_jobs)
+    |> render(:index,
+      wait_jobs: wait_jobs,
+      curr_jobs: curr_jobs,
+      done_jobs: done_jobs
+    )
   end
 
   def poll(conn, _params) do

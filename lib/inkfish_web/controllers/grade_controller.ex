@@ -27,12 +27,12 @@ defmodule InkfishWeb.GradeController do
     if grade_hidden?(conn, conn.assigns[:assignment]) do
       conn
       |> put_flash(:error, "Grade not ready yet.")
-      |> redirect(to: Routes.sub_path(conn, :show, conn.assigns[:sub]))
+      |> redirect(to: ~p"/subs/#{conn.assigns[:sub]}")
     else
       {id, _} = Integer.parse(id)
 
       grade_json =
-        InkfishWeb.Staff.GradeView.render("grade.json", %{grade: grade})
+        InkfishWeb.Staff.GradeJSON.show(%{grade: grade})
 
       data =
         Inkfish.Subs.read_sub_data(grade.sub_id)

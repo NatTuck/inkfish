@@ -43,21 +43,21 @@ defmodule InkfishWeb.Staff.TeamsetController do
       {:ok, teamset} ->
         conn
         |> put_flash(:info, "Teamset created successfully.")
-        |> redirect(to: Routes.staff_teamset_path(conn, :show, teamset))
+        |> redirect(to: ~p"/staff/teamsets/#{teamset}")
 
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, "new.html", changeset: changeset)
     end
   end
 
-  alias InkfishWeb.Staff.TeamView
+  alias InkfishWeb.Staff.TeamJSON
 
   def show(conn, %{"id" => id}) do
     teamset = Teams.get_teamset!(id)
-    past_teams = Enum.map(Teams.past_teams(teamset), &TeamView.view_members/1)
+    past_teams = Enum.map(Teams.past_teams(teamset), &TeamJSON.view_members/1)
 
     data =
-      InkfishWeb.Staff.TeamsetView.render("teamset.json", %{teamset: teamset})
+      InkfishWeb.Staff.TeamsetJSON.show(%{teamset: teamset})
 
     render(conn, "show.html",
       teamset: teamset,
@@ -79,7 +79,7 @@ defmodule InkfishWeb.Staff.TeamsetController do
       {:ok, teamset} ->
         conn
         |> put_flash(:info, "Teamset updated successfully.")
-        |> redirect(to: Routes.staff_teamset_path(conn, :show, teamset))
+        |> redirect(to: ~p"/staff/teamsets/#{teamset}")
 
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, "edit.html", teamset: teamset, changeset: changeset)
@@ -92,9 +92,7 @@ defmodule InkfishWeb.Staff.TeamsetController do
 
     conn
     |> put_flash(:info, "Teamset deleted successfully.")
-    |> redirect(
-      to: Routes.staff_course_teamset_path(conn, :index, teamset.course_id)
-    )
+    |> redirect(to: ~p"/staff/courses/#{teamset.course_id}/teamsets")
   end
 
   def add_prof_team(conn, %{"id" => id}) do
@@ -102,23 +100,23 @@ defmodule InkfishWeb.Staff.TeamsetController do
     reg = conn.assigns[:current_reg]
 
     if reg.is_prof do
-      team = Teams.get_active_team(teamset, reg)
+      case Teams.get_active_team(teamset, reg) do
+        {:ok, _} ->
+          conn
+          |> put_flash(:info, "Prof team exists for ts #{id}")
+          |> redirect(to: ~p"/staff/teamsets/#{teamset}")
 
-      if team do
-        conn
-        |> put_flash(:info, "Prof team exists for ts #{id}")
-        |> redirect(to: Routes.staff_teamset_path(conn, :show, teamset))
-      else
-        team = Teams.create_solo_team(teamset, reg)
+        {:error, _} ->
+          team = Teams.create_solo_team(teamset, reg)
 
-        conn
-        |> put_flash(:info, "Added prof team #{team.id} for teamset #{id}")
-        |> redirect(to: Routes.staff_teamset_path(conn, :show, teamset))
+          conn
+          |> put_flash(:info, "Added prof team #{team.id} for teamset #{id}")
+          |> redirect(to: ~p"/staff/teamsets/#{teamset}")
       end
     else
       conn
       |> put_flash(:error, "Must be prof")
-      |> redirect(to: Routes.staff_teamset_path(conn, :show, teamset))
+      |> redirect(to: ~p"/staff/teamsets/#{teamset}")
     end
   end
 end

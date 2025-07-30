@@ -38,8 +38,6 @@ defmodule Inkfish.AgJobs.Autograde do
         image: "inkfish:latest"
       })
 
-    IO.puts("created container: #{cont_id} for grade #{grade.id}")
-
     env = %{
       "SCR" => script_dir,
       "SUB" => unpacked_sub,

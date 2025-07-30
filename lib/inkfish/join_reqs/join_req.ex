@@ -13,6 +13,9 @@ defmodule Inkfish.JoinReqs.JoinReq do
     timestamps()
   end
 
+  def parent(), do: :course
+  def standard_preloads(), do: [:user]
+
   @doc false
   def changeset(join_req, attrs) do
     join_req

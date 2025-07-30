@@ -16,6 +16,8 @@ defmodule Inkfish.LineComments.LineComment do
     timestamps()
   end
 
+  def parent(), do: :grade
+
   @doc false
   def changeset(line_comment, attrs) do
     line_comment

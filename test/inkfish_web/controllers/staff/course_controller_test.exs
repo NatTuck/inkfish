@@ -14,21 +14,21 @@ defmodule InkfishWeb.Staff.CourseControllerTest do
 
   describe "index" do
     test "lists all courses", %{conn: conn, course: _course} do
-      conn = get(conn, Routes.staff_course_path(conn, :index))
+      conn = get(conn, ~p"/staff/courses")
       assert html_response(conn, 200) =~ "Listing Courses"
     end
   end
 
   describe "gradesheet" do
     test "renders", %{conn: conn, course: course} do
-      conn = get(conn, Routes.staff_course_path(conn, :gradesheet, course))
+      conn = get(conn, ~p"/staff/courses/#{course}/gradesheet")
       assert html_response(conn, 200) =~ "Gradesheet"
     end
   end
 
   describe "edit course" do
     test "renders form for editing chosen course", %{conn: conn, course: course} do
-      conn = get(conn, Routes.staff_course_path(conn, :edit, course))
+      conn = get(conn, ~p"/staff/courses/#{course}/edit")
       assert html_response(conn, 200) =~ "Edit Course"
     end
   end
@@ -36,20 +36,20 @@ defmodule InkfishWeb.Staff.CourseControllerTest do
   describe "update course" do
     test "redirects when data is valid", %{conn: conn, course: course} do
       conn =
-        put(conn, Routes.staff_course_path(conn, :update, course),
+        put(conn, ~p"/staff/courses/#{course}",
           course: %{footer: "some updated footer"}
         )
 
       assert redirected_to(conn) ==
-               Routes.staff_course_path(conn, :show, course)
+               ~p"/staff/courses/#{course}"
 
-      conn = get(conn, Routes.staff_course_path(conn, :show, course))
+      conn = get(conn, ~p"/staff/courses/#{course}")
       assert html_response(conn, 200) =~ "some updated footer"
     end
 
     test "renders errors when data is invalid", %{conn: conn, course: course} do
       conn =
-        put(conn, Routes.staff_course_path(conn, :update, course),
+        put(conn, ~p"/staff/courses/#{course}",
           course: %{name: "x"}
         )
 

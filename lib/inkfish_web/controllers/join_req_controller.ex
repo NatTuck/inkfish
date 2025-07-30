@@ -29,7 +29,7 @@ defmodule InkfishWeb.JoinReqController do
       {:ok, _join_req} ->
         conn
         |> put_flash(:info, "Join req created successfully.")
-        |> redirect(to: Routes.course_path(conn, :index))
+        |> redirect(to: ~p"/courses")
 
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, "new.html", changeset: changeset)

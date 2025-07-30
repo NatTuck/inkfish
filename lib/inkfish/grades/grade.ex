@@ -19,6 +19,9 @@ defmodule Inkfish.Grades.Grade do
     timestamps()
   end
 
+  def parent(), do: :sub
+  def standard_preloads(), do: [:grade_column]
+
   @doc false
   def changeset(grade, attrs) do
     grade

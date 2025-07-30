@@ -18,7 +18,7 @@ defmodule InkfishWeb.Staff.GradeColumnControllerTest do
   describe "index" do
     test "lists all grade_columns", %{conn: conn, assignment: asg} do
       conn =
-        get(conn, Routes.staff_assignment_grade_column_path(conn, :index, asg))
+        get(conn, ~p"/staff/assignments/#{asg}/grade_columns")
 
       assert html_response(conn, 200) =~ "Listing Grade_Columns"
     end
@@ -27,7 +27,7 @@ defmodule InkfishWeb.Staff.GradeColumnControllerTest do
   describe "new grade_column" do
     test "renders form", %{conn: conn, assignment: asg} do
       conn =
-        get(conn, Routes.staff_assignment_grade_column_path(conn, :new, asg))
+        get(conn, ~p"/staff/assignments/#{asg}/grade_columns/new")
 
       assert html_response(conn, 200) =~ "New Grade Column"
     end
@@ -40,16 +40,16 @@ defmodule InkfishWeb.Staff.GradeColumnControllerTest do
       conn =
         post(
           conn,
-          Routes.staff_assignment_grade_column_path(conn, :create, asg),
+          ~p"/staff/assignments/#{asg}/grade_columns",
           grade_column: params
         )
 
       assert %{id: id} = redirected_params(conn)
 
       assert redirected_to(conn) ==
-               Routes.staff_grade_column_path(conn, :show, id)
+               ~p"/staff/grade_columns/#{id}"
 
-      conn = get(conn, Routes.staff_grade_column_path(conn, :show, id))
+      conn = get(conn, ~p"/staff/grade_columns/#{id}")
       assert html_response(conn, 200) =~ "Show Grade Column"
     end
 
@@ -59,7 +59,7 @@ defmodule InkfishWeb.Staff.GradeColumnControllerTest do
       conn =
         post(
           conn,
-          Routes.staff_assignment_grade_column_path(conn, :create, asg),
+          ~p"/staff/assignments/#{asg}/grade_columns",
           grade_column: params
         )
 
@@ -72,7 +72,7 @@ defmodule InkfishWeb.Staff.GradeColumnControllerTest do
       conn: conn,
       grade_column: gc
     } do
-      conn = get(conn, Routes.staff_grade_column_path(conn, :edit, gc))
+      conn = get(conn, ~p"/staff/grade_columns/#{gc}/edit")
       assert html_response(conn, 200) =~ "Edit Grade Column"
     end
   end
@@ -82,14 +82,12 @@ defmodule InkfishWeb.Staff.GradeColumnControllerTest do
       params = %{name: "some updated name"}
 
       conn =
-        put(conn, Routes.staff_grade_column_path(conn, :update, gc),
-          grade_column: params
-        )
+        put(conn, ~p"/staff/grade_columns/#{gc}", grade_column: params)
 
       assert redirected_to(conn) ==
-               Routes.staff_grade_column_path(conn, :show, gc)
+               ~p"/staff/grade_columns/#{gc}"
 
-      conn = get(conn, Routes.staff_grade_column_path(conn, :show, gc))
+      conn = get(conn, ~p"/staff/grade_columns/#{gc}")
       assert html_response(conn, 200) =~ "some updated name"
     end
 
@@ -97,9 +95,7 @@ defmodule InkfishWeb.Staff.GradeColumnControllerTest do
       params = %{name: ""}
 
       conn =
-        put(conn, Routes.staff_grade_column_path(conn, :update, gc),
-          grade_column: params
-        )
+        put(conn, ~p"/staff/grade_columns/#{gc}", grade_column: params)
 
       assert html_response(conn, 200) =~ "Edit Grade Column"
     end
@@ -113,19 +109,14 @@ defmodule InkfishWeb.Staff.GradeColumnControllerTest do
       conn =
         delete(
           conn,
-          Routes.staff_grade_column_path(conn, :delete, grade_column)
+          ~p"/staff/grade_columns/#{grade_column}"
         )
 
       assert redirected_to(conn) ==
-               Routes.staff_assignment_path(
-                 conn,
-                 :show,
-                 grade_column.assignment_id
-               )
+               ~p"/staff/assignments/#{grade_column.assignment_id}"
 
-      assert_error_sent 404, fn ->
-        get(conn, Routes.staff_grade_column_path(conn, :show, grade_column))
-      end
+      conn = get(conn, ~p"/staff/grade_columns/#{grade_column}")
+      assert redirected_to(conn) == ~p"/"
     end
   end
 end

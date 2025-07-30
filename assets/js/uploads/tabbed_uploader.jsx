@@ -7,8 +7,9 @@ import FileUploader from './file_uploader';
 import GitUploader from './git_uploader';
 
 export default function TabbedUploader({allowGit, allowFile, setUploadId, token, nonce}) {
-  allowFile = (allowFile == "true");
-  allowGit = (allowGit == "true");
+  console.log(allowFile, allowGit);
+  allowFile = (typeof allowFile !== "undefined" && allowFile != "false");
+  allowGit =  (typeof allowGit !== "undefined" && allowGit != "false");
 
   if (allowGit && allowFile) {
     return (

@@ -25,8 +25,7 @@ config :inkfish, InkfishWeb.Endpoint,
   secret_key_base:
     "V2mJIKEOJpyjppjtVUT2Zl4Rc24vEyI9FPA0DUQE/UW9ZmPLr/uRsgofj5E3yJnp",
   render_errors: [
-    view: InkfishWeb.ErrorView,
-    accepts: ~w(html json),
+    formats: [html: InkfishWeb.ErrorHTML, json: InkfishWeb.ErrorJSON],
     layout: false
   ],
   pubsub_server: Inkfish.PubSub,

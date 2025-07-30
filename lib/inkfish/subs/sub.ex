@@ -1,6 +1,7 @@
 defmodule Inkfish.Subs.Sub do
   use Ecto.Schema
   import Ecto.Changeset
+  import Ecto.Query, warn: false
 
   @timestamps_opts [
     type: :utc_datetime,
@@ -17,12 +18,16 @@ defmodule Inkfish.Subs.Sub do
     belongs_to :assignment, Inkfish.Assignments.Assignment
     belongs_to :reg, Inkfish.Users.Reg
     belongs_to :team, Inkfish.Teams.Team
+    # upload_id remains binary_id
     belongs_to :upload, Inkfish.Uploads.Upload, type: :binary_id
     belongs_to :grader, Inkfish.Users.Reg
     has_many :grades, Inkfish.Grades.Grade
 
     timestamps()
   end
+
+  def parent(), do: :assignment
+  def standard_preloads(), do: [:team]
 
   @doc false
   def changeset(sub, attrs) do

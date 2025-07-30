@@ -34,7 +34,7 @@ defmodule InkfishWeb.Staff.LineCommentController do
       |> put_status(:created)
       |> put_resp_header(
         "location",
-        Routes.ajax_staff_line_comment_path(conn, :show, lc)
+        ~p"/ajax/staff/line_comments/#{lc}"
       )
       |> render("show.json", line_comment: lc)
     end

@@ -18,6 +18,9 @@ defmodule Inkfish.Teams.Team do
     timestamps()
   end
 
+  def parent(), do: :teamset
+  def standard_preloads(), do: [:regs]
+
   @doc false
   def changeset(team, attrs) do
     cset =

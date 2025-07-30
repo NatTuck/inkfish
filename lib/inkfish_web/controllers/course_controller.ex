@@ -22,14 +22,14 @@ defmodule InkfishWeb.CourseController do
     render(conn, "index.html", courses: courses, regs: regs, reqs: reqs)
   end
 
-  def show(conn, %{"id" => id}) do
+  def show(conn, %{"id" => _id}) do
     current_reg =
       conn.assigns[:current_reg]
       |> Users.preload_reg_teams!()
 
     course =
-      Courses.get_course_for_student_view!(id)
-      |> Courses.preload_subs_for_student!(current_reg.id)
+      conn.assigns[:course]
+      |> Courses.reload_course_for_student_view!(current_reg)
 
     teams = Courses.get_teams_for_student!(course, current_reg)
     totals = bucket_totals(course.buckets)
@@ -48,11 +48,14 @@ defmodule InkfishWeb.CourseController do
           weight = fix_weight(as.weight)
           points = Assignment.assignment_total_points(as)
           frac = Decimal.div(Decimal.mult(weight, score), fix_weight(points))
+          IO.inspect({as.id, sub.id, frac, points})
           {Decimal.add(s, frac), Decimal.add(p, weight)}
         end)
 
       p = fix_weight(p)
       pct = Decimal.mult(Decimal.div(s, p), Decimal.new("100.0"))
+
+      IO.inspect({:bucket, bucket, s, p})
 
       {bucket.id, pct}
     end

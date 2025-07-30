@@ -16,6 +16,7 @@ defmodule Inkfish.Factory do
   alias Inkfish.Grades.Grade
   alias Inkfish.LineComments.LineComment
   alias Inkfish.AgJobs.AgJob
+  alias Inkfish.ApiKeys.ApiKey
 
   def stock_course do
     course_params = %{
@@ -44,7 +45,7 @@ defmodule Inkfish.Factory do
 
     student = Inkfish.Users.get_user_by_email!("dave@example.com")
     student_reg = insert(:reg, course: course, user: student, is_student: true)
-    team = Inkfish.Teams.get_active_team(asgn, student_reg)
+    {:ok, team} = Inkfish.Teams.get_active_team(asgn, student_reg)
     sub = insert(:sub, assignment: asgn, reg: student_reg, team: team)
 
     grade =
@@ -218,6 +219,16 @@ defmodule Inkfish.Factory do
       sub_id: sub.id,
       dupkey: dupkey,
       prio: 1
+    }
+  end
+
+  def api_key_factory do
+    key = sequence(:key, &"api-key-#{&1}")
+
+    %ApiKey{
+      name: "Some API Key",
+      key: key,
+      user: build(:user)
     }
   end
 end

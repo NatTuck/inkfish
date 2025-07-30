@@ -1,5 +1,5 @@
 defmodule InkfishWeb.Admin.DockerTagController do
-  use InkfishWeb, :controller1
+  use InkfishWeb, :controller
 
   alias Inkfish.Sandbox.Containers
   alias Inkfish.DockerTags

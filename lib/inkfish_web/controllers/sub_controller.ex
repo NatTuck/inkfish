@@ -1,5 +1,5 @@
 defmodule InkfishWeb.SubController do
-  use InkfishWeb, :controller1
+  use InkfishWeb, :controller
 
   alias InkfishWeb.Plugs
 
@@ -41,10 +41,10 @@ defmodule InkfishWeb.SubController do
   def new(conn, _params) do
     asg = conn.assigns[:assignment]
     reg = conn.assigns[:current_reg]
-    team = Teams.get_active_team(asg, reg)
-    %{nonce: nonce, token: token} = upload_token(conn, "sub")
 
-    if team do
+    with {:ok, team} <- Teams.get_active_team(asg, reg) do
+      %{nonce: nonce, token: token} = upload_token(conn, "sub")
+
       changeset = Subs.change_sub(%Sub{})
 
       render(conn, "new.html",
@@ -54,16 +54,18 @@ defmodule InkfishWeb.SubController do
         token: token
       )
     else
-      conn
-      |> put_flash(:error, "You need a team to submit.")
-      |> redirect(to: Routes.assignment_path(conn, :show, asg))
+      _ ->
+        conn
+        |> put_flash(:error, "You need a team to submit.")
+        |> redirect(to: ~p"/assignments/#{asg}")
     end
   end
 
   def create(conn, %{"sub" => sub_params}) do
     asg = conn.assigns[:assignment]
     reg = conn.assigns[:current_reg]
-    team = Teams.get_active_team(asg, reg)
+
+    {:ok, team} = Teams.get_active_team(asg, reg)
 
     sub_params =
       sub_params
@@ -81,7 +83,7 @@ defmodule InkfishWeb.SubController do
 
         conn
         |> put_flash(:info, "Sub created successfully.")
-        |> redirect(to: Routes.sub_path(conn, :show, sub))
+        |> redirect(to: ~p"/subs/#{sub}")
 
       {:error, %Ecto.Changeset{} = changeset} ->
         # IO.inspect({:error, changeset})
@@ -102,12 +104,10 @@ defmodule InkfishWeb.SubController do
     sub = %{sub | team: Teams.get_team!(sub.team_id)}
 
     autogrades =
-      sub.grades
-      |> Enum.filter(&(!is_nil(&1.log_uuid)))
+      Subs.get_or_create_script_grades(sub)
       |> Enum.map(fn grade ->
         grade = %{grade | sub: sub}
         log = Grade.get_log(grade)
-        IO.inspect({:log, log})
         token = Phoenix.Token.sign(conn, "autograde", %{uuid: grade.log_uuid})
         {grade, token, log}
       end)
@@ -117,7 +117,7 @@ defmodule InkfishWeb.SubController do
 
   def files(conn, %{"id" => id}) do
     sub = Subs.get_sub!(id)
-    sub_data = InkfishWeb.SubView.render("sub.json", %{sub: sub})
+    sub_data = InkfishWeb.SubJSON.show(%{sub: sub})
     gcol = %{points: 0}
 
     data =
@@ -135,6 +135,6 @@ defmodule InkfishWeb.SubController do
 
     conn
     |> put_flash(:info, "Rerunning all grading scripts for sub")
-    |> redirect(to: Routes.staff_sub_path(conn, :show, sub))
+    |> redirect(to: ~p"/staff/subs/#{sub}")
   end
 end

@@ -1,0 +1,10 @@
+<h1>Show Grade: <%= @grade.grade_column.name %></h1>
+
+<div class="code-viewer">
+  <!-- assets/js/code-viewer -->
+  React code viewer loading...
+</div>
+
+<script>
+ window.code_view_data = <%= raw(Jason.encode!(@data)) %>;
+</script>

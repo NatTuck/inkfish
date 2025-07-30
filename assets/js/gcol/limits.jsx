@@ -52,10 +52,12 @@ function Limits({target}) {
 
 function init() {
   let root_div = document.getElementById('gcol-limits-root');
-  let root = ReactDOM.createRoot(root_div);
-  root.render(
-    <Limits target="gcol-limits" />
-  );
+  if (root_div) {
+    let root = ReactDOM.createRoot(root_div);
+    root.render(
+      <Limits target="gcol-limits" />
+    );
+  }
 }
 
 $(init);

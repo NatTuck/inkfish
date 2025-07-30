@@ -1,19 +1,19 @@
 <div class="row">
   <div class="col">
     <h1>Log In</h1>
-    <%= form_for @conn, Routes.session_path(@conn, :create), fn f -> %>
+    <.form for={@conn} action={~p"/session"} as={:user}>
       <div class="mb-3">
-        {label(f, :email, class: "form-label")}
-        {text_input(f, :email, class: "form-control")}
+        <.label for="email" class="form-label">Email</.label>
+        <input type="text" name="email" class="form-control" />
       </div>
 
       <div class="mb-3">
-        {label(f, :password, class: "form-label")}
-        {password_input(f, :password, class: "form-control")}
+        <.label for="password" class="form-label">Password</.label>
+        <input type="password" name="password" class="form-control" />
       </div>
 
-      {submit("Log In", class: "btn btn-primary")}
-    <% end %>
+      <.button class="btn btn-primary">Log In</.button>
+    </.form>
   </div>
 </div>
 
@@ -22,13 +22,13 @@
     <h1>Get a Password</h1>
     <p>Enter your email to create a new account or reset your password.</p>
 
-    <%= form_for @conn, ~p"/users/send_auth_email", fn f -> %>
+    <.form :let={f} for={@conn} action={~p"/users/send_auth_email"} as={:user}>
       <div class="mb-3">
-        {label(f, :email, class: "form-label")}
-        {text_input(f, :email, class: "form-control")}
+        <.label for="email" class="form-label">Email</.label>
+        <.text_input field={f[:email]} class="form-control" />
       </div>
 
-      {submit("Request", class: "btn btn-primary")}
-    <% end %>
+      <.button class="btn btn-primary">Request</.button>
+    </.form>
   </div>
 </div>

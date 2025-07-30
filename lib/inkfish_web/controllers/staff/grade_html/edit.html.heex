@@ -1,0 +1,25 @@
+<h1>Edit Grade</h1>
+
+<%= if @rubric do %>
+  <% path = ~p"/uploads/#{@rubric}?show=true" %>
+  <p>Rubric: <.link href={path} target="_blank"><%= @rubric.name %></.link></p>
+<% else %>
+  <p>Rubric: Not available.</p>
+<% end %>
+
+<div class="code-viewer">
+  <!-- assets/js/code-viewer -->
+  React code viewer loading...
+</div>
+
+<script>
+ window.code_view_data = <%= raw(Jason.encode!(@data)) %>;
+ window.upload_unpacked_base = (
+   "<%= ~p"/uploads/#{@sub.upload}/_meta/unpacked" %>"
+ );
+ <% id = "ID" %>
+ window.line_comment_paths = {
+   create: "<%= ~p"/ajax/staff/grades/#{@grade}/line_comments" %>",
+   update: "<%= ~p"/ajax/staff/line_comments/#{id}" %>",
+ };
+</script>

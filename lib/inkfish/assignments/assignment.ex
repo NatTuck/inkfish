@@ -31,6 +31,9 @@ defmodule Inkfish.Assignments.Assignment do
     timestamps()
   end
 
+  def parent, do: :bucket
+  def standard_preloads, do: [:starter_upload, :grade_columns]
+
   @doc false
   def changeset(assignment, attrs) do
     assignment

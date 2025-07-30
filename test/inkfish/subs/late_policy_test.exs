@@ -19,7 +19,8 @@ defmodule Inkfish.LatePolicyTest do
   def create_sub_and_grade(asgn) do
     sub_attrs = params_with_assocs(:sub, assignment: asgn)
     assert {:ok, %Sub{} = sub} = Subs.create_sub(sub_attrs)
-    sub = Subs.get_sub_path!(sub.id)
+    Inkfish.Repo.Cache.drop(Sub, sub.id)
+    {:ok, sub} = Inkfish.Repo.Cache.get(Sub, sub.id)
 
     gcol = hd(sub.assignment.grade_columns)
 

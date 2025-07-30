@@ -56,7 +56,7 @@ defmodule InkfishWeb.Staff.AssignmentController do
       {:ok, assignment} ->
         conn
         |> put_flash(:info, "Assignment created successfully.")
-        |> redirect(to: Routes.staff_assignment_path(conn, :show, assignment))
+        |> redirect(to: ~p"/staff/assignments/#{assignment}")
 
       {:error, %Ecto.Changeset{} = changeset} ->
         teamsets = Inkfish.Teams.list_teamsets(conn.assigns[:course])
@@ -105,7 +105,7 @@ defmodule InkfishWeb.Staff.AssignmentController do
       {:ok, assignment} ->
         conn
         |> put_flash(:info, "Assignment updated successfully.")
-        |> redirect(to: Routes.staff_assignment_path(conn, :show, assignment))
+        |> redirect(to: ~p"/staff/assignments/#{assignment}")
 
       {:error, %Ecto.Changeset{} = changeset} ->
         teamsets = Inkfish.Teams.list_teamsets(conn.assigns[:course])
@@ -131,7 +131,7 @@ defmodule InkfishWeb.Staff.AssignmentController do
     conn
     |> put_flash(:info, "Assignment deleted successfully.")
     |> redirect(
-      to: Routes.staff_course_path(conn, :show, conn.assigns[:course])
+      to: ~p"/staff/courses/#{conn.assigns[:course]}"
     )
   end
 
@@ -142,6 +142,6 @@ defmodule InkfishWeb.Staff.AssignmentController do
 
     conn
     |> put_flash(:info, "Fake submissions created")
-    |> redirect(to: Routes.staff_assignment_path(conn, :show, assignment))
+    |> redirect(to: ~p"/staff/assignments/#{assignment}")
   end
 end

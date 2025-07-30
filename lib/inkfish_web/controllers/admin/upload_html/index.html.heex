@@ -1,0 +1,9 @@
+<h1>Listing Uploads</h1>
+
+<.table id="uploads" rows={@uploads}>
+  <:col :let={upload} label="Name">
+    <.link href={~p"/uploads/#{upload.id}/#{upload.name}"}><%= upload.name %></.link>
+  </:col>
+  <:col :let={upload} label="Kind"><%= upload.kind %></:col>
+  <:col :let={upload} label="User"><%= user_display_name(upload.user) %></:col>
+</.table>

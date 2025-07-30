@@ -1,6 +1,8 @@
 defmodule Inkfish.Users.Reg do
   use Ecto.Schema
   import Ecto.Changeset
+  # Added for Ecto.Query
+  import Ecto.Query, warn: false
 
   @timestamps_opts [type: :utc_datetime]
 
@@ -20,6 +22,9 @@ defmodule Inkfish.Users.Reg do
 
     timestamps()
   end
+
+  def parent(), do: :course
+  def standard_preloads(), do: [:user]
 
   @doc false
   def changeset(reg, attrs) do

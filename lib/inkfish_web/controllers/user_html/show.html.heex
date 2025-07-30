@@ -1,29 +1,30 @@
-<h1>User Profile: {user_display_name(@user)}</h1>
+<h1>User Profile: <%= user_display_name(@user) %></h1>
 
 <%= if @current_user.is_admin || @current_user.id == @user.id do %>
   <p>
-    {link("Edit Profile", to: Routes.user_path(@conn, :edit, @user))}
+    <.link href={~p"/users/#{@user}/edit"}>Edit Profile</.link> |
+    <.link href={~p"/api_keys"}>API Keys</.link>
   </p>
 <% end %>
 
 <ul>
   <li>
     <strong>Name:</strong>
-    {@user.given_name} {@user.surname}
+    <%= @user.given_name %> <%= @user.surname %>
   </li>
 
   <li>
     <strong>Nickname:</strong>
-    {@user.nickname}
+    <%= @user.nickname %>
   </li>
 
   <li>
     <strong>Email:</strong>
-    {@user.email}
+    <%= @user.email %>
   </li>
 
   <li>
     <strong>Is admin:</strong>
-    {@user.is_admin}
+    <%= @user.is_admin %>
   </li>
 </ul>

@@ -1,0 +1,28 @@
+<h1>Show Course</h1>
+
+<p>
+  <.link href={~p"/admin/courses/#{@course}/edit"}>Edit</.link> |
+  <.link href={~p"/admin/courses"}>Back</.link>
+</p>
+
+<ul>
+  <li>
+    <strong>Name:</strong>
+    <%= @course.name %>
+  </li>
+
+  <li>
+    <strong>Start date:</strong>
+    <%= @course.start_date %>
+  </li>
+
+  <li>
+    <strong>Sections:</strong>
+    <%= @course.sections %>
+  </li>
+
+  <li>
+    <strong>Archived?</strong>
+    <%= show_bool(@course.archived) %>
+  </li>
+</ul>

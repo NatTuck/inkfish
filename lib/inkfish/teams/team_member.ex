@@ -11,6 +11,8 @@ defmodule Inkfish.Teams.TeamMember do
     timestamps()
   end
 
+  def parent(), do: :team
+
   @doc false
   def changeset(team_member, attrs) do
     team_member

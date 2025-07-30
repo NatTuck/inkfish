@@ -76,15 +76,6 @@ defmodule Inkfish.Teams do
     Repo.preload(ts, teams: :subs)
   end
 
-  def get_teamset_path!(id) do
-    Repo.one!(
-      from ts in Teamset,
-        where: ts.id == ^id,
-        inner_join: course in assoc(ts, :course),
-        preload: [course: course]
-    )
-  end
-
   def get_solo_teamset!(%Course{} = course) do
     get_teamset!(course.solo_teamset_id)
   end
@@ -138,6 +129,7 @@ defmodule Inkfish.Teams do
     teamset
     |> Teamset.changeset(attrs)
     |> Repo.update()
+    |> Repo.Cache.updated()
   end
 
   @doc """
@@ -154,6 +146,7 @@ defmodule Inkfish.Teams do
   """
   def delete_teamset(%Teamset{} = teamset) do
     Repo.delete(teamset)
+    |> Repo.Cache.updated()
   end
 
   @doc """
@@ -245,16 +238,6 @@ defmodule Inkfish.Teams do
     end
   end
 
-  def get_team_path!(id) do
-    Repo.one!(
-      from team in Team,
-        where: team.id == ^id,
-        inner_join: ts in assoc(team, :teamset),
-        inner_join: course in assoc(ts, :course),
-        preload: [teamset: {ts, course: course}]
-    )
-  end
-
   def get_active_team(%Assignment{} = asg, %Reg{} = reg) do
     asg = Repo.preload(asg, :teamset)
     get_active_team(asg.teamset, reg)
@@ -279,9 +262,9 @@ defmodule Inkfish.Teams do
       end
 
     if team1 do
-      get_team!(team1.id)
+      {:ok, get_team!(team1.id)}
     else
-      nil
+      {:error, :no_team}
     end
   end
 
@@ -332,6 +315,7 @@ defmodule Inkfish.Teams do
     team
     |> Team.changeset(attrs)
     |> Repo.update()
+    |> Repo.Cache.updated()
   end
 
   @doc """
@@ -348,6 +332,7 @@ defmodule Inkfish.Teams do
   """
   def delete_team(%Team{} = team) do
     Repo.delete(team)
+    |> Repo.Cache.updated()
   end
 
   @doc """
@@ -426,6 +411,7 @@ defmodule Inkfish.Teams do
     team_member
     |> TeamMember.changeset(attrs)
     |> Repo.update()
+    |> Repo.Cache.updated()
   end
 
   @doc """
@@ -442,6 +428,7 @@ defmodule Inkfish.Teams do
   """
   def delete_team_member(%TeamMember{} = team_member) do
     Repo.delete(team_member)
+    |> Repo.Cache.updated()
   end
 
   @doc """

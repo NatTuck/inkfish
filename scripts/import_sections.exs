@@ -5,7 +5,7 @@ defmodule Import do
 
   def set_user_section(course, email, sec) do
     user = Users.get_user_by_email!(email)
-    reg = Users.find_reg(user, course)
+    {:ok, reg} = Users.find_reg(user, course)
 
     {:ok, _} = Users.update_reg(reg, %{"section" => sec})
 

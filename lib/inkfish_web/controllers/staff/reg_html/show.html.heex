@@ -1,0 +1,82 @@
+<h1>Show Reg</h1>
+
+<p>
+  <.link href={~p"/staff/regs/#{@reg}/edit"}>Edit</.link>
+</p>
+
+<ul>
+  <li>
+    <strong>Name:</strong>
+    <%= user_display_name(@reg.user) %>
+  </li>
+
+  <li>
+    <strong>Email:</strong>
+    <%= @reg.user.email %>
+  </li>
+
+  <li>
+    <strong>Section:</strong>
+    <%= @reg.section %>
+  </li>
+
+  <li>
+    <strong>Is grader:</strong>
+    <%= @reg.is_grader %>
+  </li>
+
+  <li>
+    <strong>Is prof:</strong>
+    <%= @reg.is_prof %>
+  </li>
+
+  <li>
+    <strong>Is staff:</strong>
+    <%= @reg.is_staff %>
+  </li>
+
+  <li>
+    <strong>Is student:</strong>
+    <%= @reg.is_student %>
+  </li>
+</ul>
+
+<h2>Submissions</h2>
+
+<%= for bucket <- @course.buckets do %>
+  <h3><%= bucket.name %></h3>
+
+  <table class="table table-striped">
+    <thead>
+      <th>Active?</th>
+      <th>Timestamp</th>
+      <th>Score</th>
+      <th>Actions</th>
+    </thead>
+    <tbody>
+      <%= for as <- bucket.assignments do %>
+        <tr class="table-secondary">
+          <td>&nbsp;</td>
+          <td colspan="3"><strong><%= as.name %></strong></td>
+        </tr>
+
+        <%= for sub <- Enum.reverse((@subs[as.id] || [])) do %>
+          <tr>
+            <td><%= if sub.active, do: "✓" %></td>
+            <td><.link href={~p"/staff/subs/#{sub}"}><%= sub.inserted_at %></.link></td>
+            <td><%= sub.score || "∅" %> / <%= assignment_total_points(as) %></td>
+            <td>
+              <%= unless sub.active do %>
+                <% cset = Inkfish.Subs.change_sub(%{sub | active: true}) %>
+                <.form :let={f} for={cset} action={~p"/staff/subs/#{sub}"}>
+                  <.hidden_input field={f[:active]} />
+                  <.button class="btn btn-secondary">Set Active</.button>
+                </.form>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>
