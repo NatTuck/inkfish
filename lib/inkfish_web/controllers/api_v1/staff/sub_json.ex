@@ -29,7 +29,9 @@ defmodule InkfishWeb.ApiV1.Staff.SubJSON do
       score: sub.score,
       hours_spent: sub.hours_spent,
       note: sub.note,
-      ignore_late_penalty: sub.ignore_late_penalty
+      ignore_late_penalty: sub.ignore_late_penalty,
+      upload: Inkfish.Uploads.Upload.upload_url(sub.upload),
+      reg: InkfishWeb.Staff.RegJSON.data(sub.reg)
     }
   end
 end

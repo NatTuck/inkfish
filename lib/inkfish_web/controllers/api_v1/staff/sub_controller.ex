@@ -23,7 +23,7 @@ defmodule InkfishWeb.ApiV1.Staff.SubController do
       {:ok, asg_id_param} when is_binary(asg_id_param) and asg_id_param != "" ->
         asg_id = String.to_integer(asg_id_param)
         page = Map.get(params, "page", "0") |> String.to_integer()
-        subs = Subs.list_subs_for_api(asg_id, nil, page)
+        subs = Subs.list_subs_for_staff_api(asg_id, page)
 
         conn
         |> put_view(InkfishWeb.ApiV1.Staff.SubJSON)

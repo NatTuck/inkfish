@@ -28,6 +28,7 @@ defmodule InkfishWeb.Router do
 
   pipeline :api do
     plug(:accepts, ["json"])
+    plug(Plugs.Assign, client_mode: :api)
   end
 
   scope "/", InkfishWeb do
@@ -191,6 +192,9 @@ defmodule InkfishWeb.Router do
     pipe_through :api
 
     resources "/subs", SubController, only: [:index, :show]
+
+    resources "/grades", GradeController,
+      only: [:index, :show, :create, :delete]
   end
 
   if Mix.env() in [:dev, :test] do
