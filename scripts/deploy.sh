@@ -1,10 +1,10 @@
 #!/bin/bash
 
 if [[ -e ~/.asdf/asdf.sh ]]; then
-    .  ~/.asdf/asdf.sh
+    . ~/.asdf/asdf.sh
 fi
 if [[ -e .cargo/env ]]; then
-    .  ~/.cargo/env
+    . ~/.cargo/env
 fi
 
 export MIX_ENV=prod
@@ -23,10 +23,10 @@ mix deps.get
 mix compile
 mix ecto.migrate
 
-export NODEBIN=`pwd`/assets/node_modules/.bin
+export NODEBIN=$(pwd)/assets/node_modules/.bin
 export PATH="$PATH:$NODEBIN"
 
-(cd assets && npm install)
+(cd assets && pnpm install)
 #(cd assets && webpack --mode production)
 #mix phx.digest
 mix assets.deploy

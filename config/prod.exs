@@ -20,12 +20,6 @@ config :inkfish, Inkfish.Users.User,
 config :inkfish, download_host: "https://inkfish.homework.quest"
 config :inkfish, :env, :prod
 
-config :inkfish, Inkfish.Mailer,
-  adapter: Swoosh.Adapters.Sendmail,
-  cmd_path: "/usr/sbin/sendmail",
-  cmd_args: "",
-  send_from: {"Inkfish", "no-reply@homework.quest"}
-
 # Do not print debug messages in production
 config :logger, level: :info
 
