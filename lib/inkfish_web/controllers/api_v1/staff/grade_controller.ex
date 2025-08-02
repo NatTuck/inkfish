@@ -39,7 +39,7 @@ defmodule InkfishWeb.ApiV1.Staff.GradeController do
            Grades.put_grade_with_comments(grade_params, user) do
       conn
       |> put_status(:created)
-      |> put_resp_header("location", ~p"/api/api_v1/staff/grades/#{grade}")
+      |> put_resp_header("location", ~p"/api/v1/staff/grades/#{grade}")
       |> render(:show, grade: grade)
     end
   end
