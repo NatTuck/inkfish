@@ -16,13 +16,13 @@ defmodule InkfishWeb.ApiV1.Staff.GradeControllerTest do
       sub = stock.sub
       grade = stock.grade
       
-      conn = get(conn, ~p"/api/api_v1/staff/grades?sub_id=#{sub.id}")
+      conn = get(conn, ~p"/api/v1/staff/grades?sub_id=#{sub.id}")
       assert [%{"id" => fetched_id}] = json_response(conn, 200)["data"]
       assert fetched_id == grade.id
     end
 
     test "fails when sub_id is missing", %{conn: conn} do
-      conn = get(conn, ~p"/api/api_v1/staff/grades")
+      conn = get(conn, ~p"/api/v1/staff/grades")
       assert json_response(conn, 400)
     end
   end
@@ -62,11 +62,11 @@ defmodule InkfishWeb.ApiV1.Staff.GradeControllerTest do
         line_comments: line_comments
       }
       
-      conn = post(conn, ~p"/api/api_v1/staff/grades", grade: create_attrs)
+      conn = post(conn, ~p"/api/v1/staff/grades", grade: create_attrs)
       assert %{"id" => id} = json_response(conn, 201)["data"]
       
       # Check that grade was created with correct score
-      conn = get(conn, ~p"/api/api_v1/staff/grades/#{id}")
+      conn = get(conn, ~p"/api/v1/staff/grades/#{id}")
       response_data = json_response(conn, 200)["data"]
       
       assert %{
@@ -149,7 +149,7 @@ defmodule InkfishWeb.ApiV1.Staff.GradeControllerTest do
         line_comments: new_line_comments
       }
       
-      conn = post(conn, ~p"/api/api_v1/staff/grades", grade: update_attrs)
+      conn = post(conn, ~p"/api/v1/staff/grades", grade: update_attrs)
       response_data = json_response(conn, 201)["data"]
       
       # Check that grade was updated with correct score
@@ -202,11 +202,11 @@ defmodule InkfishWeb.ApiV1.Staff.GradeControllerTest do
       stock = stock_course()
       grade = stock.grade
       
-      conn = delete(conn, ~p"/api/api_v1/staff/grades/#{grade}")
+      conn = delete(conn, ~p"/api/v1/staff/grades/#{grade}")
       assert response(conn, 204)
 
       assert_error_sent 404, fn ->
-        get(conn, ~p"/api/api_v1/staff/grades/#{grade}")
+        get(conn, ~p"/api/v1/staff/grades/#{grade}")
       end
     end
   end
