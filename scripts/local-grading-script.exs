@@ -2,13 +2,21 @@ defmodule LocalGrading do
   alias ExOpenAI.Components.ChatCompletionRequestSystemMessage, as: SystemMsg
   alias ExOpenAI.Components.ChatCompletionRequestUserMessage, as: UserMsg
   #alias ExOpenAI.Components.ChatCompletionRequestAssistantMessage, as: AstMsg
+  
+  def api_base() do
+    "http://localhost:4000/api/v1"
+  end
 
-  def run() do
-    hdrs = [
+  def auth_hdrs() do
+    [ 
       {"x-auth", "A271A2AB73869927D323BF74E03DF6DC"}
     ]
+  end
 
-    resp = Req.get!("http://localhost:4000/api/v1/staff/subs?assignment_id=22", headers: hdrs)
+  def run() do
+
+    url = api_base() <> "/staff/subs?assignment_id=22"
+    resp = Req.get!(url, headers: auth_hdrs())
     
     sub = hd(resp.body["data"])
     task = Task.async(fn -> grade_sub(sub) end)
@@ -27,7 +35,24 @@ defmodule LocalGrading do
 
     IO.puts(text)
 
-    request_llm_feedback(text)
+    # comments = request_llm_feedback(text)
+    comments = [
+      %{
+        "line" => 9,
+        "path" => "starter-lab06/src/main/java/lab06/App.java",
+        "text" => "Main method is here.",
+        "points" => "0",
+      }
+    ]
+
+    post_data = %{
+      "sub_id" => sub["id"],
+      "grade" => %{
+        "line_comments" => comments,         
+      }
+    }
+
+    Req.post!(api_base() <> "/staff/grades", headers: auth_hdrs(), json: post_data)
   end
 
   def flatten_for_llm(files) do
@@ -69,7 +94,8 @@ defmodule LocalGrading do
     
     ```json
     [
-      {"path": "/path/and/file", "line": 99, "comment": "Main method is here."}
+      {"line": 99, "path": "/path/and/file", points: "0",
+       "text": "Main method is here."}
     ]
     ```
     """

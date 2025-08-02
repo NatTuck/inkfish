@@ -4,6 +4,7 @@ defmodule InkfishWeb.ApiV1.Staff.GradeController do
   alias Inkfish.Grades
   alias Inkfish.Grades.Grade
   alias Inkfish.Subs
+  alias Inkfish.Subs.Sub
 
   action_fallback InkfishWeb.FallbackController
 
@@ -30,15 +31,35 @@ defmodule InkfishWeb.ApiV1.Staff.GradeController do
     user = conn.assigns[:current_user]
     sub = conn.assigns[:sub]
 
-    grade_params =
-      grade_params
-      |> Map.put("sub_id", sub.id)
+    IO.inspect({:sub, sub})
+    IO.inspect({:params, grade_params})
 
-    with {:ok, grade} = Grades.put_grade_with_comments(grade_params, user) do
+    with {:ok, gcol} <- get_feedback_gcol(sub),
+         params <- put_sub_and_gcol(grade_params, sub.id, gcol.id),
+         {:ok, grade} <- Grades.put_grade_with_comments(params, user) do
       conn
       |> put_status(:created)
       |> put_resp_header("location", ~p"/api/v1/staff/grades/#{grade}")
       |> render(:show, grade: grade)
+    end
+  end
+
+  defp put_sub_and_gcol(params, sub_id, gcol_id) do
+    params
+    |> Map.put("sub_id", sub_id)
+    |> Map.put("grade_column_id", gcol_id)
+  end
+
+  defp get_feedback_gcol(%Sub{} = sub) do
+    gcol =
+      Enum.find(sub.assignment.grade_columns, fn gc ->
+        gc.kind == "feedback"
+      end)
+
+    if gcol do
+      {:ok, gcol}
+    else
+      {:error, "No feedback grade column"}
     end
   end
 
