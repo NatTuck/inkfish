@@ -1,0 +1,49 @@
+<h1>Listing Join Requests</h1>
+
+<p>Course: <%= @course.name %></p>
+
+<p>
+  <.link
+    href={~p"/staff/courses/#{@course}/join_reqs/accept_all"}
+    method="post"
+    class="btn btn-primary">
+    Accept All Students
+  </.link>
+</p>
+
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>User</th>
+      <th>Note</th>
+      <th>Staff req</th>
+
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+<%= for join_req <- @join_reqs do %>
+    <tr class={if join_req.staff_req, do: "table-warning"}>
+      <td><%= user_display_name(join_req.user) %></td>
+      <td><%= join_req.note %></td>
+      <td><%= join_req.staff_req %></td>
+
+      <td>
+        <.link
+          href={~p"/staff/join_reqs/#{join_req}/accept"}
+          method="post"
+          class="btn btn-info btn-sm">
+          Accept
+        </.link>
+        <.link
+          href={~p"/staff/join_reqs/#{join_req}"}
+          method="delete"
+          data-confirm="Are you sure?"
+          class="btn btn-danger btn-sm">
+          Delete
+        </.link>
+      </td>
+    </tr>
+<% end %>
+  </tbody>
+</table>

@@ -1,0 +1,25 @@
+<h1>Admin: Listing Users</h1>
+
+<.table id="users" rows={@users}>
+  <:col :let={user} label="Email"><%= user.email %></:col>
+  <:col :let={user} label="Given name"><%= user.given_name %></:col>
+  <:col :let={user} label="Surname"><%= user.surname %></:col>
+  <:col :let={user} label="Nickname"><%= user.nickname %></:col>
+  <:col :let={user} label="Is admin"><%= user.is_admin %></:col>
+  <:action :let={user}>
+    <.link href={~p"/admin/users/#{user}"}>Show</.link>
+  </:action>
+  <:action :let={user}>
+    <.link href={~p"/admin/users/#{user}/edit"}>Edit</.link>
+  </:action>
+  <:action :let={user}>
+    <.link href={~p"/admin/users/#{user}"} method="delete" data-confirm="Are you sure?">
+      Delete
+    </.link>
+  </:action>
+  <:action :let={user}>
+    <.link href={~p"/admin/users/#{user}/impersonate"} method="post">
+      Impersonate
+    </.link>
+  </:action>
+</.table>

@@ -13,6 +13,8 @@ defmodule Inkfish.Courses.Bucket do
     timestamps()
   end
 
+  def parent(), do: :course
+
   @doc false
   def changeset(bucket, attrs) do
     bucket

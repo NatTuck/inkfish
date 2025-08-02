@@ -19,10 +19,19 @@ defmodule Inkfish.Grades.Grade do
     timestamps()
   end
 
+  def parent(), do: :sub
+  def standard_preloads(), do: [:grade_column]
+
   @doc false
   def changeset(grade, attrs) do
     grade
     |> cast(attrs, [:grade_column_id, :sub_id, :score, :log_uuid])
+    |> validate_required([:grade_column_id, :sub_id])
+  end
+
+  def api_changeset(grade, attrs) do
+    grade
+    |> cast(attrs, [:grade_column_id, :sub_id])
     |> validate_required([:grade_column_id, :sub_id])
   end
 

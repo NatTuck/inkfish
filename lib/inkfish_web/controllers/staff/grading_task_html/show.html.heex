@@ -1,0 +1,90 @@
+<h1>Grading Tasks</h1>
+
+<p>Grading Tasks for <%= @assignment.name %></p>
+
+<h2>Your Tasks</h2>
+
+<p># of subs: <%= length(@user_tasks) %></p>
+
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>Student</th>
+      <th>Column</th>
+      <th>Points</th>
+      <th>Action</th>
+    </tr>
+  </thead>
+  <tbody>
+    <%= for sub <- @user_tasks do %>
+      <% grade = Enum.find(sub.grades, &(&1.grade_column.kind == "feedback")) %>
+      <% gcol = Enum.find(sub.assignment.grade_columns, &(&1.kind == "feedback")) %>
+      <tr>
+        <td><%= user_display_name(sub.reg.user) %></td>
+        <td><%= gcol.name %></td>
+        <td><%= show_score(@conn, grade) %> / <%= show_score(@conn, gcol) %></td>
+        <td>
+          <%= if grade do %>
+            <.link
+              href={~p"/staff/grades/#{grade}/edit"}
+              target="_blank">
+              Edit
+            </.link>
+          <% else %>
+            <% grade = %Inkfish.Grades.Grade{
+              grade_column_id: gcol.id, sub_id: sub.id
+            } %>
+            <% cset = Inkfish.Grades.change_grade(grade) %>
+            <% action = ~p"/staff/subs/#{sub}/grades" %>
+            <.form :let={f} for={cset} action={action}>
+              <.hidden_input field={f[:sub_id]} />
+              <.hidden_input field={f[:grade_column_id]} />
+              <.button class="btn btn-secondary btn-sm">Create</.button>
+            </.form>
+          <% end %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+
+<h2>All Manual Grading</h2>
+
+<% path = ~p"/staff/assignments/#{@assignment}/grading_tasks/edit" %>
+<p><.link href={path}>Edit Grading Tasks</.link></p>
+
+<% action = ~p"/staff/assignments/#{@assignment}/grading_tasks" %>
+<.form :let={_f} for={@conn} action={action}>
+  <p><.button class="btn btn-primary">Assign All Unassigned Tasks</.button></p>
+</.form>
+
+<p># of subs: <%= length(@tasks) %></p>
+
+<p>Active graders: <%= Enum.map(@graders, &(user_display_name(&1))) |> Enum.join(", ") %>
+</p>
+
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Points</th>
+      <th>Grader</th>
+    </tr>
+  </thead>
+  <tbody>
+    <%= for sub <- @tasks do %>
+      <% grade = Enum.find(sub.grades, &(&1.grade_column.kind == "feedback")) %>
+      <% gcol = Enum.find(sub.assignment.grade_columns, &(&1.kind == "feedback")) %>
+      <tr>
+        <td><%= user_display_name(sub.reg.user) %></td>
+        <td>
+          <%= show_score(@conn, grade) %>
+          /
+          <%= show_score(@conn, gcol) %>
+        </td>
+        <td><%= user_display_name(sub.grader) %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

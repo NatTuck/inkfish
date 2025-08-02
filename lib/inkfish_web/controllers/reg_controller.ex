@@ -27,7 +27,7 @@ defmodule InkfishWeb.RegController do
     else
       conn
       |> put_flash(:error, "Access denied.")
-      |> redirect(to: Routes.page_path(conn, :index))
+      |> redirect(to: ~p"/")
       |> halt
     end
   end

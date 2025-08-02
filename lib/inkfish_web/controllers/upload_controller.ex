@@ -30,7 +30,7 @@ defmodule InkfishWeb.UploadController do
       {:browser, {:ok, upload}} ->
         conn
         |> put_flash(:info, "Upload created successfully.")
-        |> redirect(to: Routes.admin_upload_path(conn, :show, upload))
+        |> redirect(to: ~p"/uploads/#{upload}")
 
       {:browser, {:error, %Ecto.Changeset{} = changeset}} ->
         render(conn, "new.html", changeset: changeset)
@@ -40,7 +40,7 @@ defmodule InkfishWeb.UploadController do
           status: "created",
           kind: upload.kind,
           name: upload.name,
-          path: Routes.upload_path(conn, :show, upload),
+          path: ~p"/uploads/#{upload}",
           size: upload.size,
           id: upload.id
         }
@@ -103,7 +103,7 @@ defmodule InkfishWeb.UploadController do
       |> send_resp(200, File.read!(path))
     else
       conn
-      |> redirect(to: Routes.upload_path(conn, :download, upload, upload.name))
+      |> redirect(to: ~p"/uploads/#{upload}/#{upload.name}")
     end
   end
 

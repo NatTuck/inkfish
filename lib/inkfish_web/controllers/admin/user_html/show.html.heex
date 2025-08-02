@@ -1,0 +1,50 @@
+<h1>Show User</h1>
+
+<p>
+  <.link href={~p"/admin/users/#{@user}/edit"}>Edit User</.link>
+</p>
+
+<ul>
+  <li>
+    <strong>Email:</strong>
+    <%= @user.email %>
+  </li>
+
+  <li>
+    <strong>Given name:</strong>
+    <%= @user.given_name %>
+  </li>
+
+  <li>
+    <strong>Surname:</strong>
+    <%= @user.surname %>
+  </li>
+
+  <li>
+    <strong>Nickname:</strong>
+    <%= @user.nickname %>
+  </li>
+
+  <li>
+    <strong>Is admin:</strong>
+    <%= @user.is_admin %>
+  </li>
+
+  <li>
+    <strong>Photo Upload ID:</strong>
+    <%= @user.photo_upload_id %>
+  </li>
+</ul>
+
+<h2>Photo</h2>
+
+<p>
+  <%= if @user.photo_upload_id && @user.photo_upload do %>
+    <img
+      src={~p"/uploads/#{@user.photo_upload.id}/#{@user.photo_upload.name}"}
+      class="user-photo-full"
+    />
+  <% else %>
+    <img src={~p"/images/red_squid.jpg"} class="user-photo-full" />
+  <% end %>
+</p>

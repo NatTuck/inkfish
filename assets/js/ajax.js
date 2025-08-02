@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 import { readAsArrayBuffer } from 'promise-file-reader';
 
@@ -12,7 +11,7 @@ export async function get(path) {
       'accept': 'application/json',
     }),
   });
-  return resp.json;
+  return resp.json();
 }
 
 export async function mutate(method, path, body) {

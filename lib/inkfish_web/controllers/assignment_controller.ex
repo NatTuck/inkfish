@@ -3,9 +3,7 @@ defmodule InkfishWeb.AssignmentController do
 
   alias InkfishWeb.Plugs
 
-  plug Plugs.FetchItem,
-       [assignment: "id"]
-       when action not in [:index, :new, :create]
+  plug Plugs.FetchItem, assignment: "id"
 
   plug Plugs.RequireReg
 
@@ -19,7 +17,13 @@ defmodule InkfishWeb.AssignmentController do
     reg = conn.assigns[:current_reg]
     asg = conn.assigns[:assignment]
     subs = Assignments.list_subs_for_reg(id, reg)
-    team = Teams.get_active_team(asg, reg)
+
+    team =
+      case Teams.get_active_team(asg, reg) do
+        {:ok, team} -> team
+        _ -> nil
+      end
+
     render(conn, "show.html", subs: subs, team: team)
   end
 end

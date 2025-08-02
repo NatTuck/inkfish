@@ -46,7 +46,7 @@ defmodule InkfishWeb.Staff.CourseController do
       {:ok, course} ->
         conn
         |> put_flash(:info, "Course updated successfully.")
-        |> redirect(to: Routes.staff_course_path(conn, :show, course))
+        |> redirect(to: ~p"/staff/courses/#{course}")
 
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, "edit.html", course: course, changeset: changeset)

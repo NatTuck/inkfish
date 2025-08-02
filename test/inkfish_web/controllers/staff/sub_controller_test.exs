@@ -10,7 +10,7 @@ defmodule InkfishWeb.Staff.SubControllerTest do
 
   describe "show sub" do
     test "shows a sub", %{conn: conn, sub: sub} do
-      conn = get(conn, Routes.staff_sub_path(conn, :show, sub))
+      conn = get(conn, ~p"/staff/subs/#{sub}")
       assert html_response(conn, 200) =~ "Show Sub"
     end
   end
@@ -18,10 +18,10 @@ defmodule InkfishWeb.Staff.SubControllerTest do
   describe "update sub" do
     test "redirects when data is valid", %{conn: conn, sub: sub} do
       params = %{ignore_late_penalty: true}
-      conn = put(conn, Routes.staff_sub_path(conn, :update, sub), sub: params)
-      assert redirected_to(conn) == Routes.staff_sub_path(conn, :show, sub)
+      conn = put(conn, ~p"/staff/subs/#{sub}", sub: params)
+      assert redirected_to(conn) == ~p"/staff/subs/#{sub}"
 
-      conn = get(conn, Routes.staff_sub_path(conn, :show, sub))
+      conn = get(conn, ~p"/staff/subs/#{sub}")
       assert html_response(conn, 200)
     end
   end

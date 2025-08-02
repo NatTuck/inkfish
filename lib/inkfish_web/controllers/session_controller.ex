@@ -10,11 +10,11 @@ defmodule InkfishWeb.SessionController do
       conn
       |> put_session(:user_id, user.id)
       |> put_flash(:info, "Logged in as #{user.email}")
-      |> redirect(to: Routes.page_path(conn, :dashboard))
+      |> redirect(to: ~p"/dashboard")
     else
       conn
       |> put_flash(:error, "Login failed.")
-      |> redirect(to: Routes.page_path(conn, :index))
+      |> redirect(to: ~p"/")
     end
   end
 
@@ -22,7 +22,7 @@ defmodule InkfishWeb.SessionController do
     conn
     |> delete_session(:user_id)
     |> put_flash(:info, "Logged out.")
-    |> redirect(to: Routes.page_path(conn, :index))
+    |> redirect(to: ~p"/")
   end
 
   def resume(conn, _params) do
@@ -32,6 +32,6 @@ defmodule InkfishWeb.SessionController do
     |> delete_session(:real_uid)
     |> put_session(:user_id, user.id)
     |> put_flash(:info, "No longer impersonating anyone.")
-    |> redirect(to: Routes.page_path(conn, :index))
+    |> redirect(to: ~p"/")
   end
 end

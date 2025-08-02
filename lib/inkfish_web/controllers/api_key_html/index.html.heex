@@ -1,0 +1,21 @@
+<.header>
+  Listing API Keys
+  <:subtitle>
+    <p>Obviously don't share your API keys.</p>
+  </:subtitle>
+  <:actions>
+    <.link href={~p"/api_keys/new"}>
+      <.button>New API Key</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.table id="api_keys" rows={@api_keys}>
+  <:col :let={api_key} label="Name">{api_key.name}</:col>
+  <:col :let={api_key} label="Key">{api_key.key}</:col>
+  <:action :let={api_key}>
+    <.link href={~p"/api_keys/#{api_key}"} method="delete" data-confirm="Are you sure?">
+      Delete
+    </.link>
+  </:action>
+</.table>

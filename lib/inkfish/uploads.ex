@@ -118,6 +118,7 @@ defmodule Inkfish.Uploads do
     upload
     |> Upload.changeset(attrs)
     |> Repo.update()
+    |> Repo.Cache.updated()
   end
 
   @doc """
@@ -145,6 +146,7 @@ defmodule Inkfish.Uploads do
       end
 
       Repo.delete(upload)
+      |> Repo.Cache.updated()
     end
   end
 

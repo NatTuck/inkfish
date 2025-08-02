@@ -23,7 +23,10 @@ defmodule Inkfish.Application do
       Inkfish.Itty.Sup,
 
       # Autograding Jobs
-      Inkfish.AgJobs.Server
+      Inkfish.AgJobs.Server,
+
+      # Path Cache
+      Inkfish.Repo.Cache
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

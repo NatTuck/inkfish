@@ -9,14 +9,33 @@ defmodule InkfishWeb.FallbackController do
   def call(conn, {:error, %Ecto.Changeset{} = changeset}) do
     conn
     |> put_status(:unprocessable_entity)
-    |> put_view(InkfishWeb.ChangesetView)
-    |> render("error.json", changeset: changeset)
+    # Use put_view
+    |> put_view(InkfishWeb.ChangesetJSON)
+    # Use render/2
+    |> render(:error, changeset: changeset)
   end
 
   def call(conn, {:error, :not_found}) do
     conn
     |> put_status(:not_found)
-    |> put_view(InkfishWeb.ErrorView)
-    |> render(:"404")
+    # Use put_view
+    |> put_view(InkfishWeb.ErrorJSON)
+    # Use render/2
+    |> render(:not_found)
+  end
+
+  # Handle ArgumentError (e.g., from String.to_integer for invalid IDs)
+  def call(conn, {:error, %ArgumentError{message: message}}) do
+    conn
+    |> put_status(:bad_request)
+    |> put_view(InkfishWeb.ErrorJSON)
+    |> render(:error, message: message)
+  end
+
+  def call(conn, :error) do
+    conn
+    |> put_status(:bad_request)
+    |> put_view(InkfishWeb.ErrorJSON)
+    |> render(:error, message: "Bad request")
   end
 end

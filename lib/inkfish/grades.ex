@@ -7,6 +7,9 @@ defmodule Inkfish.Grades do
   alias Inkfish.Repo
 
   alias Inkfish.Grades.GradeColumn
+  alias Inkfish.Users.User
+  alias Inkfish.Grades.Grade
+  alias Inkfish.LineComments.LineComment
 
   @doc """
   Returns the list of grade_columns.
@@ -41,18 +44,6 @@ defmodule Inkfish.Grades do
         where: gr.id == ^id,
         left_join: upload in assoc(gr, :upload),
         preload: [upload: upload]
-      )
-    )
-  end
-
-  def get_grade_column_path!(id) do
-    Repo.one!(
-      from(gr in GradeColumn,
-        where: gr.id == ^id,
-        inner_join: as in assoc(gr, :assignment),
-        inner_join: bucket in assoc(as, :bucket),
-        inner_join: course in assoc(bucket, :course),
-        preload: [assignment: {as, bucket: {bucket, course: course}}]
       )
     )
   end
@@ -105,6 +96,7 @@ defmodule Inkfish.Grades do
     grade_column
     |> GradeColumn.changeset(attrs)
     |> Repo.update()
+    |> Repo.Cache.updated()
     |> gc_update_assignment_points()
   end
 
@@ -122,6 +114,7 @@ defmodule Inkfish.Grades do
   """
   def delete_grade_column(%GradeColumn{} = grade_column) do
     Repo.delete(grade_column)
+    |> Repo.Cache.updated()
     |> gc_update_assignment_points()
   end
 
@@ -192,29 +185,6 @@ defmodule Inkfish.Grades do
     )
   end
 
-  def get_grade_path!(id) do
-    Repo.one!(
-      from(grade in Grade,
-        where: grade.id == ^id,
-        inner_join: sub in assoc(grade, :sub),
-        inner_join: team in assoc(sub, :team),
-        left_join: regs in assoc(team, :regs),
-        left_join: user in assoc(regs, :user),
-        inner_join: as in assoc(sub, :assignment),
-        inner_join: bucket in assoc(as, :bucket),
-        inner_join: course in assoc(bucket, :course),
-        inner_join: gc in assoc(grade, :grade_column),
-        preload: [
-          sub:
-            {sub,
-             assignment: {as, bucket: {bucket, course: course}},
-             team: {team, regs: {regs, user: user}}},
-          grade_column: gc
-        ]
-      )
-    )
-  end
-
   def get_grade_for_autograding!(id) do
     Repo.one!(
       from(grade in Grade,
@@ -272,6 +242,56 @@ defmodule Inkfish.Grades do
     )
   end
 
+  def put_grade_with_comments(attrs, %User{} = grader) do
+    attrs = with_string_keys(attrs)
+
+    Repo.transact(fn ->
+      result =
+        %Grade{}
+        |> Grade.api_changeset(attrs)
+        |> Repo.insert(
+          on_conflict: {:replace, [:updated_at]},
+          conflict_target: [:sub_id, :grade_column_id],
+          returning: true
+        )
+
+      with {:ok, grade} <- result,
+           {:ok, _lcs} <- put_comments(grade, attrs["line_comments"], grader) do
+        update_feedback_score(grade.id)
+      end
+    end)
+  end
+
+  defp with_string_keys(mm) do
+    mm
+    |> Enum.map(fn {kk, vv} ->
+      {to_string(kk), vv}
+    end)
+    |> Enum.into(%{})
+  end
+
+  def put_comments(%Grade{} = grade, comments, %User{} = grader) do
+    delete_comments_for_user(grade, grader)
+
+    OK.map_all(comments, fn lc ->
+      lc =
+        lc
+        |> Map.put("grade_id", grade.id)
+        |> Map.put("user_id", grader.id)
+
+      %LineComment{}
+      |> LineComment.changeset(lc)
+      |> Repo.insert()
+    end)
+  end
+
+  def delete_comments_for_user(%Grade{} = grade, %User{} = user) do
+    Repo.delete_all(
+      from lc in LineComment,
+        where: lc.grade_id == ^grade.id and lc.user_id == ^user.id
+    )
+  end
+
   def create_null_grade(sub_id, grade_column_id) do
     attrs = %{
       sub_id: sub_id,
@@ -310,6 +330,7 @@ defmodule Inkfish.Grades do
     grade
     |> Grade.changeset(attrs)
     |> Repo.update()
+    |> Repo.Cache.updated()
   end
 
   @doc """
@@ -327,7 +348,9 @@ defmodule Inkfish.Grades do
   def delete_grade(%Grade{} = grade) do
     grade = preload_sub_and_upload(grade)
     Grade.delete_log(grade)
+
     Repo.delete(grade)
+    |> Repo.Cache.updated()
   end
 
   @doc """

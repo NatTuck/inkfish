@@ -30,13 +30,13 @@ defmodule InkfishWeb.LineCommentControllerTest do
       conn =
         conn
         |> login(staff)
-        |> post(Routes.ajax_staff_grade_line_comment_path(conn, :create, grade),
+        |> post(~p"/ajax/staff/grades/#{grade}/line_comments",
           line_comment: params
         )
 
       assert %{"id" => id} = json_response(conn, 201)["data"]
 
-      conn = get(conn, Routes.ajax_staff_line_comment_path(conn, :show, id))
+      conn = get(conn, ~p"/ajax/staff/line_comments/#{id}")
 
       assert %{
                "id" => ^id,
@@ -56,7 +56,7 @@ defmodule InkfishWeb.LineCommentControllerTest do
       conn =
         conn
         |> login(staff)
-        |> post(Routes.ajax_staff_grade_line_comment_path(conn, :create, grade),
+        |> post(~p"/ajax/staff/grades/#{grade}/line_comments",
           line_comment: params
         )
 
@@ -75,13 +75,13 @@ defmodule InkfishWeb.LineCommentControllerTest do
       conn =
         conn
         |> login(staff)
-        |> put(Routes.ajax_staff_line_comment_path(conn, :update, line_comment),
+        |> put(~p"/ajax/staff/line_comments/#{line_comment}",
           line_comment: params
         )
 
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
 
-      conn = get(conn, Routes.ajax_staff_line_comment_path(conn, :show, id))
+      conn = get(conn, ~p"/ajax/staff/line_comments/#{id}")
 
       assert %{"points" => "7.3"} = json_response(conn, 200)["data"]
     end
@@ -96,7 +96,7 @@ defmodule InkfishWeb.LineCommentControllerTest do
       conn =
         conn
         |> login(staff)
-        |> put(Routes.ajax_staff_line_comment_path(conn, :update, line_comment),
+        |> put(~p"/ajax/staff/line_comments/#{line_comment}",
           line_comment: params
         )
 
@@ -113,18 +113,12 @@ defmodule InkfishWeb.LineCommentControllerTest do
       conn =
         conn
         |> login(staff)
-        |> delete(
-          Routes.ajax_staff_line_comment_path(conn, :delete, line_comment)
-        )
+        |> delete(~p"/ajax/staff/line_comments/#{line_comment}")
 
       assert response(conn, 200)
 
-      assert_error_sent 404, fn ->
-        get(
-          conn,
-          Routes.ajax_staff_line_comment_path(conn, :show, line_comment)
-        )
-      end
+      conn = get(conn, ~p"/ajax/staff/line_comments/#{line_comment}")
+      assert response(conn, 404)
     end
   end
 end

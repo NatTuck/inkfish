@@ -1,0 +1,95 @@
+<h1>Course: <%= @course.name %></h1>
+
+<p>
+  <.link href={~p"/courses/#{@course}"}>Student View</.link> |
+  <.link href={~p"/staff/courses/#{@course}/edit"}>Edit Course</.link> |
+  <.link href={~p"/staff/courses/#{@course}/buckets"}>Edit Buckets</.link> |
+  <.link href={~p"/staff/courses/#{@course}/regs"}>Edit Regs</.link> |
+  <.link href={~p"/staff/courses/#{@course}/join_reqs"}>View Reqs</.link>
+  <%= if length(@course.join_reqs) > 0 do %>
+    <span class="badge bg-info"><%= length(@course.join_reqs) %></span>
+  <% end %> |
+  <.link href={~p"/staff/courses/#{@course}/gradesheet"}>Gradesheet</.link> |
+  <.link href={~p"/staff/courses/#{@course}/tasks"}>Tasks</.link>
+  <%= if @task_count > 0 do %>
+    <span class="badge bg-warning"><%= @task_count %></span>
+  <% end %>
+</p>
+
+<ul>
+  <li>
+    <strong>Name:</strong>
+    <%= @course.name %>
+  </li>
+
+  <li>
+    <strong>Start date:</strong>
+    <span>
+      <%= @course.start_date %>
+    </span>
+  </li>
+
+  <li>
+    <strong>Solo Teamset ID:</strong>
+    <%= @course.solo_teamset_id %>
+  </li>
+
+  <li>
+    <strong>Sections:</strong>
+    <%= inspect(Inkfish.Courses.Course.list_sections(@course)) %>
+  </li>
+</ul>
+
+<%= for bucket <- @course.buckets do %>
+  <h2><%= bucket.name %></h2>
+  <p>weight = <%= bucket.weight %></p>
+
+  <p> <.link href={~p"/staff/buckets/#{bucket}/assignments/new"}>New Assignment</.link></p>
+
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Due</th>
+        <th>Weight</th>
+      </tr>
+    </thead>
+    <tbody>
+      <%= for aa <- bucket.assignments do %>
+        <tr>
+          <td><.link href={~p"/staff/assignments/#{aa}"}><%= aa.name %></.link></td>
+          <td class="human-date"><%= show_timestamp(aa.due) %></td>
+          <td><%= aa.weight %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>
+
+<h2>Teamsets</h2>
+
+<p>
+  <.link href={~p"/staff/courses/#{@course}/teamsets/new"}>New Teamset</.link>
+</p>
+
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Assignments</th>
+    </tr>
+  </thead>
+  <tbody>
+    <%= for ts <- @course.teamsets do %>
+    <tr>
+      <td>
+        <.link href={~p"/staff/teamsets/#{ts}"}><%= ts.name %></.link>
+        (<%= ts.id %>)
+      </td>
+      <td>
+        <%= show_teamset_assignments(ts) %>
+      </td>
+    </tr>
+    <% end %>
+  </tbody>
+</table>

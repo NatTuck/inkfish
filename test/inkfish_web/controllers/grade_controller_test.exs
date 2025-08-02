@@ -17,7 +17,7 @@ defmodule InkfishWeb.GradeControllerTest do
       conn =
         conn
         |> login("alice@example.com")
-        |> get(Routes.grade_path(conn, :show, grade))
+        |> get(~p"/grades/#{grade}")
 
       assert html_response(conn, 200) =~ "Show Grade"
     end

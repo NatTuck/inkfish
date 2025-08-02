@@ -20,7 +20,7 @@ defmodule AddFakeSubs do
     Enum.each studs, fn student ->
       subs = Assignments.list_subs_for_reg(as.id, student)
       if length(subs) == 0 do
-        solo = Teams.get_active_team(as, student)
+        {:ok, solo} = Teams.get_active_team(as, student)
         {:ok, upload} = Uploads.create_fake_upload(student.user)
         attrs = %{
           assignment_id: as.id,

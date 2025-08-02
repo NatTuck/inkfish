@@ -1,0 +1,38 @@
+<h1>Teamset: <%= @teamset.name %></h1>
+
+<%= if @course.solo_teamset_id == @teamset.id do %>
+
+  <p>This is the solo teamset, managed automatically.</p>
+
+<% else %>
+
+  <div id="team-manager">
+    <!-- react component: teams/team-manager.jsx -->
+    [react]
+  </div>
+
+  <script>
+   window.create_team_path =
+     "<%= ~p"/ajax/staff/teamsets/#{@teamset}/teams" %>";
+   <% id = "ID" %>
+   window.team_path_template =
+     "<%= ~p"/ajax/staff/teams/#{id}" %>";
+   window.teamset_data = <%= raw(Jason.encode!(@data)) %>;
+   window.past_teams = <%= raw(Jason.encode!(@past_teams)) %>;
+    
+  </script>
+
+<% end %>
+
+<%= if @current_reg.is_prof do %>
+<br>
+<.link
+  href={~p"/staff/teamsets/#{@teamset}/add_prof_team"}
+  method="post" class="btn btn-warning">
+  Add Prof Team
+</.link>
+<br>
+<br>
+<% end %>
+
+  

@@ -1,0 +1,7 @@
+<h1>Edit User: <%= user_display_name(@user) %></h1>
+
+<p>
+  <.link href={~p"/admin/users/#{@user}"}>Show User</.link>
+</p>
+
+<.user_form changeset={@changeset} action={~p"/admin/users/#{@user}"} user={@user} />

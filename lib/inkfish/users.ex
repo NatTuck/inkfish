@@ -114,6 +114,7 @@ defmodule Inkfish.Users do
     user
     |> User.changeset(attrs)
     |> Repo.update()
+    |> Repo.Cache.updated()
   end
 
   def admin_update_user(%User{} = user, attrs, %User{} = editor) do
@@ -122,10 +123,12 @@ defmodule Inkfish.Users do
       user
       |> User.changeset(attrs)
       |> Repo.update()
+      |> Repo.Cache.updated()
     else
       user
       |> User.admin_edit_changeset(attrs)
       |> Repo.update()
+      |> Repo.Cache.updated()
     end
   end
 
@@ -133,6 +136,7 @@ defmodule Inkfish.Users do
     user
     |> User.secret_changeset()
     |> Repo.update()
+    |> Repo.Cache.updated()
   end
 
   def add_secret(user), do: {:ok, user}
@@ -152,6 +156,7 @@ defmodule Inkfish.Users do
   def delete_user(%User{} = user) do
     try do
       Repo.delete(user)
+      |> Repo.Cache.updated()
     rescue
       Ecto.ConstraintError ->
         {:error, "User #{user.email} can't be deleted"}
@@ -266,37 +271,38 @@ defmodule Inkfish.Users do
     end
   end
 
-  def get_reg_path!(id) do
-    Repo.one!(
-      from reg in Reg,
-        where: reg.id == ^id,
-        inner_join: course in assoc(reg, :course),
-        preload: [course: course]
+  @doc """
+  Retrieves a user's registration for a specific course.
+  """
+  def get_reg_by_user_and_course(user_id, course_id) do
+    Repo.one(
+      from(r in Reg,
+        where: r.user_id == ^user_id and r.course_id == ^course_id
+      )
     )
   end
 
+  def find_reg(_user, nil), do: {:error, :no_course}
+  def find_reg(nil, _course), do: {:error, :no_user}
+
   def find_reg(%User{} = user, %Course{} = course) do
-    reg =
-      Repo.one(
-        from reg in Reg,
-          where: reg.user_id == ^user.id and reg.course_id == ^course.id
-      )
+    reg = get_reg_by_user_and_course(user.id, course.id)
 
     if user.is_admin && is_nil(reg) do
       # Admins are always registered for every course as no role.
       {:ok, reg} = create_reg(%{user_id: user.id, course_id: course.id})
-      %Reg{reg | user: user, course: course}
+      {:ok, %Reg{reg | user: user, course: course}}
     else
       if is_nil(reg) do
-        nil
+        {:error, :no_reg}
       else
-        %Reg{reg | user: user, course: course}
+        {:ok, %Reg{reg | user: user, course: course}}
       end
     end
   end
 
   def preload_reg_teams!(%Reg{} = reg) do
-    Repo.preload(reg, teams: :subs)
+    Repo.preload(reg, teams: [:subs, team_members: [reg: :user]])
   end
 
   def get_reg_for_grading_tasks!(reg_id) do
@@ -359,6 +365,7 @@ defmodule Inkfish.Users do
     reg
     |> Reg.changeset(attrs)
     |> Repo.update()
+    |> Repo.Cache.updated()
   end
 
   @doc """
@@ -375,6 +382,7 @@ defmodule Inkfish.Users do
   """
   def delete_reg(%Reg{} = reg) do
     Repo.delete(reg)
+    |> Repo.Cache.updated()
   end
 
   @doc """
@@ -452,6 +460,7 @@ defmodule Inkfish.Users do
     user
     |> User.password_changeset(attrs)
     |> Repo.update()
+    |> Repo.Cache.updated()
   end
 
   ## Confirmation

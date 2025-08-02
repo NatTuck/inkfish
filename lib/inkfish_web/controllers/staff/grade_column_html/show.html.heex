@@ -1,0 +1,50 @@
+<h1>Show Grade Column</h1>
+
+<p>
+  <.link href={~p"/staff/grade_columns/#{@grade_column}/edit"}>Edit</.link> |
+  <.link
+    href={~p"/staff/grade_columns/#{@grade_column}"}
+    method="delete"
+    data-confirm="Are you sure?">
+    Delete
+  </.link>
+</p>
+
+<ul>
+
+  <li>
+    <strong>Name:</strong>
+    <%= @grade_column.name %>
+  </li>
+
+  <li>
+    <strong>Kind:</strong>
+    <%= @grade_column.kind %>
+  </li>
+
+  <li>
+    <strong>Points:</strong>
+    <%= @grade_column.points %>
+  </li>
+
+  <li>
+    <strong>Params:</strong>
+    <%= @grade_column.params %>
+  </li>
+  
+  <li>
+    <strong>Limits:</strong>
+    <%= @grade_column.limits %>
+  </li>
+
+  <li>
+    <strong>Upload:</strong>
+    <%= if @grade_column.upload do %>
+      <.link href={~p"/uploads/#{@grade_column.upload.id}/#{@grade_column.upload.name}"}>
+        <%= @grade_column.upload.name %>
+      </.link>
+    <% else %>
+      ∅
+    <% end %>
+  </li>
+</ul>

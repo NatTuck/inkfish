@@ -11,7 +11,9 @@ defmodule Inkfish.Subs do
   alias Inkfish.Teams
   alias Inkfish.Teams.Team
   alias Inkfish.Grades
+  alias Inkfish.Grades.GradeColumn
   alias Inkfish.Grades.Grade
+  alias Inkfish.Uploads
 
   def make_zero_sub(as) do
     %Sub{
@@ -30,7 +32,7 @@ defmodule Inkfish.Subs do
       [%Sub{}, ...]
 
   """
-  def list_subs do
+  def list_subs() do
     Repo.all(Sub)
   end
 
@@ -45,6 +47,36 @@ defmodule Inkfish.Subs do
         inner_join: tregs in assoc(team, :regs),
         where: tregs.id == ^reg_id,
         order_by: [desc: sub.inserted_at]
+      )
+    )
+  end
+
+  def list_subs_for_api(asg_id, reg_id, page \\ 0) do
+    offset = 100 * page
+
+    Repo.all(
+      from(sub in Sub,
+        where: sub.assignment_id == ^asg_id,
+        order_by: [desc: sub.inserted_at],
+        limit: 100,
+        offset: ^offset,
+        where: sub.reg_id == ^reg_id,
+        preload: [:upload]
+      )
+    )
+  end
+
+  def list_subs_for_staff_api(asg_id, page \\ 0) do
+    offset = 100 * page
+
+    Repo.all(
+      from(sub in Sub,
+        where: sub.assignment_id == ^asg_id,
+        order_by: [desc: sub.inserted_at],
+        limit: 100,
+        offset: ^offset,
+        where: sub.active,
+        preload: [:upload, reg: [:user]]
       )
     )
   end
@@ -102,14 +134,17 @@ defmodule Inkfish.Subs do
       ** (Ecto.NoResultsError)
 
   """
-  def get_sub!(id) do
-    Repo.one!(
+  def get_sub(id) do
+    Repo.one(
       from(sub in Sub,
         where: sub.id == ^id,
         inner_join: upload in assoc(sub, :upload),
         inner_join: reg in assoc(sub, :reg),
         inner_join: user in assoc(reg, :user),
         inner_join: team in assoc(sub, :team),
+        inner_join: as in assoc(sub, :assignment),
+        inner_join: bucket in assoc(as, :bucket),
+        inner_join: course in assoc(bucket, :course),
         left_join: grader in assoc(sub, :grader),
         left_join: gruser in assoc(grader, :user),
         left_join: grades in assoc(sub, :grades),
@@ -120,29 +155,39 @@ defmodule Inkfish.Subs do
           team: team,
           grades: {grades, grade_column: gc, line_comments: lcs},
           reg: {reg, user: user},
-          grader: {grader, user: gruser}
+          grader: {grader, user: gruser},
+          assignment: {as, bucket: {bucket, course: course}}
         ]
       )
     )
   end
 
-  def get_sub_path!(id) do
+  def get_sub!(id) do
+    if sub = get_sub(id) do
+      sub
+    else
+      raise "Sub not found"
+    end
+  end
+
+  def get_sub_with_grades!(id) do
     Repo.one!(
       from(sub in Sub,
         where: sub.id == ^id,
-        inner_join: team in assoc(sub, :team),
-        left_join: team_regs in assoc(team, :regs),
-        left_join: grades in assoc(sub, :grades),
         inner_join: as in assoc(sub, :assignment),
-        left_join: grade_columns in assoc(as, :grade_columns),
-        inner_join: bucket in assoc(as, :bucket),
-        inner_join: course in assoc(bucket, :course),
+        left_join: agcols in assoc(as, :grade_columns),
+        left_join: grades in assoc(sub, :grades),
+        left_join: gc in assoc(grades, :grade_column),
         preload: [
-          assignment: {as, bucket: {bucket, course: course}, grade_columns: grade_columns},
-          team: {team, regs: team_regs}
+          grades: {grades, grade_column: gc},
+          assignment: {as, grade_columns: agcols}
         ]
       )
     )
+  end
+
+  def preload_upload(%Sub{} = sub) do
+    Repo.preload(sub, [:upload])
   end
 
   @doc """
@@ -171,11 +216,25 @@ defmodule Inkfish.Subs do
           autograde!(sub)
         end
 
+        sub = Repo.preload(sub, [:upload])
+
         {:ok, sub}
 
       error ->
         error
     end
+  end
+
+  def create_sub_with_upload(sub_attrs, upload_attrs) do
+    upload_attrs = Map.put(upload_attrs, "kind", "sub")
+
+    Repo.transact(fn ->
+      with {:ok, upload} = Uploads.create_upload(upload_attrs) do
+        sub_attrs
+        |> Map.put("upload_id", upload.id)
+        |> create_sub()
+      end
+    end)
   end
 
   def has_autograders?(sub) do
@@ -211,19 +270,44 @@ defmodule Inkfish.Subs do
       Grades.delete_grade(gr)
     end)
 
-    sub.assignment.grade_columns
-    |> Enum.filter(fn gcol ->
-      gcol.kind == "script"
-    end)
-    |> Enum.map(fn gcol ->
-      {:ok, gr} = Grades.create_autograde(sub.id, gcol.id)
-      %Grade{gr | sub: sub}
-    end)
+    get_or_create_script_grades(sub)
   end
 
   def reset_script_grades(sub_id) do
     Repo.get!(Sub, sub_id)
     |> reset_script_grades()
+  end
+
+  def get_or_create_script_grades(%Sub{} = sub) do
+    sub = get_sub_with_grades!(sub.id)
+
+    script_cols =
+      sub.assignment.grade_columns
+      |> Enum.filter(fn gcol ->
+        gcol.kind == "script"
+      end)
+
+    Enum.map(script_cols, fn gcol ->
+      get_or_create_script_grade(sub, gcol)
+    end)
+  end
+
+  def get_or_create_script_grade(%Sub{} = sub, %GradeColumn{} = gc) do
+    grade1 =
+      Enum.find(sub.grades, fn gr ->
+        gr.grade_column_id == gc.id
+      end)
+
+    if grade1 do
+      if is_nil(grade1.log_uuid) do
+        %Grade{grade1 | sub: sub, grade_column: gc, log_uuid: "HUH?"}
+      else
+        %Grade{grade1 | sub: sub, grade_column: gc}
+      end
+    else
+      {:ok, gr} = Grades.create_autograde(sub.id, gc.id)
+      %Grade{gr | sub: sub, grade_column: gc}
+    end
   end
 
   def autograde!(sub) do
@@ -292,12 +376,14 @@ defmodule Inkfish.Subs do
     sub
     |> Sub.changeset(attrs)
     |> Repo.update()
+    |> Repo.Cache.updated()
   end
 
   def update_sub_grader(%Sub{} = sub, grader_id) do
     sub
     |> Sub.change_grader(grader_id)
     |> Repo.update()
+    |> Repo.Cache.updated()
   end
 
   def update_sub_ignore_late(%Sub{} = sub, attrs) do
@@ -305,6 +391,7 @@ defmodule Inkfish.Subs do
       sub
       |> Sub.change_ignore_late(attrs)
       |> Repo.update()
+      |> Repo.Cache.updated()
 
     if sub.ignore_late_penalty do
       set_sub_active!(sub)
@@ -418,6 +505,7 @@ defmodule Inkfish.Subs do
   """
   def delete_sub(%Sub{} = _sub) do
     # Repo.delete(sub)
+    # |> Repo.Cache.updated()
     {:error, "We don't delete subs"}
   end
 

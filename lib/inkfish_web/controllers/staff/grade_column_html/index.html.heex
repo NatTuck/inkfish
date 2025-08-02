@@ -1,0 +1,36 @@
+<h1>Listing Grade_Columns</h1>
+
+<p>
+  <.link href={~p"/staff/assignments/#{@assignment}/grade_columns/new"}>
+    New Grade_Column
+  </.link>
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Kind</th>
+      <th>Points</th>
+      <th>Params</th>
+
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+<%= for grade_column <- @grade_columns do %>
+    <tr>
+      <td><%= grade_column.name %></td>
+      <td><%= grade_column.kind %></td>
+      <td><%= grade_column.points %></td>
+      <td><%= grade_column.params %></td>
+
+      <td>
+        <.link href={~p"/staff/grade_columns/#{grade_column}"}>Show</.link>
+        <.link href={~p"/staff/grade_columns/#{grade_column}/edit"}>Edit</.link>
+        <.link href={~p"/staff/grade_columns/#{grade_column}"} method="delete" data-confirm="Are you sure?">Delete</.link>
+      </td>
+    </tr>
+<% end %>
+  </tbody>
+</table>

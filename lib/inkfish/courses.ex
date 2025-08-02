@@ -12,7 +12,6 @@ defmodule Inkfish.Courses do
   alias Inkfish.Users.User
   alias Inkfish.Users.Reg
   alias Inkfish.Teams.Teamset
-  alias Inkfish.Assignments.Assignment
 
   @doc """
   Returns the list of courses.
@@ -138,64 +137,92 @@ defmodule Inkfish.Courses do
     )
   end
 
-  def get_course_for_student_view!(id) do
+  def reload_course_for_student_view!(%Course{} = course, %Reg{} = reg) do
+    # Confirm preload, should be no-op.
+    reg = Users.preload_reg_teams!(reg)
+
+    c_ts = reload_course_with_student_teams!(course, reg)
+    c_bu = reload_course_with_student_subs!(course, reg)
+
+    %Course{course | teamsets: c_ts.teamsets, buckets: c_bu.buckets}
+  end
+
+  def reload_course_with_student_teams!(%Course{} = course, %Reg{} = reg) do
     Repo.one!(
       from cc in Course,
-        where: cc.id == ^id,
+        where: cc.id == ^course.id,
         left_join: teamsets in assoc(cc, :teamsets),
-        left_join: tas in assoc(teamsets, :assignments),
-        left_join: buckets in assoc(cc, :buckets),
-        left_join: bas in assoc(buckets, :assignments),
-        left_join: gcols in assoc(bas, :grade_columns),
-        order_by: [asc: buckets.name, desc: bas.due, asc: bas.name],
+        left_join: ts_asgs in assoc(teamsets, :assignments),
+        left_join: teams in assoc(teamsets, :teams),
+        left_join: team_members in assoc(teams, :team_members),
+        left_join: tm_reg in assoc(team_members, :reg),
+        left_join: tm_user in assoc(tm_reg, :user),
+        left_join: team_subs in assoc(teams, :subs),
+        where: team_members.reg_id == ^reg.id or is_nil(team_members.id),
+        where: teams.active or is_nil(teams.id),
         preload: [
-          buckets: {buckets, assignments: {bas, grade_columns: gcols}},
-          teamsets: {teamsets, assignments: tas}
+          teamsets:
+            {teamsets,
+             teams:
+               {teams,
+                subs: team_subs,
+                team_members: {team_members, reg: {tm_reg, user: tm_user}}},
+             assignments: ts_asgs}
         ]
     )
   end
 
-  def preload_subs_for_student!(%Course{} = course, reg_id) do
-    buckets =
-      Enum.map(course.buckets, fn bucket ->
-        preload_subs_for_student!(bucket, reg_id)
-      end)
+  def reload_course_with_student_subs!(%Course{} = course, %Reg{} = reg) do
+    team_ids =
+      reg.teams
+      |> Enum.filter(& &1.active)
+      |> Enum.map(& &1.id)
 
-    %{course | buckets: buckets}
-  end
-
-  def preload_subs_for_student!(%Bucket{} = bucket, reg_id) do
-    asgs =
-      Enum.map(bucket.assignments, fn asg ->
-        preload_subs_for_student!(asg, reg_id)
-      end)
-
-    %{bucket | assignments: asgs}
-  end
-
-  def preload_subs_for_student!(%Assignment{} = asg, reg_id) do
-    subs = Inkfish.Assignments.list_subs_for_reg(asg.id, reg_id)
-    %{asg | subs: subs}
+    Repo.one!(
+      from cc in Course,
+        where: cc.id == ^course.id,
+        left_join: buckets in assoc(cc, :buckets),
+        left_join: assignments in assoc(buckets, :assignments),
+        left_join: subs in assoc(assignments, :subs),
+        left_join: grades in assoc(subs, :grades),
+        left_join: gcols in assoc(assignments, :grade_columns),
+        where: subs.team_id in ^team_ids or is_nil(subs.id),
+        where: subs.active or is_nil(subs.id),
+        order_by: [asc: buckets.name, asc: assignments.due],
+        preload: [
+          buckets:
+            {buckets,
+             assignments: {
+               assignments,
+               subs: subs, grade_columns: gcols
+             }}
+        ]
+    )
   end
 
   def get_teams_for_student!(%Course{} = course, %Reg{} = reg) do
-    ts =
-      Enum.map(course.teamsets, fn ts ->
-        team =
-          Inkfish.Teams.get_active_team(ts, reg)
-          |> Repo.preload(:subs)
+    Enum.map(course.teamsets, fn ts ->
+      team =
+        Enum.find(reg.teams, fn team ->
+          team.active && team.teamset_id == ts.id
+        end)
 
+      if team do
         {ts.id, team}
-      end)
-
-    Enum.into(ts, %{})
+      else
+        {:ok, team} = Inkfish.Teams.get_active_team(ts, reg)
+        team = Repo.preload(team, :subs)
+        {ts.id, team}
+      end
+    end)
+    |> Enum.into(%{})
   end
 
   def get_course_by_name(name) do
     course = Repo.get_by(Course, name: name)
 
     if course do
-      get_course_for_student_view!(course.id)
+      get_course_for_staff_view!(course)
     else
       nil
     end
@@ -296,6 +323,7 @@ defmodule Inkfish.Courses do
     case result do
       {:ok, %{course: course}} ->
         {:ok, course}
+        |> Repo.Cache.updated()
 
       {:error, :course, cset, _} ->
         {:error, cset}
@@ -322,6 +350,7 @@ defmodule Inkfish.Courses do
   """
   def delete_course(%Course{} = course) do
     Repo.delete(course)
+    |> Repo.Cache.updated()
   end
 
   @doc """
@@ -398,15 +427,6 @@ defmodule Inkfish.Courses do
   def get_bucket!(id), do: Repo.get!(Bucket, id)
   def get_bucket(id), do: Repo.get(Bucket, id)
 
-  def get_bucket_path!(id) do
-    Repo.one!(
-      from bb in Bucket,
-        where: bb.id == ^id,
-        inner_join: course in assoc(bb, :course),
-        preload: [course: course]
-    )
-  end
-
   @doc """
   Creates a bucket.
 
@@ -441,6 +461,7 @@ defmodule Inkfish.Courses do
     bucket
     |> Bucket.changeset(attrs)
     |> Repo.update()
+    |> Repo.Cache.updated()
   end
 
   @doc """
@@ -457,6 +478,7 @@ defmodule Inkfish.Courses do
   """
   def delete_bucket(%Bucket{} = bucket) do
     Repo.delete(bucket)
+    |> Repo.Cache.updated()
   end
 
   @doc """

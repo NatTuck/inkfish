@@ -55,23 +55,6 @@ defmodule Inkfish.LineComments do
     )
   end
 
-  def get_line_comment_path!(id) do
-    Repo.one!(
-      from lc in LineComment,
-        where: lc.id == ^id,
-        inner_join: grade in assoc(lc, :grade),
-        inner_join: sub in assoc(grade, :sub),
-        inner_join: as in assoc(sub, :assignment),
-        inner_join: bucket in assoc(as, :bucket),
-        inner_join: course in assoc(bucket, :course),
-        preload: [
-          grade:
-            {grade,
-             sub: {sub, assignment: {as, bucket: {bucket, course: course}}}}
-        ]
-    )
-  end
-
   @doc """
   Creates a line_comment.
 
@@ -119,6 +102,7 @@ defmodule Inkfish.LineComments do
       line_comment
       |> LineComment.changeset(attrs)
       |> Repo.update()
+      |> Repo.Cache.updated()
 
     case result do
       {:ok, %LineComment{} = lc} ->
@@ -148,6 +132,7 @@ defmodule Inkfish.LineComments do
   def delete_line_comment(%LineComment{} = lc) do
     case Repo.delete(lc) do
       {:ok, lc} ->
+        :ok = Repo.Cache.drop(lc)
         {:ok, grade} = Inkfish.Grades.update_feedback_score(lc.grade_id)
         Inkfish.Subs.save_sub_dump!(grade.sub.id)
         {:ok, %{lc | grade: grade}}

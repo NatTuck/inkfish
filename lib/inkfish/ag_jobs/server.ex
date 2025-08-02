@@ -26,12 +26,12 @@ defmodule Inkfish.AgJobs.Server do
   @impl true
   def init(_) do
     state0 = %{
-      # grades, ag_job set, log_uuid set, gcol prloaded
+      # grades, with ag_job set, log_uuid set, gcol preloaded
       running: [],
       waiting: []
     }
 
-    Process.send_after(self(), :do_poll, 10_000)
+    Process.send_after(self(), :do_poll, 5_000)
 
     {:ok, state0}
   end
@@ -69,7 +69,7 @@ defmodule Inkfish.AgJobs.Server do
 
   @impl true
   def handle_info(:do_poll, state) do
-    Process.send_after(self(), :do_poll, 300_000)
+    Process.send_after(self(), :do_poll, 15 * 60_000)
     state = do_poll(state)
     {:noreply, state}
   end

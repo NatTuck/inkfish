@@ -1,5 +1,5 @@
 defmodule InkfishWeb.Staff.SubController do
-  use InkfishWeb, :controller1
+  use InkfishWeb, :controller
 
   alias InkfishWeb.Plugs
 
@@ -28,11 +28,10 @@ defmodule InkfishWeb.Staff.SubController do
   def show(conn, %{"id" => id}) do
     sub = Subs.get_sub!(id)
     sub = %{sub | team: Teams.get_team!(sub.team_id)}
-    sub_data = InkfishWeb.Staff.SubView.render("sub.json", sub: sub)
+    sub_data = InkfishWeb.Staff.SubJSON.show(%{sub: sub})
 
     autogrades =
-      sub.grades
-      |> Enum.filter(&(!is_nil(&1.log_uuid)))
+      Subs.get_or_create_script_grades(sub)
       |> Enum.map(fn grade ->
         grade = %{grade | sub: sub}
         log = Grade.get_log(grade)
@@ -70,10 +69,10 @@ defmodule InkfishWeb.Staff.SubController do
     if conn.assigns[:client_mode] == :browser do
       conn
       |> put_flash(:info, "Updated sub flags: ##{sub.id}.")
-      |> redirect(to: Routes.staff_sub_path(conn, :show, sub))
+      |> redirect(to: ~p"/staff/subs/#{sub}")
     else
       asg = Assignments.get_assignment_for_grading_tasks!(sub.assignment_id)
-      data = Staff.AssignmentView.render("assignment.json", %{assignment: asg})
+      data = Staff.AssignmentJSON.show(%{assignment: asg})
 
       conn
       |> put_resp_header("content-type", "application/json; charset=UTF-8")

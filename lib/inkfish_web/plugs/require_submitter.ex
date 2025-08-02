@@ -22,7 +22,7 @@ defmodule InkfishWeb.Plugs.RequireSubmitter do
     else
       conn
       |> put_flash(:error, "Access denied.")
-      |> redirect(to: Routes.assignment_path(conn, :show, asgn))
+      |> redirect(to: ~p"/assignments/#{asgn}")
       |> halt
     end
   end

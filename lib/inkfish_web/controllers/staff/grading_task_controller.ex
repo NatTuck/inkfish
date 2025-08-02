@@ -39,7 +39,7 @@ defmodule InkfishWeb.Staff.GradingTaskController do
 
     conn
     |> put_flash(:info, "Grading has been assigned.")
-    |> redirect(to: Routes.staff_assignment_grading_task_path(conn, :show, as))
+    |> redirect(to: ~p"/staff/assignments/#{as}/grading_tasks")
   end
 
   def edit(conn, _params) do
@@ -48,16 +48,14 @@ defmodule InkfishWeb.Staff.GradingTaskController do
     graders =
       Courses.list_course_graders(course)
       |> Enum.map(fn gdr ->
-        InkfishWeb.Staff.RegView.render("reg.json", %{reg: gdr})
+        InkfishWeb.Staff.RegJSON.show(%{reg: gdr})
       end)
       |> Jason.encode!()
 
     asg =
       Assignments.get_assignment_for_grading_tasks!(as.id)
       |> (fn arg ->
-            InkfishWeb.Staff.AssignmentView.render("assignment.json", %{
-              assignment: arg
-            })
+            InkfishWeb.Staff.AssignmentJSON.show(%{assignment: arg})
           end).()
       |> Jason.encode!()
 
@@ -69,6 +67,6 @@ defmodule InkfishWeb.Staff.GradingTaskController do
 
     conn
     |> put_flash(:error, "TODO: Update grading")
-    |> redirect(to: Routes.staff_assignment_grading_task_path(conn, :show, as))
+    |> redirect(to: ~p"/staff/assignments/#{as}/grading_tasks")
   end
 end

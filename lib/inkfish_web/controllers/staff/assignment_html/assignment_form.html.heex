@@ -1,0 +1,115 @@
+<.form :let={f} for={@changeset} action={@action} multipart>
+  <%= if @changeset.action do %>
+    <div class="alert alert-danger">
+      <p>Oops, something went wrong! Please check the errors below.</p>
+    </div>
+  <% end %>
+
+  <div class="mb-3">
+    Bucket: <%= @bucket.name %>
+    <.hidden_input field={f[:bucket_id]} />
+  </div>
+
+  <div class="mb-3">
+    <.label for="name" class="form-label">Name</.label>
+    <.text_input field={f[:name]} class="form-control" />
+    <.error_tag form={f} field={:name} />
+  </div>
+
+  <div class="mb-3">
+    <.label for="desc" class="form-label">Desc</.label>
+    <.textarea field={f[:desc]} class="form-control" />
+    <.error_tag form={f} field={:desc} />
+  </div>
+
+  <div class="mb-3">
+    <div>
+      <.label for="due" class="form-label">Due</.label>
+      <div>
+        <.text_input field={f[:due]} class="form-control date-time-picker" />
+      </div>
+      <.error_tag form={f} field={:due} />
+    </div>
+    <div class="px-4">
+      <p class="mt-1">TZ: <%= @timezone %></p>
+      <div class="form-check form-switch">
+        <.label for="hard_deadline">Hard Deadline</.label>
+        <.checkbox field={f[:hard_deadline]} class="form-check-input" />
+        <.error_tag form={f} field={:hard_deadline} />
+      </div>
+      <div class="form-check form-switch">
+        <.label for="force_show_grades">Force Show Grades</.label>
+        <.checkbox field={f[:force_show_grades]} class="form-check-input" />
+        <.error_tag form={f} field={:force_show_grades} />
+      </div>
+    </div>
+  </div>
+
+  <div class="mb-3">
+    <.label for="weight" class="form-label">Weight</.label>
+    <.number_input field={f[:weight]} step="any" class="form-control" />
+    <.error_tag form={f} field={:weight} />
+  </div>
+
+  <div class="mb-3">
+    <.label for="teamset_id" class="form-label">Teamset id</.label>
+    <.select field={f[:teamset_id]} options={Enum.map(@teamsets, &({&1.name, &1.id}))}
+               class="form-control"/>
+    <.error_tag form={f} field={:teamset_id} />
+  </div>
+
+  <div class="mb-3">
+    <p>Allowed submission methods</p>
+    <div class="px-4">
+      <div class="form-check form-switch">
+        <.label for="allow_upload">File Upload</.label>
+        <.checkbox field={f[:allow_upload]} class="form-check-input" />
+        <.error_tag form={f} field={:allow_upload} />
+      </div>
+      <div class="form-check form-switch">
+        <.label for="allow_git">Git Clone</.label>
+        <.checkbox field={f[:allow_git]} class="form-check-input" />
+        <.error_tag form={f} field={:allow_git} />
+      </div>
+    </div>
+  </div>
+
+  <div class="mb-3">
+    <p>Hide this assignment from students on the course page?</p>
+    <div class="px-4">
+      <div class="form-check form-switch">
+        <.label for="hide">Hide</.label>
+        <.checkbox field={f[:hide]} class="form-check-input" />
+        <.error_tag form={f} field={:hide} />
+      </div>
+    </div>
+  </div>
+
+  <div class="mb-3">
+    <.label for="starter_upload_id" class="form-label">Starter upload id</.label>
+    <.text_input field={f[:starter_upload_id]} class="form-control" readonly="readonly" />
+    <.error_tag form={f} field={:starter_upload_id} />
+    <div class="file-uploader"
+         data-upload-field="assignment_starter_upload_id"
+         data-nonce={@sta_tok[:nonce]}
+         data-token={@sta_tok[:token]}>
+      React loading...
+    </div>
+  </div>
+
+  <div class="mb-3">
+    <.label for="solution_upload_id" class="form-label">Solution upload id</.label>
+    <.text_input field={f[:solution_upload_id]} class="form-control" readonly="readonly" />
+    <.error_tag form={f} field={:solution_upload_id} />
+    <div class="file-uploader"
+         data-upload-field="assignment_solution_upload_id"
+         data-nonce={@sol_tok[:nonce]}
+         data-token={@sol_tok[:token]}>
+      React loading...
+    </div>
+  </div>
+
+  <div class="mb-3">
+    <.button class="btn btn-primary">Save</.button>
+  </div>
+</.form>

@@ -47,7 +47,7 @@ defmodule InkfishWeb.Staff.BucketController do
       {:ok, bucket} ->
         conn
         |> put_flash(:info, "Bucket created successfully.")
-        |> redirect(to: Routes.staff_bucket_path(conn, :show, bucket))
+        |> redirect(to: ~p"/staff/buckets/#{bucket}")
 
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, "new.html", changeset: changeset)
@@ -72,7 +72,7 @@ defmodule InkfishWeb.Staff.BucketController do
       {:ok, bucket} ->
         conn
         |> put_flash(:info, "Bucket updated successfully.")
-        |> redirect(to: Routes.staff_bucket_path(conn, :show, bucket))
+        |> redirect(to: ~p"/staff/buckets/#{bucket}")
 
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, "edit.html", bucket: bucket, changeset: changeset)
@@ -86,7 +86,7 @@ defmodule InkfishWeb.Staff.BucketController do
     conn
     |> put_flash(:info, "Bucket deleted successfully.")
     |> redirect(
-      to: Routes.staff_course_bucket_path(conn, :index, bucket.course_id)
+      to: ~p"/staff/courses/#{bucket.course_id}/buckets"
     )
   end
 end

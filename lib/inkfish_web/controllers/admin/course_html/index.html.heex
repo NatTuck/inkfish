@@ -1,0 +1,95 @@
+<h1>Admin: Listing Courses</h1>
+
+<p>
+  <span><.link href={~p"/admin/courses/new"}>New Course</.link></span>
+</p>
+
+<h2>Active Courses</h2>
+
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Views</th>
+      <th>Start date</th>
+      <th>First Prof</th>
+
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <%= for course <- Enum.filter(@courses, &(!&1.archived)) do %>
+      <% prof = @profs[course.id] %>
+      <tr>
+        <td><.link href={~p"/admin/courses/#{course}"}><%= course.name %></.link></td>
+        <td>
+          <.link href={~p"/courses/#{course}"}>Student</.link> |
+          <.link href={~p"/staff/courses/#{course}"}>Staff</.link>
+        </td>
+        <td><%= course.start_date %></td>
+        <td>
+          <%= if prof do %>
+            <.link href={~p"/admin/users/#{prof}"}><%= user_display_name(prof) %></.link>
+          <% else %>
+            (none)
+          <% end %>
+        </td>
+
+        <td>
+          <.link href={~p"/admin/courses/#{course}/edit"}>Edit</.link>
+          &nbsp;
+          <.link href={~p"/admin/courses/#{course}"} method="delete" data-confirm="Are you sure?">
+            Delete
+          </.link>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<p>
+  <span><.link href={~p"/admin/courses/new"}>New Course</.link></span>
+</p>
+
+<h2>Archived Courses</h2>
+
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Views</th>
+      <th>Start date</th>
+      <th>First Prof</th>
+
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <%= for course <- Enum.filter(@courses, &(&1.archived)) do %>
+      <% prof = @profs[course.id] %>
+      <tr>
+        <td><.link href={~p"/admin/courses/#{course}"}><%= course.name %></.link></td>
+        <td>
+          <.link href={~p"/courses/#{course}"}>Student</.link> |
+          <.link href={~p"/staff/courses/#{course}"}>Staff</.link>
+        </td>
+        <td><%= course.start_date %></td>
+        <td>
+          <%= if prof do %>
+            <.link href={~p"/admin/users/#{prof}"}><%= user_display_name(prof) %></.link>
+          <% else %>
+            (none)
+          <% end %>
+        </td>
+
+        <td>
+          <.link href={~p"/admin/courses/#{course}/edit"}>Edit</.link>
+          &nbsp;
+          <.link href={~p"/admin/courses/#{course}"} method="delete" data-confirm="Are you sure?">
+            Delete
+          </.link>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

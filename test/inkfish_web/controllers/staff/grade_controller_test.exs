@@ -10,7 +10,7 @@ defmodule InkfishWeb.Staff.GradeControllerTest do
 
   describe "show grade" do
     test "shows grade", %{conn: conn, grade: grade} do
-      conn = get(conn, Routes.staff_grade_path(conn, :show, grade))
+      conn = get(conn, ~p"/staff/grades/#{grade}")
       assert html_response(conn, 200) =~ "Show Grade"
     end
   end
@@ -20,14 +20,14 @@ defmodule InkfishWeb.Staff.GradeControllerTest do
       params = params_with_assocs(:grade)
 
       conn =
-        post(conn, Routes.staff_sub_grade_path(conn, :create, sub),
+        post(conn, ~p"/staff/subs/#{sub}/grades",
           grade: params
         )
 
       assert %{id: id} = redirected_params(conn)
-      assert redirected_to(conn) == Routes.staff_grade_path(conn, :edit, id)
+      assert redirected_to(conn) == ~p"/staff/grades/#{id}/edit"
 
-      conn = get(conn, Routes.staff_grade_path(conn, :show, id))
+      conn = get(conn, ~p"/staff/grades/#{id}")
       assert html_response(conn, 200) =~ "Show Grade"
     end
 
@@ -35,7 +35,7 @@ defmodule InkfishWeb.Staff.GradeControllerTest do
       params = %{grade_column_id: nil}
 
       conn =
-        post(conn, Routes.staff_sub_grade_path(conn, :create, sub),
+        post(conn, ~p"/staff/subs/#{sub}/grades",
           grade: params
         )
 
@@ -46,7 +46,7 @@ defmodule InkfishWeb.Staff.GradeControllerTest do
 
   describe "edit grade" do
     test "renders form for editing chosen grade", %{conn: conn, grade: grade} do
-      conn = get(conn, Routes.staff_grade_path(conn, :edit, grade))
+      conn = get(conn, ~p"/staff/grades/#{grade}/edit")
       assert html_response(conn, 200) =~ "Edit Grade"
     end
   end
