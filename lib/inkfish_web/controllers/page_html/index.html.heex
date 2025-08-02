@@ -22,10 +22,10 @@
     <h1>Get a Password</h1>
     <p>Enter your email to create a new account or reset your password.</p>
 
-    <.form :let={f} for={@conn} action={~p"/users/send_auth_email"} as={:user}>
+    <.form for={@conn} action={~p"/users/send_auth_email"} as={:user}>
       <div class="mb-3">
         <.label for="email" class="form-label">Email</.label>
-        <.text_input field={f[:email]} class="form-control" />
+        <input name="email" class="form-control" />
       </div>
 
       <.button class="btn btn-primary">Request</.button>
