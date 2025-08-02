@@ -26,6 +26,12 @@ defmodule InkfishWeb.ApiV1.Staff.GradeController do
     render(conn, :index, grades: sub.grades)
   end
 
+  def index(conn, _params) do
+    conn
+    |> put_status(:bad_request)
+    |> json(%{error: "sub_id parameter is required"})
+  end
+
   def create(conn, %{"grade" => grade_params}) do
     user = conn[:current_user]
 
