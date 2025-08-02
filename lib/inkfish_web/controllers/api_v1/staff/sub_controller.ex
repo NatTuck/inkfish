@@ -40,7 +40,9 @@ defmodule InkfishWeb.ApiV1.Staff.SubController do
   end
 
   def show(conn, _params) do
-    sub = conn.assigns.sub
+    sub =
+      conn.assigns.sub
+      |> Subs.preload_upload()
 
     conn
     |> put_view(InkfishWeb.ApiV1.Staff.SubJSON)

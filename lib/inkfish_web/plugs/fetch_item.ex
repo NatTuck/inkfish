@@ -13,8 +13,8 @@ defmodule InkfishWeb.Plugs.FetchItem do
          {:ok, conn} <- assign_path(conn, item) do
       conn
     else
-      error ->
-        IO.inspect({:fetch_item, {target, param}, error})
+      _error ->
+        # IO.inspect({:fetch_item, {target, param}, error})
 
         if conn.assigns[:client_mode] == :browser do
           conn

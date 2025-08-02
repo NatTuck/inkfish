@@ -22,6 +22,8 @@ defmodule InkfishWeb.ApiV1.Staff.SubJSON do
   def data(nil), do: nil
 
   def data(%Sub{} = sub) do
+    reg = get_assoc(sub, :reg)
+
     %{
       id: sub.id,
       active: sub.active,
@@ -31,7 +33,7 @@ defmodule InkfishWeb.ApiV1.Staff.SubJSON do
       note: sub.note,
       ignore_late_penalty: sub.ignore_late_penalty,
       upload: Inkfish.Uploads.Upload.upload_url(sub.upload),
-      reg: InkfishWeb.Staff.RegJSON.data(sub.reg)
+      reg: InkfishWeb.Staff.RegJSON.data(reg)
     }
   end
 end

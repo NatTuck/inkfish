@@ -7,6 +7,9 @@ defmodule Inkfish.Grades do
   alias Inkfish.Repo
 
   alias Inkfish.Grades.GradeColumn
+  alias Inkfish.Users.User
+  alias Inkfish.Grades.Grade
+  alias Inkfish.LineComments.LineComment
 
   @doc """
   Returns the list of grade_columns.
@@ -247,13 +250,13 @@ defmodule Inkfish.Grades do
         %Grade{}
         |> Grade.api_changeset(attrs)
         |> Repo.insert(
-          on_conflict: :nothing,
+          on_conflict: {:replace, [:updated_at]},
           conflict_target: [:sub_id, :grade_column_id],
           returning: true
         )
 
       with {:ok, grade} <- result,
-           {:ok, grade} <- put_comments(grade, attrs["line_comments"], grader) do
+           {:ok, _lcs} <- put_comments(grade, attrs["line_comments"], grader) do
         update_feedback_score(grade.id)
       end
     end)

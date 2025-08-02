@@ -12,12 +12,12 @@ defmodule InkfishWeb.ApiV1.Staff.GradeController do
   plug Plugs.RequireApiUser
 
   plug Plugs.FetchItem,
-       [sub: "id"]
-       when action in [:show]
+       [grade: "id"]
+       when action in [:show, :delete]
 
   plug Plugs.FetchItem,
-       [assignment: "assignment_id"]
-       when action in [:index]
+       [sub: "sub_id"]
+       when action in [:index, :create]
 
   plug Plugs.RequireReg, staff: true
 
@@ -26,17 +26,15 @@ defmodule InkfishWeb.ApiV1.Staff.GradeController do
     render(conn, :index, grades: sub.grades)
   end
 
-  def index(conn, _params) do
-    conn
-    |> put_status(:bad_request)
-    |> json(%{error: "sub_id parameter is required"})
-  end
-
   def create(conn, %{"grade" => grade_params}) do
-    user = conn[:current_user]
+    user = conn.assigns[:current_user]
+    sub = conn.assigns[:sub]
 
-    with {:ok, %Grade{} = grade} <-
-           Grades.put_grade_with_comments(grade_params, user) do
+    grade_params =
+      grade_params
+      |> Map.put("sub_id", sub.id)
+
+    with {:ok, grade} = Grades.put_grade_with_comments(grade_params, user) do
       conn
       |> put_status(:created)
       |> put_resp_header("location", ~p"/api/v1/staff/grades/#{grade}")
