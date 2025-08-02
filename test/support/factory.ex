@@ -37,7 +37,7 @@ defmodule Inkfish.Factory do
         bucket: bucket
       )
 
-    grade_column = insert(:grade_column, assignment: asgn)
+    grade_column = insert(:grade_column, kind: "feedback", assignment: asgn)
     staff = Inkfish.Users.get_user_by_email!("carol@example.com")
 
     staff_reg =

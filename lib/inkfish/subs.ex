@@ -51,28 +51,34 @@ defmodule Inkfish.Subs do
     )
   end
 
-  def list_subs_for_api(asg_id, reg_id \\ nil, page \\ 0) do
+  def list_subs_for_api(asg_id, reg_id, page \\ 0) do
     offset = 100 * page
 
-    query =
+    Repo.all(
       from(sub in Sub,
         where: sub.assignment_id == ^asg_id,
         order_by: [desc: sub.inserted_at],
         limit: 100,
         offset: ^offset,
+        where: sub.reg_id == ^reg_id,
         preload: [:upload]
       )
+    )
+  end
 
-    query =
-      if reg_id do
-        from(sub in query,
-          where: sub.reg_id == ^reg_id
-        )
-      else
-        query
-      end
+  def list_subs_for_staff_api(asg_id, page \\ 0) do
+    offset = 100 * page
 
-    Repo.all(query)
+    Repo.all(
+      from(sub in Sub,
+        where: sub.assignment_id == ^asg_id,
+        order_by: [desc: sub.inserted_at],
+        limit: 100,
+        offset: ^offset,
+        where: sub.active,
+        preload: [:upload, reg: [:user]]
+      )
+    )
   end
 
   def active_sub_for_reg(asg_id, %Reg{} = reg) do

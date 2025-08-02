@@ -7,6 +7,9 @@ defmodule Inkfish.Grades do
   alias Inkfish.Repo
 
   alias Inkfish.Grades.GradeColumn
+  alias Inkfish.Users.User
+  alias Inkfish.Grades.Grade
+  alias Inkfish.LineComments.LineComment
 
   @doc """
   Returns the list of grade_columns.
@@ -236,6 +239,56 @@ defmodule Inkfish.Grades do
     |> Repo.insert(
       on_conflict: {:replace, [:score]},
       conflict_target: [:sub_id, :grade_column_id]
+    )
+  end
+
+  def put_grade_with_comments(attrs, %User{} = grader) do
+    attrs = with_string_keys(attrs)
+
+    Repo.transact(fn ->
+      result =
+        %Grade{}
+        |> Grade.api_changeset(attrs)
+        |> Repo.insert(
+          on_conflict: {:replace, [:updated_at]},
+          conflict_target: [:sub_id, :grade_column_id],
+          returning: true
+        )
+
+      with {:ok, grade} <- result,
+           {:ok, _lcs} <- put_comments(grade, attrs["line_comments"], grader) do
+        update_feedback_score(grade.id)
+      end
+    end)
+  end
+
+  defp with_string_keys(mm) do
+    mm
+    |> Enum.map(fn {kk, vv} ->
+      {to_string(kk), vv}
+    end)
+    |> Enum.into(%{})
+  end
+
+  def put_comments(%Grade{} = grade, comments, %User{} = grader) do
+    delete_comments_for_user(grade, grader)
+
+    OK.map_all(comments, fn lc ->
+      lc =
+        lc
+        |> Map.put("grade_id", grade.id)
+        |> Map.put("user_id", grader.id)
+
+      %LineComment{}
+      |> LineComment.changeset(lc)
+      |> Repo.insert()
+    end)
+  end
+
+  def delete_comments_for_user(%Grade{} = grade, %User{} = user) do
+    Repo.delete_all(
+      from lc in LineComment,
+        where: lc.grade_id == ^grade.id and lc.user_id == ^user.id
     )
   end
 

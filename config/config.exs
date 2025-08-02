@@ -78,6 +78,14 @@ config :phoenix_copy,
     debounce: 100
   ]
 
+# Default to local llama.cpp
+config :ex_openai,
+  api_key: "",
+  organization_key: "",
+  # Optional settings
+  base_url: "http://localhost:8080/v1",
+  http_options: [recv_timeout: 900_000]
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"

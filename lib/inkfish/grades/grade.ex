@@ -29,6 +29,12 @@ defmodule Inkfish.Grades.Grade do
     |> validate_required([:grade_column_id, :sub_id])
   end
 
+  def api_changeset(grade, attrs) do
+    grade
+    |> cast(attrs, [:grade_column_id, :sub_id])
+    |> validate_required([:grade_column_id, :sub_id])
+  end
+
   def to_map(grade) do
     grade = Map.drop(grade, [:__struct__, :__meta__, :sub, :grade_column])
 
