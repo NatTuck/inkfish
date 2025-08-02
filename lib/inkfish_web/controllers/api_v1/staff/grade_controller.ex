@@ -31,8 +31,8 @@ defmodule InkfishWeb.ApiV1.Staff.GradeController do
     user = conn.assigns[:current_user]
     sub = conn.assigns[:sub]
 
-    IO.inspect({:sub, sub})
-    IO.inspect({:params, grade_params})
+    # IO.inspect({:sub, sub})
+    # IO.inspect({:params, grade_params})
 
     with {:ok, gcol} <- get_feedback_gcol(sub),
          params <- put_sub_and_gcol(grade_params, sub.id, gcol.id),
