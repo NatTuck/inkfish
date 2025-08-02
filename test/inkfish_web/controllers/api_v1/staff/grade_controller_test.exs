@@ -37,7 +37,7 @@ defmodule InkfishWeb.ApiV1.Staff.GradeControllerTest do
       
       # Create API key for the staff user
       api_key = insert(:api_key, user: staff)
-      conn = put_req_header(conn, "authorization", "Bearer #{api_key.key}")
+      conn = put_req_header(conn, "x-auth", api_key.key)
       
       # Line comments to add
       line_comments = [
@@ -93,7 +93,7 @@ defmodule InkfishWeb.ApiV1.Staff.GradeControllerTest do
       
       # Create API key for the staff user
       api_key = insert(:api_key, user: staff)
-      conn = put_req_header(conn, "authorization", "Bearer #{api_key.key}")
+      conn = put_req_header(conn, "x-auth", api_key.key)
       
       # Create an existing grade
       {:ok, grade} = Inkfish.Grades.create_grade(%{
