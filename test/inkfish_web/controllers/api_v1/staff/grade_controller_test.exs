@@ -15,6 +15,11 @@ defmodule InkfishWeb.ApiV1.Staff.GradeControllerTest do
       stock = stock_course()
       sub = stock.sub
       grade = stock.grade
+      staff = stock.staff
+      
+      # Create API key for the staff user
+      api_key = insert(:api_key, user: staff)
+      conn = put_req_header(conn, "x-auth", api_key.key)
       
       conn = get(conn, ~p"/api/v1/staff/grades?sub_id=#{sub.id}")
       assert [%{"id" => fetched_id}] = json_response(conn, 200)["data"]
@@ -22,6 +27,11 @@ defmodule InkfishWeb.ApiV1.Staff.GradeControllerTest do
     end
 
     test "fails when sub_id is missing", %{conn: conn} do
+      # Create a user and API key to pass auth
+      user = insert(:user)
+      api_key = insert(:api_key, user: user)
+      conn = put_req_header(conn, "x-auth", api_key.key)
+      
       conn = get(conn, ~p"/api/v1/staff/grades")
       assert json_response(conn, 400)
     end
@@ -201,12 +211,19 @@ defmodule InkfishWeb.ApiV1.Staff.GradeControllerTest do
     test "deletes chosen grade", %{conn: conn} do
       stock = stock_course()
       grade = stock.grade
+      staff = stock.staff
+      
+      # Create API key for the staff user
+      api_key = insert(:api_key, user: staff)
+      conn = put_req_header(conn, "x-auth", api_key.key)
       
       conn = delete(conn, ~p"/api/v1/staff/grades/#{grade}")
       assert response(conn, 204)
 
       assert_error_sent 404, fn ->
-        get(conn, ~p"/api/v1/staff/grades/#{grade}")
+        # Need auth for this request too
+        auth_conn = put_req_header(conn, "x-auth", api_key.key)
+        get(auth_conn, ~p"/api/v1/staff/grades/#{grade}")
       end
     end
   end
