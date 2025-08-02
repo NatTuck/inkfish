@@ -14,9 +14,15 @@ defmodule Inkfish.Users.UserNotifier do
         |> subject(subject)
         |> text_body(body)
 
+      IO.inspect({:send_email, email})
+
       with {:ok, _metadata} <- Mailer.deliver(email) do
         IO.inspect({:email, email})
         {:ok, email}
+      else
+        error ->
+          IO.inspect({:email_failed, error})
+          error
       end
     else
       {:error, "Bad domain in '#{recipient}'"}

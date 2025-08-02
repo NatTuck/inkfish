@@ -9,7 +9,7 @@ import Config
 
 config :inkfish, Inkfish.Users.User,
   domain: "example.com",
-  domains: ["example.com", "example.org"]
+  domains: ["usnh.edu", "example.com", "example.org"]
 
 config :inkfish,
   ecto_repos: [Inkfish.Repo],

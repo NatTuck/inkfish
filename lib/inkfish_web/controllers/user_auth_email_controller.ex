@@ -18,9 +18,13 @@ defmodule InkfishWeb.UserAuthEmailController do
     email = User.normalize_email(email)
     {_name, from} = Mailer.send_from()
 
+    IO.inspect({:email_to, email, :from, from})
+
     if user = Users.get_user_by_email(email) do
       token = sign_token("auth_email", %{user_id: user.id, email: email})
       url_text = url(~p"/users/auth/#{token}")
+
+      IO.inspect({:found_user, user})
 
       case Users.deliver_user_auth_email(user, url_text) do
         {:ok, _} ->
@@ -35,6 +39,8 @@ defmodule InkfishWeb.UserAuthEmailController do
           |> redirect(to: ~p"/")
       end
     else
+      IO.inspect({:no_user_for, email})
+
       token = sign_token("reg_email", %{email: email})
       url_text = url(~p"/users/new/#{token}")
 

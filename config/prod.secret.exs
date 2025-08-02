@@ -17,6 +17,24 @@ config :inkfish, Inkfish.Repo,
   url: database_url,
   pool_size: String.to_integer(System.get_env("POOL_SIZE") || "20")
 
+mailjet_key =
+  System.get_env("MAILJET_KEY") ||
+    raise """
+    environment variable MAILJET_KEY is missing.
+    Gonna need that for this to work.
+    """
+
+[mjet_key, mjet_sec] =
+  mailjet_key
+  |> String.trim()
+  |> String.split(":")
+
+config :inkfish, Inkfish.Mailer,
+  adapter: Swoosh.Adapters.Mailjet,
+  api_key: mjet_key,
+  secret: mjet_sec,
+  send_from: {"Inkfish", "no-reply@homework.quest"}
+
 secret_key_base =
   System.get_env("SECRET_KEY_BASE") ||
     raise """
