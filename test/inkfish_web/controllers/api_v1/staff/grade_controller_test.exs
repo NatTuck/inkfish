@@ -17,8 +17,8 @@ defmodule InkfishWeb.ApiV1.Staff.GradeControllerTest do
       grade = stock.grade
       
       conn = get(conn, ~p"/api/api_v1/staff/grades?sub_id=#{sub.id}")
-      assert [%{"id" => ^id}] = json_response(conn, 200)["data"]
-      assert id == grade.id
+      assert [%{"id" => fetched_id}] = json_response(conn, 200)["data"]
+      assert fetched_id == grade.id
     end
 
     test "fails when sub_id is missing", %{conn: conn} do
@@ -154,10 +154,10 @@ defmodule InkfishWeb.ApiV1.Staff.GradeControllerTest do
       
       # Check that grade was updated with correct score
       assert %{
-               "id" => ^id,
+               "id" => fetched_id,
                "score" => "33.0"
              } = response_data
-      assert id == grade.id
+      assert fetched_id == grade.id
       
       # Check that line comments are included
       assert length(response_data["line_comments"]) == 3
