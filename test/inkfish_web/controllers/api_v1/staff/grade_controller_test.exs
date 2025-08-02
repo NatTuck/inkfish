@@ -77,8 +77,8 @@ defmodule InkfishWeb.ApiV1.Staff.GradeControllerTest do
       # Check that line comments are included with user data
       assert [%{}, %{}] = response_data["line_comments"]
       [first_comment | _] = response_data["line_comments"]
-      assert first_comment["user"]["given_name"]
-      assert first_comment["user"]["surname"]
+      assert first_comment["user"]["id"]
+      assert first_comment["user"]["name"]
     end
   end
 
