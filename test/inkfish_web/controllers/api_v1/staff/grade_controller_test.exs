@@ -82,6 +82,121 @@ defmodule InkfishWeb.ApiV1.Staff.GradeControllerTest do
     end
   end
 
+  describe "update grade with comments" do
+    test "replaces only current user's comments and recalculates score", %{conn: conn} do
+      # Create test data
+      stock = stock_course()
+      sub = stock.sub
+      grade_column = stock.grade_column
+      staff = stock.staff
+      student = stock.student
+      
+      # Create API key for the staff user
+      api_key = insert(:api_key, user: staff)
+      conn = put_req_header(conn, "authorization", "Bearer #{api_key.key}")
+      
+      # Create an existing grade
+      {:ok, grade} = Inkfish.Grades.create_grade(%{
+        sub_id: sub.id,
+        grade_column_id: grade_column.id
+      })
+      
+      # Add a comment by another user (the student)
+      insert(:line_comment, 
+        grade: grade, 
+        user: student,
+        path: "main.c",
+        line: 5,
+        points: Decimal.new("-2.0"),
+        text: "Existing comment by student"
+      )
+      
+      # Add comments by the staff user that will be replaced
+      existing_staff_comment = insert(:line_comment,
+        grade: grade,
+        user: staff,
+        path: "main.c",
+        line: 10,
+        points: Decimal.new("-3.0"),
+        text: "Existing comment by staff"
+      )
+      
+      # New comments to replace the staff user's comments
+      new_line_comments = [
+        %{
+          "path" => "main.c",
+          "line" => 15,
+          "points" => "-4.0",
+          "text" => "New comment by staff"
+        },
+        %{
+          "path" => "helper.c",
+          "line" => 20,
+          "points" => "-1.0",
+          "text" => "Another new comment by staff"
+        }
+      ]
+      
+      # Base score is 40.0
+      # Existing student comment: -2.0
+      # Existing staff comment (to be replaced): -3.0
+      # New staff comments: -4.0 + -1.0 = -5.0
+      # Expected final score: 40.0 + (-2.0) + (-5.0) = 33.0
+      
+      update_attrs = %{
+        sub_id: sub.id,
+        grade_column_id: grade_column.id,
+        line_comments: new_line_comments
+      }
+      
+      conn = post(conn, ~p"/api/api_v1/staff/grades", grade: update_attrs)
+      response_data = json_response(conn, 201)["data"]
+      
+      # Check that grade was updated with correct score
+      assert %{
+               "id" => ^id,
+               "score" => "33.0"
+             } = response_data
+      assert id == grade.id
+      
+      # Check that line comments are included
+      assert length(response_data["line_comments"]) == 3
+      
+      # Verify the student's comment is still there
+      student_comment = Enum.find(response_data["line_comments"], fn lc -> 
+        lc["user"]["id"] == student.id
+      end)
+      assert student_comment
+      assert student_comment["text"] == "Existing comment by student"
+      assert student_comment["points"] == "-2.0"
+      
+      # Verify the old staff comment is gone
+      old_staff_comment = Enum.find(response_data["line_comments"], fn lc -> 
+        lc["id"] == existing_staff_comment.id
+      end)
+      refute old_staff_comment
+      
+      # Verify the new staff comments are there
+      new_staff_comments = Enum.filter(response_data["line_comments"], fn lc -> 
+        lc["user"]["id"] == staff.id and lc["id"] != existing_staff_comment.id
+      end)
+      assert length(new_staff_comments) == 2
+      
+      # Check that each new comment has the correct data
+      first_new_comment = Enum.find(response_data["line_comments"], fn lc -> 
+        lc["text"] == "New comment by staff"
+      end)
+      assert first_new_comment
+      assert first_new_comment["points"] == "-4.0"
+      
+      second_new_comment = Enum.find(response_data["line_comments"], fn lc -> 
+        lc["text"] == "Another new comment by staff"
+      end)
+      assert second_new_comment
+      assert second_new_comment["points"] == "-1.0"
+    end
+  end
+
   describe "delete grade" do
     test "deletes chosen grade", %{conn: conn} do
       stock = stock_course()
