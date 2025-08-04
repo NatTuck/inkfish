@@ -1,0 +1,7 @@
+<.header>
+  New Attendance
+  <:subtitle>Use this form to manage attendance records in your database.</:subtitle>
+</.header>
+
+<.attendance_form changeset={@changeset} 
+    action={~p"/staff/meetings/#{@meeting.id}/attendances"} />

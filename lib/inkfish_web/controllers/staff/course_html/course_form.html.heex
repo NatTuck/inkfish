@@ -35,6 +35,17 @@
   </div>
 
   <div class="mb-3">
+    <.input 
+      label="Attendance Assignment"
+      type="select" 
+      field={f[:attendance_assignment_id]} 
+      class="form-select"
+      prompt="[none]"
+      options={Enum.map(@assignments, &({"#{&1.name} (#{&1.bucket.name})", &1.id}))} />
+    <.error_tag form={f} field={:atendance_assignment_id} />
+  </div>
+
+  <div class="mb-3">
     <.button>Save</.button>
   </div>
 </.form>

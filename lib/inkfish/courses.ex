@@ -200,6 +200,19 @@ defmodule Inkfish.Courses do
     )
   end
 
+  def reload_course_with_assignments!(%Course{} = course) do
+    Repo.one!(
+      from cc in Course,
+        where: cc.id == ^course.id,
+        left_join: buckets in assoc(cc, :buckets),
+        left_join: assignments in assoc(buckets, :assignments),
+        left_join: gcols in assoc(assignments, :grade_columns),
+        preload: [
+          buckets: {buckets, assignments: {assignments, grade_columns: gcols}}
+        ]
+    )
+  end
+
   def get_teams_for_student!(%Course{} = course, %Reg{} = reg) do
     Enum.map(course.teamsets, fn ts ->
       team =
@@ -241,7 +254,7 @@ defmodule Inkfish.Courses do
 
   """
   def create_course(attrs \\ %{}) do
-    course = Course.changeset(%Course{}, attrs)
+    course = Course.create_changeset(%Course{}, attrs)
     instructor = Course.instructor_login(course)
 
     result =

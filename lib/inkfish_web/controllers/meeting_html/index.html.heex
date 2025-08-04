@@ -1,0 +1,9 @@
+<.header>
+  Listing Meetings
+</.header>
+
+<ul>
+  <%= for meeting <- @meetings do %>
+    <li><%= meeting.started_at %></li>
+  <% end %>
+</ul>

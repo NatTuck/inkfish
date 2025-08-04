@@ -67,6 +67,7 @@ defmodule InkfishWeb.Router do
 
     resources "/courses", CourseController, only: [:index, :show] do
       resources("/join_reqs", JoinReqController, only: [:new, :create])
+      resources("/meetings", MeetingController, only: [:index])
     end
 
     resources("/regs", RegController, only: [:show])
@@ -97,6 +98,7 @@ defmodule InkfishWeb.Router do
       resources("/join_reqs", JoinReqController, only: [:index])
       resources("/teamsets", TeamsetController, only: [:index, :new, :create])
       resources("/buckets", BucketController, only: [:index, :new, :create])
+      resources("/meetings", MeetingController, only: [:index, :new, :create])
       post("/join_reqs/accept_all", JoinReqController, :accept_all)
     end
 
@@ -111,6 +113,15 @@ defmodule InkfishWeb.Router do
     resources "/buckets", BucketController, except: [:index, :new, :create] do
       resources("/assignments", AssignmentController, only: [:new, :create])
     end
+
+    resources("/meetings", MeetingController,
+      except: [:index, :new, :create]
+    ) do
+      resources "/attendances", AttendanceController, only: [:index]
+    end
+
+    resources "/attendances", AttendanceController,
+      only: [:show, :edit, :update, :delete]
 
     resources "/assignments", AssignmentController,
       except: [:index, :new, :create] do

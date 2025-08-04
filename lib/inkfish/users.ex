@@ -80,6 +80,18 @@ defmodule Inkfish.Users do
     Repo.get_by!(User, email: email)
   end
 
+  def get_user_by_bracketed_email(text) do
+    email = User.extract_email(text)
+
+    case Repo.get_by(User, email: email) do
+      nil ->
+        {:error, "No user #{text}"}
+
+      %User{} = user ->
+        {:ok, user}
+    end
+  end
+
   @doc """
   Creates a user.
 

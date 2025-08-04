@@ -20,6 +20,7 @@ defmodule Inkfish.Courses.Course do
     has_many :buckets, Inkfish.Courses.Bucket
     has_many :teamsets, Inkfish.Teams.Teamset
     belongs_to :solo_teamset, Inkfish.Teams.Teamset
+    belongs_to :attendance_assignment, Inkfish.Assignments.Assignment
 
     field :instructor, :string, virtual: true
 
@@ -36,10 +37,16 @@ defmodule Inkfish.Courses.Course do
       :archived,
       :instructor,
       :solo_teamset_id,
-      :sections
+      :sections,
+      :attendance_assignment_id
     ])
     |> validate_required([:name, :start_date])
     |> validate_length(:name, min: 3)
+  end
+
+  def create_changeset(course, attrs) do
+    changeset(course, attrs)
+    |> validate_required([:instructor])
   end
 
   def instructor_login(course) do

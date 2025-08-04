@@ -20,6 +20,7 @@ defmodule InkfishWeb.Staff.CourseController do
   alias Inkfish.Courses
   alias Inkfish.Grades.Gradesheet
   alias Inkfish.GradingTasks
+  alias Inkfish.Assignments.Assignment
 
   def index(conn, _params) do
     courses = Courses.list_courses()
@@ -34,9 +35,24 @@ defmodule InkfishWeb.Staff.CourseController do
   end
 
   def edit(conn, %{"id" => _id}) do
-    course = conn.assigns[:course]
+    course =
+      conn.assigns[:course]
+      |> Courses.reload_course_with_assignments!()
+
+    assignments =
+      Enum.flat_map(course.buckets, fn bb ->
+        Enum.map(bb.assignments, fn asg ->
+          %Assignment{asg | bucket: bb}
+        end)
+      end)
+
     changeset = Courses.change_course(course)
-    render(conn, "edit.html", course: course, changeset: changeset)
+
+    render(conn, "edit.html",
+      course: course,
+      changeset: changeset,
+      assignments: assignments
+    )
   end
 
   def update(conn, %{"id" => _id, "course" => course_params}) do

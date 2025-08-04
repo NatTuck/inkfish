@@ -1,0 +1,6 @@
+<.header>
+  Edit Meeting {@meeting.id}
+</.header>
+
+<.meeting_form teamsets={@teamsets} changeset={@changeset} 
+  action={~p"/staff/meetings/#{@meeting}"} />
