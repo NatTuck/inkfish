@@ -1,7 +1,7 @@
 defmodule InkfishWeb.MeetingControllerTest do
   use InkfishWeb.ConnCase
 
-  import Inkfish.MeetingsFixtures
+  import Inkfish.Factory
 
   @create_attrs %{started_at: ~U[2025-08-02 19:36:00Z]}
   @update_attrs %{started_at: ~U[2025-08-03 19:36:00Z]}
@@ -41,7 +41,10 @@ defmodule InkfishWeb.MeetingControllerTest do
   describe "edit meeting" do
     setup [:create_meeting]
 
-    test "renders form for editing chosen meeting", %{conn: conn, meeting: meeting} do
+    test "renders form for editing chosen meeting", %{
+      conn: conn,
+      meeting: meeting
+    } do
       conn = get(conn, ~p"/meetings/#{meeting}/edit")
       assert html_response(conn, 200) =~ "Edit Meeting"
     end
@@ -78,7 +81,7 @@ defmodule InkfishWeb.MeetingControllerTest do
   end
 
   defp create_meeting(_) do
-    meeting = meeting_fixture()
+    meeting = insert(:meeting)
     %{meeting: meeting}
   end
 end
