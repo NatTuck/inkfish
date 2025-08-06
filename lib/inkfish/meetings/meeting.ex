@@ -20,7 +20,8 @@ defmodule Inkfish.Meetings.Meeting do
     attrs =
       if Map.has_key?(attrs, "started_at") do
         dt = Map.get(attrs, "started_at")
-        Map.put(attrs, "started_at", LocalTime.from!(dt))
+        dt = if dt, do: LocalTime.from!(dt), else: nil
+        Map.put(attrs, "started_at", dt)
       else
         attrs
       end

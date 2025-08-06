@@ -81,8 +81,6 @@ defmodule InkfishWeb.Staff.MeetingController do
     changeset = Meetings.change_meeting(meeting)
     teamsets = Inkfish.Teams.list_teamsets(course)
 
-    IO.inspect({:meeting, meeting})
-
     render(conn, :edit,
       meeting: meeting,
       changeset: changeset,

@@ -39,13 +39,7 @@ defmodule InkfishWeb.Staff.CourseController do
       conn.assigns[:course]
       |> Courses.reload_course_with_assignments!()
 
-    assignments =
-      Enum.flat_map(course.buckets, fn bb ->
-        Enum.map(bb.assignments, fn asg ->
-          %Assignment{asg | bucket: bb}
-        end)
-      end)
-
+    assignments = list_assignments(course)
     changeset = Courses.change_course(course)
 
     render(conn, "edit.html",
@@ -65,7 +59,17 @@ defmodule InkfishWeb.Staff.CourseController do
         |> redirect(to: ~p"/staff/courses/#{course}")
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        render(conn, "edit.html", course: course, changeset: changeset)
+        course =
+          course
+          |> Courses.reload_course_with_assignments!()
+
+        assignments = list_assignments(course)
+
+        render(conn, "edit.html",
+          course: course,
+          changeset: changeset,
+          assignments: assignments
+        )
     end
   end
 
@@ -105,5 +109,13 @@ defmodule InkfishWeb.Staff.CourseController do
       |> Enum.into(%{})
 
     render(conn, "tasks.html", course: course, tasks: tasks)
+  end
+
+  defp list_assignments(course) do
+    Enum.flat_map(course.buckets, fn bb ->
+      Enum.map(bb.assignments, fn asg ->
+        %Assignment{asg | bucket: bb}
+      end)
+    end)
   end
 end

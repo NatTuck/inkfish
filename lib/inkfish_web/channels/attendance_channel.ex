@@ -68,7 +68,7 @@ defmodule InkfishWeb.AttendanceChannel do
     # Slightly slow code checking.
     Process.sleep(500)
 
-    IO.inspect({:codes, good, code})
+    # IO.inspect({:codes, good, code})
 
     if good == code do
       :ok

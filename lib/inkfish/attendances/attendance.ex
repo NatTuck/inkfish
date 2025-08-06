@@ -20,8 +20,11 @@ defmodule Inkfish.Attendances.Attendance do
   @doc false
   def changeset(attendance, attrs) do
     attrs =
-      Map.update(attrs, "attended_at", LocalTime.now(), fn dt ->
-        LocalTime.from!(dt)
+      attrs
+      |> Enum.map(fn {kk, vv} -> {to_string(kk), vv} end)
+      |> Enum.into(%{})
+      |> Map.update("attended_at", LocalTime.now(), fn dt ->
+        if dt, do: LocalTime.from!(dt), else: nil
       end)
 
     attendance
