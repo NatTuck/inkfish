@@ -6,8 +6,6 @@ defmodule Inkfish.AttendancesTest do
   describe "attendances" do
     alias Inkfish.Attendances.Attendance
 
-    import Inkfish.AttendancesFixtures
-
     @invalid_attrs %{attended_at: nil}
 
     test "list_attendances/0 returns all attendances" do
