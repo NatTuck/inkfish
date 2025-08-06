@@ -74,7 +74,7 @@ defmodule InkfishWeb.Staff.AttendanceController do
     end
   end
 
-  def delete(conn, %{"id" => id}) do
+  def delete(conn, %{"id" => _id}) do
     attendance = conn.assigns[:attendance]
     {:ok, at} = Attendances.delete_attendance(attendance)
 

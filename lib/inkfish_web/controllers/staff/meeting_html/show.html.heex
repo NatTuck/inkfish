@@ -23,4 +23,12 @@
 
 <h2>Attendance</h2>
 
+<table class="table table-striped">
+  <%= for reg <- @student_regs do %>
+    <tr>
+      <td>{user_display_name(reg.user)}</td>
+      <td>{show_attendance(Enum.find(@meeting.attendances, & &1.reg_id == reg.id))}</td>
+    </tr>
+  <% end %>
+</table>
 

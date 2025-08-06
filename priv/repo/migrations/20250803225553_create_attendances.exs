@@ -4,8 +4,8 @@ defmodule Inkfish.Repo.Migrations.CreateAttendances do
   def change do
     create table(:attendances) do
       add :attended_at, :utc_datetime, null: false
-      add :meeting_id, references(:meetings, on_delete: :nothing), null: false
-      add :reg_id, references(:regs, on_delete: :nothing), null: false
+      add :meeting_id, references(:meetings, on_delete: :restrict), null: false
+      add :reg_id, references(:regs, on_delete: :restrict), null: false
 
       timestamps(type: :utc_datetime)
     end

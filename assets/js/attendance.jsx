@@ -25,9 +25,14 @@ function disconnect() {
   }
 }
 
-function AttBox({children}) {
+function AttBox({course_id, children}) {
   return (
     <div className="border border-secondary m-2 p-2">
+      <p>
+        <strong>Attendance</strong>
+        &nbsp;
+        (<a href={"/courses/" + course_id + "/meetings"}>Meetings</a>)
+      </p>
       { children }
     </div>
   );
@@ -97,32 +102,30 @@ function AttendanceWidget({course_id}) {
 
   if (state.mode == "connecting") {
     return (
-      <AttBox>
-        <p><strong>Attendance</strong> - Connecting...</p>
+      <AttBox course_id={course_id}>
+        <p>Connecting...</p>
       </AttBox>
     );
   }
 
   if (!state.meeting) {
     return (
-      <AttBox>
-        <p><strong>Attendance</strong> - No current meeting.</p>
+      <AttBox course_id={course_id}>
+        <p>No current meeting.</p>
       </AttBox>
     );
   }
 
   if (state.attendance) {
     return (
-      <AttBox>
-        <p><strong>Attendance</strong></p>
+      <AttBox course_id={course_id}>
         <p>{state.meeting.started_at}: Present; {state.attendance.status}</p>
       </AttBox>
     );
   }
 
   return (
-    <AttBox>
-      <p><strong>Attendance</strong></p>
+    <AttBox course_id={course_id}>
       <AttForm state={state} setState={setState} />
     </AttBox>
   );

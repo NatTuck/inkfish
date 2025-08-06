@@ -7,6 +7,7 @@ defmodule Inkfish.Meetings.Meeting do
     field :secret_code, :string
     belongs_to :course, Inkfish.Courses.Course
     belongs_to :teamset, Inkfish.Teams.Teamset
+    has_many :attendances, Inkfish.Attendances.Attendance
 
     timestamps(type: :utc_datetime)
   end

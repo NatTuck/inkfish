@@ -3,7 +3,7 @@
 </.header>
 
 <ul>
-  <%= for meeting <- @meetings do %>
-    <li><%= meeting.started_at %></li>
+  <%= for {meeting, at} <- @meetings do %>
+    <li><%= meeting.started_at %> - <%= show_attendance(at) %></li>
   <% end %>
 </ul>

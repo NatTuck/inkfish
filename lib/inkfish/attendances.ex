@@ -9,6 +9,7 @@ defmodule Inkfish.Attendances do
   alias Inkfish.Attendances.Attendance
   alias Inkfish.Meetings.Meeting
   alias Inkfish.Users.Reg
+  alias Inkfish.Courses.Course
 
   @doc """
   Returns the list of attendances.
@@ -21,6 +22,35 @@ defmodule Inkfish.Attendances do
   """
   def list_attendances do
     Repo.all(Attendance)
+  end
+
+  def list_attendances_by_meeting(%Course{} = course, %Reg{} = reg) do
+    ms =
+      Repo.all(
+        from mm in Meeting,
+          where: mm.course_id == ^course.id,
+          order_by: {:desc, mm.started_at}
+      )
+      |> Repo.Info.with_local_time()
+
+    m_ids = Enum.map(ms, & &1.id)
+
+    as =
+      Repo.all(
+        from at in Attendance,
+          where: at.reg_id == ^reg.id and at.meeting_id in ^m_ids
+      )
+      |> Repo.Info.with_local_time()
+
+    for mm <- ms do
+      at = Enum.find(as, &(&1.meeting_id == mm.id))
+
+      if at do
+        {mm, %Attendance{at | meeting: mm}}
+      else
+        {mm, at}
+      end
+    end
   end
 
   @doc """

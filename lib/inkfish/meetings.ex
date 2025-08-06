@@ -8,6 +8,7 @@ defmodule Inkfish.Meetings do
 
   alias Inkfish.Meetings.Meeting
   alias Inkfish.Courses.Course
+  alias Inkfish.Attendances.Attendance
 
   @doc """
   Returns the list of meetings.
@@ -64,6 +65,17 @@ defmodule Inkfish.Meetings do
     else
       nil
     end
+  end
+
+  def preload_attendances(%Meeting{} = mm) do
+    mm = Repo.preload(mm, attendances: [reg: [:user]])
+
+    ats =
+      for at <- mm.attendances do
+        %Attendance{at | meeting: mm}
+      end
+
+    %Meeting{mm | attendances: ats}
   end
 
   @doc """

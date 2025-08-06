@@ -51,6 +51,8 @@ defmodule InkfishWeb.Staff.MeetingController do
 
     case Meetings.create_meeting(meeting_params) do
       {:ok, meeting} ->
+        InkfishWeb.AttendanceChannel.poll(meeting.course_id)
+
         conn
         |> put_flash(:info, "Meeting created successfully.")
         |> redirect(to: ~p"/staff/meetings/#{meeting}")
@@ -62,8 +64,14 @@ defmodule InkfishWeb.Staff.MeetingController do
   end
 
   def show(conn, %{"id" => _id}) do
-    meeting = conn.assigns[:meeting]
-    render(conn, :show, meeting: meeting)
+    meeting =
+      conn.assigns[:meeting]
+      |> Meetings.preload_attendances()
+
+    course = conn.assigns[:course]
+    student_regs = Inkfish.Users.list_student_regs_for_course(course)
+
+    render(conn, :show, meeting: meeting, student_regs: student_regs)
   end
 
   def edit(conn, %{"id" => _id}) do
@@ -88,6 +96,8 @@ defmodule InkfishWeb.Staff.MeetingController do
 
     case Meetings.update_meeting(meeting, meeting_params) do
       {:ok, meeting} ->
+        InkfishWeb.AttendanceChannel.poll(meeting.course_id)
+
         conn
         |> put_flash(:info, "Meeting updated successfully.")
         |> redirect(to: ~p"/staff/meetings/#{meeting}")
@@ -106,6 +116,8 @@ defmodule InkfishWeb.Staff.MeetingController do
   def delete(conn, %{"id" => _id}) do
     meeting = conn.assigns[:meeting]
     {:ok, meeting} = Meetings.delete_meeting(meeting)
+
+    InkfishWeb.AttendanceChannel.poll(meeting.course_id)
 
     conn
     |> put_flash(:info, "Meeting deleted successfully.")

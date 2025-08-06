@@ -232,6 +232,15 @@ defmodule Inkfish.Users do
     )
   end
 
+  def list_student_regs_for_course(%Course{} = course) do
+    Repo.all(
+      from reg in Reg,
+        where: reg.course_id == ^course.id and reg.is_student,
+        inner_join: user in assoc(reg, :user),
+        preload: [user: user]
+    )
+  end
+
   def list_regs_for_user(%User{} = user) do
     regs =
       Repo.all(

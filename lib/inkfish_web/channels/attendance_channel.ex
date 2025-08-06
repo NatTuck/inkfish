@@ -12,6 +12,12 @@ defmodule InkfishWeb.AttendanceChannel do
   alias InkfishWeb.MeetingJSON
   alias InkfishWeb.AttendanceJSON
 
+  alias Phoenix.PubSub
+
+  def poll(course_id) do
+    PubSub.broadcast(Inkfish.PubSub, "attendance:#{course_id}", :poll)
+  end
+
   @impl true
   def join("attendance:" <> course_id, _payload, socket) do
     user_id = socket.assigns[:user_id]
@@ -19,7 +25,8 @@ defmodule InkfishWeb.AttendanceChannel do
     with {:ok, user} <- Cache.get(User, user_id),
          {:ok, course} <- Cache.get(Course, course_id),
          {:ok, reg} <- Users.find_reg(user, course),
-         {:ok, _asg} <- Courses.fetch_attendance_assignment(course) do
+         {:ok, _asg} <- Courses.fetch_attendance_assignment(course),
+         :ok <- PubSub.subscribe(Inkfish.PubSub, "attendance:#{course_id}") do
       meeting = Meetings.get_current_meeting(course)
       attendance = Attendances.get_attendance(meeting, reg)
 
@@ -99,11 +106,22 @@ defmodule InkfishWeb.AttendanceChannel do
     end
   end
 
-  # It is also common to receive messages from the client and
-  # broadcast to everyone in the current topic (attendance:lobby).
   @impl true
-  def handle_in("shout", payload, socket) do
-    broadcast(socket, "shout", payload)
+  def handle_info(:poll, socket) do
+    course = socket.assigns[:course]
+    reg = socket.assigns[:reg]
+    meeting = Meetings.get_current_meeting(course)
+    attendance = Attendances.get_attendance(meeting, reg)
+
+    socket =
+      socket
+      |> assign(:course, course)
+      |> assign(:reg, reg)
+      |> assign(:meeting, meeting)
+      |> assign(:attendance, attendance)
+
+    push(socket, "state", attendance_view(socket))
+
     {:noreply, socket}
   end
 end

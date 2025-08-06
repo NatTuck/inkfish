@@ -73,6 +73,9 @@ defmodule Inkfish.Repo.Info do
     end
   end
 
+  def to_local_time!(nil), do: nil
+  def to_local_time!(xx), do: LocalTime.from!(xx)
+
   def lt_convert_fields(obj) when is_struct(obj) do
     mod = obj.__struct__
 
@@ -80,7 +83,7 @@ defmodule Inkfish.Repo.Info do
       if mod.__schema__(:type, ff) == :utc_datetime do
         dt =
           Map.get(obj, ff)
-          |> LocalTime.from!()
+          |> to_local_time!()
 
         Map.put(obj, ff, dt)
       else
