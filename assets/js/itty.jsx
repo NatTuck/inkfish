@@ -28,11 +28,11 @@ export function Itty({chan, uuid, token}) {
     channel.join()
       .receive("ok", (msg) => {
         console.log("Joined", uuid, msg);
-	    dispatch({type: 'set', data: msg});
+  	    dispatch({type: 'set', data: msg});
       })
       .receive("error", (msg) => {
         console.log("Unable to join", msg);
-	    channel.leave();
+  	    channel.leave();
       });
     channel.on("block", (msg) => {
       console.log("Block", uuid, msg);

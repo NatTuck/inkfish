@@ -7,6 +7,8 @@ defmodule Inkfish.Attendances do
   alias Inkfish.Repo
 
   alias Inkfish.Attendances.Attendance
+  alias Inkfish.Meetings.Meeting
+  alias Inkfish.Users.Reg
 
   @doc """
   Returns the list of attendances.
@@ -37,6 +39,24 @@ defmodule Inkfish.Attendances do
   """
   def get_attendance!(id), do: Repo.get!(Attendance, id)
 
+  def get_attendance(nil, %Reg{}), do: nil
+
+  def get_attendance(%Meeting{} = mm, %Reg{} = reg) do
+    at =
+      Repo.one(
+        from at in Attendance,
+          where: at.meeting_id == ^mm.id and at.reg_id == ^reg.id
+      )
+
+    if at do
+      %Attendance{at | reg: reg, meeting: mm}
+      |> Attendance.put_status()
+      |> Repo.Info.with_local_time()
+    else
+      nil
+    end
+  end
+
   @doc """
   Creates a attendance.
 
@@ -52,7 +72,11 @@ defmodule Inkfish.Attendances do
   def create_attendance(attrs \\ %{}) do
     %Attendance{}
     |> Attendance.changeset(attrs)
-    |> Repo.insert()
+    |> Repo.insert(
+      on_conflict: {:replace, [:meeting_id, :reg_id]},
+      conflict_target: [:meeting_id, :reg_id],
+      returning: true
+    )
   end
 
   @doc """
@@ -71,6 +95,7 @@ defmodule Inkfish.Attendances do
     attendance
     |> Attendance.changeset(attrs)
     |> Repo.update()
+    |> Repo.Cache.updated()
   end
 
   @doc """
@@ -87,6 +112,7 @@ defmodule Inkfish.Attendances do
   """
   def delete_attendance(%Attendance{} = attendance) do
     Repo.delete(attendance)
+    |> Repo.Cache.updated()
   end
 
   @doc """

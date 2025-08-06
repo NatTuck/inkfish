@@ -95,26 +95,6 @@ defmodule Inkfish.Repo.Cache do
     end
   end
 
-  ## FIXME:
-  #
-  # When we drop an item because it's invalid, that means any cached 
-  # item with that item preloaded as a parent or default_preload becomes
-  # invalid too.
-  #
-  # Two solutions:
-  #  - Figure out what items those are and drop them too.
-  #  - Don't include preloads in the cached objects; add the preloads,
-  #    potentially from cache, at get time.
-  #
-  # Solution two is better, but will require rewriting the whole thing.
-  #
-  # Question: What about standard preloads?
-  #  - We want to be able to cache them.
-  #  - Scanning for them would be O(n), which is sub-optimal.
-  #  - Cache them on load, re-get them on get.
-  #
-  # Remaining problem: has_many standard preloads
-
   def handle_call({:drop, mod, id}, _from, state) do
     {_item, state} = pop_in(state, [mod, id])
     {:reply, :ok, state}
@@ -164,6 +144,7 @@ defmodule Inkfish.Repo.Cache do
   def _get_full(state, mod, id) do
     with {:ok, state, item} <- _get_item(state, mod, id),
          {:ok, state, item} <- _add_assocs(state, mod, item) do
+      item = with_local_time(item)
       {:ok, state, item}
     end
   end
@@ -284,6 +265,7 @@ defmodule Inkfish.Repo.Cache do
       {state, ys} =
         Enum.reduce(xs, {state, []}, fn item, {state, ys} ->
           {:ok, state, item} = _add_assocs(state, mod, item)
+          item = with_local_time(item)
           {state, [item | ys]}
         end)
 

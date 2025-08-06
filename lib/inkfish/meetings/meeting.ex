@@ -16,6 +16,14 @@ defmodule Inkfish.Meetings.Meeting do
 
   @doc false
   def changeset(meeting, attrs) do
+    attrs =
+      if Map.has_key?(attrs, "started_at") do
+        dt = Map.get(attrs, "started_at")
+        Map.put(attrs, "started_at", LocalTime.from!(dt))
+      else
+        attrs
+      end
+
     meeting
     |> cast(attrs, [:started_at, :course_id, :teamset_id, :secret_code])
     |> validate_required([:started_at, :course_id, :secret_code])

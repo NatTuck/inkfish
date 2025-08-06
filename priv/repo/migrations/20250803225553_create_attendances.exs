@@ -12,5 +12,6 @@ defmodule Inkfish.Repo.Migrations.CreateAttendances do
 
     create index(:attendances, [:meeting_id])
     create index(:attendances, [:reg_id])
+    create index(:attendances, [:meeting_id, :reg_id], unique: true)
   end
 end

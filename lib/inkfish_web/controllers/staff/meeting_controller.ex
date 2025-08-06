@@ -56,7 +56,8 @@ defmodule InkfishWeb.Staff.MeetingController do
         |> redirect(to: ~p"/staff/meetings/#{meeting}")
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        render(conn, :new, changeset: changeset)
+        teamsets = Inkfish.Teams.list_teamsets(course)
+        render(conn, :new, changeset: changeset, teamsets: teamsets)
     end
   end
 
@@ -72,6 +73,8 @@ defmodule InkfishWeb.Staff.MeetingController do
     changeset = Meetings.change_meeting(meeting)
     teamsets = Inkfish.Teams.list_teamsets(course)
 
+    IO.inspect({:meeting, meeting})
+
     render(conn, :edit,
       meeting: meeting,
       changeset: changeset,
@@ -81,6 +84,7 @@ defmodule InkfishWeb.Staff.MeetingController do
 
   def update(conn, %{"id" => _id, "meeting" => meeting_params}) do
     meeting = conn.assigns[:meeting]
+    course = conn.assigns[:course]
 
     case Meetings.update_meeting(meeting, meeting_params) do
       {:ok, meeting} ->
@@ -89,7 +93,13 @@ defmodule InkfishWeb.Staff.MeetingController do
         |> redirect(to: ~p"/staff/meetings/#{meeting}")
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        render(conn, :edit, meeting: meeting, changeset: changeset)
+        teamsets = Inkfish.Teams.list_teamsets(course)
+
+        render(conn, :edit,
+          meeting: meeting,
+          changeset: changeset,
+          teamsets: teamsets
+        )
     end
   end
 

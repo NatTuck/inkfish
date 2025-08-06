@@ -64,7 +64,7 @@ defmodule Inkfish.MixProject do
       {:briefly, "~> 0.5.0"},
       {:igniter, "~> 0.1"},
       {:csv, "~> 3.2"},
-      {:local_time, "~> 0.1.1"},
+      {:local_time, "~> 0.2.0"},
       {:methods, "~> 0.1.0"},
       {:heroicons, "~> 0.5.5"},
       {:cpu_info, "~> 0.2.1"},

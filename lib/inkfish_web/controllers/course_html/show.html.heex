@@ -2,8 +2,15 @@
 
 <%= if is_staff?(@current_reg, @current_user) do %>
   <p>
-    <.link href={~p"/staff/courses/#{@course}"}>Staff View</.link>
+    <.link href={~p"/staff/courses/#{@course}"}>Staff View</.link> |
   </p>
+<% end %>
+
+<%= if @course.attendance_assignment_id do %>
+  <div id="attendance-widget" data-course-id={@course.id}>
+    <!-- react component attendance.jsx -->
+    <p>Attendance component goes here...</p>
+  </div>
 <% end %>
 
 <ul>

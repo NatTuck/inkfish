@@ -5,6 +5,7 @@ defmodule Inkfish.Courses do
 
   import Ecto.Query, warn: false
   alias Inkfish.Repo
+  alias Inkfish.Repo.Cache
 
   alias Inkfish.Courses.Course
   alias Inkfish.Courses.Bucket
@@ -12,6 +13,7 @@ defmodule Inkfish.Courses do
   alias Inkfish.Users.User
   alias Inkfish.Users.Reg
   alias Inkfish.Teams.Teamset
+  alias Inkfish.Assignments.Assignment
 
   @doc """
   Returns the list of courses.
@@ -238,6 +240,14 @@ defmodule Inkfish.Courses do
       get_course_for_staff_view!(course)
     else
       nil
+    end
+  end
+
+  def fetch_attendance_assignment(%Course{} = course) do
+    if course.attendance_assignment_id do
+      {:ok, Cache.get(Assignment, course.attendance_assignment_id)}
+    else
+      {:error, "No attendance for this course"}
     end
   end
 

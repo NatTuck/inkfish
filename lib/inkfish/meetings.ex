@@ -7,6 +7,7 @@ defmodule Inkfish.Meetings do
   alias Inkfish.Repo
 
   alias Inkfish.Meetings.Meeting
+  alias Inkfish.Courses.Course
 
   @doc """
   Returns the list of meetings.
@@ -18,7 +19,11 @@ defmodule Inkfish.Meetings do
 
   """
   def list_meetings do
-    Repo.all(Meeting)
+    Repo.all(
+      from mm in Meeting,
+        order_by: {:desc, mm.started_at}
+    )
+    |> Inkfish.Repo.Info.with_local_time()
   end
 
   @doc """
@@ -36,6 +41,30 @@ defmodule Inkfish.Meetings do
 
   """
   def get_meeting!(id), do: Repo.get!(Meeting, id)
+
+  def get_latest_meeting(%Course{} = course) do
+    Repo.one(
+      from mm in Meeting,
+        where: mm.course_id == ^course.id,
+        order_by: {:desc, mm.started_at},
+        limit: 1
+    )
+  end
+
+  def get_current_meeting(%Course{} = course) do
+    if mm = get_latest_meeting(course) do
+      now = LocalTime.now()
+      diff = abs(DateTime.diff(mm.started_at, now, :minute))
+
+      if diff <= 60 do
+        Repo.Info.with_local_time(mm)
+      else
+        nil
+      end
+    else
+      nil
+    end
+  end
 
   @doc """
   Creates a meeting.
