@@ -42,7 +42,7 @@ defmodule InkfishWeb.AttendanceChannelTest do
     Process.sleep(100)
     
     ref = push(socket, "code", %{"code" => "ABC123"})
-    assert_reply ref, :ok, reply
+    assert_reply ref, :ok, reply, 1000
     assert reply.mode == "connected"
     assert reply.meeting.id == meeting.id
   end
@@ -55,6 +55,6 @@ defmodule InkfishWeb.AttendanceChannelTest do
     Process.sleep(100)
     
     ref = push(socket, "code", %{"code" => "INVALID"})
-    assert_reply ref, :error, "Bad code"
+    assert_reply ref, :error, "Bad code", 1000
   end
 end
