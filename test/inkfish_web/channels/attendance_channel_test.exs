@@ -6,9 +6,11 @@ defmodule InkfishWeb.AttendanceChannelTest do
     # Create a course with attendance assignment
     course = insert(:course)
     
+    # Create a teamset for the course
+    teamset = insert(:teamset, course: course)
+    
     # Create attendance assignment for the course
     bucket = insert(:bucket, course: course)
-    teamset = course.solo_teamset
     assignment = insert(:assignment, bucket: bucket, teamset: teamset)
     
     # Update course to reference the attendance assignment
