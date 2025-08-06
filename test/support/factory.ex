@@ -17,6 +17,7 @@ defmodule Inkfish.Factory do
   alias Inkfish.LineComments.LineComment
   alias Inkfish.AgJobs.AgJob
   alias Inkfish.ApiKeys.ApiKey
+  alias Inkfish.Meetings.Meeting
 
   def stock_course do
     course_params = %{
@@ -67,6 +68,15 @@ defmodule Inkfish.Factory do
       team: team,
       sub: sub,
       grade: grade
+    }
+  end
+
+  def meeting_factory do
+    %Meeting{
+      started_at: DateTime.utc_now(),
+      secret_code: Meeting.gen_code(),
+      course: build(:course),
+      teamset: build(:teamset)
     }
   end
 
