@@ -24,20 +24,22 @@ defmodule InkfishWeb.AttendanceChannelTest do
     socket = socket(InkfishWeb.UserSocket, "user_id", %{user_id: user.id})
     
     # Join the attendance channel with the course ID
-    {:ok, _, socket} = subscribe_and_join(socket, InkfishWeb.AttendanceChannel, "attendance:#{course.id}")
+    {:ok, reply, socket} = subscribe_and_join(socket, InkfishWeb.AttendanceChannel, "attendance:#{course.id}")
 
-    %{socket: socket, course: course, user: user, reg: reg}
+    %{socket: socket, course: course, user: user, reg: reg, join_reply: reply}
   end
 
-  test "join succeeds with valid course ID", %{socket: socket, course: course} do
-    # The setup already tests successful join
+  test "join succeeds with valid course ID", %{socket: socket, course: course, join_reply: reply} do
     assert socket.assigns[:course].id == course.id
-    assert socket.assigns[:mode] == "connected"
+    assert reply.mode == "connected"
   end
 
   test "code message with valid code creates attendance", %{socket: socket, course: course} do
     # Create a meeting for the course
-    meeting = insert(:meeting, course: course, secret_code: "ABC123")
+    meeting = insert(:meeting, course: course, secret_code: "ABC123", started_at: DateTime.utc_now())
+    
+    # Wait a bit for the meeting to be recognized as current
+    Process.sleep(100)
     
     ref = push(socket, "code", %{"code" => "ABC123"})
     assert_reply ref, :ok, reply
@@ -45,7 +47,13 @@ defmodule InkfishWeb.AttendanceChannelTest do
     assert reply.meeting.id == meeting.id
   end
 
-  test "code message with invalid code returns error", %{socket: socket} do
+  test "code message with invalid code returns error", %{socket: socket, course: course} do
+    # Create a meeting for the course so there's a current meeting
+    insert(:meeting, course: course, secret_code: "ABC123", started_at: DateTime.utc_now())
+    
+    # Wait a bit for the meeting to be recognized as current
+    Process.sleep(100)
+    
     ref = push(socket, "code", %{"code" => "INVALID"})
     assert_reply ref, :error, "Bad code"
   end
