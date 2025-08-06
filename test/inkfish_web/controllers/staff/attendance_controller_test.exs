@@ -2,24 +2,26 @@ defmodule InkfishWeb.Staff.AttendanceControllerTest do
   use InkfishWeb.ConnCase
   import Inkfish.Factory
 
-  @create_attrs %{attended_at: ~U[2025-08-02 22:55:00Z]}
   @update_attrs %{attended_at: ~U[2025-08-03 22:55:00Z]}
   @invalid_attrs %{attended_at: nil}
 
   describe "index" do
-    test "lists all attendances", %{conn: conn} do
-      # Create a meeting and reg for the attendance
-      meeting = insert(:meeting)
+    test "lists all attendances for a meeting", %{conn: conn} do
+      # Create course, teamset, meeting and reg for the attendance
+      course = insert(:course)
+      teamset = insert(:teamset, course: course)
+      meeting = insert(:meeting, course: course, teamset: teamset)
       reg = insert(:reg)
       
       # Create an attendance record
       insert(:attendance, meeting: meeting, reg: reg)
       
-      # Login as staff
+      # Login as staff with proper permissions
       staff = Inkfish.Users.get_user_by_email!("carol@example.com")
+      staff_reg = insert(:reg, user: staff, course: course, is_staff: true)
       conn = login(conn, staff)
       
-      conn = get(conn, ~p"/staff/attendances")
+      conn = get(conn, ~p"/staff/meetings/#{meeting.id}/attendances")
       assert html_response(conn, 200) =~ "Attendances"
     end
   end
@@ -27,9 +29,10 @@ defmodule InkfishWeb.Staff.AttendanceControllerTest do
   describe "edit attendance" do
     setup [:create_attendance_with_context]
 
-    test "renders form for editing chosen attendance", %{conn: conn, attendance: attendance} do
-      # Login as staff
+    test "renders form for editing chosen attendance", %{conn: conn, attendance: attendance, course: course} do
+      # Login as staff with proper permissions
       staff = Inkfish.Users.get_user_by_email!("carol@example.com")
+      staff_reg = insert(:reg, user: staff, course: course, is_staff: true)
       conn = login(conn, staff)
       
       conn = get(conn, ~p"/staff/attendances/#{attendance.id}/edit")
@@ -40,9 +43,10 @@ defmodule InkfishWeb.Staff.AttendanceControllerTest do
   describe "update attendance" do
     setup [:create_attendance_with_context]
 
-    test "redirects when data is valid", %{conn: conn, attendance: attendance} do
-      # Login as staff
+    test "redirects when data is valid", %{conn: conn, attendance: attendance, course: course} do
+      # Login as staff with proper permissions
       staff = Inkfish.Users.get_user_by_email!("carol@example.com")
+      staff_reg = insert(:reg, user: staff, course: course, is_staff: true)
       conn = login(conn, staff)
       
       conn = put(conn, ~p"/staff/attendances/#{attendance.id}", attendance: @update_attrs)
@@ -52,9 +56,10 @@ defmodule InkfishWeb.Staff.AttendanceControllerTest do
       assert html_response(conn, 200) =~ "Attendance"
     end
 
-    test "renders errors when data is invalid", %{conn: conn, attendance: attendance} do
-      # Login as staff
+    test "renders errors when data is invalid", %{conn: conn, attendance: attendance, course: course} do
+      # Login as staff with proper permissions
       staff = Inkfish.Users.get_user_by_email!("carol@example.com")
+      staff_reg = insert(:reg, user: staff, course: course, is_staff: true)
       conn = login(conn, staff)
       
       conn = put(conn, ~p"/staff/attendances/#{attendance.id}", attendance: @invalid_attrs)
@@ -65,9 +70,10 @@ defmodule InkfishWeb.Staff.AttendanceControllerTest do
   describe "delete attendance" do
     setup [:create_attendance_with_context]
 
-    test "deletes chosen attendance", %{conn: conn, attendance: attendance} do
-      # Login as staff
+    test "deletes chosen attendance", %{conn: conn, attendance: attendance, course: course} do
+      # Login as staff with proper permissions
       staff = Inkfish.Users.get_user_by_email!("carol@example.com")
+      staff_reg = insert(:reg, user: staff, course: course, is_staff: true)
       conn = login(conn, staff)
       
       conn = delete(conn, ~p"/staff/attendances/#{attendance.id}")
@@ -85,6 +91,6 @@ defmodule InkfishWeb.Staff.AttendanceControllerTest do
     meeting = insert(:meeting, course: course, teamset: teamset)
     reg = insert(:reg)
     attendance = insert(:attendance, meeting: meeting, reg: reg)
-    %{attendance: attendance, meeting: meeting, reg: reg}
+    %{attendance: attendance, meeting: meeting, reg: reg, course: course}
   end
 end
