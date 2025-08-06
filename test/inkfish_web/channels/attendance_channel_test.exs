@@ -3,9 +3,20 @@ defmodule InkfishWeb.AttendanceChannelTest do
   import Inkfish.Factory
 
   setup do
-    # Create a course and user for the attendance channel
+    # Create a course with attendance assignment
     course = insert(:course)
+    
+    # Create attendance assignment for the course
+    bucket = insert(:bucket, course: course)
+    teamset = course.solo_teamset
+    assignment = insert(:assignment, bucket: bucket, teamset: teamset)
+    
+    # Update course to reference the attendance assignment
+    {:ok, course} = Inkfish.Courses.update_course(course, %{attendance_assignment_id: assignment.id})
+    
+    # Create user and registration
     user = insert(:user)
+    reg = insert(:reg, user: user, course: course, is_student: true)
     
     # Create a socket with proper user ID
     socket = socket(InkfishWeb.UserSocket, "user_id", %{user_id: user.id})
@@ -13,7 +24,7 @@ defmodule InkfishWeb.AttendanceChannelTest do
     # Join the attendance channel with the course ID
     {:ok, _, socket} = subscribe_and_join(socket, InkfishWeb.AttendanceChannel, "attendance:#{course.id}")
 
-    %{socket: socket, course: course, user: user}
+    %{socket: socket, course: course, user: user, reg: reg}
   end
 
   test "join succeeds with valid course ID", %{socket: socket, course: course} do
