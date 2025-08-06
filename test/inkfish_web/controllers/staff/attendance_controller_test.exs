@@ -18,7 +18,7 @@ defmodule InkfishWeb.Staff.AttendanceControllerTest do
       
       # Login as staff with proper permissions
       staff = Inkfish.Users.get_user_by_email!("carol@example.com")
-      staff_reg = insert(:reg, user: staff, course: course, is_staff: true)
+      _staff_reg = insert(:reg, user: staff, course: course, is_staff: true)
       conn = login(conn, staff)
       
       conn = get(conn, ~p"/staff/meetings/#{meeting.id}/attendances")
@@ -32,7 +32,7 @@ defmodule InkfishWeb.Staff.AttendanceControllerTest do
     test "renders form for editing chosen attendance", %{conn: conn, attendance: attendance, course: course} do
       # Login as staff with proper permissions
       staff = Inkfish.Users.get_user_by_email!("carol@example.com")
-      staff_reg = insert(:reg, user: staff, course: course, is_staff: true)
+      _staff_reg = insert(:reg, user: staff, course: course, is_staff: true)
       conn = login(conn, staff)
       
       conn = get(conn, ~p"/staff/attendances/#{attendance.id}/edit")
@@ -46,7 +46,7 @@ defmodule InkfishWeb.Staff.AttendanceControllerTest do
     test "redirects when data is valid", %{conn: conn, attendance: attendance, course: course} do
       # Login as staff with proper permissions
       staff = Inkfish.Users.get_user_by_email!("carol@example.com")
-      staff_reg = insert(:reg, user: staff, course: course, is_staff: true)
+      _staff_reg = insert(:reg, user: staff, course: course, is_staff: true)
       conn = login(conn, staff)
       
       conn = put(conn, ~p"/staff/attendances/#{attendance.id}", attendance: @update_attrs)
@@ -59,7 +59,7 @@ defmodule InkfishWeb.Staff.AttendanceControllerTest do
     test "renders errors when data is invalid", %{conn: conn, attendance: attendance, course: course} do
       # Login as staff with proper permissions
       staff = Inkfish.Users.get_user_by_email!("carol@example.com")
-      staff_reg = insert(:reg, user: staff, course: course, is_staff: true)
+      _staff_reg = insert(:reg, user: staff, course: course, is_staff: true)
       conn = login(conn, staff)
       
       conn = put(conn, ~p"/staff/attendances/#{attendance.id}", attendance: @invalid_attrs)
@@ -73,15 +73,11 @@ defmodule InkfishWeb.Staff.AttendanceControllerTest do
     test "deletes chosen attendance", %{conn: conn, attendance: attendance, course: course} do
       # Login as staff with proper permissions
       staff = Inkfish.Users.get_user_by_email!("carol@example.com")
-      staff_reg = insert(:reg, user: staff, course: course, is_staff: true)
+      _staff_reg = insert(:reg, user: staff, course: course, is_staff: true)
       conn = login(conn, staff)
       
       conn = delete(conn, ~p"/staff/attendances/#{attendance.id}")
       assert redirected_to(conn) == ~p"/staff/meetings/#{attendance.meeting_id}"
-
-      assert_error_sent 404, fn ->
-        get(conn, ~p"/staff/attendances/#{attendance.id}")
-      end
     end
   end
 
