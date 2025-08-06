@@ -1,7 +1,6 @@
 defmodule InkfishWeb.Staff.AttendanceControllerTest do
   use InkfishWeb.ConnCase
-
-  import Inkfish.AttendancesFixtures
+  import Inkfish.Factory
 
   @create_attrs %{attended_at: ~U[2025-08-02 22:55:00Z]}
   @update_attrs %{attended_at: ~U[2025-08-03 22:55:00Z]}
@@ -9,6 +8,17 @@ defmodule InkfishWeb.Staff.AttendanceControllerTest do
 
   describe "index" do
     test "lists all attendances", %{conn: conn} do
+      # Create a meeting and reg for the attendance
+      meeting = insert(:meeting)
+      reg = insert(:reg)
+      
+      # Create an attendance record
+      insert(:attendance, meeting: meeting, reg: reg)
+      
+      # Login as staff
+      staff = Inkfish.Users.get_user_by_email!("carol@example.com")
+      conn = login(conn, staff)
+      
       conn = get(conn, ~p"/staff/attendances")
       assert html_response(conn, 200) =~ "Listing Attendances"
     end
@@ -16,14 +26,30 @@ defmodule InkfishWeb.Staff.AttendanceControllerTest do
 
   describe "new attendance" do
     test "renders form", %{conn: conn} do
-      conn = get(conn, ~p"/staff/attendances/new")
+      # Create a meeting for context
+      meeting = insert(:meeting)
+      
+      # Login as staff
+      staff = Inkfish.Users.get_user_by_email!("carol@example.com")
+      conn = login(conn, staff)
+      
+      conn = get(conn, ~p"/staff/meetings/#{meeting.id}/attendances/new")
       assert html_response(conn, 200) =~ "New Attendance"
     end
   end
 
   describe "create attendance" do
     test "redirects to show when data is valid", %{conn: conn} do
-      conn = post(conn, ~p"/staff/attendances", attendance: @create_attrs)
+      # Create a meeting and reg for the attendance
+      meeting = insert(:meeting)
+      reg = insert(:reg)
+      
+      # Login as staff
+      staff = Inkfish.Users.get_user_by_email!("carol@example.com")
+      conn = login(conn, staff)
+      
+      conn = post(conn, ~p"/staff/meetings/#{meeting.id}/attendances", 
+                  attendance: Map.merge(@create_attrs, %{reg_id: reg.id}))
 
       assert %{id: id} = redirected_params(conn)
       assert redirected_to(conn) == ~p"/staff/attendances/#{id}"
@@ -33,7 +59,14 @@ defmodule InkfishWeb.Staff.AttendanceControllerTest do
     end
 
     test "renders errors when data is invalid", %{conn: conn} do
-      conn = post(conn, ~p"/staff/attendances", attendance: @invalid_attrs)
+      # Create a meeting for context
+      meeting = insert(:meeting)
+      
+      # Login as staff
+      staff = Inkfish.Users.get_user_by_email!("carol@example.com")
+      conn = login(conn, staff)
+      
+      conn = post(conn, ~p"/staff/meetings/#{meeting.id}/attendances", attendance: @invalid_attrs)
       assert html_response(conn, 200) =~ "New Attendance"
     end
   end
@@ -42,7 +75,11 @@ defmodule InkfishWeb.Staff.AttendanceControllerTest do
     setup [:create_attendance]
 
     test "renders form for editing chosen attendance", %{conn: conn, attendance: attendance} do
-      conn = get(conn, ~p"/staff/attendances/#{attendance}/edit")
+      # Login as staff
+      staff = Inkfish.Users.get_user_by_email!("carol@example.com")
+      conn = login(conn, staff)
+      
+      conn = get(conn, ~p"/staff/attendances/#{attendance.id}/edit")
       assert html_response(conn, 200) =~ "Edit Attendance"
     end
   end
@@ -51,15 +88,23 @@ defmodule InkfishWeb.Staff.AttendanceControllerTest do
     setup [:create_attendance]
 
     test "redirects when data is valid", %{conn: conn, attendance: attendance} do
-      conn = put(conn, ~p"/staff/attendances/#{attendance}", attendance: @update_attrs)
-      assert redirected_to(conn) == ~p"/staff/attendances/#{attendance}"
+      # Login as staff
+      staff = Inkfish.Users.get_user_by_email!("carol@example.com")
+      conn = login(conn, staff)
+      
+      conn = put(conn, ~p"/staff/attendances/#{attendance.id}", attendance: @update_attrs)
+      assert redirected_to(conn) == ~p"/staff/attendances/#{attendance.id}"
 
-      conn = get(conn, ~p"/staff/attendances/#{attendance}")
+      conn = get(conn, ~p"/staff/attendances/#{attendance.id}")
       assert html_response(conn, 200)
     end
 
     test "renders errors when data is invalid", %{conn: conn, attendance: attendance} do
-      conn = put(conn, ~p"/staff/attendances/#{attendance}", attendance: @invalid_attrs)
+      # Login as staff
+      staff = Inkfish.Users.get_user_by_email!("carol@example.com")
+      conn = login(conn, staff)
+      
+      conn = put(conn, ~p"/staff/attendances/#{attendance.id}", attendance: @invalid_attrs)
       assert html_response(conn, 200) =~ "Edit Attendance"
     end
   end
@@ -68,17 +113,21 @@ defmodule InkfishWeb.Staff.AttendanceControllerTest do
     setup [:create_attendance]
 
     test "deletes chosen attendance", %{conn: conn, attendance: attendance} do
-      conn = delete(conn, ~p"/staff/attendances/#{attendance}")
-      assert redirected_to(conn) == ~p"/staff/attendances"
+      # Login as staff
+      staff = Inkfish.Users.get_user_by_email!("carol@example.com")
+      conn = login(conn, staff)
+      
+      conn = delete(conn, ~p"/staff/attendances/#{attendance.id}")
+      assert redirected_to(conn) == ~p"/staff/meetings/#{attendance.meeting_id}"
 
       assert_error_sent 404, fn ->
-        get(conn, ~p"/staff/attendances/#{attendance}")
+        get(conn, ~p"/staff/attendances/#{attendance.id}")
       end
     end
   end
 
   defp create_attendance(_) do
-    attendance = attendance_fixture()
+    attendance = insert(:attendance)
     %{attendance: attendance}
   end
 end
