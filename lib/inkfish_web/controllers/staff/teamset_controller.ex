@@ -23,6 +23,7 @@ defmodule InkfishWeb.Staff.TeamsetController do
 
   alias Inkfish.Teams
   alias Inkfish.Teams.Teamset
+  alias InkfishWeb.Staff.TeamJSON
 
   def index(conn, %{"course_id" => course_id}) do
     teamsets = Teams.list_teamsets(course_id)
@@ -50,19 +51,41 @@ defmodule InkfishWeb.Staff.TeamsetController do
     end
   end
 
-  alias InkfishWeb.Staff.TeamJSON
-
   def show(conn, %{"id" => id}) do
     teamset = Teams.get_teamset!(id)
     past_teams = Enum.map(Teams.past_teams(teamset), &TeamJSON.view_members/1)
 
     data =
-      InkfishWeb.Staff.TeamsetJSON.show(%{teamset: teamset})
+      InkfishWeb.Staff.TeamsetJSON.data(teamset)
+
+    course = conn.assigns[:course]
+
+    meeting =
+      Inkfish.Meetings.get_current_meeting(course)
+      |> Inkfish.Meetings.preload_attendances()
+
+    regs = Inkfish.Users.list_student_regs_for_course(course)
+
+    attendances =
+      for reg <- regs do
+        att =
+          Enum.find(
+            Map.get(meeting || %{}, :attendances) || [],
+            &(&1.reg_id == reg.id)
+          )
+
+        [
+          InkfishWeb.Staff.RegJSON.data(reg),
+          InkfishWeb.Staff.AttendanceJSON.data(att)
+        ]
+      end
 
     render(conn, "show.html",
       teamset: teamset,
       data: data,
-      past_teams: past_teams
+      past_teams: past_teams,
+      meeting: InkfishWeb.Staff.MeetingJSON.data(meeting),
+      attendances: attendances
     )
   end
 

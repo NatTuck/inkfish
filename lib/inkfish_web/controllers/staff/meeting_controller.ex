@@ -25,7 +25,9 @@ defmodule InkfishWeb.Staff.MeetingController do
        when action not in [:index, :new, :create]
 
   def index(conn, _params) do
-    meetings = Meetings.list_meetings()
+    course = conn.assigns[:course]
+
+    meetings = Meetings.list_meetings(course)
     render(conn, :index, meetings: meetings)
   end
 

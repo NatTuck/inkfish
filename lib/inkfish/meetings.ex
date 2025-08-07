@@ -19,9 +19,10 @@ defmodule Inkfish.Meetings do
       [%Meeting{}, ...]
 
   """
-  def list_meetings do
+  def list_meetings(%Course{} = course) do
     Repo.all(
       from mm in Meeting,
+        where: mm.course_id == ^course.id,
         order_by: {:desc, mm.started_at}
     )
     |> Inkfish.Repo.Info.with_local_time()
@@ -66,6 +67,8 @@ defmodule Inkfish.Meetings do
       nil
     end
   end
+
+  def preload_attendances(nil), do: nil
 
   def preload_attendances(%Meeting{} = mm) do
     mm = Repo.preload(mm, attendances: [reg: [:user]])

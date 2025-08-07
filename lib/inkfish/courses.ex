@@ -225,9 +225,13 @@ defmodule Inkfish.Courses do
       if team do
         {ts.id, team}
       else
-        {:ok, team} = Inkfish.Teams.get_active_team(ts, reg)
-        team = Repo.preload(team, :subs)
-        {ts.id, team}
+        with {:ok, team} <- Inkfish.Teams.get_active_team(ts, reg) do
+          team = Repo.preload(team, :subs)
+          {ts.id, team}
+        else
+          {:error, :no_team} ->
+            {ts.id, nil}
+        end
       end
     end)
     |> Enum.into(%{})

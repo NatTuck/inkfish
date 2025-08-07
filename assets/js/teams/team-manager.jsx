@@ -14,8 +14,13 @@ export default function init() {
     let root = createRoot(root_div);
     let data = window.teamset_data;
     let past = window.past_teams;
+    let meeting = window.meeting;
+    if (meeting) {
+      meeting.students = window.attendances;
+    }
     data.new_team_regs = [];
     data.past = past;
+    data.meeting = meeting;
     root.render(<TeamManager data={data} />);
   }
 }
@@ -150,11 +155,43 @@ class TeamManager extends React.Component {
           </div>
         </div>
 
-        <h2>Suggested Teams</h2>
-        <TeamSuggestions data={this.state} active={this.active_teams()} />
+        <div className="row">
+          <div className="col">
+            <h2>Suggested Teams</h2>
+            <TeamSuggestions data={this.state} active={this.active_teams()} />
+          </div>
+          <div className="col">
+            <h2>Who's Here?</h2>
+            <WhosHere meeting={this.state.meeting} />
+          </div>
+        </div>
       </div>
     );
   }
+}
+
+function WhosHere({meeting}) {
+  if (!meeting) {
+    return (<p>No active meeting.</p>);
+  }
+
+  let rows = _.map(meeting.students, ([reg, att]) => (
+    <tr key={reg.id}>
+      <td>{reg.user.name}</td>
+      <td>{att ? "here" : "missing"}</td>
+    </tr>
+  ));
+
+  return (
+    <div>
+      <p>Code: {meeting.secret_code}</p>
+      <table className="table table-striped">
+        <tbody>
+          {rows}
+        </tbody>
+      </table>
+    </div>
+  );
 }
 
 function RegTable({root, regs, controls}) {
