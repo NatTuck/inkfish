@@ -72,4 +72,49 @@ defmodule Inkfish.Repo.Info do
       []
     end
   end
+
+  def to_local_time!(nil), do: nil
+  def to_local_time!(xx), do: LocalTime.from!(xx)
+
+  def lt_convert_fields(obj) when is_struct(obj) do
+    mod = obj.__struct__
+
+    Enum.reduce(mod.__schema__(:fields), obj, fn ff, obj ->
+      if mod.__schema__(:type, ff) == :utc_datetime do
+        dt =
+          Map.get(obj, ff)
+          |> to_local_time!()
+
+        Map.put(obj, ff, dt)
+      else
+        obj
+      end
+    end)
+  end
+
+  def lt_convert_assocs(obj) when is_struct(obj) do
+    mod = obj.__struct__
+
+    Enum.reduce(mod.__schema__(:associations), obj, fn ff, obj ->
+      item = Map.get(obj, ff)
+
+      if not is_nil(item) && Ecto.assoc_loaded?(item) do
+        Map.put(obj, ff, with_local_time(item))
+      else
+        obj
+      end
+    end)
+  end
+
+  def with_local_time(nil), do: nil
+
+  def with_local_time(obj) when is_struct(obj) do
+    obj
+    |> lt_convert_fields()
+    |> lt_convert_assocs()
+  end
+
+  def with_local_time(xs) when is_list(xs) do
+    for xx <- xs, do: with_local_time(xx)
+  end
 end

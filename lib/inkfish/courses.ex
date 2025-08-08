@@ -5,6 +5,7 @@ defmodule Inkfish.Courses do
 
   import Ecto.Query, warn: false
   alias Inkfish.Repo
+  alias Inkfish.Repo.Cache
 
   alias Inkfish.Courses.Course
   alias Inkfish.Courses.Bucket
@@ -12,6 +13,7 @@ defmodule Inkfish.Courses do
   alias Inkfish.Users.User
   alias Inkfish.Users.Reg
   alias Inkfish.Teams.Teamset
+  alias Inkfish.Assignments.Assignment
 
   @doc """
   Returns the list of courses.
@@ -200,6 +202,19 @@ defmodule Inkfish.Courses do
     )
   end
 
+  def reload_course_with_assignments!(%Course{} = course) do
+    Repo.one!(
+      from cc in Course,
+        where: cc.id == ^course.id,
+        left_join: buckets in assoc(cc, :buckets),
+        left_join: assignments in assoc(buckets, :assignments),
+        left_join: gcols in assoc(assignments, :grade_columns),
+        preload: [
+          buckets: {buckets, assignments: {assignments, grade_columns: gcols}}
+        ]
+    )
+  end
+
   def get_teams_for_student!(%Course{} = course, %Reg{} = reg) do
     Enum.map(course.teamsets, fn ts ->
       team =
@@ -210,9 +225,13 @@ defmodule Inkfish.Courses do
       if team do
         {ts.id, team}
       else
-        {:ok, team} = Inkfish.Teams.get_active_team(ts, reg)
-        team = Repo.preload(team, :subs)
-        {ts.id, team}
+        with {:ok, team} <- Inkfish.Teams.get_active_team(ts, reg) do
+          team = Repo.preload(team, :subs)
+          {ts.id, team}
+        else
+          {:error, :no_team} ->
+            {ts.id, nil}
+        end
       end
     end)
     |> Enum.into(%{})
@@ -225,6 +244,14 @@ defmodule Inkfish.Courses do
       get_course_for_staff_view!(course)
     else
       nil
+    end
+  end
+
+  def fetch_attendance_assignment(%Course{} = course) do
+    if course.attendance_assignment_id do
+      {:ok, Cache.get(Assignment, course.attendance_assignment_id)}
+    else
+      {:error, "No attendance for this course"}
     end
   end
 
@@ -241,7 +268,7 @@ defmodule Inkfish.Courses do
 
   """
   def create_course(attrs \\ %{}) do
-    course = Course.changeset(%Course{}, attrs)
+    course = Course.create_changeset(%Course{}, attrs)
     instructor = Course.instructor_login(course)
 
     result =

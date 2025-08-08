@@ -1,0 +1,23 @@
+<.header>
+  Listing Meetings
+  <:actions>
+    <.link href={~p"/staff/courses/#{@course}/meetings/new"}>
+      <.button>New Meeting</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.table id="meetings" rows={@meetings} row_click={&JS.navigate(~p"/staff/meetings/#{&1}")}>
+  <:col :let={meeting} label="Started at">{meeting.started_at}</:col>
+  <:action :let={meeting}>
+    <div class="sr-only">
+      <.link navigate={~p"/staff/meetings/#{meeting}"}>Show</.link>
+    </div>
+    <.link navigate={~p"/staff/meetings/#{meeting}/edit"}>Edit</.link>
+  </:action>
+  <:action :let={meeting}>
+    <.link href={~p"/staff/meetings/#{meeting}"} method="delete" data-confirm="Are you sure?">
+      Delete
+    </.link>
+  </:action>
+</.table>

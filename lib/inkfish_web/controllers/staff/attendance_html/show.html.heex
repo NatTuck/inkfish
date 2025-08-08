@@ -1,0 +1,12 @@
+<.header>
+  Attendance {@attendance.id}
+  <:actions>
+    <.link href={~p"/staff/attendances/#{@attendance}/edit"}>
+      <.button>Edit attendance</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.list>
+  <:item title="Attended at">{@attendance.attended_at}</:item>
+</.list>

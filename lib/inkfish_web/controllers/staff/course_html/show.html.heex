@@ -13,7 +13,8 @@
   <.link href={~p"/staff/courses/#{@course}/tasks"}>Tasks</.link>
   <%= if @task_count > 0 do %>
     <span class="badge bg-warning"><%= @task_count %></span>
-  <% end %>
+  <% end %> |
+  <.link href={~p"/staff/courses/#{@course}/meetings"}>Meetings</.link>
 </p>
 
 <ul>

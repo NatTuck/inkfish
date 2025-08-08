@@ -12,6 +12,7 @@
   </div>
 
   <script>
+
    window.create_team_path =
      "<%= ~p"/ajax/staff/teamsets/#{@teamset}/teams" %>";
    <% id = "ID" %>
@@ -19,6 +20,8 @@
      "<%= ~p"/ajax/staff/teams/#{id}" %>";
    window.teamset_data = <%= raw(Jason.encode!(@data)) %>;
    window.past_teams = <%= raw(Jason.encode!(@past_teams)) %>;
+   window.meeting = <%= raw(Jason.encode!(@meeting)) %>;
+   window.attendances = <%= raw(Jason.encode!(@attendances)) %>;
     
   </script>
 

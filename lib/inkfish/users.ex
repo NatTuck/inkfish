@@ -80,6 +80,18 @@ defmodule Inkfish.Users do
     Repo.get_by!(User, email: email)
   end
 
+  def get_user_by_bracketed_email(text) do
+    email = User.extract_email(text)
+
+    case Repo.get_by(User, email: email) do
+      nil ->
+        {:error, "No user #{text}"}
+
+      %User{} = user ->
+        {:ok, user}
+    end
+  end
+
   @doc """
   Creates a user.
 
@@ -215,6 +227,15 @@ defmodule Inkfish.Users do
     Repo.all(
       from reg in Reg,
         where: reg.course_id == ^course_id,
+        inner_join: user in assoc(reg, :user),
+        preload: [user: user]
+    )
+  end
+
+  def list_student_regs_for_course(%Course{} = course) do
+    Repo.all(
+      from reg in Reg,
+        where: reg.course_id == ^course.id and reg.is_student,
         inner_join: user in assoc(reg, :user),
         preload: [user: user]
     )

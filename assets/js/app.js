@@ -16,3 +16,4 @@ import "./teams/team-manager";
 import "./gcol";
 import "./gcol/limits";
 import "./itty";
+import "./attendance";

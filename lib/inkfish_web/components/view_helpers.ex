@@ -11,6 +11,7 @@ defmodule InkfishWeb.ViewHelpers do
   alias Inkfish.Grades.GradeColumn
   alias Inkfish.Assignments.Assignment
   alias Inkfish.Teams.Team
+  alias Inkfish.Attendances.Attendance
   alias Inkfish.LocalTime
 
   def error_tag(form, field) do
@@ -292,5 +293,11 @@ defmodule InkfishWeb.ViewHelpers do
 
   def bs_icon(name) do
     raw(~s(<img src="/images/icons/#{name}.svg" />))
+  end
+
+  def show_attendance(nil), do: "absent"
+
+  def show_attendance(%Attendance{} = at) do
+    at.status
   end
 end

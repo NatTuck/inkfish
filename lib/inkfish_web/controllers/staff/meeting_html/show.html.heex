@@ -1,0 +1,34 @@
+<.header>
+  Meeting: {@course.name} @ {@meeting.started_at |> DateTime.to_date()}
+  <:actions>
+    <.link href={~p"/staff/meetings/#{@meeting}/edit"}>
+      <.button>Edit meeting</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.list>
+  <:item title="Started at">{@meeting.started_at}</:item>
+  <:item title="Teamset">
+    <%= if @meeting.teamset_id do %>
+      { @meeting.teamset.name }
+    <% else %>
+      (No teamset)
+    <% end %>
+  </:item>
+  <:item title="Secret Code">
+    { @meeting.secret_code }
+  </:item>
+</.list>
+
+<h2>Attendance</h2>
+
+<table class="table table-striped">
+  <%= for reg <- @student_regs do %>
+    <tr>
+      <td>{user_display_name(reg.user)}</td>
+      <td>{show_attendance(Enum.find(@meeting.attendances, & &1.reg_id == reg.id))}</td>
+    </tr>
+  <% end %>
+</table>
+

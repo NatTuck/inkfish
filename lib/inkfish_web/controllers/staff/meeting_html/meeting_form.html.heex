@@ -1,0 +1,25 @@
+<.simple_form :let={f} for={@changeset} action={@action}>
+  <.error :if={@changeset.action}>
+    Oops, something went wrong! Please check the errors below.
+  </.error>
+ 
+  <div class="mb-3">
+    <.input field={f[:started_at]} class="form-field" 
+      type="datetime-local" label="Started at" />
+  </div>
+
+  <div class="mb-3">
+    <.input 
+      label="Teamset"
+      type="select" 
+      field={f[:teamset_id]}
+      class="form-select"
+      prompt="[none]"
+      options={Enum.map(@teamsets, &({&1.name, &1.id}))} />
+    <.error_tag form={f} field={:teamset_id} />
+  </div>
+
+  <:actions>
+    <.button>Save Meeting</.button>
+  </:actions>
+</.simple_form>

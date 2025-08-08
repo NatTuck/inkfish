@@ -41,7 +41,14 @@ defmodule Make do
 
   def course(name) do
     today = Inkfish.LocalTime.today()
-    {:ok, course} = Courses.create_course(%{name: name, start_date: today})
+
+    attrs = %{
+      name: name,
+      start_date: today,
+      instructor: "Alice [alice@example.com]"
+    }
+
+    {:ok, course} = Courses.create_course(attrs)
     course
   end
 
