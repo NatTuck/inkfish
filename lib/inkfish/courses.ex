@@ -149,6 +149,21 @@ defmodule Inkfish.Courses do
     %Course{course | teamsets: c_ts.teamsets, buckets: c_bu.buckets}
   end
 
+  def add_solo_teamset(%Course{} = course) do
+    if is_nil(course.solo_teamset_id) do
+      ts = Teams.create_solo_teamset!(course)
+      %Course{course | solo_teamset_id: ts.id, solo_teamset: ts}
+    else
+      Repo.preload(course, :solo_teamset)
+    end
+  end
+
+  def add_solo_team(%Course{} = course, %Reg{} = reg) do
+    course = add_solo_teamset(course)
+    {:ok, _} = get_active_team(course.solo_teamset, reg)
+    course
+  end
+
   def reload_course_with_student_teams!(%Course{} = course, %Reg{} = reg) do
     Repo.one!(
       from cc in Course,
@@ -160,7 +175,7 @@ defmodule Inkfish.Courses do
         left_join: tm_reg in assoc(team_members, :reg),
         left_join: tm_user in assoc(tm_reg, :user),
         left_join: team_subs in assoc(teams, :subs),
-        where: team_members.reg_id == ^reg.id or is_nil(team_members.id),
+        where: team_members.reg_id == ^reg.id or is_nil(team_members.reg_id),
         where: teams.active or is_nil(teams.id),
         preload: [
           teamsets:
