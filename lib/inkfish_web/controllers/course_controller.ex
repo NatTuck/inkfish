@@ -29,7 +29,7 @@ defmodule InkfishWeb.CourseController do
 
     course =
       conn.assigns[:course]
-      |> Courses.add_solo_team()
+      |> Courses.add_solo_team(current_reg)
       |> Courses.reload_course_for_student_view!(current_reg)
 
     teams = Courses.get_teams_for_student!(course, current_reg)

@@ -151,7 +151,7 @@ defmodule Inkfish.Courses do
 
   def add_solo_teamset(%Course{} = course) do
     if is_nil(course.solo_teamset_id) do
-      ts = Teams.create_solo_teamset!(course)
+      ts = Inkfish.Teams.create_solo_teamset!(course)
       %Course{course | solo_teamset_id: ts.id, solo_teamset: ts}
     else
       Repo.preload(course, :solo_teamset)
@@ -160,7 +160,7 @@ defmodule Inkfish.Courses do
 
   def add_solo_team(%Course{} = course, %Reg{} = reg) do
     course = add_solo_teamset(course)
-    {:ok, _} = get_active_team(course.solo_teamset, reg)
+    {:ok, _} = Inkfish.Teams.get_active_team(course.solo_teamset, reg)
     course
   end
 
