@@ -20,6 +20,12 @@
   </div>
 
   <div class="mb-3">
+    <.label for="archived" class="form-label">Archived</.label>
+    <.checkbox field={f[:archived]} class="form-control form-check-input" />
+    <.error_tag form={f} field={:archived} />
+  </div>
+
+  <div class="mb-3">
     <.label for="sections" class="form-label">Sections</.label>
     <.text_input field={f[:sections]} class="form-control" />
     <.error_tag form={f} field={:sections} />
