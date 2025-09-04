@@ -16,8 +16,19 @@ defmodule Inkfish.Repo.Cache do
     GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
   end
 
-  def get(mod, id) do
+  def get(mod, id) when is_integer(id) do
     GenServer.call(__MODULE__, {:get, mod, id})
+  end
+
+  def get(mod, id) when is_binary(id) do
+    case Integer.parse(id) do
+      {xx, _} -> get(mod, xx)
+      :error -> {:error, :bad_id}
+    end
+  end
+
+  def get(_mod, nil) do
+    {:error, :nil_id}
   end
 
   @doc """
