@@ -298,6 +298,7 @@ defmodule InkfishWeb.ViewHelpers do
   def show_attendance(nil), do: "absent"
 
   def show_attendance(%Attendance{} = at) do
+    at = Attendance.put_status(at)
     at.status
   end
 end
