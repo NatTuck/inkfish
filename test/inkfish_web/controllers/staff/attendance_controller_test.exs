@@ -125,7 +125,7 @@ defmodule InkfishWeb.Staff.AttendanceControllerTest do
 
       # Toggle the excuse status
       conn =
-        post(conn, ~p"/staff/meetings/excuse", %{
+        post(conn, ~p"/staff/attendances/excuse", %{
           "meeting_id" => meeting.id,
           "reg_id" => reg.id
         })
@@ -156,7 +156,7 @@ defmodule InkfishWeb.Staff.AttendanceControllerTest do
 
       # Create an excused attendance
       conn =
-        post(conn, ~p"/staff/meetings/excuse", %{
+        post(conn, ~p"/staff/attendances/excuse", %{
           "meeting_id" => meeting.id,
           "reg_id" => new_reg.id
         })
