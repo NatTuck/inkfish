@@ -3,12 +3,14 @@ defmodule InkfishWeb.Staff.AttendanceController do
 
   alias Inkfish.Attendances
   alias Inkfish.Attendances.Attendance
+  alias Inkfish.Users.Reg
+  alias Inkfish.Repo.Cache
 
   alias InkfishWeb.Plugs
 
   plug Plugs.FetchItem,
        [meeting: "meeting_id"]
-       when action in [:index, :new, :create]
+       when action in [:index, :new, :create, :excuse]
 
   plug Plugs.FetchItem,
        [attendance: "id"]
@@ -81,5 +83,36 @@ defmodule InkfishWeb.Staff.AttendanceController do
     conn
     |> put_flash(:info, "Attendance deleted successfully.")
     |> redirect(to: ~p"/staff/meetings/#{at.meeting}")
+  end
+
+  def excuse(conn, %{"meeting_id" => _mid, "reg_id" => reg_id}) do
+    meeting = conn.assigns[:meeting]
+    {:ok, reg} = Cache.get(Reg, reg_id)
+
+    case Attendances.get_attendance(meeting, reg) do
+      %Attendance{} = att ->
+        {:ok, _att} =
+          Attendances.update_attendance(att, %{"excused" => !att.excused})
+
+        conn
+        |> put_flash(:info, "Attendance excuse toggled.")
+        |> redirect(to: ~p"/staff/meetings/#{meeting}")
+
+      _no_att ->
+        dt = LocalTime.now() |> DateTime.add(365, :day)
+
+        params = %{
+          "attended_at" => dt,
+          "meeting_id" => meeting.id,
+          "reg_id" => reg.id,
+          "excused" => true
+        }
+
+        {:ok, _att} = Attendances.create_attendance(params)
+
+        conn
+        |> put_flash(:info, "Created excused attendance.")
+        |> redirect(to: ~p"/staff/meetings/#{meeting}")
+    end
   end
 end

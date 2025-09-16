@@ -76,7 +76,8 @@ defmodule Inkfish.Factory do
     %Attendance{
       attended_at: DateTime.utc_now(),
       meeting: build(:meeting),
-      reg: build(:reg)
+      reg: build(:reg),
+      excused: false
     }
   end
 
