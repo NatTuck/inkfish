@@ -12,15 +12,15 @@ defmodule InkfishWeb.Staff.AttendanceControllerTest do
       teamset = insert(:teamset, course: course)
       meeting = insert(:meeting, course: course, teamset: teamset)
       reg = insert(:reg)
-      
+
       # Create an attendance record
       insert(:attendance, meeting: meeting, reg: reg)
-      
+
       # Login as staff with proper permissions
       staff = Inkfish.Users.get_user_by_email!("carol@example.com")
       _staff_reg = insert(:reg, user: staff, course: course, is_staff: true)
       conn = login(conn, staff)
-      
+
       conn = get(conn, ~p"/staff/meetings/#{meeting.id}/attendances")
       assert html_response(conn, 200) =~ "Attendances"
     end
@@ -29,12 +29,16 @@ defmodule InkfishWeb.Staff.AttendanceControllerTest do
   describe "edit attendance" do
     setup [:create_attendance_with_context]
 
-    test "renders form for editing chosen attendance", %{conn: conn, attendance: attendance, course: course} do
+    test "renders form for editing chosen attendance", %{
+      conn: conn,
+      attendance: attendance,
+      course: course
+    } do
       # Login as staff with proper permissions
       staff = Inkfish.Users.get_user_by_email!("carol@example.com")
       _staff_reg = insert(:reg, user: staff, course: course, is_staff: true)
       conn = login(conn, staff)
-      
+
       conn = get(conn, ~p"/staff/attendances/#{attendance.id}/edit")
       assert html_response(conn, 200) =~ "Edit Attendance"
     end
@@ -43,26 +47,42 @@ defmodule InkfishWeb.Staff.AttendanceControllerTest do
   describe "update attendance" do
     setup [:create_attendance_with_context]
 
-    test "redirects when data is valid", %{conn: conn, attendance: attendance, course: course} do
+    test "redirects when data is valid", %{
+      conn: conn,
+      attendance: attendance,
+      course: course
+    } do
       # Login as staff with proper permissions
       staff = Inkfish.Users.get_user_by_email!("carol@example.com")
       _staff_reg = insert(:reg, user: staff, course: course, is_staff: true)
       conn = login(conn, staff)
-      
-      conn = put(conn, ~p"/staff/attendances/#{attendance.id}", attendance: @update_attrs)
+
+      conn =
+        put(conn, ~p"/staff/attendances/#{attendance.id}",
+          attendance: @update_attrs
+        )
+
       assert redirected_to(conn) == ~p"/staff/attendances/#{attendance.id}"
 
       conn = get(conn, ~p"/staff/attendances/#{attendance.id}")
       assert html_response(conn, 200) =~ "Attendance"
     end
 
-    test "renders errors when data is invalid", %{conn: conn, attendance: attendance, course: course} do
+    test "renders errors when data is invalid", %{
+      conn: conn,
+      attendance: attendance,
+      course: course
+    } do
       # Login as staff with proper permissions
       staff = Inkfish.Users.get_user_by_email!("carol@example.com")
       _staff_reg = insert(:reg, user: staff, course: course, is_staff: true)
       conn = login(conn, staff)
-      
-      conn = put(conn, ~p"/staff/attendances/#{attendance.id}", attendance: @invalid_attrs)
+
+      conn =
+        put(conn, ~p"/staff/attendances/#{attendance.id}",
+          attendance: @invalid_attrs
+        )
+
       assert html_response(conn, 200) =~ "Edit Attendance"
     end
   end
@@ -70,12 +90,16 @@ defmodule InkfishWeb.Staff.AttendanceControllerTest do
   describe "delete attendance" do
     setup [:create_attendance_with_context]
 
-    test "deletes chosen attendance", %{conn: conn, attendance: attendance, course: course} do
+    test "deletes chosen attendance", %{
+      conn: conn,
+      attendance: attendance,
+      course: course
+    } do
       # Login as staff with proper permissions
       staff = Inkfish.Users.get_user_by_email!("carol@example.com")
       _staff_reg = insert(:reg, user: staff, course: course, is_staff: true)
       conn = login(conn, staff)
-      
+
       conn = delete(conn, ~p"/staff/attendances/#{attendance.id}")
       assert redirected_to(conn) == ~p"/staff/meetings/#{attendance.meeting_id}"
     end
@@ -84,42 +108,62 @@ defmodule InkfishWeb.Staff.AttendanceControllerTest do
   describe "excuse attendance" do
     setup [:create_attendance_with_context]
 
-    test "toggles excused status for existing attendance", %{conn: conn, attendance: attendance, course: course, meeting: meeting, reg: reg} do
+    test "toggles excused status for existing attendance", %{
+      conn: conn,
+      attendance: attendance,
+      course: course,
+      meeting: meeting,
+      reg: reg
+    } do
       # Login as staff with proper permissions
       staff = Inkfish.Users.get_user_by_email!("carol@example.com")
       _staff_reg = insert(:reg, user: staff, course: course, is_staff: true)
       conn = login(conn, staff)
-      
+
       # First, check that the attendance is not excused
       assert attendance.excused == false
-      
+
       # Toggle the excuse status
-      conn = post(conn, ~p"/staff/meetings/#{meeting.id}/excuse/#{reg.id}")
+      conn =
+        post(conn, ~p"/staff/meetings/excuse", %{
+          "meeting_id" => meeting.id,
+          "reg_id" => reg.id
+        })
+
       assert redirected_to(conn) == ~p"/staff/meetings/#{meeting.id}"
-      assert get_flash(conn, :info) == "Attendance excuse toggled."
-      
+      assert Phoenix.Flash.get(conn, :info) == "Attendance excuse toggled."
+
       # Verify the attendance is now excused
       updated_attendance = Inkfish.Attendances.get_attendance!(attendance.id)
       assert updated_attendance.excused == true
     end
 
-    test "creates new excused attendance when none exists", %{conn: conn, course: course, meeting: meeting} do
+    test "creates new excused attendance when none exists", %{
+      conn: conn,
+      course: course,
+      meeting: meeting
+    } do
       # Login as staff with proper permissions
       staff = Inkfish.Users.get_user_by_email!("carol@example.com")
       _staff_reg = insert(:reg, user: staff, course: course, is_staff: true)
       conn = login(conn, staff)
-      
+
       # Create a new reg that doesn't have an attendance yet
       new_reg = insert(:reg)
-      
+
       # Verify no attendance exists for this reg and meeting
       assert Inkfish.Attendances.get_attendance(meeting, new_reg) == nil
-      
+
       # Create an excused attendance
-      conn = post(conn, ~p"/staff/meetings/#{meeting.id}/excuse/#{new_reg.id}")
+      conn =
+        post(conn, ~p"/staff/meetings/excuse", %{
+          "meeting_id" => meeting.id,
+          "reg_id" => new_reg.id
+        })
+
       assert redirected_to(conn) == ~p"/staff/meetings/#{meeting.id}"
-      assert get_flash(conn, :info) == "Created excused attendance."
-      
+      assert Phoenix.Flash.get(conn, :info) == "Created excused attendance."
+
       # Verify the excused attendance was created
       new_attendance = Inkfish.Attendances.get_attendance(meeting, new_reg)
       assert new_attendance != nil
