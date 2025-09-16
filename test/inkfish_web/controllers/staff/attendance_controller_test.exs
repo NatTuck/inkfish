@@ -131,7 +131,9 @@ defmodule InkfishWeb.Staff.AttendanceControllerTest do
         })
 
       assert redirected_to(conn) == ~p"/staff/meetings/#{meeting.id}"
-      assert Phoenix.Flash.get(conn, :info) == "Attendance excuse toggled."
+
+      assert Phoenix.Flash.get(conn.assigns[:flash], :info) ==
+               "Attendance excuse toggled."
 
       # Verify the attendance is now excused
       updated_attendance = Inkfish.Attendances.get_attendance!(attendance.id)
@@ -162,7 +164,9 @@ defmodule InkfishWeb.Staff.AttendanceControllerTest do
         })
 
       assert redirected_to(conn) == ~p"/staff/meetings/#{meeting.id}"
-      assert Phoenix.Flash.get(conn, :info) == "Created excused attendance."
+
+      assert Phoenix.Flash.get(conn.assigns[:flash], :info) ==
+               "Created excused attendance."
 
       # Verify the excused attendance was created
       new_attendance = Inkfish.Attendances.get_attendance(meeting, new_reg)
