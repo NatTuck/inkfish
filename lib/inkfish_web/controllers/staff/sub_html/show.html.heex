@@ -26,7 +26,7 @@
       <strong>Active:</strong>
       <%= @sub.active %>
     <% else %>
-      <.form :let={f} for={Inkfish.Subs.change_active(@sub, %{})} action={~p"/staff/subs/#{@sub}"}>
+      <.form :let={f} for={Inkfish.Subs.change_sub(@sub)} action={~p"/staff/subs/#{@sub}"}>
         <strong>Active:</strong>
         <%= @sub.active %>
         &nbsp;
@@ -37,7 +37,7 @@
   </li>
 
   <li>
-    <% cset = Inkfish.Subs.change_ignore_late(@sub, %{}) %>
+    <% cset = Inkfish.Subs.change_sub(@sub) %>
     <.form :let={f} for={cset} action={~p"/staff/subs/#{@sub}"}>
       <strong>Ignore Late Penalty:</strong>
       <%= @sub.ignore_late_penalty %>
