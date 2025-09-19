@@ -18,12 +18,12 @@ defmodule InkfishWeb.Staff.SubControllerTest do
   describe "update sub" do
     test "activates sub when activate button is pressed", %{
       conn: conn,
-      assignment: assignment,
-      staff: staff
+      assignment: assignment
     } do
       # Create a non-active sub for this specific test
       student = Inkfish.Users.get_user_by_email!("dave@example.com")
-      student_reg = Inkfish.Courses.get_reg!(assignment.course_id, student.id)
+      course_id = assignment.bucket.course_id
+      student_reg = Inkfish.Repo.get_by!(Inkfish.Users.Reg, course_id: course_id, user_id: student.id)
       {:ok, team} = Inkfish.Teams.get_active_team(assignment, student_reg)
       upload = insert(:upload, user: student)
       sub = insert(:sub, active: false, assignment: assignment, reg: student_reg, team: team, upload: upload)
