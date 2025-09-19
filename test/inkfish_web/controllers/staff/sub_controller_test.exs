@@ -21,7 +21,7 @@ defmodule InkfishWeb.Staff.SubControllerTest do
       if sub.active do
         # If it's already active, deactivate it first
         sub = Inkfish.Repo.get!(Inkfish.Subs.Sub, sub.id)
-        {:ok, sub} = Inkfish.Subs.update_sub(sub, %{active: false})
+        {:ok, _sub} = Inkfish.Subs.update_sub(sub, %{active: false})
       end
       
       # Reload the sub to get the current state
@@ -33,9 +33,9 @@ defmodule InkfishWeb.Staff.SubControllerTest do
       conn = put(conn, ~p"/staff/subs/#{sub}", sub: params)
       assert redirected_to(conn) == ~p"/staff/subs/#{sub}"
       
-      # Check that the sub is now active
+      # Check that the sub is now active by looking for the active status text
       conn = get(conn, ~p"/staff/subs/#{sub}")
-      # Look for the active form that shows "true" when active
+      # When active, it should show "Active: true" without a form
       assert html_response(conn, 200) =~ "<strong>Active:</strong>\ntrue"
     end
 
@@ -44,7 +44,7 @@ defmodule InkfishWeb.Staff.SubControllerTest do
       if sub.ignore_late_penalty do
         # If it's already true, set it to false first
         sub = Inkfish.Repo.get!(Inkfish.Subs.Sub, sub.id)
-        {:ok, sub} = Inkfish.Subs.update_sub(sub, %{ignore_late_penalty: false})
+        {:ok, _sub} = Inkfish.Subs.update_sub(sub, %{ignore_late_penalty: false})
       end
       
       # Reload the sub to get the current state
