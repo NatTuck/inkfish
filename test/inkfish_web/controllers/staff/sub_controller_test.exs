@@ -56,19 +56,54 @@ defmodule InkfishWeb.Staff.SubControllerTest do
       assert html_response(conn, 200) =~ "<strong>Active:</strong>\ntrue"
     end
 
-    test "toggles late penalty when toggle button is pressed", %{
+    test "toggles late penalty when toggle button is pressed without changing active state", %{
+      conn: conn,
+      assignment: assignment
+    } do
+      # Create a non-active sub for this specific test
+      student = Inkfish.Users.get_user_by_email!("dave@example.com")
+      course_id = assignment.bucket.course_id
+
+      student_reg =
+        Inkfish.Repo.get_by!(Inkfish.Users.Reg,
+          course_id: course_id,
+          user_id: student.id
+        )
+
+      {:ok, team} = Inkfish.Teams.get_active_team(assignment, student_reg)
+      upload = insert(:upload, user: student)
+
+      sub =
+        insert(:sub,
+          active: false,
+          assignment: assignment,
+          reg: student_reg,
+          team: team,
+          upload: upload
+        )
+
+      # The sub should start as inactive
+      refute sub.active
+
+      # Press the toggle late penalty button (this should NOT activate the sub)
+      params = %{"ignore_late_penalty" => "true"}
+      conn = put(conn, ~p"/staff/subs/#{sub}", sub: params)
+      assert redirected_to(conn) == ~p"/staff/subs/#{sub}"
+
+      # Check that the sub is still inactive
+      conn = get(conn, ~p"/staff/subs/#{sub}")
+      assert html_response(conn, 200) =~ "<strong>Active:</strong>\nfalse"
+      
+      # But the late penalty should be toggled
+      assert html_response(conn, 200) =~ "<strong>Ignore Late Penalty:</strong>\ntrue"
+    end
+
+    test "toggles late penalty when toggle button is pressed on active sub", %{
       conn: conn,
       sub: sub
     } do
-      # Make sure the sub starts with ignore_late_penalty as false for this test
-      if sub.ignore_late_penalty do
-        sub_to_update = Inkfish.Repo.get!(Inkfish.Subs.Sub, sub.id)
-
-        {:ok, _updated_sub} =
-          Inkfish.Subs.update_sub(sub_to_update, %{ignore_late_penalty: false})
-      end
-
-      sub = Inkfish.Repo.get!(Inkfish.Subs.Sub, sub.id)
+      # The sub should start as active (from factory) and ignore_late_penalty as false
+      assert sub.active
       refute sub.ignore_late_penalty
 
       # Press the toggle button
@@ -76,22 +111,24 @@ defmodule InkfishWeb.Staff.SubControllerTest do
       conn = put(conn, ~p"/staff/subs/#{sub}", sub: params)
       assert redirected_to(conn) == ~p"/staff/subs/#{sub}"
 
-      # Check that the late penalty setting is now true
+      # Check that the sub is still active
       conn = get(conn, ~p"/staff/subs/#{sub}")
-      # Look for the text that shows the current value is true
-      assert html_response(conn, 200) =~
-               "<strong>Ignore Late Penalty:</strong>\ntrue"
+      assert html_response(conn, 200) =~ "<strong>Active:</strong>\ntrue"
+      
+      # But the late penalty should be toggled
+      assert html_response(conn, 200) =~ "<strong>Ignore Late Penalty:</strong>\ntrue"
 
       # Press the toggle button again
       params = %{"ignore_late_penalty" => "false"}
       conn = put(conn, ~p"/staff/subs/#{sub}", sub: params)
       assert redirected_to(conn) == ~p"/staff/subs/#{sub}"
 
-      # Check that the late penalty setting is now false
+      # Check that the sub is still active
       conn = get(conn, ~p"/staff/subs/#{sub}")
-      # Look for the text that shows the current value is false
-      assert html_response(conn, 200) =~
-               "<strong>Ignore Late Penalty:</strong>\nfalse"
+      assert html_response(conn, 200) =~ "<strong>Active:</strong>\ntrue"
+      
+      # And the late penalty should be toggled back
+      assert html_response(conn, 200) =~ "<strong>Ignore Late Penalty:</strong>\nfalse"
     end
   end
 end

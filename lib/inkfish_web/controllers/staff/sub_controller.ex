@@ -54,7 +54,8 @@ defmodule InkfishWeb.Staff.SubController do
 
     sub = conn.assigns[:sub]
 
-    if params["active"] do
+    # Check for explicit activation - only activate if active=true is explicitly set
+    if params["active"] == "true" or params["active"] == true do
       Subs.set_sub_active!(sub)
     end
 
