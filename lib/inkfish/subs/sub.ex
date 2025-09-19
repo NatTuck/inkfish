@@ -61,6 +61,12 @@ defmodule Inkfish.Subs.Sub do
     |> validate_required([:ignore_late_penalty])
   end
 
+  def change_active(sub, attrs) do
+    sub
+    |> cast(attrs, [:active])
+    |> validate_required([:active])
+  end
+
   def change_grader(sub, grader_id) do
     attrs = %{"grader_id" => grader_id}
 
