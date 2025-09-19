@@ -18,13 +18,10 @@ defmodule InkfishWeb.Staff.SubControllerTest do
   describe "update sub" do
     test "activates sub when activate button is pressed", %{conn: conn, sub: sub} do
       # First ensure the sub is not active
-      unless sub.active do
-        # If it's already inactive, we're good
-        sub = Inkfish.Repo.get!(Inkfish.Subs.Sub, sub.id)
-      else
+      if sub.active do
         # If it's already active, deactivate it first
         sub = Inkfish.Repo.get!(Inkfish.Subs.Sub, sub.id)
-        {:ok, _sub} = Inkfish.Subs.update_sub(sub, %{active: false})
+        {:ok, _updated_sub} = Inkfish.Subs.update_sub(sub, %{active: false})
       end
       
       # Reload the sub to get the current state
@@ -32,7 +29,7 @@ defmodule InkfishWeb.Staff.SubControllerTest do
       refute sub.active
       
       # Press the activate button
-      params = %{active: "true"}
+      params = %{"active" => "true"}
       conn = put(conn, ~p"/staff/subs/#{sub}", sub: params)
       assert redirected_to(conn) == ~p"/staff/subs/#{sub}"
       
@@ -44,13 +41,10 @@ defmodule InkfishWeb.Staff.SubControllerTest do
 
     test "toggles late penalty when toggle button is pressed", %{conn: conn, sub: sub} do
       # First ensure the late penalty setting is false
-      unless sub.ignore_late_penalty do
-        # If it's already false, we're good
-        sub = Inkfish.Repo.get!(Inkfish.Subs.Sub, sub.id)
-      else
+      if sub.ignore_late_penalty do
         # If it's already true, set it to false first
         sub = Inkfish.Repo.get!(Inkfish.Subs.Sub, sub.id)
-        {:ok, _sub} = Inkfish.Subs.update_sub(sub, %{ignore_late_penalty: false})
+        {:ok, _updated_sub} = Inkfish.Subs.update_sub(sub, %{ignore_late_penalty: false})
       end
       
       # Reload the sub to get the current state
