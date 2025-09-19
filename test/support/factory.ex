@@ -189,7 +189,7 @@ defmodule Inkfish.Factory do
 
   def sub_factory do
     %Sub{
-      active: false,
+      active: true,
       hours_spent: Decimal.new("4.5"),
       note: "",
       assignment: build(:assignment),

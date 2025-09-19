@@ -18,8 +18,16 @@ defmodule InkfishWeb.Staff.SubControllerTest do
   describe "update sub" do
     test "activates sub when activate button is pressed", %{
       conn: conn,
-      sub: sub
+      assignment: assignment,
+      staff: staff
     } do
+      # Create a non-active sub for this specific test
+      student = Inkfish.Users.get_user_by_email!("dave@example.com")
+      student_reg = Inkfish.Courses.get_reg!(assignment.course_id, student.id)
+      {:ok, team} = Inkfish.Teams.get_active_team(assignment, student_reg)
+      upload = insert(:upload, user: student)
+      sub = insert(:sub, active: false, assignment: assignment, reg: student_reg, team: team, upload: upload)
+
       # The sub should start as inactive
       refute sub.active
 
@@ -38,7 +46,13 @@ defmodule InkfishWeb.Staff.SubControllerTest do
       conn: conn,
       sub: sub
     } do
-      # The sub should start with ignore_late_penalty as false
+      # Make sure the sub starts with ignore_late_penalty as false for this test
+      if sub.ignore_late_penalty do
+        sub_to_update = Inkfish.Repo.get!(Inkfish.Subs.Sub, sub.id)
+        {:ok, _updated_sub} = Inkfish.Subs.update_sub(sub_to_update, %{ignore_late_penalty: false})
+        sub = Inkfish.Repo.get!(Inkfish.Subs.Sub, sub.id)
+      end
+      
       refute sub.ignore_late_penalty
 
       # Press the toggle button
