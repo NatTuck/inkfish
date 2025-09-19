@@ -45,7 +45,7 @@ defmodule InkfishWeb.Staff.SubControllerTest do
       
       # Press the toggle button again
       params = %{ignore_late_penalty: false}
-      conn = put(conn, conn, ~p"/staff/subs/#{sub}", sub: params)
+      conn = put(conn, ~p"/staff/subs/#{sub}", sub: params)
       assert redirected_to(conn) == ~p"/staff/subs/#{sub}"
       
       # Check that the late penalty setting is now false

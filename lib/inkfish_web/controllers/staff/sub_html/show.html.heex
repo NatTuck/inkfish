@@ -30,7 +30,7 @@
         <strong>Active:</strong>
         <%= @sub.active %>
         &nbsp;
-        <.hidden_input field={f[:active]} value={true} />
+        <%= hidden_input(f, :active, value: true) %>
         <.button class="btn btn-secondary btn-sm">Activate</.button>
       </.form>
     <% end %>
@@ -42,7 +42,7 @@
       <strong>Ignore Late Penalty:</strong>
       <%= @sub.ignore_late_penalty %>
       &nbsp;
-      <.hidden_input field={f[:ignore_late_penalty]} value={!@sub.ignore_late_penalty} />
+      <%= hidden_input(f, :ignore_late_penalty, value: !@sub.ignore_late_penalty) %>
       <.button class="btn btn-secondary btn-sm">Toggle</.button>
     </.form>
   </li>
