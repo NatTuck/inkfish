@@ -23,7 +23,12 @@ defmodule Inkfish.Application do
       Inkfish.Itty.Sup,
 
       # Autograding Jobs
-      Inkfish.AgJobs.Server,
+      if Application.get_env(:inkfish, :env) == :test do
+        # Don't start AgJobs server during tests to avoid DB connection issues
+        []
+      else
+        Inkfish.AgJobs.Server
+      end,
 
       # Path Cache
       Inkfish.Repo.Cache
