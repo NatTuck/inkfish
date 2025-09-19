@@ -58,8 +58,8 @@ defmodule InkfishWeb.Staff.SubController do
       Subs.set_sub_active!(sub)
     end
 
-    if params["ignore_late_penalty"] do
-      Subs.update_sub_ignore_late(sub, params)
+    if params["ignore_late_penalty"] != nil do
+      Subs.update_sub_ignore_late(sub, %{"ignore_late_penalty" => params["ignore_late_penalty"]})
     end
 
     if params["grader_id"] do
