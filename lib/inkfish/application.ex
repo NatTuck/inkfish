@@ -25,7 +25,7 @@ defmodule Inkfish.Application do
       # Autograding Jobs
       if Application.get_env(:inkfish, :env) == :test do
         # Don't start AgJobs server during tests to avoid DB connection issues
-        []
+        :ignore
       else
         Inkfish.AgJobs.Server
       end,
