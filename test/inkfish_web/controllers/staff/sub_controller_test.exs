@@ -92,6 +92,8 @@ defmodule InkfishWeb.Staff.SubControllerTest do
 
       # Check that the sub is still inactive
       conn = get(conn, ~p"/staff/subs/#{sub}")
+      # The sub should still be inactive (no form means it's active)
+      assert html_response(conn, 200) =~ "<form action=\"/staff/subs/#{sub.id}\" method=\"post\">"
       assert html_response(conn, 200) =~ "<strong>Active:</strong>\nfalse"
       
       # But the late penalty should be toggled
@@ -113,6 +115,9 @@ defmodule InkfishWeb.Staff.SubControllerTest do
 
       # Check that the sub is still active
       conn = get(conn, ~p"/staff/subs/#{sub}")
+      # When active, there should be no activate form
+      refute html_response(conn, 200) =~ "<input id=\"sub_active\" name=\"sub[active]\" type=\"hidden\" value=\"true\">"
+      # But we should see the active status
       assert html_response(conn, 200) =~ "<strong>Active:</strong>\ntrue"
       
       # But the late penalty should be toggled
@@ -125,6 +130,9 @@ defmodule InkfishWeb.Staff.SubControllerTest do
 
       # Check that the sub is still active
       conn = get(conn, ~p"/staff/subs/#{sub}")
+      # When active, there should be no activate form
+      refute html_response(conn, 200) =~ "<input id=\"sub_active\" name=\"sub[active]\" type=\"hidden\" value=\"true\">"
+      # But we should see the active status
       assert html_response(conn, 200) =~ "<strong>Active:</strong>\ntrue"
       
       # And the late penalty should be toggled back
