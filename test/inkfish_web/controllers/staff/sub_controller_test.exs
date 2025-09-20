@@ -98,9 +98,9 @@ defmodule InkfishWeb.Staff.SubControllerTest do
       assert html_response(conn, 200) =~
                "<strong>Ignore Late Penalty:</strong>\ntrue"
       
-      # When ignore_late_penalty is set to true, the sub becomes active
+      # The sub should still be inactive (toggle_late_penalty and activate are independent)
       assert html_response(conn, 200) =~
-               "<strong>Active:</strong>\ntrue"
+               "<strong>Active:</strong>\nfalse"
     end
 
     test "toggles late penalty when toggle_late_penalty action is called on active sub",
