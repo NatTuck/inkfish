@@ -15,8 +15,8 @@ defmodule InkfishWeb.Staff.SubControllerTest do
     end
   end
 
-  describe "update sub" do
-    test "activates sub when activate button is pressed", %{
+  describe "activate sub" do
+    test "activates sub when activate action is called", %{
       conn: conn,
       assignment: assignment
     } do
@@ -45,9 +45,8 @@ defmodule InkfishWeb.Staff.SubControllerTest do
       # The sub should start as inactive
       refute sub.active
 
-      # Press the activate button
-      params = %{"active" => "true"}
-      conn = put(conn, ~p"/staff/subs/#{sub}", sub: params)
+      # Call the activate action
+      conn = post(conn, ~p"/staff/subs/#{sub}/activate")
       assert redirected_to(conn) == ~p"/staff/subs/#{sub}"
 
       # Check that the sub is now active by looking for the active status text
@@ -55,8 +54,10 @@ defmodule InkfishWeb.Staff.SubControllerTest do
       # When active, it should show "Active: true" without a form
       assert html_response(conn, 200) =~ "<strong>Active:</strong>\ntrue"
     end
+  end
 
-    test "toggles late penalty when toggle button is pressed without changing active state", %{
+  describe "toggle late penalty" do
+    test "toggles late penalty when toggle_late_penalty action is called on inactive sub", %{
       conn: conn,
       assignment: assignment
     } do
@@ -85,9 +86,8 @@ defmodule InkfishWeb.Staff.SubControllerTest do
       # The sub should start as inactive
       refute sub.active
 
-      # Press the toggle late penalty button (this should NOT activate the sub)
-      params = %{"ignore_late_penalty" => "true"}
-      conn = put(conn, ~p"/staff/subs/#{sub}", sub: params)
+      # Call the toggle_late_penalty action (this should NOT activate the sub)
+      conn = post(conn, ~p"/staff/subs/#{sub}/toggle_late_penalty")
       assert redirected_to(conn) == ~p"/staff/subs/#{sub}"
 
       # Check that the sub is still inactive
@@ -100,7 +100,7 @@ defmodule InkfishWeb.Staff.SubControllerTest do
       assert html_response(conn, 200) =~ "<strong>Ignore Late Penalty:</strong>\ntrue"
     end
 
-    test "toggles late penalty when toggle button is pressed on active sub", %{
+    test "toggles late penalty when toggle_late_penalty action is called on active sub", %{
       conn: conn,
       sub: sub
     } do
@@ -108,9 +108,8 @@ defmodule InkfishWeb.Staff.SubControllerTest do
       assert sub.active
       refute sub.ignore_late_penalty
 
-      # Press the toggle button
-      params = %{"ignore_late_penalty" => "true"}
-      conn = put(conn, ~p"/staff/subs/#{sub}", sub: params)
+      # Call the toggle_late_penalty action
+      conn = post(conn, ~p"/staff/subs/#{sub}/toggle_late_penalty")
       assert redirected_to(conn) == ~p"/staff/subs/#{sub}"
 
       # Check that the sub is still active
@@ -123,9 +122,8 @@ defmodule InkfishWeb.Staff.SubControllerTest do
       # But the late penalty should be toggled
       assert html_response(conn, 200) =~ "<strong>Ignore Late Penalty:</strong>\ntrue"
 
-      # Press the toggle button again
-      params = %{"ignore_late_penalty" => "false"}
-      conn = put(conn, ~p"/staff/subs/#{sub}", sub: params)
+      # Call the toggle_late_penalty action again
+      conn = post(conn, ~p"/staff/subs/#{sub}/toggle_late_penalty")
       assert redirected_to(conn) == ~p"/staff/subs/#{sub}"
 
       # Check that the sub is still active
@@ -137,6 +135,23 @@ defmodule InkfishWeb.Staff.SubControllerTest do
       
       # And the late penalty should be toggled back
       assert html_response(conn, 200) =~ "<strong>Ignore Late Penalty:</strong>\nfalse"
+    end
+  end
+
+  describe "update sub" do
+    test "updates grader when grader_id is provided", %{
+      conn: conn,
+      sub: sub,
+      staff: staff
+    } do
+      # Test setting grader ID
+      params = %{"grader_id" => "#{staff.id}"}
+      conn = put(conn, ~p"/staff/subs/#{sub}", sub: params)
+      assert redirected_to(conn) == ~p"/staff/subs/#{sub}"
+
+      # Check that the grader was set
+      conn = get(conn, ~p"/staff/subs/#{sub}")
+      assert html_response(conn, 200) =~ "Updated sub flags: ##{sub.id}"
     end
   end
 end
