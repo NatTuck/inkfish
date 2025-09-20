@@ -393,9 +393,9 @@ defmodule Inkfish.Subs do
       |> Repo.update()
       |> Repo.Cache.updated()
 
-    if sub.ignore_late_penalty do
-      set_sub_active!(sub)
-    end
+    # if sub.ignore_late_penalty do
+    #  set_sub_active!(sub)
+    # end
 
     calc_sub_score!(sub.id)
     sub

@@ -48,19 +48,9 @@ defmodule InkfishWeb.Staff.SubController do
 
   def update(conn, %{"id" => _id, "sub" => params}) do
     # Limited operations allowed:
-    #  - Set sub active.
-    #  - Toggle ignore late.
     #  - Set or clear grader
 
     sub = conn.assigns[:sub]
-
-    if params["active"] do
-      Subs.set_sub_active!(sub)
-    end
-
-    if params["ignore_late_penalty"] do
-      Subs.update_sub_ignore_late(sub, params)
-    end
 
     if params["grader_id"] do
       Subs.update_sub_grader(sub, params["grader_id"])
@@ -78,5 +68,26 @@ defmodule InkfishWeb.Staff.SubController do
       |> put_resp_header("content-type", "application/json; charset=UTF-8")
       |> send_resp(200, Jason.encode!(%{assignment: data}))
     end
+  end
+
+  def activate(conn, %{"id" => _id}) do
+    sub = conn.assigns[:sub]
+    Subs.set_sub_active!(sub)
+
+    conn
+    |> put_flash(:info, "Set sub active: ##{sub.id}.")
+    |> redirect(to: ~p"/staff/subs/#{sub}")
+  end
+
+  def toggle_late_penalty(conn, %{"id" => _id}) do
+    sub = conn.assigns[:sub]
+
+    Subs.update_sub_ignore_late(sub, %{
+      "ignore_late_penalty" => !sub.ignore_late_penalty
+    })
+
+    conn
+    |> put_flash(:info, "Toggle ingore late for sub: ##{sub.id}.")
+    |> redirect(to: ~p"/staff/subs/#{sub}")
   end
 end

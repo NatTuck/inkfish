@@ -6,7 +6,7 @@ defmodule Inkfish.Application do
   use Application
 
   def start(_type, _args) do
-    children = [
+    base_children = [
       # Start the Ecto repository
       Inkfish.Repo,
       # Start the Telemetry supervisor
@@ -22,12 +22,17 @@ defmodule Inkfish.Application do
       # Live console output
       Inkfish.Itty.Sup,
 
-      # Autograding Jobs
-      Inkfish.AgJobs.Server,
-
       # Path Cache
       Inkfish.Repo.Cache
     ]
+
+    children = 
+      if Application.get_env(:inkfish, :env) == :test do
+        # Don't start AgJobs server during tests to avoid DB connection issues
+        base_children
+      else
+        base_children ++ [Inkfish.AgJobs.Server]
+      end
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options

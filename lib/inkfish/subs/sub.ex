@@ -55,10 +55,16 @@ defmodule Inkfish.Subs.Sub do
     cast(sub, %{active: true}, [:active])
   end
 
-  def change_ignore_late(sub, attrs) do
+  def change_ignore_late(sub, attrs \\ %{}) do
     sub
     |> cast(attrs, [:ignore_late_penalty])
     |> validate_required([:ignore_late_penalty])
+  end
+
+  def change_active(sub, attrs \\ %{}) do
+    sub
+    |> cast(attrs, [:active])
+    |> validate_required([:active])
   end
 
   def change_grader(sub, grader_id) do

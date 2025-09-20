@@ -22,21 +22,26 @@
   </li>
  
   <li>
-    <strong>Active:</strong>
-    <%= @sub.active %>
+    <%= if @sub.active do %>
+      <strong>Active:</strong>
+      <%= @sub.active %>
+    <% else %>
+      <strong>Active:</strong>
+      <%= @sub.active %>
+      &nbsp;
+      <.link class="btn btn-sm btn-secondary" href={~p"/staff/subs/#{@sub}/activate"} method="post">
+        Set Active
+      </.link>
+    <% end %>
   </li>
 
   <li>
-    <% cset = Inkfish.Subs.change_sub(
-      %{ @sub | ignore_late_penalty: !@sub.ignore_late_penalty }
-      ) %>
-    <.form :let={f} for={cset} action={~p"/staff/subs/#{@sub}"}>
-      <strong>Ignore Late Penalty:</strong>
-      <%= @sub.ignore_late_penalty %>
-      &nbsp;
-      <.hidden_input field={f[:ignore_late_penalty]} />
-      <.button class="btn btn-secondary btn-sm">Toggle</.button>
-    </.form>
+    <strong>Ignore Late Penalty:</strong>
+    <%= @sub.ignore_late_penalty %>
+    &nbsp;
+    <.link class="btn btn-sm btn-secondary" href={~p"/staff/subs/#{@sub}/toggle_late_penalty"} method="post">
+      Toggle
+    </.link>
   </li>
 
   <li>
