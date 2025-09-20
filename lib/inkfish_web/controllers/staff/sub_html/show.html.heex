@@ -26,25 +26,22 @@
       <strong>Active:</strong>
       <%= @sub.active %>
     <% else %>
-      <.form :let={f} for={Inkfish.Subs.change_sub(@sub)} action={~p"/staff/subs/#{@sub}"}>
-        <strong>Active:</strong>
-        <%= @sub.active %>
-        &nbsp;
-        <%= Phoenix.HTML.Form.hidden_input(f, :active, value: true) %>
-        <.button class="btn btn-secondary btn-sm">Activate</.button>
-      </.form>
+      <strong>Active:</strong>
+      <%= @sub.active %>
+      &nbsp;
+      <.link class="btn btn-sm btn-secondary" href={~p"/staff/subs/#{@sub}/activate"} method="post">
+        Set Active
+      </.link>
     <% end %>
   </li>
 
   <li>
-    <% cset = Inkfish.Subs.change_sub(@sub) %>
-    <.form :let={f} for={cset} action={~p"/staff/subs/#{@sub}"}>
-      <strong>Ignore Late Penalty:</strong>
-      <%= @sub.ignore_late_penalty %>
-      &nbsp;
-      <%= Phoenix.HTML.Form.hidden_input(f, :ignore_late_penalty, value: !@sub.ignore_late_penalty) %>
-      <.button class="btn btn-secondary btn-sm">Toggle</.button>
-    </.form>
+    <strong>Ignore Late Penalty:</strong>
+    <%= @sub.ignore_late_penalty %>
+    &nbsp;
+    <.link class="btn btn-sm btn-secondary" href={~p"/staff/subs/#{@sub}/toggle_late_penalty"} method="post">
+      Toggle
+    </.link>
   </li>
 
   <li>

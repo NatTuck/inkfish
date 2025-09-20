@@ -149,6 +149,9 @@ defmodule InkfishWeb.Router do
       resources("/grades", GradeController, only: [:create])
     end
 
+    post("/subs/:id/activate", SubController, :activate)
+    post("/subs/:id/toggle_late_penalty", SubController, :toggle_late_penalty)
+
     resources("/grades", GradeController, only: [:edit, :show])
   end
 
