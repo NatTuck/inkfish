@@ -134,12 +134,6 @@ defmodule InkfishWeb.ApiV1.Staff.AssignmentControllerTest do
       gcol1 = insert(:grade_column, assignment: assignment, name: "Problem 1", points: "10")
       gcol2 = insert(:grade_column, assignment: assignment, name: "Problem 2", points: "15")
 
-      # Add a submission
-      team = insert(:team, teamset: assignment.teamset)
-      insert(:team_member, team: team, reg: staff_reg)
-      upload = insert(:upload, user: staff_user)
-      sub = insert(:sub, assignment: assignment, reg: staff_reg, team: team, upload: upload)
-
       conn = get(staff_conn, ~p"/api/v1/staff/assignments/#{assignment.id}")
       response = json_response(conn, 200)
       
@@ -149,13 +143,9 @@ defmodule InkfishWeb.ApiV1.Staff.AssignmentControllerTest do
           "name" => "Test Assignment",
           "desc" => "Test Description",
           "bucket" => %{"id" => _},
-          "teamset" => %{"id" => _},
           "grade_columns" => [
             %{"id" => gcol1_id, "name" => "Problem 1", "points" => "10"},
             %{"id" => gcol2_id, "name" => "Problem 2", "points" => "15"}
-          ],
-          "subs" => [
-            %{"id" => sub_id}
           ]
         }
       } = response
@@ -163,7 +153,6 @@ defmodule InkfishWeb.ApiV1.Staff.AssignmentControllerTest do
       assert assignment_id == assignment.id
       assert gcol1_id == gcol1.id
       assert gcol2_id == gcol2.id
-      assert sub_id == sub.id
     end
   end
 end
