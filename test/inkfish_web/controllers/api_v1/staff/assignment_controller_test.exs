@@ -54,7 +54,7 @@ defmodule InkfishWeb.ApiV1.Staff.AssignmentControllerTest do
       conn = get(staff_conn, ~p"/api/v1/staff/assignments/#{assignment.id}")
       response = json_response(conn, 200)
       
-      assert %{"data" => %{"id" => ^assignment_id}} = response
+      assert %{"data" => %{"id" => assignment_id}} = response
       assert assignment_id == assignment.id
     end
 
@@ -70,7 +70,7 @@ defmodule InkfishWeb.ApiV1.Staff.AssignmentControllerTest do
       conn = get(prof_conn, ~p"/api/v1/staff/assignments/#{assignment.id}")
       response = json_response(conn, 200)
       
-      assert %{"data" => %{"id" => ^assignment_id}} = response
+      assert %{"data" => %{"id" => assignment_id}} = response
       assert assignment_id == assignment.id
     end
 
@@ -152,11 +152,11 @@ defmodule InkfishWeb.ApiV1.Staff.AssignmentControllerTest do
           "bucket" => %{"id" => _},
           "teamset" => %{"id" => _},
           "grade_columns" => [
-            %{"id" => ^gcol1_id, "name" => "Problem 1", "points" => "10"},
-            %{"id" => ^gcol2_id, "name" => "Problem 2", "points" => "15"}
+            %{"id" => gcol1_id, "name" => "Problem 1", "points" => "10"},
+            %{"id" => gcol2_id, "name" => "Problem 2", "points" => "15"}
           ],
           "subs" => [
-            %{"id" => ^sub_id}
+            %{"id" => sub_id}
           ]
         }
       } = response
