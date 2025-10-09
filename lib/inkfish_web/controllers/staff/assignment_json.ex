@@ -32,7 +32,8 @@ defmodule InkfishWeb.Staff.AssignmentJSON do
       bucket: BucketJSON.data(bucket),
       teamset: TeamsetJSON.data(teamset),
       grade_columns: for(gcol <- gcols, do: GradeColumnJSON.data(gcol)),
-      subs: for(sub <- subs, do: SubJSON.data(sub))
+      subs: for(sub <- subs, do: SubJSON.data(sub)),
+      desc: assignment.desc
     }
   end
 end
