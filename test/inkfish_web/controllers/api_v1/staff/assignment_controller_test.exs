@@ -118,7 +118,7 @@ defmodule InkfishWeb.ApiV1.Staff.AssignmentControllerTest do
       %{assignment: assignment} = create_assignment(course)
 
       conn = get(conn, ~p"/api/v1/staff/assignments/#{assignment.id}")
-      assert json_response(conn, 401)
+      assert json_response(conn, 403)
     end
 
     test "returns assignment with all related data", %{
@@ -126,7 +126,7 @@ defmodule InkfishWeb.ApiV1.Staff.AssignmentControllerTest do
       course: course
     } do
       %{conn: staff_conn, user: staff_user} = logged_in_user_with_api_key(conn)
-      insert(:reg, user: staff_user, course: course, is_staff: true)
+      staff_reg = insert(:reg, user: staff_user, course: course, is_staff: true)
 
       %{assignment: assignment} = create_assignment(course, %{name: "Test Assignment", desc: "Test Description"})
 
@@ -135,11 +135,10 @@ defmodule InkfishWeb.ApiV1.Staff.AssignmentControllerTest do
       gcol2 = insert(:grade_column, assignment: assignment, name: "Problem 2", points: "15")
 
       # Add a submission
-      reg = insert(:reg, user: staff_user, course: course)
       team = insert(:team, teamset: assignment.teamset)
-      insert(:team_member, team: team, reg: reg)
+      insert(:team_member, team: team, reg: staff_reg)
       upload = insert(:upload, user: staff_user)
-      sub = insert(:sub, assignment: assignment, reg: reg, team: team, upload: upload)
+      sub = insert(:sub, assignment: assignment, reg: staff_reg, team: team, upload: upload)
 
       conn = get(staff_conn, ~p"/api/v1/staff/assignments/#{assignment.id}")
       response = json_response(conn, 200)
