@@ -53,7 +53,7 @@ defmodule InkfishWeb.ApiV1.Staff.AssignmentControllerTest do
 
       conn = get(staff_conn, ~p"/api/v1/staff/assignments/#{assignment.id}")
       response = json_response(conn, 200)
-      
+
       assert %{"data" => %{"id" => assignment_id}} = response
       assert assignment_id == assignment.id
     end
@@ -69,12 +69,14 @@ defmodule InkfishWeb.ApiV1.Staff.AssignmentControllerTest do
 
       conn = get(prof_conn, ~p"/api/v1/staff/assignments/#{assignment.id}")
       response = json_response(conn, 200)
-      
+
       assert %{"data" => %{"id" => assignment_id}} = response
       assert assignment_id == assignment.id
     end
 
-    test "staff/prof user cannot see assignment in a different course", %{conn: conn} do
+    test "staff/prof user cannot see assignment in a different course", %{
+      conn: conn
+    } do
       %{conn: staff_conn, user: staff_user} = logged_in_user_with_api_key(conn)
       course_a = insert(:course)
       insert(:reg, user: staff_user, course: course_a, is_staff: true)
@@ -83,7 +85,10 @@ defmodule InkfishWeb.ApiV1.Staff.AssignmentControllerTest do
       %{assignment: assignment_in_course_b} = create_assignment(course_b)
 
       conn =
-        get(staff_conn, ~p"/api/v1/staff/assignments/#{assignment_in_course_b.id}")
+        get(
+          staff_conn,
+          ~p"/api/v1/staff/assignments/#{assignment_in_course_b.id}"
+        )
 
       assert json_response(conn, 403)
     end
@@ -103,7 +108,10 @@ defmodule InkfishWeb.ApiV1.Staff.AssignmentControllerTest do
       assert json_response(conn, 403)["error"] == "Access denied"
     end
 
-    test "returns 404 for non-existent assignment", %{conn: conn, course: course} do
+    test "returns 404 for non-existent assignment", %{
+      conn: conn,
+      course: course
+    } do
       %{conn: conn, user: user} = logged_in_user_with_api_key(conn)
       insert(:reg, user: user, course: course, is_staff: true)
       # Use a large integer for a non-existent ID
@@ -126,30 +134,47 @@ defmodule InkfishWeb.ApiV1.Staff.AssignmentControllerTest do
       course: course
     } do
       %{conn: staff_conn, user: staff_user} = logged_in_user_with_api_key(conn)
-      staff_reg = insert(:reg, user: staff_user, course: course, is_staff: true)
 
-      %{assignment: assignment} = create_assignment(course, %{name: "Test Assignment", desc: "Test Description"})
+      _staff_reg =
+        insert(:reg, user: staff_user, course: course, is_staff: true)
+
+      %{assignment: assignment} =
+        create_assignment(course, %{
+          name: "Test Assignment",
+          desc: "Test Description"
+        })
 
       # Add grade columns
-      gcol1 = insert(:grade_column, assignment: assignment, name: "Problem 1", points: "10")
-      gcol2 = insert(:grade_column, assignment: assignment, name: "Problem 2", points: "15")
+      gcol1 =
+        insert(:grade_column,
+          assignment: assignment,
+          name: "Problem 1",
+          points: "10"
+        )
+
+      gcol2 =
+        insert(:grade_column,
+          assignment: assignment,
+          name: "Problem 2",
+          points: "15"
+        )
 
       conn = get(staff_conn, ~p"/api/v1/staff/assignments/#{assignment.id}")
       response = json_response(conn, 200)
-      
+
       assert %{
-        "data" => %{
-          "id" => assignment_id,
-          "name" => "Test Assignment",
-          "desc" => "Test Description",
-          "bucket" => %{"id" => _},
-          "grade_columns" => [
-            %{"id" => gcol1_id, "name" => "Problem 1", "points" => "10"},
-            %{"id" => gcol2_id, "name" => "Problem 2", "points" => "15"}
-          ]
-        }
-      } = response
-      
+               "data" => %{
+                 "id" => assignment_id,
+                 "name" => "Test Assignment",
+                 "desc" => "Test Description",
+                 "bucket" => %{"id" => _},
+                 "grade_columns" => [
+                   %{"id" => gcol1_id, "name" => "Problem 1", "points" => "10"},
+                   %{"id" => gcol2_id, "name" => "Problem 2", "points" => "15"}
+                 ]
+               }
+             } = response
+
       assert assignment_id == assignment.id
       assert gcol1_id == gcol1.id
       assert gcol2_id == gcol2.id
