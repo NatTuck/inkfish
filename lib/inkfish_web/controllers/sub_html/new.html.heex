@@ -13,7 +13,7 @@
 
   <div class="mb-3">
     <.label for={f[:hours_spent].id} class="form-label">Hours spent</.label>
-    <.number_input field={f[:hours_spent]} class="form-control" />
+    <.number_input field={f[:hours_spent]} step="0.1" class="form-control" />
     <.error_tag form={f} field={:hours_spent} />
   </div>
 
