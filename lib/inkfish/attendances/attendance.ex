@@ -6,6 +6,7 @@ defmodule Inkfish.Attendances.Attendance do
 
   schema "attendances" do
     field :attended_at, :utc_datetime
+    field :excused, :boolean
     belongs_to :meeting, Inkfish.Meetings.Meeting
     belongs_to :reg, Inkfish.Users.Reg
 
@@ -28,7 +29,7 @@ defmodule Inkfish.Attendances.Attendance do
       end)
 
     attendance
-    |> cast(attrs, [:attended_at, :meeting_id, :reg_id])
+    |> cast(attrs, [:attended_at, :meeting_id, :reg_id, :excused])
     |> validate_required([:attended_at, :meeting_id, :reg_id])
   end
 
@@ -40,6 +41,9 @@ defmodule Inkfish.Attendances.Attendance do
     mins_late = minutes_late(at)
 
     cond do
+      at.excused ->
+        %Attendance{at | status: "excused"}
+
       mins_late <= 6 ->
         %Attendance{at | status: "on time"}
 

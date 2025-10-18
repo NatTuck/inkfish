@@ -28,6 +28,13 @@
     <tr>
       <td>{user_display_name(reg.user)}</td>
       <td>{show_attendance(Enum.find(@meeting.attendances, & &1.reg_id == reg.id))}</td>
+      <td>
+        <.form :let={_f} for={@conn} method="post" action={~p"/staff/attendances/excuse"}>
+          <input type="hidden" name="reg_id" value={reg.id} />
+          <input type="hidden" name="meeting_id" value={@meeting.id} />
+          <button class="btn btn-secondary btn-sm">Toggle Excused</button>
+        </.form>
+      </td>
     </tr>
   <% end %>
 </table>

@@ -123,6 +123,8 @@ defmodule InkfishWeb.Router do
     resources "/attendances", AttendanceController,
       only: [:show, :edit, :update, :delete]
 
+    post "/attendances/excuse", AttendanceController, :excuse
+
     resources "/assignments", AssignmentController,
       except: [:index, :new, :create] do
       resources("/grade_columns", GradeColumnController,

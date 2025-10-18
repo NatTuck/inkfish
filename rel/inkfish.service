@@ -9,7 +9,7 @@ Description=Inkfish
 
 [Service]
 Type=simple
-Restart=on-failure
+Restart=always
 Environment=MIX_ENV=prod "PORT=4080"
 Environment=LANG=en_US.UTF-8
 
