@@ -1,6 +1,7 @@
 defmodule InkfishWeb.ApiV1.Staff.AssignmentController do
   use InkfishWeb, :controller
 
+  alias Inkfish.Assignments
   alias InkfishWeb.Plugs
 
   action_fallback InkfishWeb.FallbackController
@@ -14,7 +15,9 @@ defmodule InkfishWeb.ApiV1.Staff.AssignmentController do
   plug Plugs.RequireReg, staff: true
 
   def show(conn, _params) do
-    asg = conn.assigns.assignment
+    asg =
+      conn.assigns.assignment
+      |> Assignments.preload_uploads()
 
     conn
     |> put_view(InkfishWeb.Staff.AssignmentJSON)

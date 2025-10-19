@@ -24,6 +24,8 @@ defmodule InkfishWeb.Staff.AssignmentJSON do
     teamset = get_assoc(assignment, :teamset)
     gcols = get_assoc(assignment, :grade_columns) || []
     subs = get_assoc(assignment, :subs) || []
+    starter = get_assoc(assignment, :starter_upload)
+    solution = get_assoc(assignment, :solution_upload)
 
     %{
       id: assignment.id,
@@ -33,7 +35,9 @@ defmodule InkfishWeb.Staff.AssignmentJSON do
       teamset: TeamsetJSON.data(teamset),
       grade_columns: for(gcol <- gcols, do: GradeColumnJSON.data(gcol)),
       subs: for(sub <- subs, do: SubJSON.data(sub)),
-      desc: assignment.desc
+      desc: assignment.desc,
+      starter_upload: Inkfish.Uploads.Upload.upload_url(starter),
+      solution_upload: Inkfish.Uploads.Upload.upload_url(solution)
     }
   end
 end
