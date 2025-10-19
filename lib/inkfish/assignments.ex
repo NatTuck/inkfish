@@ -144,6 +144,10 @@ defmodule Inkfish.Assignments do
     )
   end
 
+  def preload_uploads(%Assignment{} = asg) do
+    Repo.preload(asg, [:starter_upload, :solution_upload])
+  end
+
   @doc """
   Creates a assignment.
 
