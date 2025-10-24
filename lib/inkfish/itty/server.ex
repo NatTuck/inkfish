@@ -72,9 +72,17 @@ defmodule Inkfish.Itty.Server do
     ]
 
     IO.puts(" =[Itty]= Run cmd [#{cmd}] for UUID #{uuid}")
-    {:ok, _pid, ospid} = :exec.run(cmd, opts, 30)
 
-    IO.puts("Itty: Ran command '#{cmd}'")
+    {:ok, ospid} =
+      case :exec.run(cmd, opts, 30) do
+        {:ok, _pid, ospid} ->
+          IO.puts("Itty: Ran command '#{cmd}'")
+          {:ok, ospid}
+
+        other ->
+          IO.inspect({:error, other})
+          raise "blargh!"
+      end
 
     block = %{seq: 99, stream: :adm, text: "\nStarting task.\n\n"}
 

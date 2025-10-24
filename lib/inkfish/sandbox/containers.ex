@@ -1,4 +1,20 @@
 defmodule Inkfish.Sandbox.Containers do
+  def list_sandboxes() do
+    args = [
+      "ls",
+      "--filter",
+      "'label=inkfish.sandbox'",
+      "--format",
+      "'{{json .}}'"
+    ]
+
+    {lines, 0} = System.cmd("docker", args, into: [], lines: 4096)
+
+    for line <- lines do
+      Jason.decode!(line)
+    end
+  end
+
   def get_image_by_tag(tag) do
     Docker.Images.list()
     |> Enum.find(&Enum.member?(&1["RepoTags"], tag))
@@ -27,29 +43,33 @@ defmodule Inkfish.Sandbox.Containers do
       "Cmd" => conf.cmd,
       "Env" => conf[:env] || [],
       "WorkingDir" => "/home/student",
-      HostConfig => %{
+      "Labels" => %{
+        "inkfish.sandbox" => "true"
+      },
+      "HostConfig" => %{
         # Bytes
-        Memory => megs(conf[:ram] || 1024),
-        MemorySwap => 2 * megs(conf[:ram] || 1024),
-        NanoCpus => billion(conf[:cpus] || 1.0),
-        Devices => conf[:devices] || [],
-        PidsLimit => 1024,
-        AutoRemove => true,
-        CapAdd => conf[:caps] || [],
-        SecurityOpt => ["apparmor:unconfined"],
-        TmpFs => %{
+        "Memory" => megs(conf[:ram] || 1024),
+        "MemorySwap" => 2 * megs(conf[:ram] || 1024),
+        "NanoCpus" => billion(conf[:cpus] || 1.0),
+        "Devices" => conf[:devices] || [],
+        "PidsLimit" => 1024,
+        "AutoRemove" => true,
+        "CapAdd" => conf[:caps] || [],
+        "SecurityOpt" => ["apparmor:unconfined"],
+        "Tmpfs" => %{
           "/var/tmp" => "rw,size=128m",
           "/home/student" => "rw,size=#{disk}m"
-        }
+        },
+        "ReadonlyRootFs" => true
       }
     }
   end
 
   defp megs(xx) do
-    xx * 1024 * 1024
+    round(xx * 1024 * 1024)
   end
 
   defp billion(xx) do
-    xx * 1000_000_000.0
+    round(xx * 1000_000_000.0)
   end
 end

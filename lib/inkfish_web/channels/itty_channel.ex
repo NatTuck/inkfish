@@ -18,9 +18,11 @@ defmodule InkfishWeb.IttyChannel do
           {:ok, state, socket}
 
         _else ->
+          IO.puts("bad itty: #{uuid}")
           {:error, %{reason: "bad itty"}}
       end
     else
+      IO.puts("itty auth fail: #{uuid}")
       {:error, %{reason: "unauthorized"}}
     end
   end
