@@ -3,8 +3,8 @@ defmodule Inkfish.AgJobs.AutogradeTest do
 
   import Mimic
   alias Inkfish.AgJobs.Autograde
-  alias Inkfish.Itty
-  alias Inkfish.Itty.Task
+  alias Inkfish.Ittys
+  alias Inkfish.Ittys.Task
   alias Inkfish.Repo
   alias Inkfish.Sandbox.Containers
 
@@ -12,7 +12,7 @@ defmodule Inkfish.AgJobs.AutogradeTest do
 
   describe "autograde/1" do
     test "constructs a task and passes it to Itty.start/1" do
-      Mimic.copy(Inkfish.Itty)
+      Mimic.copy(Inkfishs.Itty)
       Mimic.copy(Inkfish.Sandbox.Containers)
 
       # Setup: Create the necessary database records.
@@ -22,13 +22,15 @@ defmodule Inkfish.AgJobs.AutogradeTest do
       sub_upload = insert(:upload)
       sub = insert(:sub, assignment: assignment, upload: sub_upload)
       gc_upload = insert(:upload)
-      grade_column = insert(:grade_column, assignment: assignment, upload: gc_upload)
+
+      grade_column =
+        insert(:grade_column, assignment: assignment, upload: gc_upload)
 
       grade =
         insert(:grade, sub: sub, grade_column: grade_column)
         |> Repo.preload(sub: :upload, grade_column: :upload)
 
-      expect(Itty, :start, fn %Task{} = task ->
+      expect(Ittys, :start, fn %Task{} = task ->
         # Assert that the task passed to Itty contains the grade we created.
         assert task.grade.id == grade.id
         assert task.uuid == grade.log_uuid

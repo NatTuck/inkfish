@@ -118,7 +118,7 @@ defmodule Inkfish.Ittys.Server do
     env =
       System.get_env()
       |> Map.merge(task.env)
-      |> Map.put("COOKIE", task.cookie)
+      |> Map.put("COOKIE", task.cookie || "none")
       |> Enum.into([])
 
     IO.puts(" =[Itty]= Run cmd [#{cmd}] for UUID #{state.uuid}")
@@ -133,7 +133,18 @@ defmodule Inkfish.Ittys.Server do
 
     {:ok, _pid, ospid} = :exec.run(cmd, opts, 30)
 
-    send_text("Starting task.", Map.put(state, :ospid, ospid))
+    send_text("Starting task: #{task.label}", Map.put(state, :ospid, ospid))
+  end
+
+  def start_build_image(task, conf, state) do
+    case AgImage.prepare(conf) do
+      {:ok, %AgImage{tag: tag, cmd: cmd}} ->
+        IO.inspect({:created_ag_image, tag})
+        start_cmd(task, cmd, state)
+
+      error ->
+        send_text("Error in build_image: #{inspect(error)}", state)
+    end
   end
 
   @impl true
@@ -141,6 +152,9 @@ defmodule Inkfish.Ittys.Server do
     case task.action do
       {:cmd, cmd} ->
         start_cmd(task, cmd, state)
+
+      {:build_image, conf} ->
+        start_build_image(task, conf, state)
 
       _else ->
         IO.puts("Itty: unknown action #{inspect(task.action)}")

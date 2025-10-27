@@ -1,6 +1,4 @@
 defmodule Inkfish.AgJobs.AgJob do
-  alias __MODULE__
-
   use Ecto.Schema
   import Ecto.Changeset
 

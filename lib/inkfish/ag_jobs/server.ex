@@ -3,6 +3,7 @@ defmodule Inkfish.AgJobs.Server do
 
   alias Inkfish.AgJobs
   alias Inkfish.AgJobs.AgJob
+  alias Inkfish.AgJobs.Autograde
   alias Inkfish.Ittys
   alias Inkfish.Subs
 

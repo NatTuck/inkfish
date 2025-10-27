@@ -56,7 +56,8 @@ defmodule Inkfish.Sandbox.Containers do
         "CapAdd" => conf[:caps] || [],
         "SecurityOpt" => ["apparmor:unconfined"],
         "Tmpfs" => %{
-          "/home/student" => "rw,size=#{disk}m"
+          "/home/student" => "rw,size=#{disk}m",
+          "/tmp" => "rw,size=10m"
         },
         "ReadonlyRootFs" => true
       }

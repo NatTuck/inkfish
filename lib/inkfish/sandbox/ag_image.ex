@@ -20,19 +20,19 @@ defmodule Inkfish.Sandbox.AgImage do
     Path.join(work, "Dockerfile")
     |> File.write(dockerfile(conf))
 
-    if conf["SUB"] do
-      tar_up!(Path.join(work, "sub.tar.gz"), conf["SUB"])
+    if conf.unpacked_sub do
+      tar_up!(Path.join(work, "sub.tar.gz"), conf.unpacked_sub)
     end
 
-    if conf["GRA"] do
-      tar_up!(Path.join(work, "gra.tar.gz"), conf["GRA"])
+    if conf.unpacked_gra do
+      tar_up!(Path.join(work, "gra.tar.gz"), conf.unpacked_gra)
     end
 
-    scr = conf["SCR"] || raise "No script dir"
+    scr = conf.script_dir || raise "No script dir"
     File.cp!(Path.join(scr, "unpack.pl"), Path.join(work, "unpack.pl"))
     File.cp!(Path.join(scr, "simple-driver.pl"), Path.join(work, "driver.pl"))
 
-    gid = conf["GID"] || raise "No grade id"
+    gid = conf.ag_job_id || raise "No job id"
     tag = "sandbox:#{gid}"
 
     cmd = ~s[(cd "#{work}" && DOCKER_BUILDKIT=1 docker build -t "#{tag}" .)]
@@ -41,14 +41,14 @@ defmodule Inkfish.Sandbox.AgImage do
 
   def dockerfile(conf) do
     """
-    FROM #{conf["BASE"]}
+    FROM #{conf[:base_image] || "inkfish:latest"}
 
     LABEL inkfish.sandbox=true
 
+    COPY unpack.pl /usr/local/bin
+    RUN chmod a+x /usr/local/bin/unpack.pl
+
     COPY *.pl /var/tmp
-
-    USER student
-
     COPY *.gz /var/tmp
 
     WORKDIR /home/student

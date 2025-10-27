@@ -1,7 +1,8 @@
 defmodule Inkfish.Ittys.Task do
   alias __MODULE__
 
-  defstruct action: {:cmd, "echo hello, world"},
+  defstruct label: "Generic Task",
+            action: {:cmd, "echo hello, world"},
             cookie: nil,
             on_exit: nil,
             env: %{}

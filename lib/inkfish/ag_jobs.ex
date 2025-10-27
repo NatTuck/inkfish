@@ -67,12 +67,12 @@ defmodule Inkfish.AgJobs do
           from(job in AgJob,
             order_by: [job.prio, job.inserted_at],
             where: is_nil(job.started_at) and is_nil(job.finished_at),
-            preload: [:sub, :grades],
+            preload: [sub: [grades: :grade_column]],
             limit: 1
           )
         )
 
-      if is_nil(job0) || AgJob.cores_needed(job0) > cores_free do
+      if is_nil(job0) || Inkfish.AgJobs.Server.cores_needed(job0) > cores_free do
         Repo.rollback(:no_more_work)
       end
 
@@ -104,6 +104,10 @@ defmodule Inkfish.AgJobs do
   """
   def get_ag_job!(id), do: Repo.get!(AgJob, id)
   def get_ag_job(id), do: Repo.get(AgJob, id)
+
+  def preload_for_autograde(%AgJob{} = job) do
+    Repo.preload(job, sub: [:upload, grades: [grade_column: [:upload]]])
+  end
 
   @doc """
   Creates a ag_job.
