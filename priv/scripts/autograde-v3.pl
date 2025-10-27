@@ -38,3 +38,7 @@ copy($id, "$SCR/simple-driver.pl", "/var/tmp/driver.pl");
 copy($id, "$temp/sub.tar.gz", "/var/tmp/sub.tar.gz");
 copy($id, "$temp/gra.tar.gz", "/var/tmp/gra.tar.gz");
 start($id);
+
+if (-e "$HOME/reap-old-v1.pl") {
+    system(qq{perl ~/reap-old-v1.pl});
+}
