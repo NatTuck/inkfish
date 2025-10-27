@@ -32,6 +32,18 @@ sub start($id) {
     system(qq{docker start -a $id});
 }
 
+sub count_containers {
+    my $nn = 0 + `docker container ls --format '{{json .}}' | wc -l`;
+    return $nn;
+}
+
+sub reap {
+    my $home = $ENV{'HOME'};
+    if (-e "$home/reap-old-v1.pl") {
+        system(qq{(perl ~/reap-old-v1.pl 2>&1) > /dev/null &});
+    }
+}
+
 my $temp = tempdir( CLEANUP => 1 );
 tar_up("$temp/sub.tar.gz", $SUB);
 tar_up("$temp/gra.tar.gz", $GRA);
@@ -40,4 +52,14 @@ copy($id, "$SCR/unpack.pl", "/var/tmp/unpack.pl");
 copy($id, "$SCR/simple-driver.pl", "/var/tmp/driver.pl");
 copy($id, "$temp/sub.tar.gz", "/var/tmp/sub.tar.gz");
 copy($id, "$temp/gra.tar.gz", "/var/tmp/gra.tar.gz");
+
+while (my $count = count_containers() > 2) {
+    say("Too many containers: $count\n");
+    say("Waiting 10 seconds...\n");
+    reap();
+    sleep(10);
+}
+
 start($id);
+
+reap();
