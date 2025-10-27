@@ -22,6 +22,7 @@ defmodule Inkfish.Sandbox.Containers do
 
   def create(conf) do
     conf
+    |> Enum.into(%{})
     |> expand_config()
     |> Docker.Containers.create()
     |> just_id()
@@ -40,8 +41,6 @@ defmodule Inkfish.Sandbox.Containers do
 
     %{
       "Image" => conf.image,
-      "Cmd" => conf.cmd,
-      "Env" => conf[:env] || [],
       "WorkingDir" => "/home/student",
       "Labels" => %{
         "inkfish.sandbox" => "true"
@@ -57,7 +56,6 @@ defmodule Inkfish.Sandbox.Containers do
         "CapAdd" => conf[:caps] || [],
         "SecurityOpt" => ["apparmor:unconfined"],
         "Tmpfs" => %{
-          "/var/tmp" => "rw,size=128m",
           "/home/student" => "rw,size=#{disk}m"
         },
         "ReadonlyRootFs" => true

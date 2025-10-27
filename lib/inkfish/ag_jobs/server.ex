@@ -2,9 +2,8 @@ defmodule Inkfish.AgJobs.Server do
   use GenServer
 
   alias Inkfish.AgJobs
-  alias Inkfish.Grades
-  alias Inkfish.Grades.Grade
-  alias Inkfish.Itty
+  alias Inkfish.AgJobs.AgJob
+  alias Inkfish.Ittys
   alias Inkfish.Subs
 
   def start_link(_) do
@@ -19,20 +18,21 @@ defmodule Inkfish.AgJobs.Server do
     GenServer.cast(__MODULE__, :poll)
   end
 
-  def grade_status(grade_id) do
-    GenServer.call(__MODULE__, {:grade_status, grade_id})
+  def list() do
+    GenServer.call(__MODULE__, :list)
+  end
+
+  def running?(ag_id) do
+    GenServer.call(__MODULE__, {:running?, ag_id})
   end
 
   @impl true
   def init(_) do
-    state0 = %{
-      # grades, with ag_job set, log_uuid set, gcol preloaded
-      running: [],
-      waiting: []
-    }
+    Inkfish.Sandbox.start_cleanups()
+
+    state0 = %{}
 
     Process.send_after(self(), :do_poll, 5_000)
-
     {:ok, state0}
   end
 
@@ -42,23 +42,13 @@ defmodule Inkfish.AgJobs.Server do
     {:reply, {:ok, state}, state}
   end
 
-  def handle_call({:grade_status, grade_id}, _from, state) do
-    r_idx = Enum.find_index(state.running, &(&1.id == grade_id))
-    w_idx = Enum.find_index(state.waiting, &(&1.id == grade_id))
+  def handle_call(:list, _from, state) do
+    {:reply, state.running, state}
+  end
 
-    reply =
-      cond do
-        !is_nil(r_idx) ->
-          {:ok, {:running, r_idx}}
-
-        !is_nil(w_idx) ->
-          {:ok, {:waiting, w_idx}}
-
-        true ->
-          :error
-      end
-
-    {:reply, reply, state}
+  def handle_call({:running?, uuid}, _from, state) do
+    yy = Enum.find(state.running, &(&1.uuid == uuid))
+    {:reply, !is_nil(yy), state}
   end
 
   @impl true
@@ -74,115 +64,67 @@ defmodule Inkfish.AgJobs.Server do
     {:noreply, state}
   end
 
-  def do_poll(state) do
+  def do_poll(_state) do
     AgJobs.delete_old_ag_jobs()
 
-    state
-    |> reap_tasks()
-    |> mark_jobs()
+    AgJobs.list_curr_ag_jobs()
+    |> reap()
     |> schedule()
   end
 
   @doc """
   Check each running task:
   - Kill it if it has it its time limit.
-  - Remove it if it's dead or done.
+  - Mark it if it's dead or done.
   """
-  def reap_tasks(state) do
-    running =
-      Enum.filter(state.running, fn grade ->
-        uuid = grade.log_uuid
+  def reap_tasks(running) do
+    Enum.filter(running, fn job ->
+      if time_left(job) < 0 do
+        IO.puts("Warning: timed out task didn't exit.")
+        Ittys.stop(job.uuid)
+      end
 
-        if time_left(grade) < 0 do
-          IO.puts("Warning: timed out task didn't exit.")
-          Itty.stop(uuid)
-        end
+      running = Ittys.running?(job.uuid)
 
-        Itty.running?(uuid)
-      end)
-
-    %{state | running: running}
-  end
-
-  def mark_jobs(state) do
-    all_grade_ids =
-      Enum.map(state.waiting ++ state.running, fn grade ->
-        grade.id
-      end)
-
-    curr_jobs = AgJobs.list_curr_ag_jobs()
-
-    Enum.each(curr_jobs, fn job ->
-      ags = Subs.get_script_grades(job.sub)
-
-      if !Enum.any?(ags, &Enum.member?(all_grade_ids, &1.id)) do
+      if !running do
         AgJobs.update_ag_job(job, %{finished_at: LocalTime.now()})
       end
-    end)
 
-    state
+      running
+    end)
   end
 
-  def time_left(%Grade{} = grade) do
-    time0 = grade.started_at
+  def time_left(%AgJob{} = job) do
+    time0 = job.started_at
     time1 = LocalTime.now()
     DateTime.diff(time1, time0)
   end
 
-  def schedule(state) do
+  def schedule(running) do
     machine_cores = get_config()[:resources][:cores]
-    current_cores = count_cores(state.running)
-    cores_free = machine_cores - current_cores
+    current_cores = count_cores(running)
+    free_cores = machine_cores - current_cores
 
-    state
-    |> load_queue(cores_free)
-    |> start_tasks(cores_free)
-  end
+    case AgJobs.start_next_ag_job(free_cores) do
+      {:ok, job} ->
+        start_job(job)
 
-  def load_queue(state, cores_free) do
-    if count_cores(state.waiting) < cores_free do
-      case AgJobs.start_next_ag_job() do
-        {:ok, job} ->
-          grades =
-            Inkfish.Subs.get_script_grades(job.sub_id)
-            |> Enum.map(&Grades.get_grade_for_autograding!(&1.id))
-            |> Enum.map(&%Grade{&1 | ag_job: job})
-
-          %{state | waiting: state.waiting ++ grades}
-          |> load_queue(cores_free)
-
-        {:error, _} ->
-          state
-      end
-    else
-      state
+      {:error, _} ->
+        :ok
     end
+
+    %{}
   end
 
-  def start_tasks(state, cores_left) do
-    case state.waiting do
-      [grade | rest] ->
-        cores_req = get_cores_limit(grade)
+  def count_cores(jobs) do
+    Enum.sum_by(jobs, &cores_needed/1)
+  end
 
-        if cores_req <= cores_left do
-          {:ok, _uuid} = Inkfish.AgJobs.Autograde.autograde(grade)
-
-          grade = %Grade{grade | started_at: LocalTime.now()}
-
-          running = [grade | state.running]
-          state = %{state | running: running, waiting: rest}
-          start_tasks(state, cores_left - cores_req)
-        else
-          state
-        end
-
-      [] ->
-        state
+  def cores_needed(%AgJob{} = job) do
+    for grade <- job.sub.grades do
+      get_cores_limit(grade)
     end
-  end
-
-  def count_cores(grades) do
-    Enum.sum_by(grades, &get_cores_limit/1)
+    |> Enum.max()
   end
 
   def get_cores_limit(grade) do

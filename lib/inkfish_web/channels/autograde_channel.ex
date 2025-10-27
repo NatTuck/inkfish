@@ -1,10 +1,10 @@
 defmodule InkfishWeb.AutogradeChannel do
   use InkfishWeb, :channel
 
-  alias Inkfish.Grades
-
   def join("autograde:" <> uuid, %{"token" => token}, socket) do
-    case Phoenix.Token.verify(InkfishWeb.Endpoint, "autograde", token, max_age: 8640) do
+    case Phoenix.Token.verify(InkfishWeb.Endpoint, "autograde", token,
+           max_age: 8640
+         ) do
       {:ok, %{uuid: ^uuid}} ->
         socket =
           socket
@@ -40,7 +40,12 @@ defmodule InkfishWeb.AutogradeChannel do
         itty_not_found(socket)
 
       {:error, msg} ->
-        push(socket, "block", %{seq: 10, stream: :err, text: "Could not connect to itty.\n"})
+        push(socket, "block", %{
+          seq: 10,
+          stream: :err,
+          text: "Could not connect to itty.\n"
+        })
+
         push(socket, "block", %{seq: 11, stream: :err, text: "Error: #{msg}\n"})
 
         {:noreply, socket}
@@ -48,7 +53,9 @@ defmodule InkfishWeb.AutogradeChannel do
   end
 
   def handle_info(:show_score, socket) do
-    grade = Grades.get_grade_by_log_uuid(socket.assigns[:uuid])
+    # FIXME: Push logic towards Itty
+    # Grades.get_grade_by_log_uuid(socket.assigns[:uuid])
+    grade = nil
 
     if grade do
       data = %{
@@ -88,33 +95,8 @@ defmodule InkfishWeb.AutogradeChannel do
   end
 
   def itty_not_found(socket) do
-    uuid = socket.assigns[:uuid]
-
-    grade = Grades.get_grade_by_log_uuid(uuid)
-
-    if grade do
-      grade = Grades.preload_sub_and_upload(grade)
-      log = Grades.Grade.get_log(grade)
-
-      if log do
-        push_messages(socket, [Jason.encode!(log)])
-      else
-        case Inkfish.AgJobs.grade_status(grade) do
-          :missing ->
-            push_messages(socket, ["This grade is missing from the queue."])
-
-          msg ->
-            Process.send_after(self(), :open, 10_000)
-
-            push_messages(socket, [
-              "In queue: #{inspect(msg)}",
-              "Waiting 10 seconds..."
-            ])
-        end
-      end
-    else
-      push_messages(socket, ["Unknown grade UUID.", "Try reloading?"])
-    end
+    # uuid = socket.assigns[:uuid]
+    push_messages(socket, ["Unknown job UUID.", "Try reloading?"])
   end
 
   def push_messages(socket, []) do

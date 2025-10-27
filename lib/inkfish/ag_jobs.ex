@@ -8,8 +8,6 @@ defmodule Inkfish.AgJobs do
 
   alias Inkfish.AgJobs.AgJob
   alias Inkfish.Subs.Sub
-  alias Inkfish.Grades.Grade
-  alias Inkfish.AgJobs.Server
 
   @doc """
   Returns the list of ag_jobs.
@@ -62,18 +60,19 @@ defmodule Inkfish.AgJobs do
     )
   end
 
-  def start_next_ag_job() do
+  def start_next_ag_job(cores_free) do
     Repo.transaction(fn ->
       job0 =
         Repo.one(
           from(job in AgJob,
             order_by: [job.prio, job.inserted_at],
             where: is_nil(job.started_at) and is_nil(job.finished_at),
+            preload: [:sub, :grades],
             limit: 1
           )
         )
 
-      if is_nil(job0) do
+      if is_nil(job0) || AgJob.cores_needed(job0) > cores_free do
         Repo.rollback(:no_more_work)
       end
 
@@ -81,29 +80,12 @@ defmodule Inkfish.AgJobs do
 
       job1 = get_ag_job(job0.id)
 
-      if is_nil(job0) do
+      if is_nil(job1) do
         Repo.rollback(:no_more_work)
       end
 
       job1
     end)
-  end
-
-  def grade_status(%Grade{} = grade) do
-    case Server.grade_status(grade.id) do
-      {:ok, msg} ->
-        msg
-
-      :error ->
-        jobs = list_upcoming_ag_jobs()
-        idx = Enum.find_index(jobs, &(&1.sub_id == grade.sub_id))
-
-        if idx do
-          {:scheduled, idx}
-        else
-          :missing
-        end
-    end
   end
 
   @doc """
@@ -217,7 +199,8 @@ defmodule Inkfish.AgJobs do
       rv =
         Repo.delete_all(
           from(job in AgJob,
-            where: not is_nil(job.finished_at) and job.finished_at < ^one_day_ago
+            where:
+              not is_nil(job.finished_at) and job.finished_at < ^one_day_ago
           )
         )
 

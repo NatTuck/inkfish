@@ -9,6 +9,9 @@ use File::Temp qw(tempdir);
 
 my $id = shift or die "Need container ID.";
 
+say("Running in docker container:");
+system(qq{docker container inspect $id});
+
 my $SCR = $ENV{'SCR'} or die "Need $ENV{'SCR'}";
 my $SUB = $ENV{'SUB'} or die "Need $ENV{'SUB'}";
 my $GRA = $ENV{'GRA'} or die "Need $ENV{'GRA'}";

@@ -1,4 +1,6 @@
 defmodule Inkfish.AgJobs.AgJob do
+  alias __MODULE__
+
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -19,5 +21,13 @@ defmodule Inkfish.AgJobs.AgJob do
     ag_job
     |> cast(attrs, [:dupkey, :prio, :sub_id, :started_at, :finished_at])
     |> validate_required([:dupkey, :prio, :sub_id])
+  end
+
+  alias Inkfish.Grades.Grade
+
+  def cores_needed(%AgJob{} = job) do
+    job.sub.grades
+    |> Enum.map(&Grade.cores_needed/1)
+    |> Enum.max()
   end
 end
