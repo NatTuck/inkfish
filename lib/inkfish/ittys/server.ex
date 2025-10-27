@@ -16,7 +16,7 @@ defmodule Inkfish.Ittys.Server do
   end
 
   def reg(uuid) do
-    {:via, Registry, {Inkfish.Itty.Reg, uuid}}
+    {:via, Registry, {Inkfish.Ittys.Reg, uuid}}
   end
 
   def start(%Job{} = job) do
@@ -26,11 +26,11 @@ defmodule Inkfish.Ittys.Server do
       restart: :temporary
     }
 
-    DynamicSupervisor.start_child(Inkfish.Itty.DynSup, spec)
+    DynamicSupervisor.start_child(Inkfish.Ittys.DynSup, spec)
   end
 
   def peek(uuid) do
-    if !Enum.empty?(Registry.lookup(Inkfish.Itty.Reg, uuid)) do
+    if !Enum.empty?(Registry.lookup(Inkfish.Ittys.Reg, uuid)) do
       GenServer.call(reg(uuid), :peek)
     else
       {:error, :itty_not_found}
@@ -38,7 +38,7 @@ defmodule Inkfish.Ittys.Server do
   end
 
   def running?(uuid) do
-    if Enum.empty?(Registry.lookup(Inkfish.Itty.Reg, uuid)) do
+    if Enum.empty?(Registry.lookup(Inkfish.Ittys.Reg, uuid)) do
       false
     else
       {:ok, state} = GenServer.call(reg(uuid), :peek)
@@ -47,7 +47,7 @@ defmodule Inkfish.Ittys.Server do
   end
 
   def stop(uuid) do
-    if !Enum.empty?(Registry.lookup(Inkfish.Itty.Reg, uuid)) do
+    if !Enum.empty?(Registry.lookup(Inkfish.Ittys.Reg, uuid)) do
       GenServer.call(reg(uuid), :stop)
     else
       :ok

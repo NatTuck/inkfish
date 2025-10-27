@@ -26,7 +26,7 @@ defmodule Inkfish.Ittys do
     Server.peek(uuid)
   end
 
-  def running?(%Task{} = task), do: running?(task.uuid)
+  def running?(%Job{} = job), do: running?(job.uuid)
 
   def running?(uuid) do
     Server.running?(uuid)

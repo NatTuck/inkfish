@@ -5,6 +5,7 @@ defmodule Inkfish.AgJobs.AgJob do
   import Ecto.Changeset
 
   schema "ag_jobs" do
+    field(:uuid, :string)
     field(:started_at, :utc_datetime)
     field(:finished_at, :utc_datetime)
     field(:dupkey, :string)
@@ -21,13 +22,5 @@ defmodule Inkfish.AgJobs.AgJob do
     ag_job
     |> cast(attrs, [:dupkey, :prio, :sub_id, :started_at, :finished_at])
     |> validate_required([:dupkey, :prio, :sub_id])
-  end
-
-  alias Inkfish.Grades.Grade
-
-  def cores_needed(%AgJob{} = job) do
-    job.sub.grades
-    |> Enum.map(&Grade.cores_needed/1)
-    |> Enum.max()
   end
 end

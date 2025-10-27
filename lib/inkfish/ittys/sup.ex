@@ -1,4 +1,4 @@
-defmodule Inkfish.Itty.Sup do
+defmodule Inkfish.Ittys.Sup do
   use Supervisor
 
   def start_link(arg) do
@@ -8,8 +8,8 @@ defmodule Inkfish.Itty.Sup do
   @impl true
   def init(_arg) do
     children = [
-      {DynamicSupervisor, strategy: :one_for_one, name: Inkfish.Itty.DynSup},
-      {Registry, keys: :unique, name: Inkfish.Itty.Reg}
+      {DynamicSupervisor, strategy: :one_for_one, name: Inkfish.Ittys.DynSup},
+      {Registry, keys: :unique, name: Inkfish.Ittys.Reg}
     ]
 
     Supervisor.init(children, strategy: :one_for_one)
@@ -17,8 +17,8 @@ defmodule Inkfish.Itty.Sup do
 
   def poll(qname) do
     alive =
-      Enum.any?(Supervisor.which_children(Inkfish.Itty.DynSup), fn {_, pid, _,
-                                                                    _} ->
+      Enum.any?(Supervisor.which_children(Inkfish.Ittys.DynSup), fn {_, pid, _,
+                                                                     _} ->
         {:ok, info} = GenServer.call(pid, :peek)
         qname == Map.get(info, :qname) && Map.get(info, :started)
       end)

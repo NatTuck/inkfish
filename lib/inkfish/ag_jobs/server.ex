@@ -77,7 +77,7 @@ defmodule Inkfish.AgJobs.Server do
   - Kill it if it has it its time limit.
   - Mark it if it's dead or done.
   """
-  def reap_tasks(running) do
+  def reap(running) do
     Enum.filter(running, fn job ->
       if time_left(job) < 0 do
         IO.puts("Warning: timed out task didn't exit.")
@@ -107,7 +107,7 @@ defmodule Inkfish.AgJobs.Server do
 
     case AgJobs.start_next_ag_job(free_cores) do
       {:ok, job} ->
-        start_job(job)
+        Autograde.autograde(job)
 
       {:error, _} ->
         :ok

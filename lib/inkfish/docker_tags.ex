@@ -105,7 +105,7 @@ defmodule Inkfish.DockerTags do
     DockerTag.changeset(docker_tag, attrs)
   end
 
-  alias Inkfish.Itty
+  alias Inkfish.Ittys
 
   def build_dir(%DockerTag{} = dt) do
     text =
@@ -125,13 +125,13 @@ defmodule Inkfish.DockerTags do
     Path.join(dir, "Dockerfile")
     |> File.write!(dt.dockerfile)
 
-    Itty.run(
+    Ittys.run(
       ~s[(cd "#{dir}" && DOCKER_BUILDKIT=1 docker build -t "#{dt.name}" .)]
     )
   end
 
   def start_clean(%DockerTag{} = dt) do
-    Itty.run(~s[(docker image rm "#{dt.name}" && docker image prune -f)])
+    Ittys.run(~s[(docker image rm "#{dt.name}" && docker image prune -f)])
   end
 
   def fresh_image?(%DockerTag{} = _dt, nil), do: false

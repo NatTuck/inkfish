@@ -7,11 +7,11 @@ defmodule Inkfish.Uploads.Git do
       :code.priv_dir(:inkfish)
       |> Path.join("scripts/upload_git_clone.sh")
 
-    {:ok, _uuid} = Inkfish.Itty.run(script, REPO: url, SIZE: "5m")
+    {:ok, _uuid} = Inkfish.Ittys.run(script, REPO: url, SIZE: "5m")
   end
 
   def get_results(uuid) do
-    {:ok, view} = Inkfish.Itty.close(uuid)
+    {:ok, view} = Inkfish.Ittys.close(uuid)
     parse_results(view.result)
   end
 
