@@ -5,6 +5,11 @@ defmodule Inkfish.Repo.Migrations.AgJobsUniqueSubs do
     # Delete all existing ag jobs
     execute("DELETE FROM ag_jobs", "")
     
+    # Alter the uuid column to be non-null
+    alter table("ag_jobs") do
+      modify(:uuid, :string, null: false)
+    end
+    
     # Drop the existing index on sub_id
     drop index(:ag_jobs, [:sub_id])
     
