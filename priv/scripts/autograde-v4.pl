@@ -10,6 +10,6 @@ sub start($id) {
     system(qq{docker start -a $id});
 }
 
-my $id = ENV{'CID'} || die "Need container id";
+my $id = $ENV{'CID'} || die "Need container id";
 
 start($id);

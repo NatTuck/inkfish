@@ -40,15 +40,10 @@ defmodule Inkfish.AgJobs.Autograde do
       Application.app_dir(:inkfish)
       |> Path.join("priv/scripts")
 
-    grade_script =
-      script_dir
-      |> Path.join("autograde-v4.pl")
-
     conf = %{
       script_dir: script_dir,
       unpacked_sub: unpacked_sub,
       unpacked_gra: unpacked_gra,
-      grade_script: grade_script,
       ag_job_id: ag_job.id,
       cmd: ["perl", "/var/tmp/driver.pl"]
     }
@@ -63,17 +58,28 @@ defmodule Inkfish.AgJobs.Autograde do
     on_exit = fn rv ->
       {:ok, {passed, tests}} = Tap.score(rv.result)
 
-      Grades.set_grade_log!(rv.uuid, rv)
-      Grades.set_grade_score(grade, passed, tests)
+      # FIXME: Need to correctly store logs.
+      # Grades.set_grade_log!(rv.uuid, rv)
+      # Grades.set_grade_score(grade, passed, tests)
 
       Inkfish.AgJobs.Server.cast_poll()
     end
+
+    grade_script =
+      Application.app_dir(:inkfish)
+      |> Path.join("priv/scripts")
+      |> Path.join("autograde-v4.pl")
+
+    conf = %{
+      cmd: "perl '#{grade_script}'",
+      img: "sandbox:#{ag_job.id}"
+    }
 
     cookie = Inkfish.Text.gen_uuid()
 
     %Task{
       label: "Run container",
-      action: {:run_container, ag_job},
+      action: {:run_container, conf},
       cookie: cookie,
       on_exit: on_exit
     }

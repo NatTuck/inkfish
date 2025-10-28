@@ -39,7 +39,12 @@ defmodule InkfishWeb.Staff.SubController do
         {grade, token, log}
       end)
 
-    token = Phoenix.Token.sign(conn, "autograde", %{uuid: sub.ag_job.uuid})
+    token =
+      if sub.ag_job do
+        Phoenix.Token.sign(conn, "autograde", %{uuid: sub.ag_job.uuid})
+      else
+        nil
+      end
 
     render(conn, "show.html",
       sub: sub,

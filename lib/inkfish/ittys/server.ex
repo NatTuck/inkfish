@@ -5,10 +5,15 @@ defmodule Inkfish.Ittys.Server do
   alias Inkfish.Ittys.Job
   alias Inkfish.Sandbox.AgImage
   alias Inkfish.Sandbox.Containers
+  alias Inkfish.Ittys.Block
 
   # How long to stay alive waiting for late
   # subscribers after the job terminates.
   @linger_seconds 300
+
+  # If the output ever gets longer than this
+  # in characters we need to give up.
+  @max_output_size 1_000_000
 
   def start_link(%Job{} = job) do
     IO.puts(" =[Itty]= Start server with UUID #{job.uuid}")
@@ -76,7 +81,8 @@ defmodule Inkfish.Ittys.Server do
       |> Map.put(:outputs, outputs)
 
     if view.done do
-      Map.put(view, :result, get_marked_output(state, state.cookie))
+      # Map.put(view, :result, get_marked_output(state, state.cookie))
+      Map.put(view, :result, "done")
     else
       Map.put(view, :result, nil)
     end
@@ -99,13 +105,28 @@ defmodule Inkfish.Ittys.Server do
   end
 
   def send_text(text, %{seq: seq} = state) do
-    block = %{seq: seq, stream: :adm, text: text}
+    block = Block.new(seq, :adm, text)
     send_block(block, state)
   end
 
-  def send_block(block, %{uuid: uuid, seq: seq, blocks: blocks} = state) do
-    blocks = [block | blocks]
-    # IO.puts(" =[Itty]= Send block for UUID #{uuid} #{block.seq}")
+  def send_block(
+        %Block{} = block,
+        %{uuid: uuid, seq: seq, blocks: blocks} = state
+      ) do
+    blocks1 = [block | blocks]
+
+    output_size = Enum.sum_by(blocks1, & &1.length)
+
+    {block, blocks} =
+      if output_size < @max_output_size do
+        {block, blocks1}
+      else
+        Process.send_after(self(), :shutdown, 10)
+
+        eblock = Block.new(seq, :adm, "\nHit output limit, bye.\n")
+        {eblock, [eblock | blocks]}
+      end
+
     Phoenix.PubSub.broadcast!(
       Inkfish.PubSub,
       "ittys:" <> uuid,
@@ -151,7 +172,9 @@ defmodule Inkfish.Ittys.Server do
     end
   end
 
-  def start_run_container(%AgJob{} = job) do
+  def start_run_container(task, %{cmd: cmd, img: img} = _conf, state) do
+    cont_id = Containers.create(image: img)
+    start_cmd(Task.put_env(task, "CID", cont_id), cmd, state)
   end
 
   @impl true
@@ -164,7 +187,7 @@ defmodule Inkfish.Ittys.Server do
         start_build_image(task, conf, state)
 
       {:run_container, job} ->
-        start_run_container(job, state)
+        start_run_container(task, job, state)
 
       _else ->
         IO.puts("Itty: unknown action #{inspect(task.action)}")
@@ -174,12 +197,12 @@ defmodule Inkfish.Ittys.Server do
 
   def handle_info({:stdout, _, text}, %{seq: seq} = state) do
     IO.inspect({:stdout, text})
-    block = %{seq: seq, stream: :out, text: text}
+    block = Block.new(seq, :out, text)
     send_block(block, state)
   end
 
   def handle_info({:stderr, _, text}, %{seq: seq} = state) do
-    block = %{seq: seq, stream: :err, text: text}
+    block = Block.new(seq, :err, text)
     send_block(block, state)
   end
 
@@ -198,7 +221,7 @@ defmodule Inkfish.Ittys.Server do
           uuid: uuid,
           downstat: status,
           status: "ok",
-          result: get_marked_output(state, state.cookie),
+          result: get_marked_output(state, task.cookie),
           log: blocks
         }
 

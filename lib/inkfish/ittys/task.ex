@@ -25,4 +25,8 @@ defmodule Inkfish.Ittys.Task do
     end)
     |> Enum.into(%{})
   end
+
+  def put_env(%Task{} = task, key, val) do
+    %Task{task | env: Map.put(task.env, key, val)}
+  end
 end
