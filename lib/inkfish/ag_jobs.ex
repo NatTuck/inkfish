@@ -133,7 +133,8 @@ defmodule Inkfish.AgJobs do
     attrs = %{
       sub_id: sub.id,
       dupkey: dupkey,
-      prio: count_user_jobs(sub.reg.user_id)
+      prio: count_user_jobs(sub.reg.user_id),
+      uuid: Inkfish.Text.gen_uuid()
     }
 
     create_ag_job(attrs)
@@ -143,6 +144,19 @@ defmodule Inkfish.AgJobs do
     %AgJob{}
     |> AgJob.changeset(attrs)
     |> Repo.insert()
+  end
+
+  def reset_ag_job(%AgJob{} = ag_job) do
+    ag_job = Repo.preload(ag_job, sub: [reg: [:user]])
+
+    attrs = %{
+      prio: 100 + count_user_jobs(ag_job.sub.reg.user_id),
+      uuid: Inkfish.Text.gen_uuid(),
+      started_at: nil,
+      finished_at: nil
+    }
+
+    update_ag_job(ag_job, attrs)
   end
 
   @doc """

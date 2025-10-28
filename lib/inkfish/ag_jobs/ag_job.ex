@@ -18,7 +18,7 @@ defmodule Inkfish.AgJobs.AgJob do
   @doc false
   def changeset(ag_job, attrs) do
     ag_job
-    |> cast(attrs, [:dupkey, :prio, :sub_id, :started_at, :finished_at])
-    |> validate_required([:dupkey, :prio, :sub_id])
+    |> cast(attrs, [:dupkey, :prio, :sub_id, :started_at, :finished_at, :uuid])
+    |> validate_required([:dupkey, :prio, :sub_id, :uuid])
   end
 end

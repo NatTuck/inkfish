@@ -37,7 +37,7 @@ defmodule InkfishWeb.AutogradeChannel do
         {:noreply, socket}
 
       {:error, :itty_not_found} ->
-        itty_not_found(socket)
+        push_messages(socket, ["Unknown job UUID: #{uuid}", "Try reloading?"])
 
       {:error, msg} ->
         push(socket, "block", %{
@@ -92,11 +92,6 @@ defmodule InkfishWeb.AutogradeChannel do
     push(socket, "done", %{uuid: uuid})
     Inkfish.Ittys.close(uuid)
     {:noreply, socket}
-  end
-
-  def itty_not_found(socket) do
-    # uuid = socket.assigns[:uuid]
-    push_messages(socket, ["Unknown job UUID.", "Try reloading?"])
   end
 
   def push_messages(socket, []) do

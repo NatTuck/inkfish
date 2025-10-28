@@ -71,7 +71,8 @@ defmodule Inkfish.Ittys.Server do
 
     view =
       state
-      |> Map.drop([:on_exit])
+      |> Map.drop([:__struct__, :on_exit])
+      |> Map.put(:done, Enum.empty?(state.tasks))
       |> Map.put(:outputs, outputs)
 
     if view.done do
@@ -133,7 +134,10 @@ defmodule Inkfish.Ittys.Server do
 
     {:ok, _pid, ospid} = :exec.run(cmd, opts, 30)
 
-    send_text("Starting task: #{task.label}", Map.put(state, :ospid, ospid))
+    send_text(
+      "\nStarting task: #{task.label}\n\n",
+      Map.put(state, :ospid, ospid)
+    )
   end
 
   def start_build_image(task, conf, state) do
@@ -143,8 +147,11 @@ defmodule Inkfish.Ittys.Server do
         start_cmd(task, cmd, state)
 
       error ->
-        send_text("Error in build_image: #{inspect(error)}", state)
+        send_text("\nError in build_image: #{inspect(error)}\n\n", state)
     end
+  end
+
+  def start_run_container(%AgJob{} = job) do
   end
 
   @impl true
@@ -155,6 +162,9 @@ defmodule Inkfish.Ittys.Server do
 
       {:build_image, conf} ->
         start_build_image(task, conf, state)
+
+      {:run_container, job} ->
+        start_run_container(job, state)
 
       _else ->
         IO.puts("Itty: unknown action #{inspect(task.action)}")

@@ -112,7 +112,8 @@ defmodule InkfishWeb.SubController do
         {grade, token, log}
       end)
 
-    render(conn, "show.html", sub: sub, autogrades: autogrades)
+    token = Phoenix.Token.sign(conn, "autograde", %{uuid: sub.ag_job.uuid})
+    render(conn, "show.html", sub: sub, autogrades: autogrades, token: token)
   end
 
   def files(conn, %{"id" => id}) do

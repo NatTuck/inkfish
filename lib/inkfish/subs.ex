@@ -150,7 +150,9 @@ defmodule Inkfish.Subs do
         left_join: grades in assoc(sub, :grades),
         left_join: lcs in assoc(grades, :line_comments),
         left_join: gc in assoc(grades, :grade_column),
+        left_join: ag_job in assoc(sub, :ag_job),
         preload: [
+          ag_job: ag_job,
           upload: upload,
           team: team,
           grades: {grades, grade_column: gc, line_comments: lcs},
@@ -311,9 +313,15 @@ defmodule Inkfish.Subs do
   end
 
   def autograde!(sub) do
+    sub = Repo.preload(sub, [:ag_job])
     reset_script_grades(sub)
 
-    Inkfish.AgJobs.create_ag_job(sub)
+    if sub.ag_job do
+      Inkfish.AgJobs.reset_ag_job(sub.ag_job)
+    else
+      Inkfish.AgJobs.create_ag_job(sub)
+    end
+
     Inkfish.AgJobs.Server.poll()
   end
 
