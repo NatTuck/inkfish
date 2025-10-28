@@ -41,6 +41,7 @@ defmodule Inkfish.Sandbox.Containers do
 
     %{
       "Image" => conf.image,
+      "Tty" => true,
       "WorkingDir" => "/home/student",
       "Labels" => %{
         "inkfish.sandbox" => "true"
