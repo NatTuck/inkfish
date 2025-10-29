@@ -4,7 +4,8 @@ defmodule Inkfish.Ittys.Job do
             seq: 100,
             blocks: [],
             ag_job: nil,
-            ospid: nil
+            ospid: nil,
+            cookie: nil
 
   alias __MODULE__
 
@@ -16,6 +17,8 @@ defmodule Inkfish.Ittys.Job do
         Inkfish.Text.gen_uuid()
       end
 
-    %Job{uuid: uuid, tasks: tasks, ag_job: ag_job}
+    cookie = Inkfish.Text.gen_uuid()
+
+    %Job{uuid: uuid, tasks: tasks, ag_job: ag_job, cookie: cookie}
   end
 end

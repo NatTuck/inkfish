@@ -81,8 +81,7 @@ defmodule Inkfish.Ittys.Server do
       |> Map.put(:outputs, outputs)
 
     if view.done do
-      # Map.put(view, :result, get_marked_output(state, state.cookie))
-      Map.put(view, :result, "done")
+      Map.put(view, :result, get_marked_output(state, state.cookie))
     else
       Map.put(view, :result, nil)
     end
@@ -140,7 +139,7 @@ defmodule Inkfish.Ittys.Server do
     env =
       System.get_env()
       |> Map.merge(task.env)
-      |> Map.put("COOKIE", task.cookie || "none")
+      |> Map.put("COOKIE", state.cookie)
       |> Enum.into([])
 
     IO.puts(" =[Itty]= Run cmd [#{cmd}] for UUID #{state.uuid}")
@@ -162,6 +161,8 @@ defmodule Inkfish.Ittys.Server do
   end
 
   def start_build_image(task, conf, state) do
+    conf = Map.put(conf, "COOKIE", state.cookie)
+
     case AgImage.prepare(conf) do
       {:ok, %AgImage{tag: tag, cmd: cmd}} ->
         IO.inspect({:created_ag_image, tag})
@@ -221,7 +222,7 @@ defmodule Inkfish.Ittys.Server do
           uuid: uuid,
           downstat: status,
           status: "ok",
-          result: get_marked_output(state, task.cookie),
+          result: get_marked_output(state, state.cookie),
           log: blocks
         }
 
@@ -266,6 +267,7 @@ defmodule Inkfish.Ittys.Server do
   def get_marked_output(state, cookie) do
     splits =
       get_stream_text(state, :out)
+      |> String.replace("\r", "")
       |> String.split("\n#{cookie}\n", trim: true)
 
     if length(splits) > 1 do

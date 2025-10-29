@@ -13,13 +13,17 @@ defmodule Inkfish.AgJobs.Autograde do
   def autograde(%AgJob{} = ag_job) do
     ag_job = AgJobs.preload_for_autograde(ag_job)
 
-    # IO.inspect({:autograde, grade})
-    Enum.flat_map(ag_job.sub.grades, fn grade ->
-      if grade.grade_column.kind == "script" do
-        create_grade_tasks(ag_job, grade)
-      else
-        []
-      end
+    script_grades =
+      Enum.filter(ag_job.sub.grades, fn grade ->
+        grade.grade_column.kind == "script"
+      end)
+
+    if length(script_grades) != 1 do
+      raise "FIXME: Can't handle multiple script grades"
+    end
+
+    Enum.flat_map(script_grades, fn grade ->
+      create_grade_tasks(ag_job, grade)
     end)
     |> Job.new(ag_job)
     |> Ittys.start()
@@ -58,9 +62,8 @@ defmodule Inkfish.AgJobs.Autograde do
     on_exit = fn rv ->
       {:ok, {passed, tests}} = Tap.score(rv.result)
 
-      # FIXME: Need to correctly store logs.
-      # Grades.set_grade_log!(rv.uuid, rv)
-      # Grades.set_grade_score(grade, passed, tests)
+      Grades.set_grade_log!(grade.log_uuid, rv)
+      Grades.set_grade_score(grade, passed, tests)
 
       Inkfish.AgJobs.Server.cast_poll()
     end
@@ -75,12 +78,9 @@ defmodule Inkfish.AgJobs.Autograde do
       img: "sandbox:#{ag_job.id}"
     }
 
-    cookie = Inkfish.Text.gen_uuid()
-
     %Task{
       label: "Run container",
       action: {:run_container, conf},
-      cookie: cookie,
       on_exit: on_exit
     }
   end

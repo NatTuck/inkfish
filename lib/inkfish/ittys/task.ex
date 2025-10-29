@@ -3,15 +3,13 @@ defmodule Inkfish.Ittys.Task do
 
   defstruct label: "Generic Task",
             action: {:cmd, "echo hello, world"},
-            cookie: nil,
             on_exit: nil,
             env: %{}
 
   def new(cmd, env) do
     action = {:cmd, cmd}
-    cookie = Inkfish.Text.gen_uuid()
     env = norm_env(env)
-    %Task{action: action, cookie: cookie, env: env}
+    %Task{action: action, env: env}
   end
 
   def new(cmd) do

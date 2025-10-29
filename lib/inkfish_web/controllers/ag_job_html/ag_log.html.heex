@@ -1,15 +1,13 @@
 <h2>Grading Scripts Output</h2>
 
 <% path = ~p"/subs/#{@sub}/rerun_scripts" %>
+
+
 <.form for={%{}} action={path} method="post">
   <.button class="btn btn-secondary">Rerun Scripts</.button>
 </.form>
 
 <%= if @sub.ag_job do %>
-  <pre>
-  <%= inspect(@sub.ag_job, pretty: true) %>
-  </pre>
-
   <div id="itty-root"
        data-token={@token}
        data-chan="autograde"
