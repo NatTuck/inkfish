@@ -1,22 +1,26 @@
 <h2>Grading Scripts Output</h2>
 
-<% path = ~p"/subs/#{@sub}/rerun_scripts" %>
-
-
-<.form for={%{}} action={path} method="post">
-  <.button class="btn btn-secondary">Rerun Scripts</.button>
-</.form>
-
 <%= if @sub.ag_job do %>
-  <div id="itty-root"
-       data-token={@token}
-       data-chan="autograde"
-       data-uuid={@sub.ag_job.uuid}>
-    <!-- React component in js/itty.jsx -->
-    Loading...
-  </div>
- 
+  <% status = Inkfish.AgJobs.AgJob.ag_job_status(@sub.ag_job) %>
+
+  <%= if status == :running do %>
+    <div id="itty-root"
+         data-token={@token}
+         data-chan="autograde"
+         data-uuid={@sub.ag_job.uuid}>
+       <!-- React component in js/itty.jsx -->
+       Loading...
+    </div>
+  <% end %>
+
+  <%= if status == :ready do %>
+    <p>Job in queue since <%= @sub.ag_job.started_at %></p>
+  <% end %>
+
+  <%= if status == :done do %>
+    <.rerun_button sub={@sub} />
+    <p>Show grade log here.</p>
+  <% end %>
 <% else %>
   <p>No ag job.</p>
 <% end %>
-
