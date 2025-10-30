@@ -7,6 +7,8 @@ use autodie qw(:all);
 
 my $id = $ENV{'CID'} || die "Need container id";
 
+use JSON;
+
 $SIG{ALRM} = sub {
     say "Timeout reached (5 minutes). Stopping container $id...";
     system(qq{docker stop $id});

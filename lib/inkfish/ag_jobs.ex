@@ -208,17 +208,17 @@ defmodule Inkfish.AgJobs do
     if Application.get_env(:inkfish, :env) == :test do
       {0, nil}
     else
-      one_day = 60 * 60 * 24
+      three_days = 3 * 60 * 60 * 24
 
-      one_day_ago =
+      three_days_ago =
         LocalTime.now()
-        |> DateTime.add(-one_day)
+        |> DateTime.add(-three_days)
 
       rv =
         Repo.delete_all(
           from(job in AgJob,
             where:
-              not is_nil(job.finished_at) and job.finished_at < ^one_day_ago
+              not is_nil(job.finished_at) and job.finished_at < ^three_days_ago
           )
         )
 
@@ -226,6 +226,10 @@ defmodule Inkfish.AgJobs do
 
       rv
     end
+  end
+
+  def cleanup_resources(%AgJob{} = ag_job) do
+    Inkfish.Sandbox.Containers.cleanup_sandboxes(ag_job.id)
   end
 
   @doc """

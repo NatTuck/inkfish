@@ -20,6 +20,15 @@ defmodule Inkfish.Sandbox.Containers do
     |> Enum.find(&Enum.member?(&1["RepoTags"], tag))
   end
 
+  def cleanup_sandboxes(_job_id) do
+    :ok
+    # TODO:
+    # - clean up containers a little earlier
+    # - in a task, because slow
+    # - find running containers with this job_id image; stop
+    # - remove the image
+  end
+
   def create(conf) do
     conf
     |> Enum.into(%{})
@@ -60,7 +69,8 @@ defmodule Inkfish.Sandbox.Containers do
           "/home/student" => "rw,exec,size=#{disk}m,mode=0777",
           "/tmp" => "rw,size=10m,mode=0777"
         },
-        "ReadonlyRootFs" => true
+        "ReadonlyRootFs" => true,
+        "Network" => "none"
       }
     }
   end

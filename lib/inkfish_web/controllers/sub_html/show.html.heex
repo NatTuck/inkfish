@@ -94,5 +94,5 @@
 <%= if Enum.empty?(@autogrades) do %>
   <p>No autogrades.</p>
 <% else %>
-  <.ag_log sub={@sub} token={@token} />
+  <.ag_log sub={@sub} token={@token} autogrades={@autogrades} />
 <% end %>

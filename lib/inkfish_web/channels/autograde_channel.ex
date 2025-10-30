@@ -52,32 +52,6 @@ defmodule InkfishWeb.AutogradeChannel do
     end
   end
 
-  def handle_info(:show_score, socket) do
-    # FIXME: Push logic towards Itty
-    # Grades.get_grade_by_log_uuid(socket.assigns[:uuid])
-    grade = nil
-
-    if grade do
-      data = %{
-        serial: 8_000_000_001,
-        stream: "stderr",
-        text: "\n\nyour score: #{grade.score} / #{grade.grade_column.points}"
-      }
-
-      push(socket, "output", data)
-    else
-      data = %{
-        serial: 8_000_000_001,
-        stream: "stderr",
-        text: "\n\ncan't find grade to see score"
-      }
-
-      push(socket, "output", data)
-    end
-
-    {:noreply, socket}
-  end
-
   def handle_info({:block, uuid, item}, socket) do
     if uuid != socket.assigns[:uuid] do
       IO.inspect({:uuid_mismatch, uuid, socket.assigns[:uuid]})

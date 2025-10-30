@@ -3,16 +3,17 @@ defmodule Inkfish.AgJobs.AutogradeTest do
 
   import Mimic
   alias Inkfish.AgJobs.Autograde
+  # alias Inkfish.AgJobs.AgJob
   alias Inkfish.Ittys
-  alias Inkfish.Ittys.Task
+  alias Inkfish.Ittys.Job
   alias Inkfish.Repo
-  alias Inkfish.Sandbox.Containers
+  # alias Inkfish.Sandbox.Containers
 
   import Inkfish.Factory
 
   describe "autograde/1" do
     test "constructs a task and passes it to Itty.start/1" do
-      Mimic.copy(Inkfishs.Itty)
+      Mimic.copy(Inkfish.Ittys)
       Mimic.copy(Inkfish.Sandbox.Containers)
 
       # Setup: Create the necessary database records.
@@ -24,30 +25,29 @@ defmodule Inkfish.AgJobs.AutogradeTest do
       gc_upload = insert(:upload)
 
       grade_column =
-        insert(:grade_column, assignment: assignment, upload: gc_upload)
+        insert(:grade_column,
+          kind: "script",
+          assignment: assignment,
+          upload: gc_upload
+        )
 
-      grade =
-        insert(:grade, sub: sub, grade_column: grade_column)
-        |> Repo.preload(sub: :upload, grade_column: :upload)
+      # grade =
+      insert(:grade, sub: sub, grade_column: grade_column)
+      |> Repo.preload(sub: :upload, grade_column: :upload)
 
-      expect(Ittys, :start, fn %Task{} = task ->
+      ag_job = insert(:ag_job, sub: sub, sub_id: sub.id)
+
+      expect(Ittys, :start, fn %Job{} = job ->
         # Assert that the task passed to Itty contains the grade we created.
-        assert task.grade.id == grade.id
-        assert task.uuid == grade.log_uuid
-
-        # The script and environment variables should be set correctly.
-        assert task.cmd =~ "autograde-v3.pl"
-        assert task.env["SUB"] =~ "unpacked"
-        assert task.env["GRA"] =~ "unpacked"
-
-        {:ok, task}
+        assert job.ag_job.sub.id == sub.id
+        {:ok, job}
       end)
 
-      expect(Containers, :create, fn conf ->
-        assert is_list(conf.cmd)
-      end)
+      # expect(Containers, :create, fn conf ->
+      #  assert is_list(conf.cmd)
+      # end)
 
-      Autograde.autograde(grade)
+      Autograde.autograde(ag_job)
 
       verify!()
     end

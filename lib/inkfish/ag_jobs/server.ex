@@ -5,7 +5,6 @@ defmodule Inkfish.AgJobs.Server do
   alias Inkfish.AgJobs.AgJob
   alias Inkfish.AgJobs.Autograde
   alias Inkfish.Ittys
-  alias Inkfish.Subs
 
   def start_link(_) do
     GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
@@ -89,6 +88,7 @@ defmodule Inkfish.AgJobs.Server do
 
       if !running do
         AgJobs.update_ag_job(job, %{finished_at: LocalTime.now()})
+        AgJobs.cleanup_resources(job)
       end
 
       running

@@ -103,8 +103,12 @@ defmodule Inkfish.Ittys.Server do
     {:reply, :ok, state}
   end
 
-  def send_text(text, %{seq: seq} = state) do
-    block = Block.new(seq, :adm, text)
+  def send_text(text, state) do
+    send_text(:adm, text, state)
+  end
+
+  def send_text(stream, text, %{seq: seq} = state) do
+    block = Block.new(seq, stream, text)
     send_block(block, state)
   end
 
@@ -120,7 +124,11 @@ defmodule Inkfish.Ittys.Server do
       if output_size < @max_output_size do
         {block, blocks1}
       else
-        Process.send_after(self(), :shutdown, 10)
+        if state.ospid do
+          :exec.stop(state.ospid)
+        end
+
+        Process.send_after(self(), :shutdown, 5000)
 
         eblock = Block.new(seq, :adm, "\nHit output limit, bye.\n")
         {eblock, [eblock | blocks]}
@@ -197,13 +205,17 @@ defmodule Inkfish.Ittys.Server do
   end
 
   def handle_info({:stdout, _, text}, %{seq: seq} = state) do
-    IO.inspect({:stdout, text})
     block = Block.new(seq, :out, text)
     send_block(block, state)
   end
 
   def handle_info({:stderr, _, text}, %{seq: seq} = state) do
     block = Block.new(seq, :err, text)
+    send_block(block, state)
+  end
+
+  def handle_info({:send, text}, %{seq: seq} = state) do
+    block = Block.new(seq, :adm, text)
     send_block(block, state)
   end
 
@@ -226,25 +238,38 @@ defmodule Inkfish.Ittys.Server do
           log: blocks
         }
 
-        task.on_exit.(rv)
+        case task.on_exit.(rv) do
+          {:send, text} ->
+            IO.inspect({:send, text})
+            Process.send_after(self(), {:send, text}, 1)
+
+          _else ->
+            IO.inspect({:on_exit, :empty})
+            :pass
+        end
       end
     end
 
     rest = Enum.drop(tasks, 1)
 
     if length(rest) == 0 do
-      Phoenix.PubSub.broadcast!(
-        Inkfish.PubSub,
-        "ittys:" <> uuid,
-        {:done, uuid}
-      )
-
+      Process.send_after(self(), :send_done, 100)
       Process.send_after(self(), :shutdown, @linger_seconds * 1000)
     else
-      Process.send_after(self(), :start_next, 1)
+      Process.send_after(self(), :start_next, 10)
     end
 
     {:noreply, %{state | tasks: rest}}
+  end
+
+  def handle_info(:send_done, %{uuid: uuid} = state0) do
+    Phoenix.PubSub.broadcast!(
+      Inkfish.PubSub,
+      "ittys:" <> uuid,
+      {:done, uuid}
+    )
+
+    {:noreply, state0}
   end
 
   def handle_info(:shutdown, state0) do

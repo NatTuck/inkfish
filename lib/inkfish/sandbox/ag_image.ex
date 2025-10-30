@@ -35,7 +35,14 @@ defmodule Inkfish.Sandbox.AgImage do
     gid = conf.ag_job_id || raise "No job id"
     tag = "sandbox:#{gid}"
 
-    cmd = ~s[(cd "#{work}" && DOCKER_BUILDKIT=1 docker build -t "#{tag}" .)]
+    cleanup = Path.join(scr, "cleanup-sandboxes.pl")
+
+    cmd = """
+      (cd "#{work}" && \
+        perl "#{cleanup}" && \
+        DOCKER_BUILDKIT=1 docker build -t "#{tag}" .)
+    """
+
     {:ok, %AgImage{tag: tag, cmd: cmd}}
   end
 

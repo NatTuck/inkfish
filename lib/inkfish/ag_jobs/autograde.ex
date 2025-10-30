@@ -1,7 +1,6 @@
 defmodule Inkfish.AgJobs.Autograde do
   alias Inkfish.AgJobs
   alias Inkfish.AgJobs.AgJob
-  alias Inkfish.Subs.Sub
   alias Inkfish.Grades
   alias Inkfish.Grades.Grade
   alias Inkfish.Uploads.Upload
@@ -63,9 +62,19 @@ defmodule Inkfish.AgJobs.Autograde do
       {:ok, {passed, tests}} = Tap.score(rv.result)
 
       Grades.set_grade_log!(grade.log_uuid, rv)
-      Grades.set_grade_score(grade, passed, tests)
+      {:ok, grade} = Grades.set_grade_score(grade, passed, tests)
 
       Inkfish.AgJobs.Server.cast_poll()
+
+      {:send,
+       Enum.join(
+         [
+           "\n\nScore: #{passed} / #{tests} =",
+           "#{Decimal.round(grade.score, 1)} /",
+           "#{grade.grade_column.points}\n\n"
+         ],
+         " "
+       )}
     end
 
     grade_script =
