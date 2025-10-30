@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-use 5.36.0;
+use 5.30.0;
 use warnings FATAL => 'all';
 use feature qw(signatures);
 no warnings "experimental::signatures";

@@ -18,7 +18,7 @@ sudo usermod -aG docker inkfish
 ## Core Deps
 
 ```bash
-sudo yum install -y perl-core perl-doc perl-IPC-System-Simple git \
+sudo yum install -y perl-core perl-doc perl-IPC-System-Simple perl-JSON git \
     ncurses-devel libxslt inotify-tools systemd-container nginx nginx-all-modules
 yum groupinstall -y 'Development Tools'
 ```
