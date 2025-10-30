@@ -94,35 +94,5 @@
 <%= if Enum.empty?(@autogrades) do %>
   <p>No autogrades.</p>
 <% else %>
-  <h2>Grading Scripts Output</h2>
-    
-  <% path = ~p"/subs/#{@sub}/rerun_scripts" %>
-  <.form for={%{}} action={path} method="post">
-    <.button class="btn btn-secondary">Rerun Scripts</.button>
-  </.form>
-
-  <%= Enum.map @autogrades, fn {grade, token, log} -> %>
-    <h3><%= grade.grade_column.name %> (<%= grade.id %>)</h3>
-    <%= if log do %>
-      <p><strong>Sandbox Exit Status</strong></p>
-      <pre><%= log["status"] %></pre>
-      <p><strong>Test Output</strong></p>
-      <pre><%= log["result"] %></pre>
-      <p><strong>Full Log</strong></p>
-      <pre><%= render_autograde_log(log["log"]) %></pre>
-    <% else %>
-      <div id="itty-root"
-	data-token={token}
-	data-chan="autograde"
-	data-uuid={grade.log_uuid}>
-        <!-- React component in js/itty.jsx -->
-        Loading...
-      </div>
-
-      <p>
-        Once the grading script has completed, you can reload this page to see
-        your autograding score.
-      </p>
-    <% end %>
-  <% end %>
+  <.ag_log sub={@sub} token={@token} autogrades={@autogrades} />
 <% end %>

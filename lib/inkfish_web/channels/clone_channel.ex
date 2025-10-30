@@ -2,7 +2,7 @@ defmodule InkfishWeb.CloneChannel do
   use InkfishWeb, :channel
 
   alias Inkfish.Uploads.Git
-  alias Inkfish.Itty
+  alias Inkfish.Ittys
 
   def join("clone:" <> nonce, %{"token" => token}, socket) do
     case Phoenix.Token.verify(InkfishWeb.Endpoint, "upload", token,
@@ -54,7 +54,7 @@ defmodule InkfishWeb.CloneChannel do
   def handle_in("clone", %{"url" => url}, socket) do
     {:ok, uuid} = Git.start_clone(url)
 
-    case Itty.open(uuid) do
+    case Ittys.open(uuid) do
       {:ok, state} ->
         socket =
           socket

@@ -22,6 +22,7 @@ defmodule Inkfish.Subs.Sub do
     belongs_to :upload, Inkfish.Uploads.Upload, type: :binary_id
     belongs_to :grader, Inkfish.Users.Reg
     has_many :grades, Inkfish.Grades.Grade
+    has_one :ag_job, Inkfish.AgJobs.AgJob
 
     timestamps()
   end

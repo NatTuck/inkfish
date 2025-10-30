@@ -238,7 +238,8 @@ defmodule Inkfish.Factory do
       sub: sub,
       sub_id: sub.id,
       dupkey: dupkey,
-      prio: 1
+      prio: 1,
+      uuid: Inkfish.Text.gen_uuid()
     }
   end
 

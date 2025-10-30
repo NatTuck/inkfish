@@ -1,12 +1,12 @@
 defmodule InkfishWeb.IttyChannel do
   use InkfishWeb, :channel
 
-  alias Inkfish.Itty
+  alias Inkfish.Ittys
 
   @impl true
   def join("itty:" <> uuid, _payload, socket) do
     if authorized?(socket) do
-      case Itty.open(uuid) do
+      case Ittys.open(uuid) do
         {:ok, state} ->
           socket =
             socket
@@ -18,9 +18,11 @@ defmodule InkfishWeb.IttyChannel do
           {:ok, state, socket}
 
         _else ->
+          IO.puts("bad itty: #{uuid}")
           {:error, %{reason: "bad itty"}}
       end
     else
+      IO.puts("itty auth fail: #{uuid}")
       {:error, %{reason: "unauthorized"}}
     end
   end

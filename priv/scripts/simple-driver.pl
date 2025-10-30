@@ -5,9 +5,6 @@ use feature qw(signatures);
 no warnings "experimental::signatures";
 use autodie qw(:all);
 
-#use File::stat;
-#use Data::Dumper;
-
 alarm(300);
 
 sub run($cmd) {
@@ -19,11 +16,8 @@ sub untar($path) {
     run(qq{unpack.pl "$path"});
 }
 
-my $COOKIE = $ENV{'COOKIE'} || "=> COOKIE-COOKIE-COOKIE <=";
+my $COOKIE = $ENV{'COOKIE'} || "== COOKIE-COOKIE-COOKIE ==";
 $ENV{'COOKIE'} = "~redacted~";
-
-system("cp /var/tmp/unpack.pl /usr/local/bin/unpack.pl");
-system("chmod a+x /usr/local/bin/unpack.pl");
 
 say("\nUnpack grading archive:");
 untar("/var/tmp/gra.tar.gz");
@@ -48,14 +42,14 @@ say("\nRun test script:");
 say("\n$COOKIE");
 
 if (-f "./test.pl") {
-    system(qq{perl test.pl || echo "# test.pl failed"});
+   run(qq{perl test.pl || echo "# test.pl failed"});
 }
 elsif (-f "./test.py") {
     if (`cat test.py` =~ /unittest/) {
-        system(qq{/usr/bin/python -m tap test.py || echo "# test.py failed"});
+        run(qq{/usr/bin/python -m tap test.py || echo "# test.py failed"});
     }
     else {
-        system(qq{/usr/bin/python test.py || echo "# test.py failed"});
+        run(qq{/usr/bin/python test.py || echo "# test.py failed"});
     }
 }
 elsif (-f "./pom.xml") {

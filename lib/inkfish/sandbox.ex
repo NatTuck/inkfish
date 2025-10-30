@@ -22,4 +22,11 @@ defmodule Inkfish.Sandbox do
   def extract_archive(path, target, max_size \\ "10M") do
     Sandbox.Archive.safe_extract(path, target, max_size)
   end
+
+  @doc """
+  Trigger cleanups for all sandboxed resources.
+  """
+  def start_cleanups() do
+    IO.puts("FIXME: Start sandbox cleanups")
+  end
 end

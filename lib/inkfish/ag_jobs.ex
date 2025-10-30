@@ -8,8 +8,6 @@ defmodule Inkfish.AgJobs do
 
   alias Inkfish.AgJobs.AgJob
   alias Inkfish.Subs.Sub
-  alias Inkfish.Grades.Grade
-  alias Inkfish.AgJobs.Server
 
   @doc """
   Returns the list of ag_jobs.
@@ -62,18 +60,19 @@ defmodule Inkfish.AgJobs do
     )
   end
 
-  def start_next_ag_job() do
+  def start_next_ag_job(cores_free) do
     Repo.transaction(fn ->
       job0 =
         Repo.one(
           from(job in AgJob,
             order_by: [job.prio, job.inserted_at],
             where: is_nil(job.started_at) and is_nil(job.finished_at),
+            preload: [sub: [grades: :grade_column]],
             limit: 1
           )
         )
 
-      if is_nil(job0) do
+      if is_nil(job0) || Inkfish.AgJobs.Server.cores_needed(job0) > cores_free do
         Repo.rollback(:no_more_work)
       end
 
@@ -81,29 +80,12 @@ defmodule Inkfish.AgJobs do
 
       job1 = get_ag_job(job0.id)
 
-      if is_nil(job0) do
+      if is_nil(job1) do
         Repo.rollback(:no_more_work)
       end
 
       job1
     end)
-  end
-
-  def grade_status(%Grade{} = grade) do
-    case Server.grade_status(grade.id) do
-      {:ok, msg} ->
-        msg
-
-      :error ->
-        jobs = list_upcoming_ag_jobs()
-        idx = Enum.find_index(jobs, &(&1.sub_id == grade.sub_id))
-
-        if idx do
-          {:scheduled, idx}
-        else
-          :missing
-        end
-    end
   end
 
   @doc """
@@ -122,6 +104,10 @@ defmodule Inkfish.AgJobs do
   """
   def get_ag_job!(id), do: Repo.get!(AgJob, id)
   def get_ag_job(id), do: Repo.get(AgJob, id)
+
+  def preload_for_autograde(%AgJob{} = job) do
+    Repo.preload(job, sub: [:upload, grades: [grade_column: [:upload]]])
+  end
 
   @doc """
   Creates a ag_job.
@@ -147,7 +133,8 @@ defmodule Inkfish.AgJobs do
     attrs = %{
       sub_id: sub.id,
       dupkey: dupkey,
-      prio: count_user_jobs(sub.reg.user_id)
+      prio: count_user_jobs(sub.reg.user_id),
+      uuid: Inkfish.Text.gen_uuid()
     }
 
     create_ag_job(attrs)
@@ -157,6 +144,19 @@ defmodule Inkfish.AgJobs do
     %AgJob{}
     |> AgJob.changeset(attrs)
     |> Repo.insert()
+  end
+
+  def reset_ag_job(%AgJob{} = ag_job) do
+    ag_job = Repo.preload(ag_job, sub: [reg: [:user]])
+
+    attrs = %{
+      prio: 100 + count_user_jobs(ag_job.sub.reg.user_id),
+      uuid: Inkfish.Text.gen_uuid(),
+      started_at: nil,
+      finished_at: nil
+    }
+
+    update_ag_job(ag_job, attrs)
   end
 
   @doc """
@@ -208,16 +208,17 @@ defmodule Inkfish.AgJobs do
     if Application.get_env(:inkfish, :env) == :test do
       {0, nil}
     else
-      one_day = 60 * 60 * 24
+      three_days = 3 * 60 * 60 * 24
 
-      one_day_ago =
+      three_days_ago =
         LocalTime.now()
-        |> DateTime.add(-one_day)
+        |> DateTime.add(-three_days)
 
       rv =
         Repo.delete_all(
           from(job in AgJob,
-            where: not is_nil(job.finished_at) and job.finished_at < ^one_day_ago
+            where:
+              not is_nil(job.finished_at) and job.finished_at < ^three_days_ago
           )
         )
 
@@ -225,6 +226,10 @@ defmodule Inkfish.AgJobs do
 
       rv
     end
+  end
+
+  def cleanup_resources(%AgJob{} = ag_job) do
+    Inkfish.Sandbox.Containers.cleanup_sandboxes(ag_job.id)
   end
 
   @doc """

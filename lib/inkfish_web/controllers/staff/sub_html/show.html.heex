@@ -112,29 +112,6 @@
 <%= if Enum.empty?(@autogrades) do %>
   <p>No autogrades.</p>
 <% else %>
-  <h2>Grading Script Output</h2>
-
-  <.form for={%{}} action={~p"/subs/#{@sub}/rerun_scripts"} method="post">
-    <.button class="btn btn-secondary">Rerun Scripts</.button>
-  </.form>
-
-  <%= for {grade, token, log} <- @autogrades do %>
-  <h3><%= grade.grade_column.name %></h3>
-    <%= if log do %>
-      <p><strong>Sandbox Exit Status</strong></p>
-      <pre><%= log["status"] %></pre>
-      <p><strong>Test Output</strong></p>
-      <pre><%= log["result"] %></pre>
-      <p><strong>Full Log</strong></p>
-      <pre><%= render_autograde_log(log["log"]) %></pre>
-    <% else %>
-      <div id="itty-root"
-          data-token={token}
-          data-chan="autograde"
-          data-uuid={grade.log_uuid}>
-        <!-- React component in js/itty.jsx -->
-        Loading...
-      </div>
-    <% end %>
-  <% end %>
+  <.ag_log sub={@sub} token={@token} autogrades={@autogrades} />
 <% end %>
+

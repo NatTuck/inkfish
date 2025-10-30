@@ -20,13 +20,13 @@ defmodule Inkfish.Application do
       InkfishWeb.Endpoint,
 
       # Live console output
-      Inkfish.Itty.Sup,
+      Inkfish.Ittys.Sup,
 
       # Path Cache
       Inkfish.Repo.Cache
     ]
 
-    children = 
+    children =
       if Application.get_env(:inkfish, :env) == :test do
         # Don't start AgJobs server during tests to avoid DB connection issues
         base_children

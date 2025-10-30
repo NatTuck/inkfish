@@ -68,9 +68,15 @@ defmodule Inkfish.ApiKeys do
 
   """
   def create_api_key(%User{} = user, attrs \\ %{}) do
-    %ApiKey{}
-    |> ApiKey.changeset(Map.put(attrs, "user_id", user.id))
-    |> Repo.insert()
+    keys = list_user_apikeys(user)
+
+    if length(keys) < 10 do
+      %ApiKey{}
+      |> ApiKey.changeset(Map.put(attrs, "user_id", user.id))
+      |> Repo.insert()
+    else
+      {:error, "Too many api keys"}
+    end
   end
 
   @doc """

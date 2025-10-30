@@ -1,10 +1,15 @@
-defmodule Inkfish.Itty do
-  alias Inkfish.Itty.Server
-  alias Inkfish.Itty.Task
+defmodule Inkfish.Ittys do
+  alias Inkfish.Ittys.Server
+  alias Inkfish.Ittys.Task
+  alias Inkfish.Ittys.Job
+
+  def start(%Job{} = job) do
+    Server.start(job)
+    {:ok, job.uuid}
+  end
 
   def start(%Task{} = task) do
-    Server.start(task)
-    {:ok, task.uuid}
+    start(Job.new([task]))
   end
 
   def run(script) do
@@ -13,14 +18,7 @@ defmodule Inkfish.Itty do
   end
 
   def run(script, env) do
-    env =
-      env
-      |> Enum.map(fn {kk, vv} ->
-        {to_string(kk), to_string(vv)}
-      end)
-      |> Enum.into(%{})
-
-    Task.new_env(script, env)
+    Task.new(script, env)
     |> start()
   end
 
@@ -28,7 +26,7 @@ defmodule Inkfish.Itty do
     Server.peek(uuid)
   end
 
-  def running?(%Task{} = task), do: running?(task.uuid)
+  def running?(%Job{} = job), do: running?(job.uuid)
 
   def running?(uuid) do
     Server.running?(uuid)
