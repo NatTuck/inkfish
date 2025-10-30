@@ -7,6 +7,14 @@ use autodie qw(:all);
 
 use File::Temp qw(tempdir);
 
+say("Autograding temporarily disabled.");
+say("Make sure your tests pass locally.");
+exit(0);
+
+#say("Autograding temporarily enabled.");
+#say("Don't run any jobs that aren't straightfoward assignment attempts.");
+#sleep(5);
+
 my $id = shift or die "Need container ID.";
 
 my $SCR = $ENV{'SCR'} or die "Need $ENV{'SCR'}";

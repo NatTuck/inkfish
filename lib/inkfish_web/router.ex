@@ -51,8 +51,10 @@ defmodule InkfishWeb.Router do
 
     post("/users/send_auth_email", UserAuthEmailController, :create)
     get("/users/auth/:token", UserAuthEmailController, :show)
-    get("/users/new/:token", UserController, :new)
-    post("/users", UserController, :create)
+
+    # FIXME: User registration
+    # get("/users/new/:token", UserController, :new)
+    # post("/users", UserController, :create)
   end
 
   scope "/", InkfishWeb do
