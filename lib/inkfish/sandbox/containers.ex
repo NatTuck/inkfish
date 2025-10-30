@@ -69,8 +69,10 @@ defmodule Inkfish.Sandbox.Containers do
           "/home/student" => "rw,exec,size=#{disk}m,mode=0777",
           "/tmp" => "rw,size=10m,mode=0777"
         },
-        "ReadonlyRootFs" => true,
-        "Network" => "none"
+        "ReadonlyRootFs" => true
+
+        # TODO: Fully disable network.
+        # "NetworkMode" => "none"
       }
     }
   end
