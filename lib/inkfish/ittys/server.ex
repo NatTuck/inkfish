@@ -182,8 +182,13 @@ defmodule Inkfish.Ittys.Server do
   end
 
   def start_run_container(task, %{cmd: cmd, img: img} = _conf, state) do
-    cont_id = Containers.create(image: img)
-    start_cmd(Task.put_env(task, "CID", cont_id), cmd, state)
+    case Containers.create(image: img) do
+      {:ok, cont_id} ->
+        start_cmd(Task.put_env(task, "CID", cont_id), cmd, state)
+
+      {:error, obj} ->
+        send_text("\nError creating container: #{inspect(obj)}\n\n", state)
+    end
   end
 
   @impl true

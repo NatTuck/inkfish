@@ -38,11 +38,17 @@ defmodule Inkfish.Sandbox.Containers do
   end
 
   defp just_id(resp) do
-    if length(resp["Warnings"]) > 0 do
-      IO.inspect({:docker_warnings, resp})
-    end
+    case resp do
+      %{"Warnings" => _, "Id" => id} = resp ->
+        if length(resp["Warnings"]) > 0 do
+          IO.inspect({:docker_warnings, resp})
+        end
 
-    resp["Id"]
+        {:ok, id}
+
+      errs ->
+        {:error, errs}
+    end
   end
 
   def expand_config(conf) do
