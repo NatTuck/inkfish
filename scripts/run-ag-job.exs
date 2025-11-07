@@ -2,7 +2,7 @@ defmodule RunAgJob do
   alias Inkfish.Sandbox.Containers
 
   def start(job_id) do
-    id = Containers.create(image: "sandbox:#{job_id}")
+    {id, _conf} = Containers.create(image: "sandbox:#{job_id}")
     IO.puts("Container: #{id}")
   end
 end

@@ -133,7 +133,10 @@ defmodule Inkfish.AgJobs.Server do
       {:ok, %{"cores" => cores}} ->
         max(0.5, cores)
 
-      _else ->
+      # |> IO.inspect(label: "requested cores")
+
+      _other ->
+        # IO.inspect({:limits, other})
         1
     end
   end

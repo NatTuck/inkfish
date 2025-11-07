@@ -181,8 +181,14 @@ defmodule Inkfish.Ittys.Server do
     end
   end
 
-  def start_run_container(task, %{cmd: cmd, img: img} = _conf, state) do
-    cont_id = Containers.create(image: img)
+  def start_run_container(
+        task,
+        %{cmd: cmd, img: img, cores: cores} = _conf,
+        state
+      ) do
+    {cont_id, conf} = Containers.create(image: img, cores: cores)
+    msg = "docker config:\n#{inspect(conf, pretty: true)}"
+    Process.send_after(self(), {:send, msg}, 1)
     start_cmd(Task.put_env(task, "CID", cont_id), cmd, state)
   end
 

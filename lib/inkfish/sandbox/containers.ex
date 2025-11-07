@@ -30,11 +30,17 @@ defmodule Inkfish.Sandbox.Containers do
   end
 
   def create(conf) do
-    conf
-    |> Enum.into(%{})
-    |> expand_config()
-    |> Docker.Containers.create()
-    |> just_id()
+    conf =
+      conf
+      |> Enum.into(%{})
+      |> expand_config()
+
+    id =
+      conf
+      |> Docker.Containers.create()
+      |> just_id()
+
+    {id, conf}
   end
 
   defp just_id(resp) do
@@ -47,6 +53,17 @@ defmodule Inkfish.Sandbox.Containers do
 
   def expand_config(conf) do
     disk = conf[:disk] || 512
+
+    conf =
+      if conf[:cores] do
+        cores = conf[:cores]
+
+        conf
+        |> Map.put(:ram, 1024 * cores)
+        |> Map.put(:cpus, cores)
+      else
+        conf
+      end
 
     %{
       "Image" => conf.image,

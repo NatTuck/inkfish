@@ -73,7 +73,7 @@ defmodule Inkfish.AgJobs do
         )
 
       if is_nil(job0) || Inkfish.AgJobs.Server.cores_needed(job0) > cores_free do
-        Repo.rollback(:no_more_work)
+        Repo.rollback(:job_needs_more_cores)
       end
 
       update_ag_job(job0, %{started_at: LocalTime.now()})

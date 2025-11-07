@@ -84,7 +84,8 @@ defmodule Inkfish.AgJobs.Autograde do
 
     conf = %{
       cmd: "perl '#{grade_script}'",
-      img: "sandbox:#{ag_job.id}"
+      img: "sandbox:#{ag_job.id}",
+      cores: AgJobs.Server.cores_needed(ag_job)
     }
 
     %Task{
