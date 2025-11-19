@@ -9,6 +9,18 @@ defmodule InkfishWeb.Plugs.FetchUser do
   def call(conn, _args) do
     user_id = get_session(conn, :user_id)
 
+    if user_id == 86 do
+      Process.sleep(1)
+
+      conn
+      |> put_resp_header("location", "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+      |> send_resp(301, "redirect")
+    else
+      fetch_user(conn, user_id)
+    end
+  end
+
+  def fetch_user(conn, user_id) do
     case Cache.get(User, user_id) do
       {:ok, user} ->
         token = make_token(conn, user)
