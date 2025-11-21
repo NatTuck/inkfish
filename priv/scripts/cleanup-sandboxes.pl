@@ -24,9 +24,9 @@ for my $line (@images) {
     my $cre = $image->{CreatedAt};
     my $age = get_age($cre);
     say("$name (created $cre; $age s old)");
-    if ($age > 600) {
+    if ($age > 900) {
       say("Removing"); 
-      system("docker image rm '$name'");
+      system("docker image rm -f '$name'");
     }
   }
 }
