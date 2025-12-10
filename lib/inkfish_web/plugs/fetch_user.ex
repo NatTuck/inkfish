@@ -15,6 +15,7 @@ defmodule InkfishWeb.Plugs.FetchUser do
       conn
       |> put_resp_header("location", "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
       |> send_resp(301, "redirect")
+      |> halt()
     else
       fetch_user(conn, user_id)
     end
