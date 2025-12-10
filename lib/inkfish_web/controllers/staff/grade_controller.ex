@@ -51,7 +51,13 @@ defmodule InkfishWeb.Staff.GradeController do
       {:ok, grade} ->
         Inkfish.Subs.calc_sub_score!(grade.sub_id)
         save_sub_dump!(grade.sub_id)
-        render(conn, "grade.json", grade: grade)
+
+        grade_json =
+          InkfishWeb.Staff.GradeJSON.data(grade)
+
+        conn
+        |> put_resp_header("content-type", "application/json; charset=UTF-8")
+        |> send_resp(201, Jason.encode!(%{data: grade_json}))
 
       {:error, %Ecto.Changeset{} = changeset} ->
         conn

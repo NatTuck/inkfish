@@ -29,7 +29,7 @@ class NumberInput extends React.Component {
 
   change(ev) {
     ev.preventDefault();
-    this.setState({score: ev.target.value});
+    this.setState({ score: ev.target.value });
   }
 
   keypress(ev) {
@@ -48,13 +48,13 @@ class NumberInput extends React.Component {
     });
 
     let on_save = this.save_success1.bind(this);
-    let score1  = this.state.score;
+    let score1 = this.state.score;
 
     let req = new XMLHttpRequest();
-    req.onreadystatechange = function() {
-	if (this.readyState == 4 && this.status == 200) {
-            on_save(score1);
-        }
+    req.onreadystatechange = function () {
+      if (this.readyState == 4 && (this.status >= 200 && this.status < 250)) {
+        on_save(score1);
+      }
     };
     req.open('POST', save_grade_path(this.state.sub_id), true);
     req.setRequestHeader('Content-Type', "application/json; charset=UTF-8");
@@ -73,26 +73,26 @@ class NumberInput extends React.Component {
     });
     */
 
-    this.setState({saving: true});
+    this.setState({ saving: true });
   }
 
   save_success(resp) {
-    this.setState({saving: false, saved_score: resp.score, error: null});
+    this.setState({ saving: false, saved_score: resp.score, error: null });
   }
-  
+
   save_success1(score) {
-    this.setState({saving: false, saved_score: score, error: null});
+    this.setState({ saving: false, saved_score: score, error: null });
   }
-  
+
   save_error(resp) {
     let msg = `${resp.status} ${resp.statusText}`;
     console.log("Error saving grade: ", msg);
     console.log(resp);
-    this.setState({saving: false, error: msg});
+    this.setState({ saving: false, error: msg });
   }
 
   setEdit(edit) {
-    this.setState({edit: edit, error: null});
+    this.setState({ edit: edit, error: null });
   }
 
   render() {
@@ -109,15 +109,15 @@ class NumberInput extends React.Component {
       );
     }
 
-    
+
     let btn = <img src="/images/loading.gif" />;
 
     if (!this.state.saving) {
       let enabled = this.state.score != this.state.saved_score;
       btn = (
         <button className="btn btn-secondary btn-sm"
-                onClick={this.save.bind(this)}
-                disabled={!enabled}>
+          onClick={this.save.bind(this)}
+          disabled={!enabled}>
           Save
         </button>
       );
@@ -126,9 +126,9 @@ class NumberInput extends React.Component {
     return (
       <div>
         <input type="number" className="number-grade-input"
-               value={this.state.score}
-               onKeyPress={this.keypress.bind(this)}
-               onChange={this.change.bind(this)} />
+          value={this.state.score}
+          onKeyPress={this.keypress.bind(this)}
+          onChange={this.change.bind(this)} />
         {btn}
       </div>
     );
@@ -150,7 +150,7 @@ class NumberInputToggle extends React.Component {
     _.each(inputs.get(this.state.grade_column_id), (item) => {
       item.setEdit(edit);
     });
-    this.setState({edit: edit});
+    this.setState({ edit: edit });
   }
 
   render() {
@@ -169,9 +169,9 @@ function setup() {
     var root = createRoot(elem);
     root.render(
       <NumberInput score={ee.data('score')}
-                   points={ee.data('points')}
-                   sub_id={ee.data('sub-id')}
-                   grade_column_id={ee.data('grade-column-id')} />
+        points={ee.data('points')}
+        sub_id={ee.data('sub-id')}
+        grade_column_id={ee.data('grade-column-id')} />
     );
   });
 

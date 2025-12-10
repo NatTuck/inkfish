@@ -1,36 +1,46 @@
 <h1>Show Assignment</h1>
 
 <p>
-  <.link href={~p"/assignments/#{@assignment}"}>Student View</.link> |
-  <.link href={~p"/staff/assignments/#{@assignment}/edit"}>Edit Assignment</.link> |
-  <.link href={~p"/staff/assignments/#{@assignment}/grading_tasks"}>Grading Tasks</.link>
+  <.link href={~p"/assignments/#{@assignment}"}>Student View</.link>
+  |
+  <.link href={~p"/staff/assignments/#{@assignment}/edit"}>
+    Edit Assignment
+  </.link>
+  |
+  <.link href={~p"/staff/assignments/#{@assignment}/grading_tasks"}>
+    Grading Tasks
+  </.link>
 </p>
 
 <ul>
   <li>
     <strong>Name:</strong>
-    <%= @assignment.name %>
+    {@assignment.name}
   </li>
 
   <li>
     <strong>Bucket:</strong>
-    <%= @bucket.name %>
+    {@bucket.name}
   </li>
 
   <li>
     <strong>Teamset:</strong>
-    <%= @assignment.teamset.name %>
+    {@assignment.teamset.name}
   </li>
 
   <li>
     <strong>Hide:</strong>
-    <%= if @assignment.hide do "Yes" else "No" end %>
+    {if @assignment.hide do
+      "Yes"
+    else
+      "No"
+    end}
   </li>
 
   <li>
     <strong>Due:</strong>
     <span class="human-date">
-      <%= show_timestamp(@assignment.due) %>
+      {show_timestamp(@assignment.due)}
     </span>
   </li>
 
@@ -46,7 +56,7 @@
   <li>
     <strong>Grades Visible:</strong>
     <span class="human-date">
-      <%= show_timestamp(grades_show_date(@conn, @assignment)) %>
+      {show_timestamp(grades_show_date(@conn, @assignment))}
     </span>
     <%= if @assignment.force_show_grades do %>
       (forced)
@@ -54,17 +64,19 @@
       (default)
     <% end %>
   </li>
-  
+
   <li>
     <strong>Weight:</strong>
-    <%= @assignment.weight %>
+    {@assignment.weight}
   </li>
 
   <li>
     <strong>Starter:</strong>
     <%= if @assignment.starter_upload do %>
-      <.link href={~p"/uploads/#{@assignment.starter_upload.id}/#{@assignment.starter_upload.name}"}>
-        <%= @assignment.starter_upload.name %>
+      <.link href={
+        ~p"/uploads/#{@assignment.starter_upload.id}/#{@assignment.starter_upload.name}"
+      }>
+        {@assignment.starter_upload.name}
       </.link>
     <% else %>
       ∅
@@ -74,8 +86,10 @@
   <li>
     <strong>Solution:</strong>
     <%= if @assignment.solution_upload do %>
-      <.link href={~p"/uploads/#{@assignment.solution_upload.id}/#{@assignment.solution_upload.name}"}>
-        <%= @assignment.solution_upload.name %>
+      <.link href={
+        ~p"/uploads/#{@assignment.solution_upload.id}/#{@assignment.solution_upload.name}"
+      }>
+        {@assignment.solution_upload.name}
       </.link>
     <% else %>
       ∅
@@ -84,16 +98,22 @@
 
   <li>
     <strong>Sub Options:</strong>
-    <%= if @assignment.allow_git do %>git<% end %>
-    <%= if @assignment.allow_upload do %>upload<% end %>
+    <%= if @assignment.allow_git do %>
+      git
+    <% end %>
+    <%= if @assignment.allow_upload do %>
+      upload
+    <% end %>
   </li>
 </ul>
 
 <h2>
   Description
-  <button class="btn btn-link data-toggle"
-          data-toggle="collapse"
-          data-target="#asgn-desc">
+  <button
+    class="btn btn-link data-toggle"
+    data-toggle="collapse"
+    data-target="#asgn-desc"
+  >
     Show / Hide
   </button>
 </h2>
@@ -101,7 +121,7 @@
 <div id="asgn-desc" class="collapse">
   <div class="card">
     <div class="card-body">
-      <%= trusted_markdown @assignment.desc %>
+      {trusted_markdown(@assignment.desc)}
     </div>
   </div>
 </div>
@@ -125,9 +145,11 @@
   <tbody>
     <%= for gcol <- @assignment.grade_columns do %>
       <tr>
-        <td><.link href={~p"/staff/grade_columns/#{gcol}"}><%= gcol.name %></.link></td>
-        <td><%= gcol.kind %></td>
-        <td><%= gcol.points %></td>
+        <td>
+          <.link href={~p"/staff/grade_columns/#{gcol}"}>{gcol.name}</.link>
+        </td>
+        <td>{gcol.kind}</td>
+        <td>{gcol.points}</td>
       </tr>
     <% end %>
   </tbody>
@@ -141,18 +163,19 @@
       href={~p"/staff/assignments/#{@assignment}/create_fake_subs"}
       method="post"
       class="btn btn-secondary"
-      data-confirm="Are you sure?">
+      data-confirm="Are you sure?"
+    >
       Create Fake Subs
     </.link>
-</div>
+  </div>
 <% end %>
 
 <script>
- function save_grade_path(sub_id) {
-   <% path_sub_id = "SubID" %>
-   let path = "<%= ~p"/ajax/staff/subs/#{path_sub_id}/grades" %>";
-   return path.replace('SubID', sub_id);
- }
+  function save_grade_path(sub_id) {
+    <% path_sub_id = "SubID" %>
+    let path = "<%= ~p"/ajax/staff/subs/#{path_sub_id}/grades" %>";
+    return path.replace('SubID', sub_id);
+  }
 </script>
 
 <table class="table table-striped">
@@ -160,9 +183,9 @@
     <th>Student</th>
     <%= for gcol <- @assignment.grade_columns do %>
       <th>
-        <%= gcol.name %>
+        {gcol.name}
         <%= if gcol.kind == "number" do %>
-          <span class="toggle-number-inputs" data-grade-column-id="#{gcol.id}">
+          <span class="toggle-number-inputs" data-grade-column-id={gcol.id}>
             <!-- react component from gcolade_columns/number-input.jsx -->
             [react]
           </span>
@@ -175,27 +198,34 @@
   <tbody>
     <%= for sub <- @assignment.subs do %>
       <tr>
-        <td><.link href={~p"/staff/regs/#{sub.reg}"}><%= user_display_name(sub.reg.user) %></.link></td>
+        <td>
+          <.link href={~p"/staff/regs/#{sub.reg}"}>
+            {user_display_name(sub.reg.user)}
+          </.link>
+        </td>
         <%= for gcol <- @assignment.grade_columns do %>
           <% grade = Enum.find(sub.grades, &(&1.grade_column_id == gcol.id)) %>
           <td>
             <%= case gcol.kind do %>
               <% "number" -> %>
-                <div class="number-grade-cell"
-                     data-score="#{ (grade && grade.score) || 0 }"
-                     data-points="#{ gcol.points }"
-                     data-sub-id="#{ sub.id }"
-                     data-grade-column-id="#{ gcol.id }">
+                <div
+                  class="number-grade-cell"
+                  data-score={(grade && grade.score) || 0}
+                  data-points={gcol.points}
+                  data-sub-id={sub.id}
+                  data-grade-column-id={gcol.id}
+                >
                   <!-- React component: grade_columns/number-input.jsx -->
-                  <%= show_score(@conn, grade) %>
+                  {show_score(@conn, grade)}
                 </div>
               <% "feedback" -> %>
                 <%= if grade do %>
-                  <%= show_score(@conn, grade) %> / <%= gcol.points %>
+                  {show_score(@conn, grade)} / {gcol.points}
                   <.link href={~p"/staff/grades/#{grade}/edit"}>Edit</.link>
                 <% else %>
                   <% grade = %Inkfish.Grades.Grade{
-                    grade_column_id: gcol.id, sub_id: sub.id
+                    grade_column_id: gcol.id,
+                    sub_id: sub.id
                   } %>
                   <% cset = Inkfish.Grades.change_grade(grade) %>
                   <% action = ~p"/staff/subs/#{sub}/grades" %>
@@ -206,11 +236,13 @@
                   </.form>
                 <% end %>
               <% _else -> %>
-                <%= show_score(@conn, grade) %> / <%= gcol.points %>
+                {show_score(@conn, grade)} / {gcol.points}
             <% end %>
           </td>
         <% end %>
-        <td><%= show_score(@conn, sub) %> / <%= assignment_total_points(@assignment) %></td>
+        <td>
+          {show_score(@conn, sub)} / {assignment_total_points(@assignment)}
+        </td>
         <td>
           <.link href={~p"/staff/subs/#{sub}"}>View</.link>
         </td>
