@@ -16,12 +16,19 @@ defmodule InkfishWeb.Staff.AttendanceController do
        [attendance: "id"]
        when action in [:show, :edit, :update, :delete]
 
+  plug Plugs.FetchItem,
+       [course: "course_id"]
+       when action in [:attendance_report]
+
   plug Plugs.RequireReg, staff: true
 
   alias InkfishWeb.Plugs.Breadcrumb
   plug Breadcrumb, {"Courses (Staff)", :staff_course, :index}
   plug Breadcrumb, {:show, :staff, :course}
-  plug Breadcrumb, {:show, :staff, :meeting}
+
+  plug Breadcrumb,
+       {:show, :staff, :meeting}
+       when action not in [:attendance_report]
 
   def index(conn, _params) do
     attendances = Attendances.list_attendances()
@@ -114,5 +121,13 @@ defmodule InkfishWeb.Staff.AttendanceController do
         |> put_flash(:info, "Created excused attendance.")
         |> redirect(to: ~p"/staff/meetings/#{meeting}")
     end
+  end
+
+  def attendance_report(conn, %{"course_id" => _c_id}) do
+    report =
+      conn.assigns[:course]
+      |> Inkfish.Attendances.Report.build_attendance_report()
+
+    render(conn, :attendance_report, report: report)
   end
 end

@@ -7,7 +7,17 @@
   </:actions>
 </.header>
 
-<.table id="meetings" rows={@meetings} row_click={&JS.navigate(~p"/staff/meetings/#{&1}")}>
+<div class="my-3">
+  <.link href={~p"/staff/courses/#{@course}/attendance_report"}>
+    Attendance Report
+  </.link>
+</div>
+
+<.table
+  id="meetings"
+  rows={@meetings}
+  row_click={&JS.navigate(~p"/staff/meetings/#{&1}")}
+>
   <:col :let={meeting} label="Started at">{meeting.started_at}</:col>
   <:action :let={meeting}>
     <div class="sr-only">
@@ -16,7 +26,11 @@
     <.link navigate={~p"/staff/meetings/#{meeting}/edit"}>Edit</.link>
   </:action>
   <:action :let={meeting}>
-    <.link href={~p"/staff/meetings/#{meeting}"} method="delete" data-confirm="Are you sure?">
+    <.link
+      href={~p"/staff/meetings/#{meeting}"}
+      method="delete"
+      data-confirm="Are you sure?"
+    >
       Delete
     </.link>
   </:action>

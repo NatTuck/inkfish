@@ -11,6 +11,7 @@ defmodule Inkfish.Attendances.Attendance do
     belongs_to :reg, Inkfish.Users.Reg
 
     field :status, :string, virtual: true
+    field :points, :integer, virtual: true
 
     timestamps(type: :utc_datetime)
   end
@@ -42,19 +43,19 @@ defmodule Inkfish.Attendances.Attendance do
 
     cond do
       at.excused ->
-        %Attendance{at | status: "excused"}
+        %Attendance{at | status: "excused", points: 3}
 
       mins_late <= 6 ->
-        %Attendance{at | status: "on time"}
+        %Attendance{at | status: "on time", points: 3}
 
       mins_late <= 17 ->
-        %Attendance{at | status: "late"}
+        %Attendance{at | status: "late", points: 2}
 
       mins_late <= 45 ->
-        %Attendance{at | status: "very late"}
+        %Attendance{at | status: "very late", points: 1}
 
       true ->
-        %Attendance{at | status: "too late"}
+        %Attendance{at | status: "too late", points: 0}
     end
   end
 end

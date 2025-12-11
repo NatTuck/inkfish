@@ -17,6 +17,7 @@ defmodule Inkfish.Users.Reg do
     many_to_many :teams, Inkfish.Teams.Team, join_through: "team_members"
     has_many :subs, Inkfish.Subs.Sub
     has_many :grading_subs, Inkfish.Subs.Sub, foreign_key: :grader_id
+    has_many :attendances, Inkfish.Attendances.Attendance
 
     field :user_login, :string, virtual: true
 

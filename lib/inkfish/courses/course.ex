@@ -19,6 +19,7 @@ defmodule Inkfish.Courses.Course do
     has_many :join_reqs, Inkfish.JoinReqs.JoinReq
     has_many :buckets, Inkfish.Courses.Bucket
     has_many :teamsets, Inkfish.Teams.Teamset
+    has_many :meetings, Inkfish.Meetings.Meeting
     belongs_to :solo_teamset, Inkfish.Teams.Teamset
     belongs_to :attendance_assignment, Inkfish.Assignments.Assignment
 

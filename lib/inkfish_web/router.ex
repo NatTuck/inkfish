@@ -100,6 +100,7 @@ defmodule InkfishWeb.Router do
       resources("/buckets", BucketController, only: [:index, :new, :create])
       resources("/meetings", MeetingController, only: [:index, :new, :create])
       post("/join_reqs/accept_all", JoinReqController, :accept_all)
+      get("/attendance_report", AttendanceController, :attendance_report)
     end
 
     get("/courses/:id/gradesheet", CourseController, :gradesheet)

@@ -229,6 +229,23 @@ defmodule Inkfish.Courses do
     )
   end
 
+  def reload_course_for_attendance!(%Course{} = course) do
+    Repo.one!(
+      from cc in Course,
+        where: cc.id == ^course.id,
+        left_join: regs in assoc(cc, :regs),
+        where: regs.is_student or is_nil(regs.is_student),
+        left_join: student in assoc(regs, :user),
+        left_join: attendances in assoc(regs, :attendances),
+        left_join: meeting in assoc(attendances, :meeting),
+        preload: [
+          :meetings,
+          regs:
+            {regs, attendances: {attendances, meeting: meeting}, user: student}
+        ]
+    )
+  end
+
   def get_teams_for_student!(%Course{} = course, %Reg{} = reg) do
     Enum.map(course.teamsets, fn ts ->
       team =
