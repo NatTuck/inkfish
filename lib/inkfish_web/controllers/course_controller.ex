@@ -37,7 +37,7 @@ defmodule InkfishWeb.CourseController do
     render(conn, "show.html", course: course, teams: teams, totals: totals)
   end
 
-  defp bucket_totals(buckets) do
+  def bucket_totals(buckets) do
     for bucket <- buckets do
       base = {Decimal.new("0.0"), Decimal.new("0.0")}
 

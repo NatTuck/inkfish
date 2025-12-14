@@ -171,7 +171,6 @@ defmodule Inkfish.Courses do
         left_join: teamsets in assoc(cc, :teamsets),
         left_join: ts_asgs in assoc(teamsets, :assignments),
         left_join: teams in assoc(teamsets, :teams),
-        on: teams.active,
         left_join: team_members in assoc(teams, :team_members),
         on: team_members.reg_id == ^reg.id,
         left_join: tm_reg in assoc(team_members, :reg),
@@ -192,7 +191,6 @@ defmodule Inkfish.Courses do
   def reload_course_with_student_subs!(%Course{} = course, %Reg{} = reg) do
     team_ids =
       reg.teams
-      |> Enum.filter(& &1.active)
       |> Enum.map(& &1.id)
 
     Repo.one!(

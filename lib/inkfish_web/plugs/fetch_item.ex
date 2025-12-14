@@ -7,13 +7,13 @@ defmodule InkfishWeb.Plugs.FetchItem do
   def init(args), do: args
 
   def call(conn, [{target, param}]) do
-    IO.inspect({conn.params, target, param})
+    # IO.inspect({conn.params, target, param})
 
     with {:ok, id} <- Map.fetch(conn.params, to_string(param)),
          {:ok, mod} <- Info.slug_to_mod(target),
          {:ok, item} <- Cache.get(mod, id),
          {:ok, conn} <- assign_path(conn, item) do
-      IO.inspect(item)
+      # IO.inspect(item)
       conn
     else
       _error ->
