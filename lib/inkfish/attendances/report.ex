@@ -1,5 +1,4 @@
 defmodule Inkfish.Attendances.Report do
-  alias Inkfish.Courses
   alias Inkfish.Courses.Course
   alias Inkfish.Users.User
   alias Inkfish.Users.Reg

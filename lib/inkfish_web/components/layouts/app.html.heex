@@ -5,16 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{page_title(@conn)} · Inkfish</title>
     <link rel="stylesheet" href="/assets/app.css" />
-    <link
-      rel="icon"
-      type="image/png"
-      href="/images/inkfish.png"
-    />
-    <script
-      type="text/javascript"
-      defer
-      src="/assets/app.js"
-    >
+    <link rel="icon" type="image/png" href="/images/inkfish.png" />
+    <script type="text/javascript" defer src="/assets/app.js">
     </script>
     <script>
       window.user_token = "<%= @current_user_token %>";
@@ -29,7 +21,7 @@
         <div class="row">
           <div class="col-md-2">
             <.link navigate={~p"/"}>
-              <img src="/images/inkfish.png" class="header-logo"/>
+              <img src="/images/inkfish.png" class="header-logo" />
             </.link>
           </div>
           <div class="col-md-5">
@@ -39,7 +31,9 @@
               &nbsp;
             <% end %>
 
-            {link("Queue", to: ~p"/ag_jobs")}
+            <%= if @current_user do %>
+              {link("Queue", to: ~p"/ag_jobs")}
+            <% end %>
           </div>
           <div class="col-md-5">
             <%= if @current_user do %>
