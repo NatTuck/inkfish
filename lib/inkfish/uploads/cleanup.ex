@@ -109,4 +109,16 @@ defmodule Inkfish.Uploads.Cleanup do
         offset: 5
     )
   end
+
+  def cleanup_user_uploads(user_id, kind) do
+    uploads = case kind do
+      "sub" -> garbage_subs(user_id)
+      "user_photo" -> garbage_user_photos(user_id)
+      "assignment_starter" -> garbage_assignment_starters(user_id)
+      "assignment_solution" -> garbage_assignment_solutions(user_id)
+      _ -> []
+    end
+
+    Enum.each(uploads, &Uploads.delete_upload/1)
+  end
 end
