@@ -57,4 +57,56 @@ defmodule Inkfish.Uploads.Cleanup do
         where: up.inserted_at < fragment("now()::timestamp - interval '2 days'")
     )
   end
+
+  def garbage_subs(user_id) do
+    Repo.all(
+      from up in Upload,
+        left_join: subs in assoc(up, :subs),
+        preload: [subs: subs],
+        where: up.kind == "sub",
+        where: up.user_id == ^user_id,
+        where: is_nil(subs.id),
+        order_by: [desc: up.inserted_at],
+        offset: 5
+    )
+  end
+
+  def garbage_user_photos(user_id) do
+    Repo.all(
+      from up in Upload,
+        left_join: photo_user in assoc(up, :photo_user),
+        preload: [photo_user: photo_user],
+        where: up.kind == "user_photo",
+        where: up.user_id == ^user_id,
+        where: is_nil(photo_user.id),
+        order_by: [desc: up.inserted_at],
+        offset: 5
+    )
+  end
+
+  def garbage_assignment_starters(user_id) do
+    Repo.all(
+      from up in Upload,
+        left_join: as in assoc(up, :starter_assignment),
+        preload: [starter_assignment: as],
+        where: up.kind == "assignment_starter",
+        where: up.user_id == ^user_id,
+        where: is_nil(as.id),
+        order_by: [desc: up.inserted_at],
+        offset: 5
+    )
+  end
+
+  def garbage_assignment_solutions(user_id) do
+    Repo.all(
+      from up in Upload,
+        left_join: as in assoc(up, :solution_assignment),
+        preload: [solution_assignment: as],
+        where: up.kind == "assignment_solution",
+        where: up.user_id == ^user_id,
+        where: is_nil(as.id),
+        order_by: [desc: up.inserted_at],
+        offset: 5
+    )
+  end
 end
