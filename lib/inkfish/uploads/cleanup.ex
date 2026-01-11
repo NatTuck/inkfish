@@ -7,10 +7,22 @@ defmodule Inkfish.Uploads.Cleanup do
 
   def cleanup() do
     []
+    |> Enum.concat(garbage_subs())
     |> Enum.concat(garbage_user_photos())
     |> Enum.concat(garbage_assignment_starters())
     |> Enum.concat(garbage_assignment_solutions())
     |> Enum.each(&Uploads.delete_upload/1)
+  end
+
+  def garbage_subs() do
+    Repo.all(
+      from up in Upload,
+        left_join: subs in assoc(up, :subs),
+        preload: [subs: subs],
+        where: up.kind == "sub",
+        where: is_nil(subs.id),
+        where: up.inserted_at < fragment("now()::timestamp - interval '2 days'")
+    )
   end
 
   def garbage_user_photos() do
