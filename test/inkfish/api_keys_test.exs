@@ -15,10 +15,14 @@ defmodule Inkfish.ApiKeysTest do
       # for other user
       insert(:api_key)
 
-      assert ApiKeys.list_user_apikeys(user) |> Enum.map(& &1.id) == [
-               api_key1.id,
-               api_key2.id
-             ]
+      found_keys =
+        ApiKeys.list_user_apikeys(user)
+        |> Enum.map(& &1.id)
+        |> Enum.sort()
+
+      expected_keys = Enum.sort([api_key1.id, api_key2.id])
+
+      assert found_keys == expected_keys
     end
 
     test "get_api_key!/1 returns the api_key with given id" do

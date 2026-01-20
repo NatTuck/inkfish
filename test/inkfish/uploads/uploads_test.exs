@@ -1,7 +1,9 @@
 defmodule Inkfish.UploadsTest do
   use Inkfish.DataCase
   import Inkfish.Factory
+  import Ecto.Query
 
+  alias Inkfish.Repo
   alias Inkfish.Uploads
 
   describe "uploads" do
@@ -75,6 +77,48 @@ defmodule Inkfish.UploadsTest do
     test "change_upload/1 returns a upload changeset" do
       upload = upload_fixture()
       assert %Ecto.Changeset{} = Uploads.change_upload(upload)
+    end
+
+    test "create_upload/1 with student user creating 50 unowned sub uploads results in no more than 6 unowned uploads" do
+      user = insert(:user)
+      attrs = %{kind: "sub", user_id: user.id, upload: upload_file()}
+
+      for _ <- 1..50 do
+        {:ok, _upload} = Uploads.create_upload(attrs)
+      end
+
+      unowned_count =
+        Repo.aggregate(
+          from(up in Upload,
+            left_join: subs in assoc(up, :subs),
+            where:
+              up.kind == "sub" and up.user_id == ^user.id and is_nil(subs.id)
+          ),
+          :count
+        )
+
+      assert unowned_count <= 6
+    end
+
+    test "create_git_upload/1 with student user creating 50 unowned sub uploads results in no more than 6 unowned uploads" do
+      user = insert(:user)
+      attrs = %{kind: "sub", user_id: user.id, name: "test.tar.gz", size: 100}
+
+      for _ <- 1..50 do
+        {:ok, _upload} = Uploads.create_git_upload(attrs)
+      end
+
+      unowned_count =
+        Repo.aggregate(
+          from(up in Upload,
+            left_join: subs in assoc(up, :subs),
+            where:
+              up.kind == "sub" and up.user_id == ^user.id and is_nil(subs.id)
+          ),
+          :count
+        )
+
+      assert unowned_count <= 6
     end
   end
 end

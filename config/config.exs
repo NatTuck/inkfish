@@ -46,6 +46,9 @@ config :elixir, :time_zone_database, Tzdata.TimeZoneDatabase
 config :inkfish, :time_zone, "America/New_York"
 config :local_time, :time_zone, "America/New_York"
 
+# Use more recent docker API.
+config :docker, version: "v1.46"
+
 # Nonsense
 config :tesla, disable_deprecated_builder_warning: true
 

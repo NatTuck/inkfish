@@ -7,6 +7,7 @@ defmodule Inkfish.Uploads do
   alias Inkfish.Repo
 
   alias Inkfish.Uploads.Upload
+  alias Inkfish.Uploads.Cleanup
 
   @doc """
   Returns the list of uploads.
@@ -56,6 +57,7 @@ defmodule Inkfish.Uploads do
   """
   def create_upload(attrs \\ %{}) do
     cset = Upload.changeset(%Upload{}, attrs)
+    Cleanup.cleanup_user_uploads(attrs[:user_id], attrs[:kind])
 
     case Repo.insert(cset) do
       {:ok, upload} ->
@@ -71,6 +73,7 @@ defmodule Inkfish.Uploads do
 
   def create_git_upload(attrs \\ %{}) do
     cset = Upload.git_changeset(%Upload{}, attrs)
+    Cleanup.cleanup_user_uploads(attrs[:user_id], attrs[:kind])
 
     case Repo.insert(cset) do
       {:ok, upload} ->
@@ -137,7 +140,7 @@ defmodule Inkfish.Uploads do
     # IO.puts("Deleting upload:")
     # IO.inspect(upload)
 
-    if upload.id && upload.kind != "sub" do
+    if upload.id do
       dpath = Upload.upload_dir(upload)
 
       if String.length(dpath) > 10 do
