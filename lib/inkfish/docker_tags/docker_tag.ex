@@ -40,32 +40,29 @@ defmodule Inkfish.DockerTags.DockerTag do
 
   def default_dockerfile do
     """
-    FROM debian:bookworm
+    FROM debian:trixie
 
     ENV DEBIAN_FRONTEND=noninteractive
 
     RUN apt-get -y update && apt-get -y upgrade
 
-    RUN apt-get install -y locales && \\
-        sed -i 's/^# *\(en_US.UTF-8\)/\1/' /etc/locale.gen && \\
+    RUN apt-get install -y locales && \
+        sed -i 's/^# *(en_US.UTF-8)/1/' /etc/locale.gen && \
         locale-gen
 
-    RUN apt-get -y install apt-utils adduser
-
-    RUN apt-get -y install debian-goodies util-linux \\
-        build-essential perl-doc libipc-run-perl libarchive-zip-perl \\
-        wamerican libbsd-dev ruby python3 pkg-config time curl
-
-    RUN apt-get -y install maven openjdk-17-jdk libxml-parser-perl 
-
-    RUN apt-get -y install libbsd-dev clang-tools valgrind \\
-        libexpect-perl qemu-system-x86 qemu-utils \\
-        libfuse-dev fuse3
-
-    RUN apt-get -y install python-is-python3 python3-pyglet \\ 
-        python3-pytest python3-pygame
+    RUN apt-get -y install debian-goodies util-linux \
+        build-essential perl-doc libipc-run-perl libarchive-zip-perl \
+        wamerican libbsd-dev ruby python3 pkg-config time curl \
+        apt-utils adduser
 
     RUN adduser student --disabled-password --gecos "Student,,,,"
+
+    RUN apt-get -y install maven openjdk-25-jdk libxml-parser-perl \
+        build-essential python-is-python3 python3-pyglet python3-pytest mypy \
+        libbsd-dev clang-tools valgrind
+
+    RUN apt-get -y install libexpect-perl qemu-system-x86 qemu-utils \
+        libfuse-dev fuse3
     """
   end
 end
