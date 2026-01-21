@@ -1,5 +1,7 @@
 defmodule Inkfish.Sandbox.Containers do
   def list_sandboxes() do
+    # FIXME: This doesn't work.
+
     args = [
       "ls",
       "--filter",
@@ -79,7 +81,7 @@ defmodule Inkfish.Sandbox.Containers do
         "NanoCpus" => billion(conf[:cpus] || 1.0),
         "Devices" => conf[:devices] || [],
         "PidsLimit" => 1024,
-        "AutoRemove" => true,
+        # "AutoRemove" => true,
         "CapAdd" => conf[:caps] || [],
         "SecurityOpt" => ["apparmor:unconfined"],
         "Tmpfs" => %{
