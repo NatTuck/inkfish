@@ -1,6 +1,7 @@
 defmodule Inkfish.Ittys.Task do
   alias __MODULE__
 
+  @derive {Jason.Encoder, only: [:label]}
   defstruct label: "Generic Task",
             action: {:cmd, "echo hello, world"},
             on_exit: nil,
