@@ -19,6 +19,10 @@ import { EditorView, WidgetType, Decoration,
 import { EditorState, Range, RangeSet,
          StateField, StateEffect } from '@codemirror/state';
 
+import { marked } from 'marked';
+import DOMPurify from 'dompurify';
+import markedKatex from 'marked-katex-extension';
+
 const lcSetState = StateEffect.define({});
 
 const lcState = StateField.define({
@@ -143,9 +147,55 @@ export default function FileViewer({path, data, grade, setGrade}) {
   );
 }
 
+function MarkdownViewer({text}) {
+  const htmlContent = useMemo(() => {
+    marked.use(markedKatex({
+      throwOnError: false,
+      output: 'html'
+    }));
+
+    marked.setOptions({
+      breaks: true,
+      gfm: true,
+    });
+
+    const html = marked(text);
+
+    const sanitized = DOMPurify.sanitize(html, {
+      ALLOWED_TAGS: [
+        'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+        'p', 'br', 'hr',
+        'strong', 'em', 'u', 's', 'del', 'ins',
+        'ul', 'ol', 'li',
+        'blockquote', 'pre', 'code',
+        'a', 'img',
+        'table', 'thead', 'tbody', 'tr', 'th', 'td',
+        'div', 'span'
+      ],
+      ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class',
+                     'xmlns', 'encoding', 'style' // KaTeX
+      ]
+    });
+    return sanitized;
+  }, [text]);
+
+  return (
+    <div className="border markdown-viewer">
+      <div 
+        className="mc-content px-3 py-1"
+        dangerouslySetInnerHTML={{ __html: htmlContent }}
+      />
+    </div>
+  );
+}
+
 function OneFile({data, actions}) {
   if (data.path == "") {
     return <NoFile />;
+  }
+
+  if (data.path.toLowerCase().endsWith('.md')) {
+    return <MarkdownViewer text={data.text} />;
   }
 
   function gutter_click(view, info, ev) {
