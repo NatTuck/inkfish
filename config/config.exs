@@ -47,7 +47,7 @@ config :inkfish, :time_zone, "America/New_York"
 config :local_time, :time_zone, "America/New_York"
 
 # Use more recent docker API.
-config :docker, version: "v1.46"
+config :docker, version: "v1.44"
 
 # Nonsense
 config :tesla, disable_deprecated_builder_warning: true
@@ -78,6 +78,11 @@ config :phoenix_copy,
     source:
       Path.expand("../assets/node_modules/bootstrap-icons/icons/", __DIR__),
     destination: Path.expand("../priv/static/images/icons/", __DIR__),
+    debounce: 100
+  ],
+  katex: [
+    source: Path.expand("../assets/node_modules/katex/dist/", __DIR__),
+    destination: Path.expand("../priv/static/assets/katex/", __DIR__),
     debounce: 100
   ]
 

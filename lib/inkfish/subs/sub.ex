@@ -86,7 +86,7 @@ defmodule Inkfish.Subs.Sub do
     sub =
       Map.drop(
         sub,
-        [:__struct__, :__meta__, :assignment, :reg, :team, :upload, :grader]
+        [:__struct__, :__meta__, :assignment, :reg, :team, :upload, :grader, :ag_job]
       )
 
     %{sub | grades: grades}
