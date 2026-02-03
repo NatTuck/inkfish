@@ -180,11 +180,32 @@ function MarkdownViewer({text}) {
   }, [text]);
 
   return (
-    <div className="border markdown-viewer">
+    <div className="markdown-viewer">
       <div 
         className="mc-content px-3 py-1"
         dangerouslySetInnerHTML={{ __html: htmlContent }}
       />
+    </div>
+  );
+}
+
+function PreviewButtons({showRendered, setShowRendered}) {
+  return (
+    <div className="markdown-preview-buttons">
+      <Button 
+        variant={showRendered ? "primary" : "outline-secondary"}
+        size="sm"
+        onClick={() => setShowRendered(true)}
+      >
+        Preview
+      </Button>
+      <Button 
+        variant={!showRendered ? "primary" : "outline-secondary"}
+        size="sm"
+        onClick={() => setShowRendered(false)}
+      >
+        Code
+      </Button>
     </div>
   );
 }
@@ -194,8 +215,20 @@ function OneFile({data, actions}) {
     return <NoFile />;
   }
 
-  if (data.path.toLowerCase().endsWith('.md')) {
-    return <MarkdownViewer text={data.text} />;
+  const isMarkdown = data.path.toLowerCase().endsWith('.md');
+  const [showRendered, setShowRendered] = useState(isMarkdown);
+
+  if (isMarkdown && showRendered) {
+    return (
+      <div>
+        <div className="border" style={{position: 'relative'}}>
+          <div className="markdown-viewer-header">
+            <PreviewButtons showRendered={showRendered} setShowRendered={setShowRendered} />
+          </div>
+          <MarkdownViewer text={data.text} />
+        </div>
+      </div>
+    );
   }
 
   function gutter_click(view, info, ev) {
@@ -243,8 +276,18 @@ function OneFile({data, actions}) {
     EditorView.decorations.compute(["doc", lcState], makeLcWidgets),
   );
 
+  let previewButtons = null;
+  if (isMarkdown) {
+    previewButtons = (
+      <div className="markdown-viewer-header">
+        <PreviewButtons showRendered={showRendered} setShowRendered={setShowRendered} />
+      </div>
+    );
+  }
+
   return (
-    <div className="border">
+    <div className="border" style={{position: 'relative'}}>
+      {previewButtons}
       <CodeMirror basicSetup={false}
                   value={data.text}
                   extensions={extensions}
