@@ -79,6 +79,11 @@ config :phoenix_copy,
       Path.expand("../assets/node_modules/bootstrap-icons/icons/", __DIR__),
     destination: Path.expand("../priv/static/images/icons/", __DIR__),
     debounce: 100
+  ],
+  katex: [
+    source: Path.expand("../assets/node_modules/katex/dist/", __DIR__),
+    destination: Path.expand("../priv/static/assets/katex/", __DIR__),
+    debounce: 100
   ]
 
 # Default to local llama.cpp

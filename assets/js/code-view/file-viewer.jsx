@@ -19,6 +19,10 @@ import { EditorView, WidgetType, Decoration,
 import { EditorState, Range, RangeSet,
          StateField, StateEffect } from '@codemirror/state';
 
+import { marked } from 'marked';
+import DOMPurify from 'dompurify';
+import markedKatex from 'marked-katex-extension';
+
 const lcSetState = StateEffect.define({});
 
 const lcState = StateField.define({
@@ -143,9 +147,88 @@ export default function FileViewer({path, data, grade, setGrade}) {
   );
 }
 
+function MarkdownViewer({text}) {
+  const htmlContent = useMemo(() => {
+    marked.use(markedKatex({
+      throwOnError: false,
+      output: 'html'
+    }));
+
+    marked.setOptions({
+      breaks: true,
+      gfm: true,
+    });
+
+    const html = marked(text);
+
+    const sanitized = DOMPurify.sanitize(html, {
+      ALLOWED_TAGS: [
+        'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+        'p', 'br', 'hr',
+        'strong', 'em', 'u', 's', 'del', 'ins',
+        'ul', 'ol', 'li',
+        'blockquote', 'pre', 'code',
+        'a', 'img',
+        'table', 'thead', 'tbody', 'tr', 'th', 'td',
+        'div', 'span'
+      ],
+      ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class',
+                     'xmlns', 'encoding', 'style' // KaTeX
+      ]
+    });
+    return sanitized;
+  }, [text]);
+
+  return (
+    <div className="markdown-viewer">
+      <div 
+        className="mc-content px-3 py-1"
+        dangerouslySetInnerHTML={{ __html: htmlContent }}
+      />
+    </div>
+  );
+}
+
+function PreviewButtons({showRendered, setShowRendered}) {
+  return (
+    <div className="markdown-preview-buttons">
+      <Button 
+        variant={showRendered ? "primary" : "outline-secondary"}
+        size="sm"
+        onClick={() => setShowRendered(true)}
+      >
+        Preview
+      </Button>
+      <Button 
+        variant={!showRendered ? "primary" : "outline-secondary"}
+        size="sm"
+        onClick={() => setShowRendered(false)}
+      >
+        Code
+      </Button>
+    </div>
+  );
+}
+
 function OneFile({data, actions}) {
   if (data.path == "") {
     return <NoFile />;
+  }
+
+  const isMarkdown = data.path.toLowerCase().endsWith('.md');
+  const [showRendered, setShowRendered] = useState(isMarkdown);
+
+  if (isMarkdown && showRendered) {
+    return (
+      <div>
+        <div className="border" style={{position: 'relative'}}>
+          <div className="markdown-viewer-header">
+            <PreviewButtons showRendered={showRendered} setShowRendered={setShowRendered} />
+          </div>
+          <MarkdownViewer text={data.text} />
+        </div>
+      </div>
+    );
   }
 
   function gutter_click(view, info, ev) {
@@ -193,8 +276,18 @@ function OneFile({data, actions}) {
     EditorView.decorations.compute(["doc", lcState], makeLcWidgets),
   );
 
+  let previewButtons = null;
+  if (isMarkdown) {
+    previewButtons = (
+      <div className="markdown-viewer-header">
+        <PreviewButtons showRendered={showRendered} setShowRendered={setShowRendered} />
+      </div>
+    );
+  }
+
   return (
-    <div className="border">
+    <div className="border" style={{position: 'relative'}}>
+      {previewButtons}
       <CodeMirror basicSetup={false}
                   value={data.text}
                   extensions={extensions}

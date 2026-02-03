@@ -3,6 +3,7 @@
 @import "bootstrap/scss/bootstrap";
 @import "bootswatch/dist/spacelab/bootswatch";
 @import "react-datepicker/dist/react-datepicker";
+@import "katex/katex.min.css";
 
 @import "./console";
 
@@ -11,7 +12,7 @@
 }
 
 .header-logo {
-    width: 64px; 
+    width: 64px;
     height: 64px;
 }
 
@@ -107,4 +108,116 @@ textarea.form-control {
 
 .comment-card {
     cursor: default;
+}
+
+.markdown-viewer {
+    height: 90vh;
+    max-height: 90vh;
+    overflow: auto;
+}
+
+.markdown-viewer-header {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    z-index: 10;
+}
+
+.markdown-preview-buttons {
+    display: inline-flex;
+    gap: 0.15rem;
+
+    .btn {
+        border-radius: 0;
+
+        &:first-child {
+            border-top-left-radius: 0.375rem;
+            border-bottom-left-radius: 0.375rem;
+        }
+
+        &:last-child {
+            border-top-right-radius: 0.375rem;
+            border-bottom-right-radius: 0.375rem;
+        }
+    }
+}
+
+.mc-content {
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        margin-top: 1.5rem;
+        margin-bottom: 1rem;
+        font-weight: 700;
+    }
+
+    h1 {
+        font-size: 2rem;
+        border-bottom: 1px solid #e1e4e8;
+        padding-bottom: 0.3em;
+    }
+
+    h2 {
+        font-size: 1.75rem;
+        border-bottom: 1px solid #e1e4e8;
+        padding-bottom: 0.3em;
+    }
+
+    h3 {
+        font-size: 1.5rem;
+    }
+
+    h4 {
+        font-size: 1.25rem;
+    }
+
+    p,
+    ul,
+    ol {
+        margin-bottom: 1rem;
+    }
+
+    ul,
+    ol {
+        padding-left: 2em;
+    }
+
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-bottom: 1rem;
+        border: 1px solid #dfe2e5;
+
+        th,
+        td {
+            padding: 8px 13px;
+            border: 1px solid #dfe2e5;
+        }
+
+        th {
+            background-color: #f6f8fa;
+            font-weight: 700;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+    }
+
+    pre {
+        padding: 16px;
+        background-color: #f6f8fa;
+
+    }
+
+    blockquote {
+        padding: 0 1em;
+        color: #6a737d;
+        border-left: 0.25em solid #dfe2e5;
+        margin-bottom: 1rem;
+    }
 }

@@ -104,6 +104,7 @@ defmodule Inkfish.MixProject do
       "assets.deploy": [
         "phx.copy default",
         "phx.copy bs_icons",
+        "phx.copy katex",
         "esbuild default --minify",
         "sass default --no-source-map --style=compressed",
         "phx.digest"
