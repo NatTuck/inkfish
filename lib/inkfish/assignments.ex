@@ -9,6 +9,7 @@ defmodule Inkfish.Assignments do
 
   alias Inkfish.Assignments.Assignment
   alias Inkfish.Courses.Bucket
+  alias Inkfish.LocalTime
   alias Inkfish.Subs.Sub
   alias Inkfish.Users.Reg
   alias Inkfish.Teams.Team
@@ -321,7 +322,7 @@ defmodule Inkfish.Assignments do
 
   def list_past_assignments_with_ungraded_subs(course_ids)
       when is_list(course_ids) do
-    now = NaiveDateTime.utc_now()
+    now = LocalTime.now_naive()
     four_days_ago = NaiveDateTime.add(now, -4 * 24 * 3600, :second)
 
     assignment_rows =
@@ -389,7 +390,7 @@ defmodule Inkfish.Assignments do
 
   def list_all_buckets_with_upcoming(course_ids, limit)
       when is_list(course_ids) do
-    now = NaiveDateTime.utc_now()
+    now = LocalTime.now_naive()
 
     buckets =
       Repo.all(
