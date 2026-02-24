@@ -180,4 +180,285 @@ defmodule InkfishWeb.ApiV1.Staff.AssignmentControllerTest do
       assert gcol2_id == gcol2.id
     end
   end
+
+  describe "create assignment" do
+    test "staff user can create assignment with explicit teamset_id", %{
+      conn: conn,
+      course: course
+    } do
+      %{conn: staff_conn, user: staff_user} = logged_in_user_with_api_key(conn)
+      insert(:reg, user: staff_user, course: course, is_staff: true)
+
+      bucket = insert(:bucket, course: course)
+      teamset = insert(:teamset, course: course)
+
+      due_date = Inkfish.LocalTime.in_days(7)
+
+      assignment_params = %{
+        "name" => "Homework 1",
+        "desc" => "First homework assignment",
+        "due" => due_date,
+        "weight" => "1.0",
+        "bucket_id" => bucket.id,
+        "teamset_id" => teamset.id
+      }
+
+      conn =
+        post(
+          staff_conn,
+          ~p"/api/v1/staff/assignments?course_id=#{course.id}",
+          %{
+            assignment: assignment_params
+          }
+        )
+
+      response = json_response(conn, 201)
+
+      assert %{"data" => %{"id" => _, "name" => "Homework 1"}} = response
+    end
+
+    test "staff user can create assignment without teamset_id uses solo_teamset",
+         %{
+           conn: conn
+         } do
+      course = insert(:course)
+      solo_teamset = Inkfish.Teams.create_solo_teamset!(course)
+      course = Inkfish.Courses.get_course!(course.id)
+
+      %{conn: staff_conn, user: staff_user} = logged_in_user_with_api_key(conn)
+      insert(:reg, user: staff_user, course: course, is_staff: true)
+
+      bucket = insert(:bucket, course: course)
+      due_date = Inkfish.LocalTime.in_days(7)
+
+      assignment_params = %{
+        "name" => "Homework 1",
+        "desc" => "First homework",
+        "due" => due_date,
+        "weight" => "1.0",
+        "bucket_id" => bucket.id
+      }
+
+      conn =
+        post(
+          staff_conn,
+          ~p"/api/v1/staff/assignments?course_id=#{course.id}",
+          %{
+            assignment: assignment_params
+          }
+        )
+
+      response = json_response(conn, 201)
+
+      assert %{"data" => %{"id" => _, "teamset" => %{"id" => teamset_id}}} =
+               response
+
+      assert teamset_id == solo_teamset.id
+    end
+
+    test "prof user can create assignment", %{conn: conn, course: course} do
+      %{conn: prof_conn, user: prof_user} = logged_in_user_with_api_key(conn)
+      insert(:reg, user: prof_user, course: course, is_prof: true)
+
+      bucket = insert(:bucket, course: course)
+      teamset = insert(:teamset, course: course)
+      due_date = Inkfish.LocalTime.in_days(7)
+
+      assignment_params = %{
+        "name" => "Homework 1",
+        "desc" => "First homework",
+        "due" => due_date,
+        "weight" => "1.0",
+        "bucket_id" => bucket.id,
+        "teamset_id" => teamset.id
+      }
+
+      conn =
+        post(prof_conn, ~p"/api/v1/staff/assignments?course_id=#{course.id}", %{
+          assignment: assignment_params
+        })
+
+      response = json_response(conn, 201)
+
+      assert %{"data" => %{"name" => "Homework 1"}} = response
+    end
+
+    test "non-staff user cannot create assignment", %{
+      conn: conn,
+      course: course
+    } do
+      %{conn: student_conn, user: student_user} =
+        logged_in_user_with_api_key(conn)
+
+      insert(:reg, user: student_user, course: course, is_student: true)
+
+      bucket = insert(:bucket, course: course)
+      teamset = insert(:teamset, course: course)
+      due_date = Inkfish.LocalTime.in_days(7)
+
+      assignment_params = %{
+        "name" => "Homework 1",
+        "desc" => "First homework",
+        "due" => due_date,
+        "weight" => "1.0",
+        "bucket_id" => bucket.id,
+        "teamset_id" => teamset.id
+      }
+
+      conn =
+        post(
+          student_conn,
+          ~p"/api/v1/staff/assignments?course_id=#{course.id}",
+          %{
+            assignment: assignment_params
+          }
+        )
+
+      assert json_response(conn, 403)["error"] == "Access denied"
+    end
+
+    test "user not registered in course cannot create", %{
+      conn: conn,
+      course: course
+    } do
+      %{conn: user_conn, user: _user} = logged_in_user_with_api_key(conn)
+
+      bucket = insert(:bucket, course: course)
+      teamset = insert(:teamset, course: course)
+      due_date = Inkfish.LocalTime.in_days(7)
+
+      assignment_params = %{
+        "name" => "Homework 1",
+        "desc" => "First homework",
+        "due" => due_date,
+        "weight" => "1.0",
+        "bucket_id" => bucket.id,
+        "teamset_id" => teamset.id
+      }
+
+      conn =
+        post(user_conn, ~p"/api/v1/staff/assignments?course_id=#{course.id}", %{
+          assignment: assignment_params
+        })
+
+      assert json_response(conn, 403)["error"] == "Registration required"
+    end
+
+    test "creates assignment with valid params", %{conn: conn, course: course} do
+      %{conn: staff_conn, user: staff_user} = logged_in_user_with_api_key(conn)
+      insert(:reg, user: staff_user, course: course, is_staff: true)
+
+      bucket = insert(:bucket, course: course)
+      teamset = insert(:teamset, course: course)
+      due_date = Inkfish.LocalTime.in_days(7)
+
+      assignment_params = %{
+        "name" => "Test Assignment",
+        "desc" => "Test description",
+        "due" => due_date,
+        "weight" => "0.5",
+        "bucket_id" => bucket.id,
+        "teamset_id" => teamset.id
+      }
+
+      conn =
+        post(
+          staff_conn,
+          ~p"/api/v1/staff/assignments?course_id=#{course.id}",
+          %{
+            assignment: assignment_params
+          }
+        )
+
+      response = json_response(conn, 201)
+
+      assert %{
+               "data" => %{
+                 "name" => "Test Assignment",
+                 "desc" => "Test description",
+                 "bucket" => %{"id" => bucket_id},
+                 "teamset" => %{"id" => teamset_id}
+               }
+             } = response
+
+      assert bucket_id == bucket.id
+      assert teamset_id == teamset.id
+    end
+
+    test "missing required fields returns 422", %{conn: conn, course: course} do
+      %{conn: staff_conn, user: staff_user} = logged_in_user_with_api_key(conn)
+      insert(:reg, user: staff_user, course: course, is_staff: true)
+
+      bucket = insert(:bucket, course: course)
+      _solo_teamset = Inkfish.Teams.create_solo_teamset!(course)
+
+      assignment_params = %{
+        "bucket_id" => bucket.id
+      }
+
+      conn =
+        post(
+          staff_conn,
+          ~p"/api/v1/staff/assignments?course_id=#{course.id}",
+          %{
+            assignment: assignment_params
+          }
+        )
+
+      assert json_response(conn, 422)
+    end
+
+    test "invalid bucket_id returns 404", %{conn: conn} do
+      %{conn: staff_conn, user: staff_user} = logged_in_user_with_api_key(conn)
+      course = insert(:course)
+      insert(:reg, user: staff_user, course: course, is_staff: true)
+
+      teamset = insert(:teamset, course: course)
+      due_date = Inkfish.LocalTime.in_days(7)
+
+      assignment_params = %{
+        "name" => "Homework 1",
+        "desc" => "First homework",
+        "due" => due_date,
+        "weight" => "1.0",
+        "bucket_id" => 9_999_999_999,
+        "teamset_id" => teamset.id
+      }
+
+      conn =
+        post(
+          staff_conn,
+          ~p"/api/v1/staff/assignments?course_id=#{course.id}",
+          %{
+            assignment: assignment_params
+          }
+        )
+
+      assert json_response(conn, 404)
+    end
+
+    test "requires valid API key", %{conn: conn, course: course} do
+      conn = put_req_header(conn, "x-auth", "invalid-key")
+
+      bucket = insert(:bucket, course: course)
+      teamset = insert(:teamset, course: course)
+      due_date = Inkfish.LocalTime.in_days(7)
+
+      assignment_params = %{
+        "name" => "Homework 1",
+        "desc" => "First homework",
+        "due" => due_date,
+        "weight" => "1.0",
+        "bucket_id" => bucket.id,
+        "teamset_id" => teamset.id
+      }
+
+      conn =
+        post(conn, ~p"/api/v1/staff/assignments?course_id=#{course.id}", %{
+          assignment: assignment_params
+        })
+
+      assert json_response(conn, 403)
+    end
+  end
 end
