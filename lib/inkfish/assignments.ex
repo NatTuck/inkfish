@@ -8,6 +8,8 @@ defmodule Inkfish.Assignments do
   alias Inkfish.Repo.Cache
 
   alias Inkfish.Assignments.Assignment
+  alias Inkfish.Courses.Bucket
+  alias Inkfish.LocalTime
   alias Inkfish.Subs.Sub
   alias Inkfish.Users.Reg
   alias Inkfish.Teams.Team
@@ -317,4 +319,109 @@ defmodule Inkfish.Assignments do
       %{sub | assignment: as}
     end)
   end
+
+  def list_past_assignments_with_ungraded_subs(course_ids)
+      when is_list(course_ids) do
+    now = LocalTime.now_naive()
+    four_days_ago = NaiveDateTime.add(now, -4 * 24 * 3600, :second)
+
+    assignment_rows =
+      Repo.all(
+        from as in Assignment,
+          inner_join: bucket in assoc(as, :bucket),
+          where: bucket.course_id in ^course_ids,
+          where: as.due < ^now,
+          select: %{
+            id: as.id,
+            name: as.name,
+            due: as.due,
+            bucket_name: bucket.name,
+            course_id: bucket.course_id
+          }
+      )
+
+    assignment_data =
+      Enum.map(assignment_rows, fn %{due: due} = row ->
+        asg =
+          Repo.get!(Assignment, row.id)
+          |> Repo.preload([:grade_columns, subs: :grades])
+
+        required_kinds = ~w(feedback number)
+
+        required_gcol_ids =
+          Enum.filter(asg.grade_columns, fn gc -> gc.kind in required_kinds end)
+          |> Enum.map(& &1.id)
+          |> MapSet.new()
+
+        total_count =
+          Enum.count(asg.subs, fn s -> s.active end)
+
+        graded_count =
+          Enum.count(asg.subs, fn s ->
+            s.active &&
+              Enum.all?(required_gcol_ids, fn gcol_id ->
+                Enum.any?(s.grades, fn g ->
+                  g.grade_column_id == gcol_id && g.score != nil
+                end)
+              end)
+          end)
+
+        %{
+          id: row.id,
+          name: row.name,
+          due: due,
+          bucket_name: row.bucket_name,
+          course_id: row.course_id,
+          total_count: total_count,
+          graded_count: graded_count,
+          ungraded_count: total_count - graded_count,
+          overdue: NaiveDateTime.compare(due, four_days_ago) == :lt
+        }
+      end)
+
+    Enum.filter(assignment_data, fn row ->
+      row.ungraded_count > 0 or row.total_count == 0
+    end)
+  end
+
+  def list_past_assignments_with_ungraded_subs(_), do: []
+
+  def list_all_buckets_with_upcoming(course_ids, limit \\ 2)
+
+  def list_all_buckets_with_upcoming(course_ids, limit)
+      when is_list(course_ids) do
+    now = LocalTime.now_naive()
+
+    buckets =
+      Repo.all(
+        from b in Bucket, where: b.course_id in ^course_ids, order_by: b.name
+      )
+
+    bucket_map =
+      Enum.map(buckets, fn bucket ->
+        assignments =
+          Repo.all(
+            from as in Assignment,
+              where: as.bucket_id == ^bucket.id,
+              where: as.due > ^now,
+              order_by: [asc: as.due],
+              limit: ^limit
+          )
+
+        upcoming =
+          Enum.map(assignments, fn %{due: due} = as ->
+            %{
+              id: as.id,
+              name: as.name,
+              due: due
+            }
+          end)
+
+        {bucket.name, upcoming}
+      end)
+
+    Enum.into(bucket_map, %{})
+  end
+
+  def list_all_buckets_with_upcoming(_, _), do: %{}
 end

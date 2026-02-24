@@ -208,6 +208,8 @@ defmodule InkfishWeb.Router do
   scope "/api/v1/staff", InkfishWeb.ApiV1.Staff, as: :api_v1_staff do
     pipe_through :api
 
+    get "/dashboard", DashboardController, :index
+
     resources "/assignments", AssignmentController, only: [:show]
 
     resources "/subs", SubController, only: [:index, :show]
