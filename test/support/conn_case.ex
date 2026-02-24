@@ -32,6 +32,10 @@ defmodule InkfishWeb.ConnCase do
   end
 
   setup tags do
+    if is_nil(Process.whereis(Inkfish.Repo.Cache)) do
+      {:ok, _} = start_supervised(Inkfish.Repo.Cache)
+    end
+
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Inkfish.Repo)
 
     if !tags[:async] do
