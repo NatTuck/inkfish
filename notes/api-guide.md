@@ -228,6 +228,59 @@ curl -X GET \
 
 ### Assignments
 
+#### Create Assignment
+
+**Endpoint**: `POST /api/v1/staff/assignments`
+
+**Purpose**: Create a new assignment for a course
+
+**Authorization**: Staff privileges required
+
+**Parameters**:
+- `assignment` (required, object) - Assignment parameters
+  - `name` (required, string) - Assignment name
+  - `bucket_id` (required, string) - Bucket identifier
+  - `teamset_id` (optional, string) - Teamset identifier
+  - `due` (required, string) - Due date (ISO 8601 format)
+  - `desc` (optional, string) - Assignment description
+
+**Request**:
+```bash
+curl -X POST \
+  -H "x-auth: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "assignment": {
+      "name": "Homework 1",
+      "bucket_id": "bucket_id",
+      "due": "2026-03-01T23:59:59Z",
+      "desc": "First homework assignment"
+    }
+  }' \
+  "http://localhost:4000/api/v1/staff/assignments"
+```
+
+**Response** (201 Created):
+```json
+{
+  "data": {
+    "id": "new_assignment_id",
+    "name": "Homework 1",
+    "due": "2026-03-01T23:59:59Z",
+    "bucket": {
+      "id": "bucket_id",
+      "name": "Homework"
+    },
+    "teamset": null,
+    "grade_columns": [],
+    "subs": [],
+    "desc": "First homework assignment",
+    "starter_upload": null,
+    "solution_upload": null
+  }
+}
+```
+
 #### Get Assignment Details
 
 **Endpoint**: `GET /api/v1/staff/assignments/:id`
@@ -484,6 +537,100 @@ curl -X DELETE \
 
 **Response**: 204 No Content
 
+### Courses (Staff View)
+
+#### Get Course Details
+
+**Endpoint**: `GET /api/v1/staff/courses/:id`
+
+**Purpose**: Get comprehensive course details including buckets, teamsets, and assignments
+
+**Authorization**: Staff privileges required
+
+**Parameters**:
+- `id` (required, string) - Course identifier
+
+**Request**:
+```bash
+curl -X GET \
+  -H "x-auth: YOUR_API_KEY" \
+  "http://localhost:4000/api/v1/staff/courses/course_id"
+```
+
+**Response**:
+```json
+{
+  "data": {
+    "id": "course_id",
+    "name": "CS 101",
+    "buckets": [
+      {
+        "id": "bucket_id",
+        "name": "Homework",
+        "weight": 0.4
+      }
+    ],
+    "teamsets": [
+      {
+        "id": "teamset_id",
+        "name": "Team Project",
+        "size": 3
+      }
+    ],
+    "assignments": [
+      {
+        "id": "assignment_id",
+        "name": "Homework 1",
+        "due": "2026-03-01T23:59:59Z",
+        "bucket_name": "Homework"
+      }
+    ]
+  }
+}
+```
+
+### Teamsets
+
+#### Create Teamset
+
+**Endpoint**: `POST /api/v1/staff/courses/:course_id/teamsets`
+
+**Purpose**: Create a new teamset for a course
+
+**Authorization**: Staff privileges required
+
+**Parameters**:
+- `course_id` (required, string) - Course identifier
+- `teamset` (required, object) - Teamset parameters
+  - `name` (required, string) - Teamset name
+  - `size` (required, integer) - Team size
+
+**Request**:
+```bash
+curl -X POST \
+  -H "x-auth: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "teamset": {
+      "name": "Group Project",
+      "size": 4
+    }
+  }' \
+  "http://localhost:4000/api/v1/staff/courses/course_id/teamsets"
+```
+
+**Response** (201 Created):
+```json
+{
+  "data": {
+    "id": "new_teamset_id",
+    "name": "Group Project",
+    "size": 4,
+    "teams": []
+  }
+}
+```
+
 ## Client Implementation Examples
 
 ### Elixir (Req)
@@ -522,6 +669,40 @@ defmodule InkfishAPIClient do
     })
     
     Req.post!("#{@base_url}/staff/grades", headers: headers, body: body)
+  end
+  
+  def get_course(api_key, course_id) do
+    headers = [{"x-auth", api_key}]
+    
+    Req.get!("#{@base_url}/staff/courses/#{course_id}", headers: headers)
+  end
+  
+  def create_assignment(api_key, bucket_id, name, due, opts \\ []) do
+    headers = [{"x-auth", api_key}, {"content-type", "application/json"}]
+    
+    body = Jason.encode!(%{
+      assignment: %{
+        bucket_id: bucket_id,
+        name: name,
+        due: due,
+        desc: opts[:desc]
+      }
+    })
+    
+    Req.post!("#{@base_url}/staff/assignments", headers: headers, body: body)
+  end
+  
+  def create_teamset(api_key, course_id, name, size) do
+    headers = [{"x-auth", api_key}, {"content-type", "application/json"}]
+    
+    body = Jason.encode!(%{
+      teamset: %{
+        name: name,
+        size: size
+      }
+    })
+    
+    Req.post!("#{@base_url}/staff/courses/#{course_id}/teamsets", headers: headers, body: body)
   end
 end
 ```
@@ -584,6 +765,41 @@ class InkfishAPIClient:
         response = requests.get(url, headers=self.headers)
         response.raise_for_status()
         return response.json()
+    
+    def create_assignment(self, bucket_id, name, due, desc=None):
+        """Create a new assignment (staff only)."""
+        url = f"{self.base_url}/staff/assignments"
+        payload = {
+            "assignment": {
+                "bucket_id": bucket_id,
+                "name": name,
+                "due": due,
+                "desc": desc
+            }
+        }
+        response = requests.post(url, headers=self.headers, data=json.dumps(payload))
+        response.raise_for_status()
+        return response.json()
+    
+    def get_course(self, course_id):
+        """Get course details (staff only)."""
+        url = f"{self.base_url}/staff/courses/{course_id}"
+        response = requests.get(url, headers=self.headers)
+        response.raise_for_status()
+        return response.json()
+    
+    def create_teamset(self, course_id, name, size):
+        """Create a new teamset for a course (staff only)."""
+        url = f"{self.base_url}/staff/courses/{course_id}/teamsets"
+        payload = {
+            "teamset": {
+                "name": name,
+                "size": size
+            }
+        }
+        response = requests.post(url, headers=self.headers, data=json.dumps(payload))
+        response.raise_for_status()
+        return response.json()
 ```
 
 ### JavaScript (fetch)
@@ -643,6 +859,61 @@ class InkfishAPIClient {
     };
 
     const response = await fetch(`${this.baseUrl}/staff/grades`, {
+      method: 'POST',
+      headers: this.headers,
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  }
+
+  async createAssignment(bucketId, name, due, desc = null) {
+    const payload = {
+      assignment: {
+        bucket_id: bucketId,
+        name: name,
+        due: due,
+        desc: desc
+      }
+    };
+
+    const response = await fetch(`${this.baseUrl}/staff/assignments`, {
+      method: 'POST',
+      headers: this.headers,
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  }
+
+  async getCourse(courseId) {
+    const url = `${this.baseUrl}/staff/courses/${courseId}`;
+    const response = await fetch(url, { headers: this.headers });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    return await response.json();
+  }
+
+  async createTeamset(courseId, name, size) {
+    const payload = {
+      teamset: {
+        name: name,
+        size: size
+      }
+    };
+
+    const response = await fetch(`${this.baseUrl}/staff/courses/${courseId}/teamsets`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(payload)
