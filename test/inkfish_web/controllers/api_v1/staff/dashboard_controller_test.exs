@@ -135,7 +135,7 @@ defmodule InkfishWeb.ApiV1.Staff.DashboardControllerTest do
 
       upload = insert(:upload, user: student)
 
-      sub =
+      _sub =
         insert(:sub,
           assignment: past_asg,
           reg: student_reg,
@@ -226,7 +226,7 @@ defmodule InkfishWeb.ApiV1.Staff.DashboardControllerTest do
       teamset = insert(:teamset, course: course)
 
       # Upcoming homework 1 (due in 3 days)
-      hw1 =
+      _hw1 =
         insert(:assignment,
           bucket: bucket1,
           teamset: teamset,
