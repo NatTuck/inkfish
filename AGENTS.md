@@ -1,5 +1,10 @@
 This is a web application written using the Phoenix web framework.
 
+## Inkfish Specific Rules
+
+- *Always* use LocalTime when possible. Specifically, the current time
+is LocalTime.now() and you can convert time with LocalTime.from(thing).
+
 ## Project guidelines
 
 - Use `mix precommit` alias when you are done with all changes and fix any pending issues
@@ -42,7 +47,6 @@ custom classes must fully style the input
 - Implement **subtle micro-interactions** (e.g., button hover effects, and smooth transitions)
 - Ensure **clean typography, spacing, and layout balance** for a refined, premium look
 - Focus on **delightful details** like hover effects, loading states, and smooth page transitions
-
 
 <!-- usage-rules-start -->
 
