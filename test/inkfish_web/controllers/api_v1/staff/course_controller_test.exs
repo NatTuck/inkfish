@@ -26,8 +26,8 @@ defmodule InkfishWeb.ApiV1.Staff.CourseControllerTest do
       %{conn: staff_conn, user: staff_user} = logged_in_user_with_api_key(conn)
       insert(:reg, user: staff_user, course: course, is_staff: true)
 
-      bucket = insert(:bucket, course: course)
-      teamset = insert(:teamset, course: course)
+      _bucket = insert(:bucket, course: course)
+      _teamset = insert(:teamset, course: course)
 
       conn = get(staff_conn, ~p"/api/v1/staff/courses/#{course.id}")
       response = json_response(conn, 200)

@@ -4,6 +4,7 @@ This is a web application written using the Phoenix web framework.
 
 - *Always* use LocalTime when possible. Specifically, the current time
 is LocalTime.now() and you can convert time with LocalTime.from(thing).
+- We don't want easily fixable warnings. If you see them, fix them.
 
 ## Project guidelines
 

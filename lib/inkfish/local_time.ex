@@ -1,4 +1,4 @@
-9inmodule Inkfish.LocalTime do
+defmodule Inkfish.LocalTime do
   def now() do
     LocalTime.now()
   end
