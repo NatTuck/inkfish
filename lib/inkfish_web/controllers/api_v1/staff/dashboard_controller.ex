@@ -37,7 +37,7 @@ defmodule InkfishWeb.ApiV1.Staff.DashboardController do
   defp get_course_data(course_ids, past_assignments, upcoming_by_bucket) do
     courses =
       Inkfish.Courses.list_courses()
-      |> Enum.filter(fn c -> c.id in course_ids end)
+      |> Enum.filter(fn c -> c.id in course_ids and not c.archived end)
 
     Enum.map(courses, fn course ->
       course_buckets =

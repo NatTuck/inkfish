@@ -365,5 +365,24 @@ defmodule InkfishWeb.ApiV1.Staff.DashboardControllerTest do
       conn = get(conn, ~p"/api/v1/staff/dashboard")
       assert json_response(conn, 403)
     end
+
+    test "does not return archived courses", %{conn: conn} do
+      user = insert(:user)
+      api_key = insert(:api_key, user: user)
+      conn = put_req_header(conn, "x-auth", api_key.key)
+
+      active_course = insert(:course, archived: false)
+      archived_course = insert(:course, archived: true)
+
+      insert(:reg, user: user, course: active_course, is_staff: true)
+      insert(:reg, user: user, course: archived_course, is_staff: true)
+
+      conn = get(conn, ~p"/api/v1/staff/dashboard")
+      response = json_response(conn, 200)
+
+      assert %{"courses" => courses} = response
+      assert length(courses) == 1
+      assert hd(courses)["id"] == active_course.id
+    end
   end
 end
