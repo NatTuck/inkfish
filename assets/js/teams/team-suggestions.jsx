@@ -21,6 +21,32 @@ export function TeamSuggestions({data, active}) {
   return (<div>{suggs}</div>);
 }
 
+// Filter students by attendance status
+export function filterStudentsByAttendance(regs, attendanceMap) {
+  const presentIds = new Set();
+  
+  if (attendanceMap) {
+    for (const [reg, att] of attendanceMap) {
+      if (att && (att.status === 'present' || att.status === 'late' || att.status === 'on time')) {
+        presentIds.add(reg.id);
+      }
+    }
+  }
+  
+  console.log('presentIds:', presentIds);
+  console.log('regs:', regs);
+  
+  const result = regs.filter(reg => {
+    const isIncluded = presentIds.has(reg.id);
+    console.log(`Checking reg.id=${reg.id}, presentIds.has(${reg.id})=${isIncluded}`);
+    return isIncluded;
+  });
+  
+  console.log('Filtered result:', result);
+  
+  return result;
+}
+
 function SectionSuggestions({data, active, section}) {
   let [pairs, setPairs] = useState([]);
 
@@ -31,9 +57,22 @@ function SectionSuggestions({data, active, section}) {
     }
   }
 
+  // Filter to only present students based on attendance
+  let presentRegs = [];
+  if (data.meeting && data.meeting.students) {
+    presentRegs = filterStudentsByAttendance(data.course.regs, data.meeting.students);
+  } else {
+    // If no meeting or attendance data, include all students
+    presentRegs = data.course.regs;
+  }
+
   let names = Map();
   let students = [];
-  for (let reg of data.course.regs) {
+  for (let reg of presentRegs) {
+    // Only include students who are:
+    // 1. Actually students
+    // 2. Not already in active teams
+    // 3. In the correct section
     if (reg.is_student && !busy.has(reg.user_id) &&
         (reg.section == section || section == "default")) {
       let user = reg.user;
@@ -79,7 +118,7 @@ function SectionSuggestions({data, active, section}) {
   );
 }
 
-function suggest_pairs(students, pastTeams) {
+export function suggest_pairs(students, pastTeams) {
   if (students.length == 0) {
     return [];
   }

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 import { createRoot } from 'react-dom/client';
 import { freeze } from 'icepick';
@@ -7,6 +7,7 @@ import $ from 'cash-dom';
 
 import { TeamSuggestions } from './team-suggestions';
 import * as ajax from './ajax';
+import socket from '../socket';
 
 export default function init() {
   let root_div = document.getElementById('team-manager');
@@ -25,77 +26,140 @@ export default function init() {
   }
 }
 
-class TeamManager extends React.Component {
-  constructor(props) {
-    super(props);
-    let state = Object.assign({}, props.data);
+function TeamManager({data: initialData}) {
+  const [state, setState] = useState(() => {
+    let state = Object.assign({}, initialData);
     state.creating = false;
-    this.state = freeze(state);
-  }
-
-  remove_member(reg) {
+    return freeze(state);
+  });
+  
+  // Refs for channel and data
+  const attendanceChannelRef = React.useRef(null);
+  
+  // Effect to setup channel connection
+  React.useEffect(() => {
+    const channel = socket.channel(`attendance:${state.course.id}`, {
+      token: window.user_token
+    });
+    
+    channel.join()
+      .receive("ok", handleAttendanceState)
+      .receive("error", msg => console.error("Channel error", msg));
+    
+    channel.on("state", handleAttendanceState);
+    channel.on("team_update", handleTeamUpdate);
+    
+    attendanceChannelRef.current = channel;
+    
+    // Cleanup on unmount
+    return () => {
+      channel.leave();
+    };
+  }, [state.course.id]);
+  
+  // Handlers
+  const handleAttendanceState = useCallback((stateData) => {
+    setState(prev => freeze({
+      ...prev,
+      meeting: { ...prev.meeting, students: stateData.meeting.attendances }
+    }));
+  }, []);
+  
+  const handleTeamUpdate = useCallback((data) => {
+    // Refresh teams list or update specific team
+    loadTeams();
+  }, []);
+  
+  // Convert class methods to functions
+  const remove_member = useCallback((reg) => {
     console.log("remove", reg);
-    let regs = _.filter(
-      this.state.new_team_regs,
-      (rr) => (rr.id != reg.id)
-    );
-    this.setState(freeze({
-      ...this.state,
-      new_team_regs: regs,
-    }));
-  }
-
-  add_member(reg) {
+    setState(prev => {
+      let regs = _.filter(
+        prev.new_team_regs,
+        (rr) => (rr.id != reg.id)
+      );
+      return freeze({
+        ...prev,
+        new_team_regs: regs,
+      });
+    });
+  }, []);
+  
+  const add_member = useCallback((reg) => {
     console.log("add", reg);
-    let regs = _.concat(this.state.new_team_regs, reg);
-    this.setState(freeze({
-      ...this.state,
-      new_team_regs: regs,
+    setState(prev => {
+      let regs = _.concat(prev.new_team_regs, reg);
+      return freeze({
+        ...prev,
+        new_team_regs: regs,
+      });
+    });
+  }, []);
+  
+  const reset_data = useCallback((data) => {
+    setState(prev => freeze({
+      ...prev,
+      ...data,
+      new_team_regs: [],
+      creating: false
     }));
-  }
+  }, []);
+  
+  const createTeam = useCallback((ev) => {
+    ev.preventDefault();
+    
+    setState(prev => freeze({
+      ...prev,
+      creating: true
+    }));
 
-  reset_data(data) {
-    data.new_team_regs = [];
-    data.creating = false;
-    this.setState(freeze(data));
-  }
-
-  create_team(_ev) {
-    let st1 = Object.assign({}, this.state, {creating: true});
-    this.setState(st1);
-
-    ajax.create_team(this.state.id, this.state.new_team_regs)
-        .then((data) => {
-          console.log("created", data);
-          this.reset_data(data.data.teamset);
-        });
-  }
-
-  set_active_team(team, active) {
+    ajax.create_team(state.id, state.new_team_regs)
+      .then((data) => {
+        console.log("created", data);
+        reset_data(data.data.teamset);
+        
+        // After successful creation, push to channel
+        if (attendanceChannelRef.current) {
+          attendanceChannelRef.current.push("team_created", { team: data.data.team });
+        }
+      });
+  }, [state.id, state.new_team_regs, reset_data]);
+  
+  const toggleActive = useCallback((team, active) => {
     ajax.set_active_team(team, active)
-        .then((data) => {
-          console.log("set_active", data);
-          this.reset_data(data.data.teamset);
-        });
-  }
-
-  delete_team(team) {
+      .then((data) => {
+        console.log("set_active", data);
+        reset_data(data.data.teamset);
+        
+        // After successful update, push to channel
+        if (attendanceChannelRef.current) {
+          attendanceChannelRef.current.push("team_updated", { team: data.data.team });
+        }
+      });
+  }, [reset_data]);
+  
+  const destroyTeam = useCallback((team) => {
     ajax.delete_team(team)
-        .then((data) => {
-          console.log("deleted", data);
-          this.reset_data(data.data.teamset);
-        });
-  }
-
-  student_teams_map() {
+      .then((data) => {
+        console.log("deleted", data);
+        reset_data(data.data.teamset);
+        
+        // After successful deletion, push to channel
+        if (attendanceChannelRef.current) {
+          attendanceChannelRef.current.push("team_deleted", { team: {id: team.id} });
+        }
+      });
+  }, [reset_data]);
+  
+  const student_teams_map = useCallback(() => {
     let student_teams = new Map();
-    for (let reg of this.state.course.regs) {
+    for (let reg of state.course.regs) {
       if (reg.is_student) {
         student_teams.set(reg.id, []);
       }
     }
 
-    for (let team of this.state.teams) {
+    for (let team of state.teams) {
       if (team.active) {
         for (let reg of team.regs) {
           let xs = student_teams.get(reg.id) || [];
@@ -106,71 +170,78 @@ class TeamManager extends React.Component {
     }
 
     return student_teams;
-  }
-
-  extra_students() {
-    let student_teams = this.student_teams_map();
-    let new_regs = this.state.new_team_regs;
+  }, [state.course.regs, state.teams]);
+  
+  const extra_students = useCallback(() => {
+    let student_teams = student_teams_map();
+    let new_regs = state.new_team_regs;
     let new_ids = new Set(_.map(new_regs, (reg) => reg.id));
-    return _.filter(this.state.course.regs, (reg) => {
+    return _.filter(state.course.regs, (reg) => {
       let ts = student_teams.get(reg.id);
       return reg.is_student && ts.length == 0 && !new_ids.has(reg.id);
     });
-  }
+  }, [state.course.regs, state.new_team_regs, student_teams_map]);
+  
+  const active_teams = useCallback(() => {
+    return _.filter(state.teams, (team) => team.active);
+  }, [state.teams]);
+  
+  const inactive_teams = useCallback(() => {
+    return _.filter(state.teams, (team) => !team.active);
+  }, [state.teams]);
+  
+  // Load teams function (to be implemented)
+  const loadTeams = useCallback(() => {
+    // TODO: Implement loading teams from server
+    console.log("Loading teams...");
+  }, []);
+  
+  // Memoize computed values
+  const extraStudents = useMemo(() => extra_students(), [extra_students]);
+  const activeTeams = useMemo(() => active_teams(), [active_teams]);
+  const inactiveTeams = useMemo(() => inactive_teams(), [inactive_teams]);
 
-  active_teams() {
-    return _.filter(this.state.teams, (team) => team.active);
-  }
+  return (
+    <div>
+      <div className="row">
+        <div className="col">
+          <h2>Active Teams</h2>
+          <TeamTable root={{toggleActive, destroyTeam}} teams={activeTeams} />
 
-  inactive_teams() {
-    return _.filter(this.state.teams, (team) => !team.active);
-  }
-
-  render() {
-    let extra = this.extra_students();
-
-    return (
-      <div>
-        <div className="row">
-          <div className="col">
-            <h2>Active Teams</h2>
-            <TeamTable root={this} teams={this.active_teams()} />
-
-            <h2>Inactive Teams</h2>
-            <TeamTable root={this} teams={this.inactive_teams()} />
-          </div>
-          <div className="col">
-            <h2>New Team</h2>
-            <RegTable root={this}
-                      regs={this.state.new_team_regs}
-                      controls={RemoveFromTeam} />
-            <button className="btn btn-primary"
-                    disabled={this.state.creating}
-                    onClick={this.create_team.bind(this)}>
-              Create Team
-            </button>
-            
-            <h2>Extra Students</h2>
-            <RegTable root={this} regs={extra} controls={AddToTeam}/>
-          </div>
+          <h2>Inactive Teams</h2>
+          <TeamTable root={{toggleActive, destroyTeam}} teams={inactiveTeams} />
         </div>
-
-        <div className="row">
-          <div className="col">
-            <h2>Suggested Teams</h2>
-            <TeamSuggestions data={this.state} active={this.active_teams()} />
-          </div>
-          <div className="col">
-            <h2>Who's Here?</h2>
-            <WhosHere meeting={this.state.meeting} />
-          </div>
+        <div className="col">
+          <h2>New Team</h2>
+          <RegTable root={{add_member, remove_member}}
+                    regs={state.new_team_regs}
+                    controls={RemoveFromTeam} />
+          <button className="btn btn-primary"
+                  disabled={state.creating}
+                  onClick={createTeam}>
+            Create Team
+          </button>
+          
+          <h2>Extra Students</h2>
+          <RegTable root={{add_member}} regs={extraStudents} controls={AddToTeam}/>
         </div>
       </div>
-    );
-  }
+
+      <div className="row">
+        <div className="col">
+          <h2>Suggested Teams</h2>
+          <TeamSuggestions data={state} active={activeTeams} />
+        </div>
+        <div className="col">
+          <h2>Who's Here?</h2>
+          <WhosHere meeting={state.meeting} />
+        </div>
+      </div>
+    </div>
+  );
 }
 
-function WhosHere({meeting}) {
+export function WhosHere({meeting}) {
   if (!meeting) {
     return (<p>No active meeting.</p>);
   }
@@ -238,9 +309,9 @@ function RemoveFromTeam({root, reg}) {
   );
 }
 
-function TeamTable({root, teams, controls}) {
+function TeamTable({root, teams}) {
   let rows = _.map(teams, (team) => (
-    <TeamRow key={team.id} root={root} team={team} controls={controls} />
+    <TeamRow key={team.id} root={root} team={team} />
   ));
 
   return (
@@ -260,8 +331,7 @@ function TeamTable({root, teams, controls}) {
   );
 }
 
-function TeamRow({root, team, controls}) {
-  let Controls = controls;
+function TeamRow({root, team}) {
   let members = _.map(team.regs, (reg) => reg.user.name);
   return (
     <tr>
@@ -280,7 +350,7 @@ function TeamControls({root, team}) {
     btns.push(
       <button key="deact"
               className="btn btn-secondary btn-sm"
-              onClick={() => root.set_active_team(team, false)}>
+              onClick={() => root.toggleActive(team, false)}>
         Deactivate
       </button>
     );
@@ -289,7 +359,7 @@ function TeamControls({root, team}) {
     btns.push(
       <button key="act"
               className="btn btn-secondary btn-sm"
-              onClick={() => root.set_active_team(team, true)}>
+              onClick={() => root.toggleActive(team, true)}>
         Activate
       </button>
     );
@@ -299,7 +369,7 @@ function TeamControls({root, team}) {
     btns.push(
       <button key="delete"
               className="btn btn-danger btn-sm"
-              onClick={() => root.delete_team(team)}>
+              onClick={() => root.destroyTeam(team)}>
         Delete
       </button>
     );

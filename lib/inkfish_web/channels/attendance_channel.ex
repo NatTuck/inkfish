@@ -77,6 +77,24 @@ defmodule InkfishWeb.AttendanceChannel do
     end
   end
 
+  @impl true
+  def handle_in("team_created", %{"team" => team_data}, socket) do
+    broadcast(socket, "team_update", %{action: "created", team: team_data})
+    {:reply, :ok, socket}
+  end
+
+  @impl true
+  def handle_in("team_updated", %{"team" => team_data}, socket) do
+    broadcast(socket, "team_update", %{action: "updated", team: team_data})
+    {:reply, :ok, socket}
+  end
+
+  @impl true
+  def handle_in("team_deleted", %{"team" => team_data}, socket) do
+    broadcast(socket, "team_update", %{action: "deleted", team: team_data})
+    {:reply, :ok, socket}
+  end
+
   # Channels can be used in a request/response fashion
   # by sending replies to requests from the client
   @impl true
@@ -98,6 +116,9 @@ defmodule InkfishWeb.AttendanceChannel do
         socket
         |> assign(:meeting, meeting)
         |> assign(:attendance, attendance)
+
+      # Broadcast state to all subscribers
+      broadcast(socket, "state", attendance_view(socket))
 
       {:reply, {:ok, attendance_view(socket)}, socket}
     else
@@ -122,6 +143,13 @@ defmodule InkfishWeb.AttendanceChannel do
 
     push(socket, "state", attendance_view(socket))
 
+    {:noreply, socket}
+  end
+
+  # Handle team updates broadcast to all subscribers
+  @impl true
+  def handle_info({:team_update, data}, socket) do
+    push(socket, "team_update", data)
     {:noreply, socket}
   end
 end

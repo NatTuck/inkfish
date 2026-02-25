@@ -25,10 +25,16 @@ config :inkfish, Inkfish.Repo,
 config :phoenix_integration,
   endpoint: InkfishWeb.Endpoint
 
-config :hound,
-  driver: "selenium",
-  browser: "firefox",
-  port: 4444
+config :phoenix_test,
+  endpoint: InkfishWeb.Endpoint,
+  otp_app: :inkfish,
+  base_url: "http://localhost:4002"
+
+config :phoenix_test_playwright,
+  cli: "assets/node_modules/.bin/playwright",
+  playwright: [
+    browser: :firefox
+  ]
 
 config :ex_unit,
   tmp_dir: "/tmp/ex_unit"

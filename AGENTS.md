@@ -2,8 +2,12 @@ This is a web application written using the Phoenix web framework.
 
 ## Inkfish Specific Rules
 
-- *Always* use LocalTime when possible. Specifically, the current time
-is LocalTime.now() and you can convert time with LocalTime.from(thing).
+- *Always* use LocalTime when possible. Specifically, the current time is
+LocalTime.now() and you can convert time with LocalTime.from(thing).
+- There should never be JavaScript package stuff in the root project directory.
+Don't create a ./package.json or a ./node_modules directory, and if either (or
+some similar JS stuff) is there for some reason stop and let the user know so
+can fix it. All JS / Browser stuff should be under the ./assets directory.
 
 ## Project guidelines
 
