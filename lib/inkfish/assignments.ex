@@ -9,6 +9,7 @@ defmodule Inkfish.Assignments do
 
   alias Inkfish.Assignments.Assignment
   alias Inkfish.Courses.Bucket
+  alias Inkfish.Grades
   alias Inkfish.LocalTime
   alias Inkfish.Subs.Sub
   alias Inkfish.Users.Reg
@@ -163,9 +164,28 @@ defmodule Inkfish.Assignments do
 
   """
   def create_assignment(attrs \\ %{}) do
-    %Assignment{}
-    |> Assignment.changeset(attrs)
-    |> Repo.insert()
+    result =
+      Ecto.Multi.new()
+      |> Ecto.Multi.insert(
+        :assignment,
+        Assignment.changeset(%Assignment{}, attrs)
+      )
+      |> Ecto.Multi.run(:grade_column, fn _repo, %{assignment: assignment} ->
+        Grades.create_grade_column(%{
+          assignment_id: assignment.id,
+          name: "Feedback",
+          kind: "feedback",
+          points: Decimal.new(50),
+          base: Decimal.new(0)
+        })
+      end)
+      |> Repo.transaction()
+
+    case result do
+      {:ok, %{assignment: assignment}} -> {:ok, assignment}
+      {:error, :assignment, changeset, _} -> {:error, changeset}
+      {:error, :grade_column, changeset, _} -> {:error, changeset}
+    end
   end
 
   @doc """

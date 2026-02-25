@@ -3,6 +3,7 @@ defmodule Inkfish.AssignmentsTest do
   import Inkfish.Factory
 
   alias Inkfish.Assignments
+  alias Inkfish.Repo
 
   describe "assignments" do
     alias Inkfish.Assignments.Assignment
@@ -38,6 +39,25 @@ defmodule Inkfish.AssignmentsTest do
       assert NaiveDateTime.compare(assignment.due, attrs.due) == :eq
       assert assignment.name == attrs.name
       assert assignment.weight == attrs.weight
+    end
+
+    test "create_assignment/1 creates a default feedback grade column" do
+      attrs = params_with_assocs(:assignment)
+
+      assert {:ok, %Assignment{} = assignment} =
+               Assignments.create_assignment(attrs)
+
+      assignment =
+        Assignments.get_assignment!(assignment.id)
+        |> Repo.preload(:grade_columns)
+
+      feedback_col =
+        Enum.find(assignment.grade_columns, fn gc -> gc.kind == "feedback" end)
+
+      assert feedback_col != nil
+      assert feedback_col.name == "Feedback"
+      assert feedback_col.points == Decimal.new(50)
+      assert feedback_col.base == Decimal.new(0)
     end
 
     test "create_assignment/1 with invalid data returns error changeset" do
