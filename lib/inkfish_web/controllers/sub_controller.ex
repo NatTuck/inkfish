@@ -131,7 +131,7 @@ defmodule InkfishWeb.SubController do
       |> Map.put(:edit, false)
       |> Map.put(:grade, %{line_comments: [], sub: sub_data, grade_column: gcol})
 
-    render(conn, "files.html", sub: sub, data: data)
+    render(conn, "files.html", fluid_grid: true, sub: sub, data: data)
   end
 
   def rerun_scripts(conn, %{"id" => _id}) do

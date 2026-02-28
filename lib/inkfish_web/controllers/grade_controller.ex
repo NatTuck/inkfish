@@ -40,7 +40,7 @@ defmodule InkfishWeb.GradeController do
         |> Map.put(:grade_id, id)
         |> Map.put(:grade, grade_json)
 
-      render(conn, "show.html", grade: grade, data: data)
+      render(conn, "show.html", fluid_grid: true, grade: grade, data: data)
     end
   end
 end
