@@ -93,6 +93,7 @@ defmodule InkfishWeb.Staff.GradeController do
     sub = Inkfish.Subs.get_sub!(grade.sub_id)
 
     render(conn, "edit.html",
+      fluid_grid: true,
       grade: grade,
       sub: sub,
       changeset: changeset,
