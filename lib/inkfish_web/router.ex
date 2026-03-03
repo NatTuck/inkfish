@@ -212,6 +212,8 @@ defmodule InkfishWeb.Router do
 
     resources "/courses", CourseController, only: [:show]
 
+    get "/courses/:id/gradesheet", CourseController, :gradesheet
+
     post "/assignments", AssignmentController, :create
     resources "/assignments", AssignmentController, only: [:show]
 
