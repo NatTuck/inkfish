@@ -102,4 +102,91 @@ defmodule InkfishWeb.ApiV1.Staff.CourseControllerTest do
       assert solo_id == solo_teamset.id
     end
   end
+
+  describe "gradesheet" do
+    test "staff user can view gradesheet for their course", %{conn: conn} do
+      course = insert(:course)
+
+      %{conn: staff_conn, user: staff_user} = logged_in_user_with_api_key(conn)
+      insert(:reg, user: staff_user, course: course, is_staff: true)
+
+      bucket = insert(:bucket, course: course)
+      assignment = insert(:assignment, bucket: bucket)
+
+      student_user = insert(:user, given_name: "Alice", surname: "Smith")
+
+      student_reg =
+        insert(:reg, user: student_user, course: course, is_student: true)
+
+      teamset = insert(:teamset, course: course)
+      team = insert(:team, teamset: teamset)
+      insert(:team_member, team: team, reg: student_reg)
+
+      sub = insert(:sub, assignment: assignment, reg: student_reg, team: team)
+
+      _grade_col =
+        insert(:grade_column,
+          assignment: assignment,
+          kind: "number",
+          points: Decimal.new("100")
+        )
+
+      _grade =
+        insert(:grade,
+          sub: sub,
+          grade_column:
+            insert(:grade_column,
+              assignment: assignment,
+              kind: "number",
+              points: Decimal.new("100")
+            ),
+          score: Decimal.new("85")
+        )
+
+      conn = get(staff_conn, ~p"/api/v1/staff/courses/#{course.id}/gradesheet")
+      response = json_response(conn, 200)
+
+      assert response["course"]["id"] == course.id
+      assert response["course"]["name"] == course.name
+
+      assert is_map(response["students"])
+      assert is_map(response["buckets"])
+      assert is_map(response["stats"])
+
+      student_key = to_string(student_reg.id)
+      assert response["students"][student_key]["name"] == "Alice Smith"
+
+      bucket_key = to_string(bucket.id)
+      assert response["buckets"][bucket_key]["name"] == bucket.name
+      assert response["buckets"][bucket_key]["weight"] == "1.0"
+
+      assignment_key = to_string(assignment.id)
+
+      assert response["buckets"][bucket_key]["assignments"][assignment_key][
+               "name"
+             ] == assignment.name
+    end
+
+    test "non-staff user cannot view gradesheet", %{conn: conn, course: course} do
+      %{conn: student_conn, user: student_user} =
+        logged_in_user_with_api_key(conn)
+
+      insert(:reg, user: student_user, course: course, is_student: true)
+
+      conn =
+        get(student_conn, ~p"/api/v1/staff/courses/#{course.id}/gradesheet")
+
+      assert json_response(conn, 403)["error"] == "Access denied"
+    end
+
+    test "user not registered in course cannot view gradesheet", %{
+      conn: conn,
+      course: course
+    } do
+      %{conn: user_conn, user: _user} = logged_in_user_with_api_key(conn)
+
+      conn = get(user_conn, ~p"/api/v1/staff/courses/#{course.id}/gradesheet")
+      assert json_response(conn, 403)["error"] == "Registration required"
+    end
+  end
 end
