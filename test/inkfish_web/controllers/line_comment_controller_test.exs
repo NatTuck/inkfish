@@ -25,7 +25,12 @@ defmodule InkfishWeb.LineCommentControllerTest do
       staff: staff,
       grade: grade
     } do
-      params = params_for(:line_comment, user: staff, grade: grade)
+      params =
+        params_for(:line_comment,
+          user: staff,
+          grade: grade,
+          path: "Ω_grading_extra.txt"
+        )
 
       conn =
         conn
@@ -41,7 +46,7 @@ defmodule InkfishWeb.LineCommentControllerTest do
       assert %{
                "id" => ^id,
                "line" => 10,
-               "path" => "hw03/main.c",
+               "path" => "Ω_grading_extra.txt",
                "points" => "-5.0"
              } = json_response(conn, 200)["data"]
     end

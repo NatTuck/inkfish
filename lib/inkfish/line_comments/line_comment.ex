@@ -19,10 +19,23 @@ defmodule Inkfish.LineComments.LineComment do
   def parent(), do: :grade
 
   @doc false
-  def changeset(line_comment, attrs) do
+  def changeset(line_comment, attrs, valid_paths \\ nil) do
     line_comment
     |> cast(attrs, [:path, :line, :points, :text, :grade_id, :user_id])
     |> validate_required([:path, :line, :points, :grade_id, :user_id])
+    |> validate_path(valid_paths)
+  end
+
+  defp validate_path(changeset, nil), do: changeset
+
+  defp validate_path(changeset, valid_paths) do
+    path = get_change(changeset, :path)
+
+    if path in valid_paths do
+      changeset
+    else
+      add_error(changeset, :path, "path does not exist in submission")
+    end
   end
 
   def to_map(lc) do

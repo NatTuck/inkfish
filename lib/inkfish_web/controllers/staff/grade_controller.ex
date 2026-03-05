@@ -77,14 +77,17 @@ defmodule InkfishWeb.Staff.GradeController do
     rubric = Inkfish.Uploads.get_upload(grade.grade_column.upload_id)
     changeset = Grades.change_grade(grade)
 
+    sub_data = Inkfish.Subs.read_sub_data(grade.sub_id)
+    valid_paths = extract_path_keys(sub_data.files)
+
     grade_json =
-      InkfishWeb.Staff.GradeJSON.data(grade)
+      InkfishWeb.Staff.GradeJSON.data(grade, valid_paths)
 
     grader = conn.assigns[:current_user]
     grader_json = InkfishWeb.UserJSON.data(grader)
 
     data =
-      Inkfish.Subs.read_sub_data(grade.sub_id)
+      sub_data
       |> Map.put(:edit, true)
       |> Map.put(:grade_id, id)
       |> Map.put(:grade, grade_json)
@@ -100,6 +103,26 @@ defmodule InkfishWeb.Staff.GradeController do
       data: data,
       rubric: rubric
     )
+  end
+
+  defp extract_path_keys(%{nodes: nodes}) do
+    extract_path_keys(nodes, [])
+  end
+
+  defp extract_path_keys(files) when is_list(files) do
+    extract_path_keys(files, [])
+  end
+
+  defp extract_path_keys([], acc), do: acc
+
+  defp extract_path_keys([%{key: key, nodes: nodes} | rest], acc) do
+    acc = [key | acc]
+    acc = extract_path_keys(nodes ++ rest, acc)
+    extract_path_keys(rest, acc)
+  end
+
+  defp extract_path_keys([%{key: key} | rest], acc) do
+    extract_path_keys(rest, [key | acc])
   end
 
   def update(conn, %{"id" => id, "grade" => grade_params}) do

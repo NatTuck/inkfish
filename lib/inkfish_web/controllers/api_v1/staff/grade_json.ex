@@ -2,6 +2,7 @@ defmodule InkfishWeb.ApiV1.Staff.GradeJSON do
   use InkfishWeb, :json
 
   alias Inkfish.Grades.Grade
+  alias Inkfish.LineComments
   alias InkfishWeb.Staff.LineCommentJSON
 
   @doc """
@@ -18,19 +19,26 @@ defmodule InkfishWeb.ApiV1.Staff.GradeJSON do
     %{data: data(grade)}
   end
 
-  defp data(%Grade{} = grade) do
-    line_comments = 
-      if Ecto.assoc_loaded?(grade.line_comments) do
-        Enum.map(grade.line_comments, &LineCommentJSON.data/1)
+  defp data(%Grade{} = grade, valid_paths \\ nil) do
+    lcs =
+      if valid_paths && Ecto.assoc_loaded?(grade.line_comments) do
+        {invalid_lcs, valid_lcs} =
+          LineComments.filter_for_display(grade.line_comments, valid_paths)
+
+        Enum.reverse(valid_lcs) ++ Enum.reverse(invalid_lcs)
       else
-        []
+        if Ecto.assoc_loaded?(grade.line_comments) do
+          grade.line_comments
+        else
+          []
+        end
       end
 
     %{
       id: grade.id,
       score: grade.score,
       log_uuid: grade.log_uuid,
-      line_comments: line_comments
+      line_comments: Enum.map(lcs, &LineCommentJSON.data/1)
     }
   end
 end
