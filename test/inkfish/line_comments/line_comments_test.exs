@@ -29,7 +29,7 @@ defmodule Inkfish.LineCommentsTest do
       params = params_with_assocs(:line_comment)
 
       assert {:ok, %LineComment{} = line_comment} =
-               LineComments.create_line_comment(params)
+               LineComments.create_line_comment(params, ["hw03/main.c"])
 
       assert line_comment.line == 10
       assert line_comment.path == "hw03/main.c"
@@ -39,6 +39,44 @@ defmodule Inkfish.LineCommentsTest do
 
     test "create_line_comment/1 with invalid data returns error changeset" do
       assert {:error, %Ecto.Changeset{}} = LineComments.create_line_comment(%{})
+    end
+
+    test "create_line_comment/1 with path not in submission returns error" do
+      grade = insert(:grade)
+      user = insert(:user)
+
+      params = %{
+        grade_id: grade.id,
+        user_id: user.id,
+        path: "nonexistent/file.txt",
+        line: 1,
+        points: -5,
+        text: "test"
+      }
+
+      assert {:error, %Ecto.Changeset{} = changeset} =
+               LineComments.create_line_comment(params, :auto)
+
+      assert "path does not exist in submission" in errors_on(changeset).path
+    end
+
+    test "create_line_comment/1 with valid path in submission succeeds" do
+      grade = insert(:grade)
+      user = insert(:user)
+
+      params = %{
+        grade_id: grade.id,
+        user_id: user.id,
+        path: "hw03/main.c",
+        line: 1,
+        points: -5,
+        text: "test"
+      }
+
+      assert {:ok, %LineComment{} = lc} =
+               LineComments.create_line_comment(params, ["hw03/main.c"])
+
+      assert lc.path == "hw03/main.c"
     end
 
     test "update_line_comment/2 with valid data updates the line_comment" do
@@ -79,6 +117,48 @@ defmodule Inkfish.LineCommentsTest do
     test "change_line_comment/1 returns a line_comment changeset" do
       line_comment = line_comment_fixture()
       assert %Ecto.Changeset{} = LineComments.change_line_comment(line_comment)
+    end
+  end
+
+  describe "filter_for_display" do
+    alias Inkfish.LineComments.LineComment
+
+    test "invalid path line comments are shown at line 1 in omega file" do
+      grade = insert(:grade)
+      user = insert(:user)
+
+      invalid_lc =
+        insert(:line_comment, %{
+          grade: grade,
+          user: user,
+          path: "nonexistent/file.txt",
+          line: 42,
+          points: -5,
+          text: "This file doesn't exist"
+        })
+
+      valid_lc =
+        insert(:line_comment, %{
+          grade: grade,
+          user: user,
+          path: "Ω_grading_extra.txt",
+          line: 10,
+          points: -3,
+          text: "This is valid"
+        })
+
+      valid_paths = ["Ω_grading_extra.txt"]
+
+      {invalid, valid} =
+        LineComments.filter_for_display([invalid_lc, valid_lc], valid_paths)
+
+      assert length(invalid) == 1
+      assert hd(invalid).path == "Ω_grading_extra.txt"
+      assert hd(invalid).line == 1
+
+      assert length(valid) == 1
+      assert hd(valid).path == "Ω_grading_extra.txt"
+      assert hd(valid).line == 10
     end
   end
 end

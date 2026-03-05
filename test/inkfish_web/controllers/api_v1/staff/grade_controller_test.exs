@@ -52,13 +52,13 @@ defmodule InkfishWeb.ApiV1.Staff.GradeControllerTest do
       # Line comments to add
       line_comments = [
         %{
-          "path" => "main.c",
+          "path" => "Ω_grading_extra.txt",
           "line" => 10,
           "points" => "-5.0",
           "text" => "Style issue"
         },
         %{
-          "path" => "main.c",
+          "path" => "Ω_grading_extra.txt",
           "line" => 15,
           "points" => "-3.0",
           "text" => "Logic error"
@@ -126,7 +126,7 @@ defmodule InkfishWeb.ApiV1.Staff.GradeControllerTest do
       insert(:line_comment,
         grade: grade,
         user: student,
-        path: "main.c",
+        path: "Ω_grading_extra.txt",
         line: 5,
         points: Decimal.new("-2.0"),
         text: "Existing comment by student"
@@ -137,7 +137,7 @@ defmodule InkfishWeb.ApiV1.Staff.GradeControllerTest do
         insert(:line_comment,
           grade: grade,
           user: staff,
-          path: "main.c",
+          path: "Ω_grading_extra.txt",
           line: 10,
           points: Decimal.new("-3.0"),
           text: "Existing comment by staff"
@@ -146,13 +146,13 @@ defmodule InkfishWeb.ApiV1.Staff.GradeControllerTest do
       # New comments to replace the staff user's comments
       new_line_comments = [
         %{
-          "path" => "main.c",
+          "path" => "Ω_grading_extra.txt",
           "line" => 15,
           "points" => "-4.0",
           "text" => "New comment by staff"
         },
         %{
-          "path" => "helper.c",
+          "path" => "Ω_grading_extra.txt",
           "line" => 20,
           "points" => "-1.0",
           "text" => "Another new comment by staff"

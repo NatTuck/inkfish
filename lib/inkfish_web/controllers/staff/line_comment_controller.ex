@@ -29,7 +29,7 @@ defmodule InkfishWeb.Staff.LineCommentController do
       |> Map.put("user_id", conn.assigns[:current_user].id)
 
     with {:ok, %LineComment{} = lc} <-
-           LineComments.create_line_comment(lc_params) do
+           LineComments.create_line_comment(lc_params, :auto) do
       conn
       |> put_status(:created)
       |> put_resp_header(
