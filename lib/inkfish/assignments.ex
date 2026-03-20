@@ -176,7 +176,7 @@ defmodule Inkfish.Assignments do
           name: "Feedback",
           kind: "feedback",
           points: Decimal.new(50),
-          base: Decimal.new(0)
+          base: Decimal.new(50)
         })
       end)
       |> Repo.transaction()
