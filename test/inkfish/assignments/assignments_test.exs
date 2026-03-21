@@ -57,7 +57,7 @@ defmodule Inkfish.AssignmentsTest do
       assert feedback_col != nil
       assert feedback_col.name == "Feedback"
       assert feedback_col.points == Decimal.new(50)
-      assert feedback_col.base == Decimal.new(0)
+      assert feedback_col.base == Decimal.new(50)
     end
 
     test "create_assignment/1 with invalid data returns error changeset" do
