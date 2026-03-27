@@ -269,6 +269,7 @@ function OneFile({data, actions}) {
   extensions.push(
     highlightSpecialChars(),
     scrollPastEnd(),
+    EditorView.lineWrapping,
     //foldGutter(),
     syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
     EditorState.readOnly.of(true),
@@ -286,7 +287,7 @@ function OneFile({data, actions}) {
   }
 
   return (
-    <div className="border" style={{position: 'relative'}}>
+    <div className="border" style={{position: 'relative', paddingTop: isMarkdown ? '2.5rem' : 0}}>
       {previewButtons}
       <CodeMirror basicSetup={false}
                   value={data.text}

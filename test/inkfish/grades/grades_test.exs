@@ -58,6 +58,62 @@ defmodule Inkfish.GradesTest do
     end
   end
 
+  describe "put_grade_with_comments" do
+    alias Inkfish.Grades.Grade
+
+    test "with invalid line comment path returns error" do
+      sub = insert(:sub)
+      user = insert(:user)
+
+      gcol =
+        insert(:grade_column, %{assignment: sub.assignment, kind: "feedback"})
+
+      params = %{
+        "sub_id" => sub.id,
+        "grade_column_id" => gcol.id,
+        "line_comments" => [
+          %{
+            "path" => "nonexistent/file.txt",
+            "line" => 1,
+            "points" => -5,
+            "text" => "invalid path"
+          }
+        ]
+      }
+
+      assert {:error, %Ecto.Changeset{} = changeset} =
+               Grades.put_grade_with_comments(params, user)
+
+      assert changeset.errors != []
+    end
+
+    test "with valid line comment path creates grade with comments" do
+      sub = insert(:sub)
+      user = insert(:user)
+
+      gcol =
+        insert(:grade_column, %{assignment: sub.assignment, kind: "feedback"})
+
+      params = %{
+        "sub_id" => sub.id,
+        "grade_column_id" => gcol.id,
+        "line_comments" => [
+          %{
+            "path" => "Ω_grading_extra.txt",
+            "line" => 1,
+            "points" => -5,
+            "text" => "valid path"
+          }
+        ]
+      }
+
+      assert {:ok, %Grade{} = grade} =
+               Grades.put_grade_with_comments(params, user)
+
+      assert length(grade.line_comments) == 1
+    end
+  end
+
   describe "grade_columns" do
     alias Inkfish.Grades.GradeColumn
 

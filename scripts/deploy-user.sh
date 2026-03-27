@@ -29,6 +29,7 @@ export PATH="$PATH:$NODEBIN"
 
 (cd assets && pnpm install)
 # (cd assets && webpack --mode production)
+mix phx.copy katex
 mix phx.digest
 mix assets.deploy
 

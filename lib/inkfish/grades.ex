@@ -273,16 +273,53 @@ defmodule Inkfish.Grades do
   def put_comments(%Grade{} = grade, comments, %User{} = grader) do
     delete_comments_for_user(grade, grader)
 
-    OK.map_all(comments, fn lc ->
-      lc =
-        lc
-        |> Map.put("grade_id", grade.id)
-        |> Map.put("user_id", grader.id)
+    valid_paths = get_valid_paths(grade.sub_id)
 
-      %LineComment{}
-      |> LineComment.changeset(lc)
-      |> Repo.insert()
-    end)
+    result =
+      OK.map_all(comments, fn lc ->
+        lc =
+          lc
+          |> Map.put("grade_id", grade.id)
+          |> Map.put("user_id", grader.id)
+
+        %LineComment{}
+        |> LineComment.changeset(lc, valid_paths)
+        |> Repo.insert()
+      end)
+
+    case result do
+      {:ok, _lcs} ->
+        update_feedback_score(grade.id)
+
+      error ->
+        error
+    end
+  end
+
+  defp get_valid_paths(sub_id) do
+    sub = Inkfish.Subs.get_sub!(sub_id)
+    data = Inkfish.Subs.read_sub_data(sub)
+    extract_path_keys(data.files)
+  end
+
+  defp extract_path_keys(%{nodes: nodes}) do
+    extract_path_keys(nodes, [])
+  end
+
+  defp extract_path_keys(files) when is_list(files) do
+    extract_path_keys(files, [])
+  end
+
+  defp extract_path_keys([], acc), do: acc
+
+  defp extract_path_keys([%{key: key, nodes: nodes} | rest], acc) do
+    acc = [key | acc]
+    acc = extract_path_keys(nodes ++ rest, acc)
+    extract_path_keys(rest, acc)
+  end
+
+  defp extract_path_keys([%{key: key} | rest], acc) do
+    extract_path_keys(rest, [key | acc])
   end
 
   def delete_comments_for_user(%Grade{} = grade, %User{} = user) do

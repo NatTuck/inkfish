@@ -208,12 +208,23 @@ defmodule InkfishWeb.Router do
   scope "/api/v1/staff", InkfishWeb.ApiV1.Staff, as: :api_v1_staff do
     pipe_through :api
 
+    get "/dashboard", DashboardController, :index
+
+    resources "/courses", CourseController, only: [:show]
+
+    get "/courses/:id/gradesheet", CourseController, :gradesheet
+
+    post "/assignments", AssignmentController, :create
     resources "/assignments", AssignmentController, only: [:show]
 
     resources "/subs", SubController, only: [:index, :show]
 
     resources "/grades", GradeController,
       only: [:index, :show, :create, :delete]
+
+    resources "/courses", CourseController, only: [] do
+      resources "/teamsets", TeamsetController, only: [:create]
+    end
   end
 
   if Mix.env() in [:dev, :test] do
