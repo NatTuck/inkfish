@@ -149,14 +149,16 @@ defmodule InkfishWeb.ApiV1.Staff.AssignmentControllerTest do
         insert(:grade_column,
           assignment: assignment,
           name: "Problem 1",
-          points: "10"
+          points: Decimal.new("10.0"),
+          base: Decimal.new("0.0")
         )
 
       gcol2 =
         insert(:grade_column,
           assignment: assignment,
           name: "Problem 2",
-          points: "15"
+          points: Decimal.new("15.0"),
+          base: Decimal.new("5.0")
         )
 
       conn = get(staff_conn, ~p"/api/v1/staff/assignments/#{assignment.id}")
@@ -169,8 +171,20 @@ defmodule InkfishWeb.ApiV1.Staff.AssignmentControllerTest do
                  "desc" => "Test Description",
                  "bucket" => %{"id" => _},
                  "grade_columns" => [
-                   %{"id" => gcol1_id, "name" => "Problem 1", "points" => "10"},
-                   %{"id" => gcol2_id, "name" => "Problem 2", "points" => "15"}
+                   %{
+                     "id" => gcol1_id,
+                     "name" => "Problem 1",
+                     "points" => "10.0",
+                     "base" => "0.0",
+                     "kind" => _
+                   },
+                   %{
+                     "id" => gcol2_id,
+                     "name" => "Problem 2",
+                     "points" => "15.0",
+                     "base" => "5.0",
+                     "kind" => _
+                   }
                  ]
                }
              } = response

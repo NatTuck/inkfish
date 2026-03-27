@@ -24,6 +24,13 @@ defmodule InkfishWeb.FallbackController do
     |> render(:not_found)
   end
 
+  def call(conn, {:error, message}) when is_binary(message) do
+    conn
+    |> put_status(:unprocessable_entity)
+    |> put_view(InkfishWeb.ErrorJSON)
+    |> render(:error, message: message)
+  end
+
   # Handle ArgumentError (e.g., from String.to_integer for invalid IDs)
   def call(conn, {:error, %ArgumentError{message: message}}) do
     conn

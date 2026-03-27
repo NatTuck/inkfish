@@ -9,23 +9,30 @@ defmodule InkfishWeb.ApiV1.Staff.GradeControllerTest do
 
   describe "index" do
     test "lists all grades for a sub", %{conn: conn} do
-      # Need to create a complete test setup with a submission and grade
       stock = stock_course()
       sub = stock.sub
       grade = stock.grade
+      grade_column = stock.grade_column
       staff = stock.staff
 
-      # Create API key for the staff user
       api_key = insert(:api_key, user: staff)
       conn = put_req_header(conn, "x-auth", api_key.key)
 
       conn = get(conn, ~p"/api/v1/staff/grades?sub_id=#{sub.id}")
-      assert [%{"id" => fetched_id}] = json_response(conn, 200)["data"]
+      response_data = json_response(conn, 200)["data"]
+      assert [%{"id" => fetched_id}] = response_data
       assert fetched_id == grade.id
+
+      [grade_data] = response_data
+      assert grade_data["grade_column_id"] == grade_column.id
+      assert grade_data["grade_column"]["id"] == grade_column.id
+      assert grade_data["grade_column"]["name"] == grade_column.name
+      assert grade_data["grade_column"]["kind"] == grade_column.kind
+      assert grade_data["grade_column"]["points"] != nil
+      assert grade_data["grade_column"]["base"] != nil
     end
 
     test "fails when sub_id is missing", %{conn: conn} do
-      # Create a user and API key to pass auth
       user = insert(:user)
       api_key = insert(:api_key, user: user)
       conn = put_req_header(conn, "x-auth", api_key.key)
@@ -35,21 +42,18 @@ defmodule InkfishWeb.ApiV1.Staff.GradeControllerTest do
     end
   end
 
-  describe "create grade" do
-    test "creates grade with line comments and recalculates score", %{
+  describe "create feedback grade" do
+    test "creates feedback grade with line comments and recalculates score", %{
       conn: conn
     } do
-      # Create test data
       stock = stock_course()
       sub = stock.sub
       grade_column = stock.grade_column
       staff = stock.staff
 
-      # Create API key for the staff user
       api_key = insert(:api_key, user: staff)
       conn = put_req_header(conn, "x-auth", api_key.key)
 
-      # Line comments to add
       line_comments = [
         %{
           "path" => "main.c",
@@ -65,7 +69,6 @@ defmodule InkfishWeb.ApiV1.Staff.GradeControllerTest do
         }
       ]
 
-      # Base score is 40.0, comments deduct 8.0, so final should be 32.0
       create_attrs = %{
         sub_id: sub.id,
         grade_column_id: grade_column.id,
@@ -79,7 +82,6 @@ defmodule InkfishWeb.ApiV1.Staff.GradeControllerTest do
 
       assert %{"id" => id} = json_response(conn, 201)["data"]
 
-      # Check that grade was created with correct score
       conn =
         Phoenix.ConnTest.build_conn()
         |> put_req_header("x-auth", api_key.key)
@@ -92,11 +94,161 @@ defmodule InkfishWeb.ApiV1.Staff.GradeControllerTest do
                "score" => "32.0"
              } = response_data
 
-      # Check that line comments are included with user data
+      assert response_data["grade_column_id"] == grade_column.id
+      assert response_data["grade_column"]["id"] == grade_column.id
+      assert response_data["grade_column"]["name"] == grade_column.name
+      assert response_data["grade_column"]["kind"] == grade_column.kind
+
       assert [%{}, %{}] = response_data["line_comments"]
       [first_comment | _] = response_data["line_comments"]
       assert first_comment["user"]["id"]
       assert first_comment["user"]["name"]
+    end
+
+    test "rejects feedback grade with explicit score parameter", %{conn: conn} do
+      stock = stock_course()
+      sub = stock.sub
+      grade_column = stock.grade_column
+      staff = stock.staff
+
+      api_key = insert(:api_key, user: staff)
+      conn = put_req_header(conn, "x-auth", api_key.key)
+
+      create_attrs = %{
+        grade_column_id: grade_column.id,
+        score: "35.0",
+        line_comments: [
+          %{
+            "path" => "main.c",
+            "line" => 10,
+            "points" => "-5.0",
+            "text" => "Style issue"
+          }
+        ]
+      }
+
+      conn =
+        post(conn, ~p"/api/v1/staff/grades?sub_id=#{sub.id}",
+          grade: create_attrs
+        )
+
+      assert %{"error" => error_message} = json_response(conn, 422)
+      assert error_message =~ "Feedback grades are calculated automatically"
+      assert error_message =~ "Score cannot be set directly"
+    end
+
+    test "rejects feedback grade with explicit score even without grade_column_id",
+         %{
+           conn: conn
+         } do
+      stock = stock_course()
+      sub = stock.sub
+      staff = stock.staff
+
+      api_key = insert(:api_key, user: staff)
+      conn = put_req_header(conn, "x-auth", api_key.key)
+
+      create_attrs = %{
+        score: "35.0",
+        line_comments: [
+          %{
+            "path" => "main.c",
+            "line" => 10,
+            "points" => "-5.0",
+            "text" => "Style issue"
+          }
+        ]
+      }
+
+      conn =
+        post(conn, ~p"/api/v1/staff/grades?sub_id=#{sub.id}",
+          grade: create_attrs
+        )
+
+      assert %{"error" => error_message} = json_response(conn, 422)
+      assert error_message =~ "Feedback grades are calculated automatically"
+      assert error_message =~ "Score cannot be set directly"
+    end
+  end
+
+  describe "create number grade" do
+    test "creates number grade with explicit score", %{conn: conn} do
+      stock = stock_course()
+      sub = stock.sub
+      assignment = stock.assignment
+      staff = stock.staff
+
+      number_gcol =
+        insert(:grade_column,
+          kind: "number",
+          name: "Participation",
+          points: Decimal.new("10.0"),
+          base: Decimal.new("0.0"),
+          assignment: assignment
+        )
+
+      api_key = insert(:api_key, user: staff)
+      conn = put_req_header(conn, "x-auth", api_key.key)
+
+      create_attrs = %{
+        grade_column_id: number_gcol.id,
+        score: "8.5"
+      }
+
+      conn =
+        post(conn, ~p"/api/v1/staff/grades?sub_id=#{sub.id}",
+          grade: create_attrs
+        )
+
+      assert %{"id" => id} = json_response(conn, 201)["data"]
+
+      conn =
+        Phoenix.ConnTest.build_conn()
+        |> put_req_header("x-auth", api_key.key)
+
+      conn = get(conn, ~p"/api/v1/staff/grades/#{id}")
+      response_data = json_response(conn, 200)["data"]
+
+      assert %{
+               "id" => ^id,
+               "score" => "8.5"
+             } = response_data
+
+      assert response_data["grade_column_id"] == number_gcol.id
+      assert response_data["grade_column"]["id"] == number_gcol.id
+      assert response_data["grade_column"]["name"] == number_gcol.name
+      assert response_data["grade_column"]["kind"] == "number"
+    end
+
+    test "rejects number grade without score", %{conn: conn} do
+      stock = stock_course()
+      sub = stock.sub
+      assignment = stock.assignment
+      staff = stock.staff
+
+      number_gcol =
+        insert(:grade_column,
+          kind: "number",
+          name: "Participation",
+          points: Decimal.new("10.0"),
+          base: Decimal.new("0.0"),
+          assignment: assignment
+        )
+
+      api_key = insert(:api_key, user: staff)
+      conn = put_req_header(conn, "x-auth", api_key.key)
+
+      create_attrs = %{
+        grade_column_id: number_gcol.id
+      }
+
+      conn =
+        post(conn, ~p"/api/v1/staff/grades?sub_id=#{sub.id}",
+          grade: create_attrs
+        )
+
+      assert %{"error" => error_message} = json_response(conn, 422)
+      assert error_message =~ "Number grades require a score value"
     end
   end
 
@@ -104,25 +256,21 @@ defmodule InkfishWeb.ApiV1.Staff.GradeControllerTest do
     test "replaces only current user's comments and recalculates score", %{
       conn: conn
     } do
-      # Create test data
       stock = stock_course()
       sub = stock.sub
       grade_column = stock.grade_column
       staff = stock.staff
       student = stock.student
 
-      # Create API key for the staff user
       api_key = insert(:api_key, user: staff)
       conn = put_req_header(conn, "x-auth", api_key.key)
 
-      # Create an existing grade
       {:ok, grade} =
         Inkfish.Grades.create_grade(%{
           sub_id: sub.id,
           grade_column_id: grade_column.id
         })
 
-      # Add a comment by another user (the student)
       insert(:line_comment,
         grade: grade,
         user: student,
@@ -132,7 +280,6 @@ defmodule InkfishWeb.ApiV1.Staff.GradeControllerTest do
         text: "Existing comment by student"
       )
 
-      # Add comments by the staff user that will be replaced
       existing_staff_comment =
         insert(:line_comment,
           grade: grade,
@@ -143,7 +290,6 @@ defmodule InkfishWeb.ApiV1.Staff.GradeControllerTest do
           text: "Existing comment by staff"
         )
 
-      # New comments to replace the staff user's comments
       new_line_comments = [
         %{
           "path" => "main.c",
@@ -159,12 +305,6 @@ defmodule InkfishWeb.ApiV1.Staff.GradeControllerTest do
         }
       ]
 
-      # Base score is 40.0
-      # Existing student comment: -2.0
-      # Existing staff comment (to be replaced): -3.0
-      # New staff comments: -4.0 + -1.0 = -5.0
-      # Expected final score: 40.0 + (-2.0) + (-5.0) = 33.0
-
       update_attrs = %{
         grade_column_id: grade_column.id,
         line_comments: new_line_comments
@@ -177,7 +317,6 @@ defmodule InkfishWeb.ApiV1.Staff.GradeControllerTest do
 
       response_data = json_response(conn, 201)["data"]
 
-      # Check that grade was updated with correct score
       assert %{
                "id" => fetched_id,
                "score" => "33.0"
@@ -185,10 +324,13 @@ defmodule InkfishWeb.ApiV1.Staff.GradeControllerTest do
 
       assert fetched_id == grade.id
 
-      # Check that line comments are included
+      assert response_data["grade_column_id"] == grade_column.id
+      assert response_data["grade_column"]["id"] == grade_column.id
+      assert response_data["grade_column"]["name"] == grade_column.name
+      assert response_data["grade_column"]["kind"] == grade_column.kind
+
       assert length(response_data["line_comments"]) == 3
 
-      # Verify the student's comment is still there
       student_comment =
         Enum.find(response_data["line_comments"], fn lc ->
           lc["user"]["id"] == student.id
@@ -198,7 +340,6 @@ defmodule InkfishWeb.ApiV1.Staff.GradeControllerTest do
       assert student_comment["text"] == "Existing comment by student"
       assert student_comment["points"] == "-2.0"
 
-      # Verify the old staff comment is gone
       old_staff_comment =
         Enum.find(response_data["line_comments"], fn lc ->
           lc["id"] == existing_staff_comment.id
@@ -206,7 +347,6 @@ defmodule InkfishWeb.ApiV1.Staff.GradeControllerTest do
 
       refute old_staff_comment
 
-      # Verify the new staff comments are there
       new_staff_comments =
         Enum.filter(response_data["line_comments"], fn lc ->
           lc["user"]["id"] == staff.id and lc["id"] != existing_staff_comment.id
@@ -214,7 +354,6 @@ defmodule InkfishWeb.ApiV1.Staff.GradeControllerTest do
 
       assert length(new_staff_comments) == 2
 
-      # Check that each new comment has the correct data
       first_new_comment =
         Enum.find(response_data["line_comments"], fn lc ->
           lc["text"] == "New comment by staff"
@@ -239,7 +378,6 @@ defmodule InkfishWeb.ApiV1.Staff.GradeControllerTest do
       grade = stock.grade
       staff = stock.staff
 
-      # Create API key for the staff user
       api_key = insert(:api_key, user: staff)
       conn = put_req_header(conn, "x-auth", api_key.key)
 
