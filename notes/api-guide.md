@@ -415,15 +415,30 @@ curl -X POST \
       "score": 90.0,
       "line_comments": [
         {
+          "path": "main.c",
           "line": 10,
-          "comment": "Excellent implementation",
+          "text": "Excellent implementation",
           "points": 5.0
+        },
+        {
+          "path": "src/utils.c",
+          "line": 42,
+          "text": "Consider refactoring this function",
+          "points": -2.0
+        },
+        {
+          "path": "Ω_grading_extra.txt",
+          "line": 1,
+          "text": "Overall good work on the assignment",
+          "points": 0
         }
       ]
     }
   }' \
   "http://localhost:4000/api/v1/staff/grades"
 ```
+
+> **Note**: Use `path: "Ω_grading_extra.txt"` for general feedback that doesn't belong to a specific file. This is a virtual file available in every submission.
 
 **Response** (201 Created):
 ```json
@@ -435,9 +450,24 @@ curl -X POST \
     "line_comments": [
       {
         "id": "comment_id",
+        "path": "main.c",
         "line": 10,
-        "comment": "Excellent implementation",
-        "points": 5.0
+        "text": "Excellent implementation",
+        "points": "5.0"
+      },
+      {
+        "id": "comment_id_2",
+        "path": "src/utils.c",
+        "line": 42,
+        "text": "Consider refactoring this function",
+        "points": "-2.0"
+      },
+      {
+        "id": "comment_id_3",
+        "path": "Ω_grading_extra.txt",
+        "line": 1,
+        "text": "Overall good work on the assignment",
+        "points": "0"
       }
     ]
   }
