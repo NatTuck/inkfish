@@ -24,6 +24,7 @@
 | POST | `/api/v1/staff/courses/:course_id/teamsets` | `teamset{name,size}` |
 | POST | `/api/v1/staff/assignments` | `assignment{name,bucket_id,due,desc}` |
 | GET | `/api/v1/staff/assignments/:id` | |
+| POST | `/api/v1/staff/assignments/:id/recalc_grades` | |
 | GET | `/api/v1/staff/subs` | `assignment_id`, `page` |
 | GET | `/api/v1/staff/subs/:id` | |
 | GET | `/api/v1/staff/grades` | `sub_id` |
@@ -65,6 +66,10 @@ curl -X POST -H "x-auth: KEY" -H "Content-Type: application/json" \
 # Get assignment
 curl -H "x-auth: KEY" "http://localhost:4000/api/v1/staff/assignments/1"
 # Returns: {"data":{"id":"1","name":"HW1","due":"...","bucket":{...},"grade_columns":[...],"subs":[]}}
+
+# Recalculate grades
+curl -X POST -H "x-auth: KEY" "http://localhost:4000/api/v1/staff/assignments/1/recalc_grades"
+# Returns: 204 No Content
 
 # List submissions (staff)
 curl -H "x-auth: KEY" "http://localhost:4000/api/v1/staff/subs?assignment_id=22"
