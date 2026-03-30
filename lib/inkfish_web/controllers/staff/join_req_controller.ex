@@ -39,9 +39,7 @@ defmodule InkfishWeb.Staff.JoinReqController do
 
     conn
     |> put_flash(:info, "Join req accepted.")
-    |> redirect(
-      to: ~p"/staff/courses/#{conn.assigns[:course]}/join_reqs"
-    )
+    |> redirect(to: ~p"/staff/courses/#{conn.assigns[:course]}/join_reqs")
   end
 
   def accept_all(conn, %{"course_id" => course_id}) do
@@ -63,9 +61,7 @@ defmodule InkfishWeb.Staff.JoinReqController do
 
     conn
     |> put_flash(:info, "Accepted #{count} reqs")
-    |> redirect(
-      to: ~p"/staff/courses/#{conn.assigns[:course]}/join_reqs"
-    )
+    |> redirect(to: ~p"/staff/courses/#{conn.assigns[:course]}/join_reqs")
   end
 
   def delete(conn, %{"id" => _id}) do
@@ -74,8 +70,6 @@ defmodule InkfishWeb.Staff.JoinReqController do
 
     conn
     |> put_flash(:info, "Join req deleted successfully.")
-    |> redirect(
-      to: ~p"/staff/courses/#{conn.assigns[:course]}/join_reqs"
-    )
+    |> redirect(to: ~p"/staff/courses/#{conn.assigns[:course]}/join_reqs")
   end
 end

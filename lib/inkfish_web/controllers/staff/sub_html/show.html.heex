@@ -7,29 +7,31 @@
 <ul>
   <li>
     <strong>Team:</strong>
-    <%= show_team(@sub.team) %>
+    {show_team(@sub.team)}
   </li>
 
   <li>
     <strong>Submitter:</strong>
-    <%= user_display_name(@sub.reg.user) %>
-    (<%= @sub.reg.user.email %>)
+    {user_display_name(@sub.reg.user)} ({@sub.reg.user.email})
   </li>
 
   <li>
     <strong>Timestamp:</strong>
-    <%= @sub.inserted_at %>
+    {@sub.inserted_at}
   </li>
- 
+
   <li>
     <%= if @sub.active do %>
       <strong>Active:</strong>
-      <%= @sub.active %>
+      {@sub.active}
     <% else %>
       <strong>Active:</strong>
-      <%= @sub.active %>
-      &nbsp;
-      <.link class="btn btn-sm btn-secondary" href={~p"/staff/subs/#{@sub}/activate"} method="post">
+      {@sub.active} &nbsp;
+      <.link
+        class="btn btn-sm btn-secondary"
+        href={~p"/staff/subs/#{@sub}/activate"}
+        method="post"
+      >
         Set Active
       </.link>
     <% end %>
@@ -37,38 +39,43 @@
 
   <li>
     <strong>Ignore Late Penalty:</strong>
-    <%= @sub.ignore_late_penalty %>
-    &nbsp;
-    <.link class="btn btn-sm btn-secondary" href={~p"/staff/subs/#{@sub}/toggle_late_penalty"} method="post">
+    {@sub.ignore_late_penalty} &nbsp;
+    <.link
+      class="btn btn-sm btn-secondary"
+      href={~p"/staff/subs/#{@sub}/toggle_late_penalty"}
+      method="post"
+    >
       Toggle
     </.link>
   </li>
 
   <li>
     <strong>Score:</strong>
-    <%= @sub.score || "∅" %>
+    {@sub.score || "∅"}
   </li>
 
   <li>
     <strong>Hours Spent:</strong>
-    <%= @sub.hours_spent %>
+    {@sub.hours_spent}
   </li>
 
   <li>
     <strong>Assigned Grader:</strong>
-    <%= user_display_name(@sub.grader) %>
+    {user_display_name(@sub.grader)}
   </li>
 
   <li>
     <strong>Upload:</strong>
-    <.link href={~p"/uploads/#{@sub.upload.id}/#{@sub.upload.name}"}><%= @sub.upload.name %></.link>
+    <.link href={~p"/uploads/#{@sub.upload.id}/#{@sub.upload.name}"}>
+      {@sub.upload.name}
+    </.link>
     (<.link href={~p"/subs/#{@sub}/files"}>View Files</.link>)
   </li>
 </ul>
 
 <p><strong>Note:</strong></p>
 
-<p><%= sanitize_markdown(@sub.note) %></p>
+<p>{sanitize_markdown(@sub.note)}</p>
 
 <h2>Grades</h2>
 
@@ -83,15 +90,16 @@
   <%= for grade_column <- @assignment.grade_columns do %>
     <% grade = Enum.find(@sub.grades, &(&1.grade_column_id == grade_column.id)) %>
     <tr>
-      <td><%= grade_column.name %></td>
-      <td><%= show_score(@conn, grade) %> / <%= grade_column.points %></td>
+      <td>{grade_column.name}</td>
+      <td>{show_score(@conn, grade)} / {grade_column.points}</td>
       <td>
         <%= if grade_column.kind == "feedback" do %>
           <%= if grade do %>
             <.link href={~p"/staff/grades/#{grade}/edit"}>Edit Grade</.link>
           <% else %>
             <% grade = %Inkfish.Grades.Grade{
-              grade_column_id: grade_column.id, sub_id: @sub.id
+              grade_column_id: grade_column.id,
+              sub_id: @sub.id
             } %>
             <% cset = Inkfish.Grades.change_grade(grade) %>
             <.form :let={f} for={cset} action={~p"/staff/subs/#{@sub}/grades"}>
@@ -114,4 +122,3 @@
 <% else %>
   <.ag_log sub={@sub} token={@token} autogrades={@autogrades} />
 <% end %>
-

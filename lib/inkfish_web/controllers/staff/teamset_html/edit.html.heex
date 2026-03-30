@@ -4,5 +4,6 @@
   <.link href={~p"/staff/courses/#{@course}/teamsets"}>Back to List</.link>
 </p>
 
-<%= InkfishWeb.Staff.TeamsetHTML.teamset_form(
-  Map.put(assigns, :action, ~p"/staff/teamsets/#{@teamset}")) %>
+{InkfishWeb.Staff.TeamsetHTML.teamset_form(
+  Map.put(assigns, :action, ~p"/staff/teamsets/#{@teamset}")
+)}

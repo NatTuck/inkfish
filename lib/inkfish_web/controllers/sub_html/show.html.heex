@@ -9,44 +9,46 @@
 <ul>
   <li>
     <strong>Team:</strong>
-    <%= show_team(@sub.team) %>
+    {show_team(@sub.team)}
   </li>
 
   <li>
     <strong>Submitter:</strong>
-    <%= user_display_name(@sub.reg) %>
+    {user_display_name(@sub.reg)}
   </li>
 
   <li>
     <strong>Timestamp:</strong>
-    <%= @sub.inserted_at %>
+    {@sub.inserted_at}
   </li>
 
   <li>
     <strong>Active:</strong>
-    <%= @sub.active %>
+    {@sub.active}
   </li>
 
   <li>
     <strong>Hours Spent:</strong>
-    <%= @sub.hours_spent %>
+    {@sub.hours_spent}
   </li>
 
   <li>
     <strong>Assigned Grader:</strong>
-    <%= user_display_name(@sub.grader) %>
+    {user_display_name(@sub.grader)}
   </li>
 
   <li>
     <strong>Upload:</strong>
-    <.link href={~p"/uploads/#{@sub.upload}/#{@sub.upload.name}"}><%= @sub.upload.name %></.link>
+    <.link href={~p"/uploads/#{@sub.upload}/#{@sub.upload.name}"}>
+      {@sub.upload.name}
+    </.link>
     (<.link href={~p"/subs/#{@sub}/files"}>View Files</.link>)
   </li>
 </ul>
 
 <p><strong>Student Note:</strong></p>
 
-<p><%= sanitize_markdown(@sub.note) %></p>
+<p>{sanitize_markdown(@sub.note)}</p>
 
 <h2>Grades</h2>
 
@@ -63,16 +65,16 @@
       <td>
         <%= if grade && !grade_hidden?(@conn, @assignment) do %>
           <%= if grade_column.kind == "feedback" do %>
-            <.link href={~p"/grades/#{grade.id}"}><%= grade_column.name %></.link>
-            (<%= length(grade.line_comments) %> note(s))
+            <.link href={~p"/grades/#{grade.id}"}>{grade_column.name}</.link>
+            ({length(grade.line_comments)} note(s))
           <% else %>
-            <%= grade_column.name %>
+            {grade_column.name}
           <% end %>
         <% else %>
-          <%= grade_column.name %>
+          {grade_column.name}
         <% end %>
       </td>
-      <td><%= show_score(@conn, grade) %> / <%= grade_column.points %></td>
+      <td>{show_score(@conn, grade)} / {grade_column.points}</td>
     </tr>
   <% end %>
   <tr>
@@ -81,13 +83,13 @@
       <%= if @sub.ignore_late_penalty do %>
         (ignored)
       <% else %>
-        <%= show_score(@sub.late_penalty) %>
+        {show_score(@sub.late_penalty)}
       <% end %>
     </td>
   </tr>
   <tr>
     <td>Total Score</td>
-    <td><%= show_score(@conn, @sub) %> / <%= assignment_total_points(@assignment) %></td>
+    <td>{show_score(@conn, @sub)} / {assignment_total_points(@assignment)}</td>
   </tr>
 </table>
 

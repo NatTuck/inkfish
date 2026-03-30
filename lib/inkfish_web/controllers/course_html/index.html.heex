@@ -11,34 +11,36 @@
     </tr>
   </thead>
   <tbody>
-<%= for course <- Enum.filter(@courses, &(!&1.archived)) do %>
-  <% reg = Enum.find(@regs, &(&1.course_id == course.id)) %>
-    <tr>
-      <td>
-        <%= if reg do %>
-          <.link href={~p"/courses/#{course}"}><%= course.name %></.link>
-          <%= if is_staff?(reg, reg.user) do %>
-            (<.link href={~p"/staff/courses/#{course}"}>Staff View</.link>)
-          <% end %>
-        <% else %>
-          <%= course.name %>
-        <% end %>
-      </td>
-      <td><%= course.start_date %></td>
-      <td>
-        <%= if reg do %>
-          <%= show_reg_role(reg) %>
-        <% else %>
-          <% req = Enum.find(@reqs, &(&1.course_id == course.id)) %>
-          <%= if req do %>
-            Waiting for approval
+    <%= for course <- Enum.filter(@courses, &(!&1.archived)) do %>
+      <% reg = Enum.find(@regs, &(&1.course_id == course.id)) %>
+      <tr>
+        <td>
+          <%= if reg do %>
+            <.link href={~p"/courses/#{course}"}>{course.name}</.link>
+            <%= if is_staff?(reg, reg.user) do %>
+              (<.link href={~p"/staff/courses/#{course}"}>Staff View</.link>)
+            <% end %>
           <% else %>
-            <.link href={~p"/courses/#{course.id}/join_reqs/new"}>Request to Join</.link>
+            {course.name}
           <% end %>
-        <% end %>
-      </td>
-    </tr>
-<% end %>
+        </td>
+        <td>{course.start_date}</td>
+        <td>
+          <%= if reg do %>
+            {show_reg_role(reg)}
+          <% else %>
+            <% req = Enum.find(@reqs, &(&1.course_id == course.id)) %>
+            <%= if req do %>
+              Waiting for approval
+            <% else %>
+              <.link href={~p"/courses/#{course.id}/join_reqs/new"}>
+                Request to Join
+              </.link>
+            <% end %>
+          <% end %>
+        </td>
+      </tr>
+    <% end %>
   </tbody>
 </table>
 
@@ -53,28 +55,28 @@
     </tr>
   </thead>
   <tbody>
-<%= for course <- Enum.filter(@courses, &(&1.archived)) do %>
-  <% reg = Enum.find(@regs, &(&1.course_id == course.id)) %>
-    <tr>
-      <td>
-        <%= if reg do %>
-          <.link href={~p"/courses/#{course}"}><%= course.name %></.link>
-          <%= if is_staff?(reg, reg.user) do %>
-            (<.link href={~p"/staff/courses/#{course}"}>Staff View</.link>)
+    <%= for course <- Enum.filter(@courses, &(&1.archived)) do %>
+      <% reg = Enum.find(@regs, &(&1.course_id == course.id)) %>
+      <tr>
+        <td>
+          <%= if reg do %>
+            <.link href={~p"/courses/#{course}"}>{course.name}</.link>
+            <%= if is_staff?(reg, reg.user) do %>
+              (<.link href={~p"/staff/courses/#{course}"}>Staff View</.link>)
+            <% end %>
+          <% else %>
+            {course.name}
           <% end %>
-        <% else %>
-          <%= course.name %>
-        <% end %>
-      </td>
-      <td><%= course.start_date %></td>
-      <td>
-        <%= if reg do %>
-          <%= show_reg_role(reg) %>
-        <% else %>
-          (none)
-        <% end %>
-      </td>
-    </tr>
-<% end %>
+        </td>
+        <td>{course.start_date}</td>
+        <td>
+          <%= if reg do %>
+            {show_reg_role(reg)}
+          <% else %>
+            (none)
+          <% end %>
+        </td>
+      </tr>
+    <% end %>
   </tbody>
 </table>

@@ -9,10 +9,10 @@ defmodule InkfishWeb.MeetingControllerTest do
     test "lists all meetings", %{conn: conn, course: course, reg: reg} do
       # Create a meeting for the course
       insert(:meeting, course: course)
-      
+
       # Login as the user
       conn = login(conn, reg.user)
-      
+
       conn = get(conn, ~p"/courses/#{course}/meetings")
       assert html_response(conn, 200) =~ "Meetings"
     end

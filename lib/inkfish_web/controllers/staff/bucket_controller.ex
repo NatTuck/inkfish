@@ -85,8 +85,6 @@ defmodule InkfishWeb.Staff.BucketController do
 
     conn
     |> put_flash(:info, "Bucket deleted successfully.")
-    |> redirect(
-      to: ~p"/staff/courses/#{bucket.course_id}/buckets"
-    )
+    |> redirect(to: ~p"/staff/courses/#{bucket.course_id}/buckets")
   end
 end

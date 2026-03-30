@@ -14,7 +14,11 @@
   <:col :let={api_key} label="Name">{api_key.name}</:col>
   <:col :let={api_key} label="Key">{api_key.key}</:col>
   <:action :let={api_key}>
-    <.link href={~p"/api_keys/#{api_key}"} method="delete" data-confirm="Are you sure?">
+    <.link
+      href={~p"/api_keys/#{api_key}"}
+      method="delete"
+      data-confirm="Are you sure?"
+    >
       Delete
     </.link>
   </:action>

@@ -40,9 +40,7 @@ defmodule InkfishWeb.Staff.TeamControllerTest do
         |> Map.put(:reg_ids, [r1.id, r2.id])
 
       conn =
-        post(conn, ~p"/ajax/staff/teamsets/#{ts}/teams",
-          team: params
-        )
+        post(conn, ~p"/ajax/staff/teamsets/#{ts}/teams", team: params)
 
       data = json_response(conn, 201)["data"]
       assert data["teamset"]["id"] == ts.id
@@ -55,9 +53,7 @@ defmodule InkfishWeb.Staff.TeamControllerTest do
       params = %{}
 
       conn =
-        post(conn, ~p"/ajax/staff/teamsets/#{ts}/teams",
-          team: params
-        )
+        post(conn, ~p"/ajax/staff/teamsets/#{ts}/teams", team: params)
 
       assert json_response(conn, 422)["errors"]
     end
@@ -68,9 +64,7 @@ defmodule InkfishWeb.Staff.TeamControllerTest do
       params = %{active: false}
 
       conn =
-        put(conn, ~p"/ajax/staff/teams/#{team}",
-          team: params
-        )
+        put(conn, ~p"/ajax/staff/teams/#{team}", team: params)
 
       assert json_response(conn, 200)["data"]["id"] == team.id
 
@@ -83,9 +77,7 @@ defmodule InkfishWeb.Staff.TeamControllerTest do
       params = %{regs: []}
 
       conn =
-        put(conn, ~p"/ajax/staff/teams/#{team}",
-          team: params
-        )
+        put(conn, ~p"/ajax/staff/teams/#{team}", team: params)
 
       assert json_response(conn, 422)["errors"]
     end

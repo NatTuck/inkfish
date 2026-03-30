@@ -7,7 +7,11 @@
   </:actions>
 </.header>
 
-<.table id="attendances" rows={@attendances} row_click={&JS.navigate(~p"/staff/attendances/#{&1}")}>
+<.table
+  id="attendances"
+  rows={@attendances}
+  row_click={&JS.navigate(~p"/staff/attendances/#{&1}")}
+>
   <:col :let={attendance} label="Attended at">{attendance.attended_at}</:col>
   <:action :let={attendance}>
     <div class="sr-only">
@@ -16,7 +20,11 @@
     <.link navigate={~p"/staff/attendances/#{attendance}/edit"}>Edit</.link>
   </:action>
   <:action :let={attendance}>
-    <.link href={~p"/staff/attendances/#{attendance}"} method="delete" data-confirm="Are you sure?">
+    <.link
+      href={~p"/staff/attendances/#{attendance}"}
+      method="delete"
+      data-confirm="Are you sure?"
+    >
       Delete
     </.link>
   </:action>
