@@ -144,6 +144,18 @@ defmodule InkfishWeb.Router do
       :create_fake_subs
     )
 
+    post(
+      "/assignments/:id/rerun_script_grades",
+      AssignmentController,
+      :rerun_script_grades
+    )
+
+    post(
+      "/assignments/:id/recalc_grades",
+      AssignmentController,
+      :recalc_grades
+    )
+
     resources("/grade_columns", GradeColumnController,
       except: [:index, :new, :create]
     )

@@ -95,6 +95,7 @@ defmodule InkfishWeb.ApiV1.Staff.AssignmentController do
     subs = Assignments.list_active_subs(assignment)
 
     Enum.each(subs, fn sub ->
+      Inkfish.Grades.recalc_feedback_grades_for_sub!(sub.id)
       Inkfish.Subs.calc_sub_score!(sub.id)
     end)
 
