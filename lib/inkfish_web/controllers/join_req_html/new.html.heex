@@ -8,11 +8,11 @@
   <% end %>
 
   <div class="mb-3">
-    <p>Course: <%= @course.name %></p>
+    <p>Course: {@course.name}</p>
   </div>
 
   <div class="mb-3">
-    <p>User: <%= user_display_name(@current_user) %></p>
+    <p>User: {user_display_name(@current_user)}</p>
   </div>
 
   <div class="mb-3">
@@ -24,8 +24,8 @@
   <div class="mb-3">
     Special role?
     <div>
-      <.label for="staff_req">Course staff</.label> &nbsp;
-      <.checkbox field={f[:staff_req]} class="form-check-input" />
+      <.label for="staff_req">Course staff</.label>
+      &nbsp; <.checkbox field={f[:staff_req]} class="form-check-input" />
       <.error_tag form={f} field={:staff_req} />
     </div>
   </div>

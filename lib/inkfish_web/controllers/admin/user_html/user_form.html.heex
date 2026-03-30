@@ -6,7 +6,13 @@
   <% end %>
 
   <div class="mb-3">
-    <.input field={f[:email]} type="text" label="Email" name="_email" readonly={true} />
+    <.input
+      field={f[:email]}
+      type="text"
+      label="Email"
+      name="_email"
+      readonly={true}
+    />
   </div>
 
   <div class="mb-3">
@@ -22,7 +28,8 @@
   </div>
 
   <div class="mb-3">
-    <.label for={f[:is_admin].id}>Is admin</.label><br />
+    <.label for={f[:is_admin].id}>Is admin</.label>
+    <br />
     <div class="form-check form-switch">
       <.checkbox field={f[:is_admin]} class="form-check-input form-switch" />
     </div>
@@ -31,20 +38,29 @@
 
   <div class="mb-3">
     <.label for={f[:photo_upload_id].id}>Photo</.label>
-    <.text_input field={f[:photo_upload_id]} class="form-control" readonly={true} />
+    <.text_input
+      field={f[:photo_upload_id]}
+      class="form-control"
+      readonly={true}
+    />
     <.error_tag form={f} field={:photo_upload_id} />
 
     <div class="row">
       <div class="col">
-        <%= ajax_upload_field("user_photo", f[:photo_upload_id].id) %>
+        {ajax_upload_field("user_photo", f[:photo_upload_id].id)}
       </div>
       <div class="col">
         <%= if @user.photo_upload_id && @user.photo_upload do %>
-          <p><img src={~p"/uploads/#{@user.photo_upload.id}/#{@user.photo_upload.name}"}
-                  id="photo-preview" /></p>
+          <p>
+            <img
+              src={
+                ~p"/uploads/#{@user.photo_upload.id}/#{@user.photo_upload.name}"
+              }
+              id="photo-preview"
+            />
+          </p>
         <% else %>
-          <p><img src={~p"/images/red_squid.jpg"}
-                  id="photo-preview" /></p>
+          <p><img src={~p"/images/red_squid.jpg"} id="photo-preview" /></p>
         <% end %>
       </div>
     </div>

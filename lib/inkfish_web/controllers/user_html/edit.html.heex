@@ -5,7 +5,12 @@
 </p>
 
 <.form :let={f} for={@changeset} action={~p"/users/#{@user}"} as={:user}>
-  <.input field={f[:action]} type="hidden" name="action" value="update_nickname" />
+  <.input
+    field={f[:action]}
+    type="hidden"
+    name="action"
+    value="update_nickname"
+  />
 
   <%= if @changeset.action do %>
     <div class="alert alert-danger">
@@ -14,8 +19,8 @@
   <% end %>
 
   <ul>
-    <li><strong>Email:</strong> <%= @user.email %></li>
-    <li><strong>Name:</strong> <%= user_display_name(@user) %></li>
+    <li><strong>Email:</strong> {@user.email}</li>
+    <li><strong>Name:</strong> {user_display_name(@user)}</li>
   </ul>
 
   <div class="mb-3">

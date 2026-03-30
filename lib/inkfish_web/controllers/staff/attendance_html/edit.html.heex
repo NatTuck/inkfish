@@ -1,7 +1,11 @@
 <.header>
   Edit Attendance {@attendance.id}
-  <:subtitle>Use this form to manage attendance records in your database.</:subtitle>
+  <:subtitle>
+    Use this form to manage attendance records in your database.
+  </:subtitle>
 </.header>
 
-<.attendance_form changeset={@changeset} action={~p"/staff/attendances/#{@attendance}"} />
-
+<.attendance_form
+  changeset={@changeset}
+  action={~p"/staff/attendances/#{@attendance}"}
+/>

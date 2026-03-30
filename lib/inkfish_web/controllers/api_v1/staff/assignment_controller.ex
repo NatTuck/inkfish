@@ -18,6 +18,10 @@ defmodule InkfishWeb.ApiV1.Staff.AssignmentController do
        when action in [:show]
 
   plug Plugs.FetchItem,
+       [assignment: "assignment_id"]
+       when action in [:recalc_grades]
+
+  plug Plugs.FetchItem,
        [course: "course_id"]
        when action in [:create]
 
@@ -84,5 +88,16 @@ defmodule InkfishWeb.ApiV1.Staff.AssignmentController do
     conn
     |> put_view(InkfishWeb.Staff.AssignmentJSON)
     |> render(:show, assignment: asg)
+  end
+
+  def recalc_grades(conn, _params) do
+    assignment = conn.assigns[:assignment]
+    subs = Assignments.list_active_subs(assignment)
+
+    Enum.each(subs, fn sub ->
+      Inkfish.Subs.calc_sub_score!(sub.id)
+    end)
+
+    send_resp(conn, :no_content, "")
   end
 end

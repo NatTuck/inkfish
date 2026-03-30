@@ -8,13 +8,16 @@
   <% end %>
 
   <div class="mb-3">
-    <p>Course: <%= @course.name %></p>
+    <p>Course: {@course.name}</p>
   </div>
 
   <div class="mb-3">
     <.label for="user_email" class="form-label">User email</.label>
-    <.text_input field={f[:user_email]} class="form-control autosearch"
-                  data-topic="users" />
+    <.text_input
+      field={f[:user_email]}
+      class="form-control autosearch"
+      data-topic="users"
+    />
     <.error_tag form={f} field={:user_email} />
     <div class="text-muted">
       Username; start typing to search

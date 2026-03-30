@@ -181,6 +181,144 @@ defmodule InkfishWeb.ApiV1.Staff.AssignmentControllerTest do
     end
   end
 
+  describe "recalc_grades" do
+    test "staff user can recalc grades for assignment in their course", %{
+      conn: conn,
+      course: course
+    } do
+      %{conn: staff_conn, user: staff_user} = logged_in_user_with_api_key(conn)
+      insert(:reg, user: staff_user, course: course, is_staff: true)
+
+      %{assignment: assignment} = create_assignment(course)
+
+      conn =
+        post(
+          staff_conn,
+          ~p"/api/v1/staff/assignments/#{assignment.id}/recalc_grades"
+        )
+
+      assert response(conn, 204)
+    end
+
+    test "recalculates scores for active subs", %{
+      conn: conn,
+      course: course
+    } do
+      %{conn: staff_conn, user: staff_user} = logged_in_user_with_api_key(conn)
+      insert(:reg, user: staff_user, course: course, is_staff: true)
+
+      %{assignment: assignment, bucket: _bucket, teamset: teamset} =
+        create_assignment(course)
+
+      student = insert(:user)
+
+      student_reg =
+        insert(:reg, user: student, course: course, is_student: true)
+
+      team = insert(:team, teamset: teamset, active: true)
+      insert(:team_member, team: team, reg: student_reg)
+
+      upload = insert(:upload, user: student)
+
+      sub =
+        insert(:sub,
+          assignment: assignment,
+          reg: student_reg,
+          team: team,
+          upload: upload,
+          active: true
+        )
+
+      gcol =
+        insert(:grade_column,
+          assignment: assignment,
+          kind: "feedback",
+          points: Decimal.new("50.0"),
+          base: Decimal.new("40.0")
+        )
+
+      insert(:grade, grade_column: gcol, sub: sub, score: Decimal.new("42.0"))
+
+      conn =
+        post(
+          staff_conn,
+          ~p"/api/v1/staff/assignments/#{assignment.id}/recalc_grades"
+        )
+
+      assert response(conn, 204)
+
+      updated_sub = Inkfish.Repo.get(Inkfish.Subs.Sub, sub.id)
+      assert updated_sub.score != nil
+    end
+
+    test "non-staff user cannot recalc grades", %{
+      conn: conn,
+      course: course
+    } do
+      %{conn: student_conn, user: student_user} =
+        logged_in_user_with_api_key(conn)
+
+      insert(:reg, user: student_user, course: course, is_student: true)
+
+      %{assignment: assignment} = create_assignment(course)
+
+      conn =
+        post(
+          student_conn,
+          ~p"/api/v1/staff/assignments/#{assignment.id}/recalc_grades"
+        )
+
+      assert json_response(conn, 403)["error"] == "Access denied"
+    end
+
+    test "staff user cannot recalc grades for assignment in different course",
+         %{
+           conn: conn
+         } do
+      %{conn: staff_conn, user: staff_user} = logged_in_user_with_api_key(conn)
+      course_a = insert(:course)
+      insert(:reg, user: staff_user, course: course_a, is_staff: true)
+
+      course_b = insert(:course)
+      %{assignment: assignment_in_course_b} = create_assignment(course_b)
+
+      conn =
+        post(
+          staff_conn,
+          ~p"/api/v1/staff/assignments/#{assignment_in_course_b.id}/recalc_grades"
+        )
+
+      assert json_response(conn, 403)
+    end
+
+    test "returns 404 for non-existent assignment", %{
+      conn: conn,
+      course: course
+    } do
+      %{conn: staff_conn, user: staff_user} = logged_in_user_with_api_key(conn)
+      insert(:reg, user: staff_user, course: course, is_staff: true)
+      non_existent_id = 9_999_999_999
+
+      conn =
+        post(
+          staff_conn,
+          ~p"/api/v1/staff/assignments/#{non_existent_id}/recalc_grades"
+        )
+
+      assert json_response(conn, 404)
+    end
+
+    test "requires valid API key", %{conn: conn, course: course} do
+      conn = put_req_header(conn, "x-auth", "invalid-key")
+      %{assignment: assignment} = create_assignment(course)
+
+      conn =
+        post(conn, ~p"/api/v1/staff/assignments/#{assignment.id}/recalc_grades")
+
+      assert json_response(conn, 403)
+    end
+  end
+
   describe "create assignment" do
     test "staff user can create assignment with explicit teamset_id", %{
       conn: conn,

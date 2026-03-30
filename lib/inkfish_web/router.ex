@@ -215,7 +215,10 @@ defmodule InkfishWeb.Router do
     get "/courses/:id/gradesheet", CourseController, :gradesheet
 
     post "/assignments", AssignmentController, :create
-    resources "/assignments", AssignmentController, only: [:show]
+
+    resources "/assignments", AssignmentController, only: [:show] do
+      post "/recalc_grades", AssignmentController, :recalc_grades
+    end
 
     resources "/subs", SubController, only: [:index, :show]
 

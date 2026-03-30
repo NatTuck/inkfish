@@ -130,9 +130,7 @@ defmodule InkfishWeb.Staff.AssignmentController do
 
     conn
     |> put_flash(:info, "Assignment deleted successfully.")
-    |> redirect(
-      to: ~p"/staff/courses/#{conn.assigns[:course]}"
-    )
+    |> redirect(to: ~p"/staff/courses/#{conn.assigns[:course]}")
   end
 
   def create_fake_subs(conn, %{"id" => _id}) do

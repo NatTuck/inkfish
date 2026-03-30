@@ -4,6 +4,6 @@
 
 <ul>
   <%= for {meeting, at} <- @meetings do %>
-    <li><%= meeting.started_at %> - <%= show_attendance(at) %></li>
+    <li>{meeting.started_at} - {show_attendance(at)}</li>
   <% end %>
 </ul>

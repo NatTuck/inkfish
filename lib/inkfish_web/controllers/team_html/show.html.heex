@@ -4,7 +4,6 @@
 
 <ul>
   <%= for reg <- @team.regs do %>
-    <li><%= user_display_name(reg.user) %></li>
+    <li>{user_display_name(reg.user)}</li>
   <% end %>
 </ul>
-

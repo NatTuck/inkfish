@@ -52,7 +52,7 @@ defmodule InkfishWeb.Staff.SubControllerTest do
       # Check that the sub is now active by looking for the active status text
       conn = get(conn, ~p"/staff/subs/#{sub}")
       # When active, it should show "Active: true" without a form
-      assert html_response(conn, 200) =~ "<strong>Active:</strong>\ntrue"
+      assert html_response(conn, 200) =~ ~r/<strong>Active:<\/strong>\s+true/
     end
   end
 
@@ -93,14 +93,14 @@ defmodule InkfishWeb.Staff.SubControllerTest do
 
       # Check the response after redirect
       conn = get(conn, ~p"/staff/subs/#{sub}")
-      
+
       # The late penalty should be toggled
       assert html_response(conn, 200) =~
-               "<strong>Ignore Late Penalty:</strong>\ntrue"
-      
+               ~r/<strong>Ignore Late Penalty:<\/strong>\s+true/
+
       # The sub should still be inactive (toggle_late_penalty and activate are independent)
       assert html_response(conn, 200) =~
-               "<strong>Active:</strong>\nfalse"
+               ~r/<strong>Active:<\/strong>\s+false/
     end
 
     test "toggles late penalty when toggle_late_penalty action is called on active sub",
@@ -118,10 +118,10 @@ defmodule InkfishWeb.Staff.SubControllerTest do
 
       # Check the response after redirect
       conn = get(conn, ~p"/staff/subs/#{sub}")
-      
+
       # The late penalty should be toggled
       assert html_response(conn, 200) =~
-               "<strong>Ignore Late Penalty:</strong>\ntrue"
+               ~r/<strong>Ignore Late Penalty:<\/strong>\s+true/
 
       # Call the toggle_late_penalty action again
       conn = post(conn, ~p"/staff/subs/#{sub}/toggle_late_penalty")
@@ -129,10 +129,10 @@ defmodule InkfishWeb.Staff.SubControllerTest do
 
       # Check the response after redirect
       conn = get(conn, ~p"/staff/subs/#{sub}")
-      
+
       # And the late penalty should be toggled back
       assert html_response(conn, 200) =~
-               "<strong>Ignore Late Penalty:</strong>\nfalse"
+               ~r/<strong>Ignore Late Penalty:<\/strong>\s+false/
     end
   end
 

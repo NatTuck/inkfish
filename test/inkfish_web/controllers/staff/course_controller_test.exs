@@ -49,9 +49,7 @@ defmodule InkfishWeb.Staff.CourseControllerTest do
 
     test "renders errors when data is invalid", %{conn: conn, course: course} do
       conn =
-        put(conn, ~p"/staff/courses/#{course}",
-          course: %{name: "x"}
-        )
+        put(conn, ~p"/staff/courses/#{course}", course: %{name: "x"})
 
       assert html_response(conn, 200) =~ "Edit Course"
     end

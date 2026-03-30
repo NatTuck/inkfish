@@ -1,8 +1,8 @@
 <h1>New Submission</h1>
 
-<p>Course: <%= @course.name %></p>
-<p>Assignment: <%= @assignment.name %></p>
-<p>Submitting for: <%= show_team(@team) %></p>
+<p>Course: {@course.name}</p>
+<p>Assignment: {@assignment.name}</p>
+<p>Submitting for: {show_team(@team)}</p>
 
 <.form :let={f} for={@changeset} action={~p"/assignments/#{@assignment}/subs"}>
   <%= if @changeset.action do %>
@@ -29,12 +29,14 @@
     <.error_tag form={f} field={:upload_id} />
     <p>Max upload size is 5MB, larger uploads will fail.</p>
 
-    <div class="tabbed-uploader"
-     data-upload-field="sub_upload_id"
-     data-nonce={@nonce}
-     data-token={@token}
-     data-allow-git={@assignment.allow_git}
-     data-allow-file={@assignment.allow_upload}>
+    <div
+      class="tabbed-uploader"
+      data-upload-field="sub_upload_id"
+      data-nonce={@nonce}
+      data-token={@token}
+      data-allow-git={@assignment.allow_git}
+      data-allow-file={@assignment.allow_upload}
+    >
       React component loading...
     </div>
   </div>

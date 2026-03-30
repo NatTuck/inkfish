@@ -16,7 +16,7 @@ defmodule InkfishWeb.Plugs.FetchUser do
       # |> send_resp(301, "redirect")
       # |> halt()
     end
-      
+
     fetch_user(conn, user_id)
     # end
   end
