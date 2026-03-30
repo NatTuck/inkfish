@@ -419,6 +419,32 @@ defmodule Inkfish.Grades do
     {:ok, %{grade | grade_column: gcol}}
   end
 
+  def recalc_feedback_grades_for_sub!(sub_id) do
+    grades =
+      Repo.all(
+        from grade in Grade,
+          inner_join: gcol in assoc(grade, :grade_column),
+          left_join: lcs in assoc(grade, :line_comments),
+          where: grade.sub_id == ^sub_id,
+          where: gcol.kind == "feedback",
+          preload: [grade_column: gcol, line_comments: lcs]
+      )
+
+    Enum.each(grades, fn grade ->
+      recalc_feedback_grade_score!(grade)
+    end)
+  end
+
+  def recalc_feedback_grade_score!(%Grade{} = grade) do
+    delta =
+      Enum.reduce(grade.line_comments, Decimal.new("0.0"), fn lc, acc ->
+        Decimal.add(lc.points, acc)
+      end)
+
+    score = Decimal.add(grade.grade_column.base, delta)
+    update_grade(grade, %{score: score})
+  end
+
   def set_grade_log!(uuid, log) do
     grade =
       Repo.one!(

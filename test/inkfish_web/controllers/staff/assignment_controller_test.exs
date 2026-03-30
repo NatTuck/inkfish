@@ -12,8 +12,8 @@ defmodule InkfishWeb.Staff.AssignmentControllerTest do
   end
 
   defp create_stock_course(_) do
-    %{course: course, bucket: bucket, staff: staff} = stock_course()
-    {:ok, course: course, bucket: bucket, staff: staff}
+    stock = stock_course()
+    {:ok, stock}
   end
 
   describe "new assignment" do
@@ -139,6 +139,156 @@ defmodule InkfishWeb.Staff.AssignmentControllerTest do
                ~p"/staff/courses/#{conn.assigns[:course]}"
 
       conn = get(conn, ~p"/staff/assignments/#{assignment}")
+      assert redirected_to(conn) == ~p"/"
+    end
+  end
+
+  describe "rerun_script_grades" do
+    setup [:create_stock_course]
+
+    import Mimic
+
+    test "staff user can rerun script grades", %{
+      conn: conn,
+      staff: staff,
+      assignment: assignment,
+      sub: _sub
+    } do
+      Mimic.copy(Inkfish.Subs)
+
+      expect(Inkfish.Subs, :autograde!, fn _sub -> :ok end)
+
+      conn =
+        conn
+        |> login(staff)
+        |> post(~p"/staff/assignments/#{assignment}/rerun_script_grades")
+
+      assert redirected_to(conn) == ~p"/staff/assignments/#{assignment}"
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) ==
+               "Script grades rerun started"
+
+      verify!()
+    end
+
+    test "non-staff user cannot rerun script grades", %{
+      conn: conn,
+      assignment: assignment
+    } do
+      student = Inkfish.Users.get_user_by_email!("dave@example.com")
+
+      conn =
+        conn
+        |> login(student)
+        |> post(~p"/staff/assignments/#{assignment}/rerun_script_grades")
+
+      assert redirected_to(conn) == ~p"/"
+    end
+  end
+
+  describe "recalc_grades" do
+    setup [:create_stock_course]
+
+    test "staff user can recalc grades", %{
+      conn: conn,
+      staff: staff,
+      assignment: assignment
+    } do
+      conn =
+        conn
+        |> login(staff)
+        |> post(~p"/staff/assignments/#{assignment}/recalc_grades")
+
+      assert redirected_to(conn) == ~p"/staff/assignments/#{assignment}"
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) ==
+               "Grade totals recalculated"
+    end
+
+    test "recalculates feedback grade scores from line comments", %{
+      conn: conn,
+      staff: staff,
+      assignment: assignment,
+      sub: _sub,
+      grade: grade
+    } do
+      gcol = grade.grade_column
+
+      _gcol =
+        Inkfish.Repo.update!(
+          Ecto.Changeset.change(gcol, base: Decimal.new("40.0"))
+        )
+
+      _lc1 =
+        insert(:line_comment,
+          grade: grade,
+          user: staff,
+          line: 1,
+          path: "main.c",
+          text: "Good work",
+          points: Decimal.new("5.0")
+        )
+
+      _lc2 =
+        insert(:line_comment,
+          grade: grade,
+          user: staff,
+          line: 2,
+          path: "main.c",
+          text: "Minor issue",
+          points: Decimal.new("-2.0")
+        )
+
+      conn =
+        conn
+        |> login(staff)
+        |> post(~p"/staff/assignments/#{assignment}/recalc_grades")
+
+      assert redirected_to(conn) == ~p"/staff/assignments/#{assignment}"
+
+      updated_grade = Inkfish.Repo.get(Inkfish.Grades.Grade, grade.id)
+      expected_score = Decimal.add(Decimal.new("40.0"), Decimal.new("3.0"))
+      assert Decimal.compare(updated_grade.score, expected_score) == :eq
+    end
+
+    test "recalculates sub total scores", %{
+      conn: conn,
+      staff: staff,
+      assignment: assignment,
+      sub: sub,
+      grade: _grade,
+      grade_column: grade_column
+    } do
+      Inkfish.Repo.update!(
+        Ecto.Changeset.change(grade_column, base: Decimal.new("35.0"))
+      )
+
+      Inkfish.Repo.update!(
+        Ecto.Changeset.change(sub, score: Decimal.new("20.0"))
+      )
+
+      conn =
+        conn
+        |> login(staff)
+        |> post(~p"/staff/assignments/#{assignment}/recalc_grades")
+
+      assert redirected_to(conn) == ~p"/staff/assignments/#{assignment}"
+
+      updated_sub = Inkfish.Repo.get(Inkfish.Subs.Sub, sub.id)
+      assert Decimal.compare(updated_sub.score, Decimal.new("35.0")) == :eq
+    end
+
+    test "non-staff user cannot recalc grades", %{
+      conn: conn,
+      assignment: assignment
+    } do
+      student = Inkfish.Users.get_user_by_email!("dave@example.com")
+
+      conn =
+        conn
+        |> login(student)
+        |> post(~p"/staff/assignments/#{assignment}/recalc_grades")
+
       assert redirected_to(conn) == ~p"/"
     end
   end

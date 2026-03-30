@@ -142,4 +142,31 @@ defmodule InkfishWeb.Staff.AssignmentController do
     |> put_flash(:info, "Fake submissions created")
     |> redirect(to: ~p"/staff/assignments/#{assignment}")
   end
+
+  def rerun_script_grades(conn, %{"id" => _id}) do
+    assignment = conn.assigns[:assignment]
+    subs = Assignments.list_active_subs(assignment)
+
+    Enum.each(subs, fn sub ->
+      Inkfish.Subs.autograde!(sub)
+    end)
+
+    conn
+    |> put_flash(:info, "Script grades rerun started")
+    |> redirect(to: ~p"/staff/assignments/#{assignment}")
+  end
+
+  def recalc_grades(conn, %{"id" => _id}) do
+    assignment = conn.assigns[:assignment]
+    subs = Assignments.list_active_subs(assignment)
+
+    Enum.each(subs, fn sub ->
+      Inkfish.Grades.recalc_feedback_grades_for_sub!(sub.id)
+      Inkfish.Subs.calc_sub_score!(sub.id)
+    end)
+
+    conn
+    |> put_flash(:info, "Grade totals recalculated")
+    |> redirect(to: ~p"/staff/assignments/#{assignment}")
+  end
 end
