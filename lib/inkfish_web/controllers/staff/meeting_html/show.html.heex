@@ -11,13 +11,13 @@
   <:item title="Started at">{@meeting.started_at}</:item>
   <:item title="Teamset">
     <%= if @meeting.teamset_id do %>
-      { @meeting.teamset.name }
+      {@meeting.teamset.name}
     <% else %>
       (No teamset)
     <% end %>
   </:item>
   <:item title="Secret Code">
-    { @meeting.secret_code }
+    {@meeting.secret_code}
   </:item>
 </.list>
 
@@ -27,9 +27,18 @@
   <%= for reg <- @student_regs do %>
     <tr>
       <td>{user_display_name(reg.user)}</td>
-      <td>{show_attendance(Enum.find(@meeting.attendances, & &1.reg_id == reg.id))}</td>
       <td>
-        <.form :let={_f} for={@conn} method="post" action={~p"/staff/attendances/excuse"}>
+        {show_attendance(
+          Enum.find(@meeting.attendances, &(&1.reg_id == reg.id))
+        )}
+      </td>
+      <td>
+        <.form
+          :let={_f}
+          for={@conn}
+          method="post"
+          action={~p"/staff/attendances/excuse"}
+        >
           <input type="hidden" name="reg_id" value={reg.id} />
           <input type="hidden" name="meeting_id" value={@meeting.id} />
           <button class="btn btn-secondary btn-sm">Toggle Excused</button>
@@ -38,4 +47,3 @@
     </tr>
   <% end %>
 </table>
-

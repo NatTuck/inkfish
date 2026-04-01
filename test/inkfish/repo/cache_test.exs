@@ -62,7 +62,9 @@ defmodule Inkfish.Repo.CacheTest do
     test "applies pagination", %{bucket: bucket} do
       Enum.each(1..5, fn _ -> insert(:assignment, bucket: bucket) end)
 
-      {:ok, assignments} = Cache.list(Assignment, limit: 2, offset: 1, bucket_id: bucket.id)
+      {:ok, assignments} =
+        Cache.list(Assignment, limit: 2, offset: 1, bucket_id: bucket.id)
+
       assert length(assignments) == 2
     end
 

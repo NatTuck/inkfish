@@ -45,7 +45,7 @@ defmodule InkfishWeb.ApiV1.Staff.DashboardController do
 
       course_past =
         Enum.filter(past_assignments, fn row ->
-          row.bucket_name in course_buckets
+          row.course_id == course.id
         end)
 
       course_upcoming =

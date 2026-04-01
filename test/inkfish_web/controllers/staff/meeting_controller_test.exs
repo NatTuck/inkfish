@@ -50,7 +50,10 @@ defmodule InkfishWeb.Staff.MeetingControllerTest do
   end
 
   describe "edit meeting" do
-    test "renders form for editing chosen meeting", %{conn: conn, meeting: meeting} do
+    test "renders form for editing chosen meeting", %{
+      conn: conn,
+      meeting: meeting
+    } do
       conn = get(conn, ~p"/staff/meetings/#{meeting}/edit")
       assert html_response(conn, 200) =~ "Edit Meeting"
     end
@@ -83,7 +86,8 @@ defmodule InkfishWeb.Staff.MeetingControllerTest do
     test "deletes chosen meeting", %{conn: conn, meeting: meeting} do
       conn = delete(conn, ~p"/staff/meetings/#{meeting}")
 
-      assert redirected_to(conn) == ~p"/staff/courses/#{meeting.course_id}/meetings"
+      assert redirected_to(conn) ==
+               ~p"/staff/courses/#{meeting.course_id}/meetings"
 
       conn = get(conn, ~p"/staff/meetings/#{meeting}")
       assert redirected_to(conn) == ~p"/"

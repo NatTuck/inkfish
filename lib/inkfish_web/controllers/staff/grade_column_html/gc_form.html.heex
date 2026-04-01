@@ -40,7 +40,8 @@
   </div>
 
   <div class="mb-3">
-    <.label for="gcol-limits">Limits</.label> <br />
+    <.label for="gcol-limits">Limits</.label>
+    <br />
     <div id="gcol-limits-root" class="mb-2">
       React component loading...
     </div>
@@ -60,7 +61,7 @@
     <.label for={f[:upload_id].id}>Upload ID</.label>
     <.text_input field={f[:upload_id]} class="form-control" readonly="readonly" />
     <.error_tag form={f} field={:upload_id} />
-    <%= ajax_upload_field("grade_column", "", "grade_column_upload_id") %>
+    {ajax_upload_field("grade_column", "", "grade_column_upload_id")}
   </div>
   <div class="mb-3">
     <.button class="btn btn-primary">Save</.button>

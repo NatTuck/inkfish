@@ -3,6 +3,7 @@ defmodule InkfishWeb.ApiV1.Staff.GradeController do
 
   alias Inkfish.Grades
   alias Inkfish.Grades.Grade
+  alias Inkfish.Grades.GradeColumn
   alias Inkfish.Subs
   alias Inkfish.Subs.Sub
 
@@ -31,12 +32,9 @@ defmodule InkfishWeb.ApiV1.Staff.GradeController do
     user = conn.assigns[:current_user]
     sub = conn.assigns[:sub]
 
-    # IO.inspect({:sub, sub})
-    # IO.inspect({:params, grade_params})
-
-    with {:ok, gcol} <- get_feedback_gcol(sub),
-         params <- put_sub_and_gcol(grade_params, sub.id, gcol.id),
-         {:ok, grade} <- Grades.put_grade_with_comments(params, user) do
+    with {:ok, gcol} <- get_grade_column(sub, grade_params),
+         params <- build_grade_params(grade_params, sub.id, gcol),
+         {:ok, grade} <- create_grade_for_column_kind(params, gcol, user) do
       conn
       |> put_status(:created)
       |> put_resp_header("location", ~p"/api/v1/staff/grades/#{grade}")
@@ -44,10 +42,61 @@ defmodule InkfishWeb.ApiV1.Staff.GradeController do
     end
   end
 
-  defp put_sub_and_gcol(params, sub_id, gcol_id) do
+  defp get_grade_column(%Sub{} = sub, params) do
+    case Map.get(params, "grade_column_id") do
+      nil ->
+        get_feedback_gcol(sub)
+
+      gcol_id when is_binary(gcol_id) ->
+        gcol_id = String.to_integer(gcol_id)
+        gcol = Enum.find(sub.assignment.grade_columns, &(&1.id == gcol_id))
+
+        if gcol do
+          {:ok, gcol}
+        else
+          {:error, "Grade column not found"}
+        end
+
+      gcol_id when is_integer(gcol_id) ->
+        gcol = Enum.find(sub.assignment.grade_columns, &(&1.id == gcol_id))
+
+        if gcol do
+          {:ok, gcol}
+        else
+          {:error, "Grade column not found"}
+        end
+    end
+  end
+
+  defp build_grade_params(params, sub_id, gcol) do
     params
     |> Map.put("sub_id", sub_id)
-    |> Map.put("grade_column_id", gcol_id)
+    |> Map.put("grade_column_id", gcol.id)
+  end
+
+  defp create_grade_for_column_kind(
+         params,
+         %GradeColumn{kind: "feedback"},
+         user
+       ) do
+    if Map.has_key?(params, "score") do
+      {:error,
+       "Feedback grades are calculated automatically from line comments. Score cannot be set directly."}
+    else
+      Grades.put_grade_with_comments(params, user)
+    end
+  end
+
+  defp create_grade_for_column_kind(params, %GradeColumn{kind: "number"}, _user) do
+    if Map.has_key?(params, "score") do
+      Grades.create_grade(params)
+    else
+      {:error, "Number grades require a score value"}
+    end
+  end
+
+  defp create_grade_for_column_kind(_params, %GradeColumn{kind: kind}, _user) do
+    {:error, "Grade column kind '#{kind}' is not supported via API"}
   end
 
   defp get_feedback_gcol(%Sub{} = sub) do

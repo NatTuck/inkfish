@@ -20,7 +20,8 @@ defmodule InkfishWeb.Staff.GradeColumnJSON do
       id: grade_column.id,
       name: grade_column.name,
       kind: grade_column.kind,
-      points: grade_column.points
+      points: grade_column.points,
+      base: grade_column.base
     }
   end
 end

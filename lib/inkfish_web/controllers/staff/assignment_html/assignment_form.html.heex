@@ -6,7 +6,7 @@
   <% end %>
 
   <div class="mb-3">
-    Bucket: <%= @bucket.name %>
+    Bucket: {@bucket.name}
     <.hidden_input field={f[:bucket_id]} />
   </div>
 
@@ -31,7 +31,7 @@
       <.error_tag form={f} field={:due} />
     </div>
     <div class="px-4">
-      <p class="mt-1">TZ: <%= @timezone %></p>
+      <p class="mt-1">TZ: {@timezone}</p>
       <div class="form-check form-switch">
         <.label for="hard_deadline">Hard Deadline</.label>
         <.checkbox field={f[:hard_deadline]} class="form-check-input" />
@@ -53,8 +53,11 @@
 
   <div class="mb-3">
     <.label for="teamset_id" class="form-label">Teamset id</.label>
-    <.select field={f[:teamset_id]} options={Enum.map(@teamsets, &({&1.name, &1.id}))}
-               class="form-control"/>
+    <.select
+      field={f[:teamset_id]}
+      options={Enum.map(@teamsets, &{&1.name, &1.id})}
+      class="form-control"
+    />
     <.error_tag form={f} field={:teamset_id} />
   </div>
 
@@ -86,25 +89,41 @@
   </div>
 
   <div class="mb-3">
-    <.label for="starter_upload_id" class="form-label">Starter upload id</.label>
-    <.text_input field={f[:starter_upload_id]} class="form-control" readonly="readonly" />
+    <.label for="starter_upload_id" class="form-label">
+      Starter upload id
+    </.label>
+    <.text_input
+      field={f[:starter_upload_id]}
+      class="form-control"
+      readonly="readonly"
+    />
     <.error_tag form={f} field={:starter_upload_id} />
-    <div class="file-uploader"
-         data-upload-field="assignment_starter_upload_id"
-         data-nonce={@sta_tok[:nonce]}
-         data-token={@sta_tok[:token]}>
+    <div
+      class="file-uploader"
+      data-upload-field="assignment_starter_upload_id"
+      data-nonce={@sta_tok[:nonce]}
+      data-token={@sta_tok[:token]}
+    >
       React loading...
     </div>
   </div>
 
   <div class="mb-3">
-    <.label for="solution_upload_id" class="form-label">Solution upload id</.label>
-    <.text_input field={f[:solution_upload_id]} class="form-control" readonly="readonly" />
+    <.label for="solution_upload_id" class="form-label">
+      Solution upload id
+    </.label>
+    <.text_input
+      field={f[:solution_upload_id]}
+      class="form-control"
+      readonly="readonly"
+    />
     <.error_tag form={f} field={:solution_upload_id} />
-    <div class="file-uploader"
-         data-upload-field="assignment_solution_upload_id"
-         data-nonce={@sol_tok[:nonce]}
-         data-token={@sol_tok[:token]}>
+    <div
+      class="file-uploader"
+      data-upload-field="assignment_solution_upload_id"
+      data-nonce={@sol_tok[:nonce]}
+      data-token={@sol_tok[:token]}
+    >
       React loading...
     </div>
   </div>

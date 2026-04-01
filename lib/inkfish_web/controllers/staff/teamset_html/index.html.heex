@@ -12,23 +12,25 @@
     </tr>
   </thead>
   <tbody>
-<%= for teamset <- @teamsets do %>
-    <tr>
-      <td>
-        <%= teamset.name %>
-      </td>
-      <td>
-        <.link href={~p"/staff/teamsets/#{teamset}"}>Show</.link>&nbsp;
-        <.link href={~p"/staff/teamsets/#{teamset}/edit"}>Edit</.link>&nbsp;
-        <.link
-          href={~p"/staff/teamsets/#{teamset}"}
-          method="delete"
-          data-confirm="Are you sure?"
-          class="btn btn-sm btn-danger">
-          Delete
-        </.link>
-      </td>
-    </tr>
-<% end %>
+    <%= for teamset <- @teamsets do %>
+      <tr>
+        <td>
+          {teamset.name}
+        </td>
+        <td>
+          <.link href={~p"/staff/teamsets/#{teamset}"}>Show</.link>&nbsp; <.link href={
+            ~p"/staff/teamsets/#{teamset}/edit"
+          }>Edit</.link>&nbsp;
+          <.link
+            href={~p"/staff/teamsets/#{teamset}"}
+            method="delete"
+            data-confirm="Are you sure?"
+            class="btn btn-sm btn-danger"
+          >
+            Delete
+          </.link>
+        </td>
+      </tr>
+    <% end %>
   </tbody>
 </table>

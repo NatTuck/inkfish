@@ -1,4 +1,4 @@
-<h1>Listing Buckets for <%= @course.name %></h1>
+<h1>Listing Buckets for {@course.name}</h1>
 
 <p>
   <.link href={~p"/staff/courses/#{@course}/buckets/new"}>New Bucket</.link>
@@ -14,21 +14,22 @@
     </tr>
   </thead>
   <tbody>
-<%= for bucket <- @buckets do %>
-    <tr>
-      <td><%= bucket.name %></td>
-      <td><%= bucket.weight %></td>
+    <%= for bucket <- @buckets do %>
+      <tr>
+        <td>{bucket.name}</td>
+        <td>{bucket.weight}</td>
 
-      <td>
-        <.link href={~p"/staff/buckets/#{bucket}/edit"}>Edit</.link>
-        <.link
-          href={~p"/staff/buckets/#{bucket}"}
-          method="delete"
-          data-confirm="Are you sure?">
-          Delete
-        </.link>
-      </td>
-    </tr>
-<% end %>
+        <td>
+          <.link href={~p"/staff/buckets/#{bucket}/edit"}>Edit</.link>
+          <.link
+            href={~p"/staff/buckets/#{bucket}"}
+            method="delete"
+            data-confirm="Are you sure?"
+          >
+            Delete
+          </.link>
+        </td>
+      </tr>
+    <% end %>
   </tbody>
 </table>

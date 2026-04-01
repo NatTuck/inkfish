@@ -8,7 +8,7 @@ defmodule InkfishWeb.FormComponents do
   def error_tag(assigns) do
     ~H"""
     <%= for error <- Keyword.get_values(@form.errors, @field) do %>
-      <span class="help-block"><%= translate_error(error) %></span>
+      <span class="help-block">{translate_error(error)}</span>
     <% end %>
     """
   end
@@ -210,13 +210,7 @@ defmodule InkfishWeb.FormComponents do
     ~H"""
     <div phx-feedback-for={@name}>
       <.label for={@id}>{@label}</.label>
-      <select
-        id={@id}
-        name={@name}
-        class="form-select"
-        multiple={@multiple}
-        {@rest}
-      >
+      <select id={@id} name={@name} class="form-select" multiple={@multiple} {@rest}>
         <option :if={@prompt} value="">{@prompt}</option>
         {Phoenix.HTML.Form.options_for_select(@options, @value)}
       </select>
@@ -329,7 +323,13 @@ defmodule InkfishWeb.FormComponents do
 
   def text_input(assigns) do
     ~H"""
-    <input type="text" name={@field.name} id={@field.id} value={@field.value} {@rest} />
+    <input
+      type="text"
+      name={@field.name}
+      id={@field.id}
+      value={@field.value}
+      {@rest}
+    />
     """
   end
 
@@ -338,7 +338,13 @@ defmodule InkfishWeb.FormComponents do
 
   def number_input(assigns) do
     ~H"""
-    <input type="number" name={@field.name} id={@field.id} value={@field.value} {@rest} />
+    <input
+      type="number"
+      name={@field.name}
+      id={@field.id}
+      value={@field.value}
+      {@rest}
+    />
     """
   end
 
@@ -347,7 +353,13 @@ defmodule InkfishWeb.FormComponents do
 
   def hidden_input(assigns) do
     ~H"""
-    <input type="hidden" name={@field.name} id={@field.id} value={@field.value} {@rest} />
+    <input
+      type="hidden"
+      name={@field.name}
+      id={@field.id}
+      value={@field.value}
+      {@rest}
+    />
     """
   end
 
@@ -356,7 +368,13 @@ defmodule InkfishWeb.FormComponents do
 
   def password_input(assigns) do
     ~H"""
-    <input type="password" name={@field.name} id={@field.id} value={@field.value} {@rest} />
+    <input
+      type="password"
+      name={@field.name}
+      id={@field.id}
+      value={@field.value}
+      {@rest}
+    />
     """
   end
 
@@ -376,7 +394,14 @@ defmodule InkfishWeb.FormComponents do
     ~H"""
     <span>
       <input type="hidden" name={@field.name} value="false" />
-      <input type="checkbox" name={@field.name} id={@field.id} value="true" checked={@field.value} {@rest} />
+      <input
+        type="checkbox"
+        name={@field.name}
+        id={@field.id}
+        value="true"
+        checked={@field.value}
+        {@rest}
+      />
     </span>
     """
   end
@@ -388,7 +413,7 @@ defmodule InkfishWeb.FormComponents do
   def select(assigns) do
     ~H"""
     <select name={@field.name} id={@field.id} {@rest}>
-      <%= Phoenix.HTML.Form.options_for_select(@options, @field.value) %>
+      {Phoenix.HTML.Form.options_for_select(@options, @field.value)}
     </select>
     """
   end

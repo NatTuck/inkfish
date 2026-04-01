@@ -17,26 +17,31 @@
     </tr>
   </thead>
   <tbody>
-<%= for reg <- @regs do %>
-  <tr>
-    <td><.link href={~p"/staff/regs/#{reg}"}><%= user_display_name(reg.user) %></.link></td>
-    <td><%= reg.is_grader %></td>
-    <td><%= reg.is_prof %></td>
-    <td><%= reg.is_staff %></td>
-    <td><%= reg.is_student %></td>
+    <%= for reg <- @regs do %>
+      <tr>
+        <td>
+          <.link href={~p"/staff/regs/#{reg}"}>
+            {user_display_name(reg.user)}
+          </.link>
+        </td>
+        <td>{reg.is_grader}</td>
+        <td>{reg.is_prof}</td>
+        <td>{reg.is_staff}</td>
+        <td>{reg.is_student}</td>
 
-    <td>
-      <.link href={~p"/staff/regs/#{reg}/edit"}>Edit</.link>
-      &nbsp;
-      <.link
-        href={~p"/staff/regs/#{reg}"}
-        method="delete"
-        data-confirm="Are you sure?"
-        class="btn btn-danger btn-sm">
-        Delete
-      </.link>
-    </td>
-  </tr>
-<% end %>
+        <td>
+          <.link href={~p"/staff/regs/#{reg}/edit"}>Edit</.link>
+          &nbsp;
+          <.link
+            href={~p"/staff/regs/#{reg}"}
+            method="delete"
+            data-confirm="Are you sure?"
+            class="btn btn-danger btn-sm"
+          >
+            Delete
+          </.link>
+        </td>
+      </tr>
+    <% end %>
   </tbody>
 </table>

@@ -17,13 +17,13 @@ export default function Viewer({data}) {
 
   return (
     <Row className="vh-100">
-      <Col md={3} className="h-100">
+      <Col sm={4} lg={2} className="h-100">
         <FileTree data={data}
                   grade={grade}
                   activePath={activePath}
                   pickFile={pickFile} />
       </Col>
-      <Col md={9} className="h-100">
+      <Col sm={8} lg={10} className="h-100">
         <FileViewer data={data}
                     path={activePath}
                     grade={data.grade}

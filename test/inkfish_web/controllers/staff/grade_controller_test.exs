@@ -20,9 +20,7 @@ defmodule InkfishWeb.Staff.GradeControllerTest do
       params = params_with_assocs(:grade)
 
       conn =
-        post(conn, ~p"/staff/subs/#{sub}/grades",
-          grade: params
-        )
+        post(conn, ~p"/staff/subs/#{sub}/grades", grade: params)
 
       assert %{id: id} = redirected_params(conn)
       assert redirected_to(conn) == ~p"/staff/grades/#{id}/edit"
@@ -35,9 +33,7 @@ defmodule InkfishWeb.Staff.GradeControllerTest do
       params = %{grade_column_id: nil}
 
       conn =
-        post(conn, ~p"/staff/subs/#{sub}/grades",
-          grade: params
-        )
+        post(conn, ~p"/staff/subs/#{sub}/grades", grade: params)
 
       assert Phoenix.Flash.get(conn.assigns[:flash], :error) =~
                "Failed to create grade"

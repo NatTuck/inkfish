@@ -1,10 +1,10 @@
 <h1>Grading Tasks</h1>
 
-<p>Grading Tasks for <%= @assignment.name %></p>
+<p>Grading Tasks for {@assignment.name}</p>
 
 <h2>Your Tasks</h2>
 
-<p># of subs: <%= length(@user_tasks) %></p>
+<p># of subs: {length(@user_tasks)}</p>
 
 <table class="table table-striped">
   <thead>
@@ -18,21 +18,21 @@
   <tbody>
     <%= for sub <- @user_tasks do %>
       <% grade = Enum.find(sub.grades, &(&1.grade_column.kind == "feedback")) %>
-      <% gcol = Enum.find(sub.assignment.grade_columns, &(&1.kind == "feedback")) %>
+      <% gcol =
+        Enum.find(sub.assignment.grade_columns, &(&1.kind == "feedback")) %>
       <tr>
-        <td><%= user_display_name(sub.reg.user) %></td>
-        <td><%= gcol.name %></td>
-        <td><%= show_score(@conn, grade) %> / <%= show_score(@conn, gcol) %></td>
+        <td>{user_display_name(sub.reg.user)}</td>
+        <td>{gcol.name}</td>
+        <td>{show_score(@conn, grade)} / {show_score(@conn, gcol)}</td>
         <td>
           <%= if grade do %>
-            <.link
-              href={~p"/staff/grades/#{grade}/edit"}
-              target="_blank">
+            <.link href={~p"/staff/grades/#{grade}/edit"} target="_blank">
               Edit
             </.link>
           <% else %>
             <% grade = %Inkfish.Grades.Grade{
-              grade_column_id: gcol.id, sub_id: sub.id
+              grade_column_id: gcol.id,
+              sub_id: sub.id
             } %>
             <% cset = Inkfish.Grades.change_grade(grade) %>
             <% action = ~p"/staff/subs/#{sub}/grades" %>
@@ -48,7 +48,6 @@
   </tbody>
 </table>
 
-
 <h2>All Manual Grading</h2>
 
 <% path = ~p"/staff/assignments/#{@assignment}/grading_tasks/edit" %>
@@ -56,12 +55,15 @@
 
 <% action = ~p"/staff/assignments/#{@assignment}/grading_tasks" %>
 <.form :let={_f} for={@conn} action={action}>
-  <p><.button class="btn btn-primary">Assign All Unassigned Tasks</.button></p>
+  <p>
+    <.button class="btn btn-primary">Assign All Unassigned Tasks</.button>
+  </p>
 </.form>
 
-<p># of subs: <%= length(@tasks) %></p>
+<p># of subs: {length(@tasks)}</p>
 
-<p>Active graders: <%= Enum.map(@graders, &(user_display_name(&1))) |> Enum.join(", ") %>
+<p>
+  Active graders: {Enum.map(@graders, &user_display_name(&1)) |> Enum.join(", ")}
 </p>
 
 <table class="table table-striped">
@@ -75,15 +77,14 @@
   <tbody>
     <%= for sub <- @tasks do %>
       <% grade = Enum.find(sub.grades, &(&1.grade_column.kind == "feedback")) %>
-      <% gcol = Enum.find(sub.assignment.grade_columns, &(&1.kind == "feedback")) %>
+      <% gcol =
+        Enum.find(sub.assignment.grade_columns, &(&1.kind == "feedback")) %>
       <tr>
-        <td><%= user_display_name(sub.reg.user) %></td>
+        <td>{user_display_name(sub.reg.user)}</td>
         <td>
-          <%= show_score(@conn, grade) %>
-          /
-          <%= show_score(@conn, gcol) %>
+          {show_score(@conn, grade)} / {show_score(@conn, gcol)}
         </td>
-        <td><%= user_display_name(sub.grader) %></td>
+        <td>{user_display_name(sub.grader)}</td>
       </tr>
     <% end %>
   </tbody>
