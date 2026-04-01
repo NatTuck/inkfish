@@ -1,83 +1,29 @@
 defmodule InkfishWeb.SubmitTest do
-  use ExUnit.Case
-  use Hound.Helpers
+  use PhoenixTest.Playwright.Case
 
-  setup _tags do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Inkfish.Repo)
-    Ecto.Adapters.SQL.Sandbox.mode(Inkfish.Repo, {:shared, self()})
+  import Inkfish.Factory
 
-    metadata = Phoenix.Ecto.SQL.Sandbox.metadata_for(YourApp.Repo, self())
-    Hound.start_session(metadata: metadata)
-
-    on_exit(fn ->
-      Hound.end_session()
-    end)
-
-    :ok
-  end
-
-  def wait_for(op, timeout, waited) do
-    cond do
-      op.() ->
-        true
-
-      waited > timeout ->
-        false
-
-      true ->
-        :timer.sleep(50)
-        wait_for(op, timeout, waited + 50)
-    end
-  end
-
-  def wait_for(op, timeout \\ 500) do
-    wait_for(op, timeout, 0)
-  end
-
-  def wait_for_text(text, timeout \\ 500) do
-    op = fn ->
-      String.contains?(visible_page_text(), text)
-    end
-
-    wait_for(op, timeout)
-  end
-
-  def click_link(text) do
-    assert wait_for_text(text)
-    click({:link_text, text})
-  end
+  @session_options [
+    store: :cookie,
+    key: "_inkfish_key",
+    signing_salt: "D/1gbc4j",
+    extra: "SameSite=Lax"
+  ]
 
   @tag :skip
-  test "load main page" do
-    navigate_to("http://localhost:4001/")
-    assert page_title() =~ ~r/Inkfish/
+  test "load main page", %{conn: conn} do
+    student_user = insert(:user, email: "student@test.com")
+    course = insert(:course)
+    insert(:reg, course: course, user: student_user, is_student: true)
+    bucket = insert(:bucket, course: course)
+    _assignment = insert(:assignment, bucket: bucket)
 
-    fill_field({:id, "email"}, "carol@example.com")
-    fill_field({:id, "password"}, "test")
-    click({:class, "btn-primary"})
-
-    click_link("Data Science of Art History")
-    click_link("HW01")
-    click_link("New Submission")
-    click_link("Clone Git Repo")
-
-    fill_field(
-      {:id, "git-clone-input"},
-      "https://github.com/NatTuck/pancake.git"
+    conn
+    |> add_session_cookie(
+      [value: %{user_id: student_user.id}],
+      @session_options
     )
-
-    click({:id, "git-clone-btn"})
-
-    assert wait_for_text("Done. Upload is")
-
-    assert wait_for(fn ->
-             up = find_element(:id, "sub_upload_id")
-             text = attribute_value(up, :value)
-             String.length(text) > 0
-           end)
-
-    click({:class, "btn-primary"})
-
-    assert wait_for_text("Show Sub")
+    |> visit("/")
+    |> assert_has("title", text: "Inkfish")
   end
 end

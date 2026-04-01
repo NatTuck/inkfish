@@ -6,12 +6,10 @@
   </p>
 <% end %>
 
-<%= if @course.attendance_assignment_id do %>
-  <div id="attendance-widget" data-course-id={@course.id}>
-    <!-- react component attendance.jsx -->
-    <p>Attendance component goes here...</p>
-  </div>
-<% end %>
+<div id="attendance-widget" data-course-id={@course.id}>
+  <!-- react component attendance.jsx -->
+  <p>Attendance component goes here...</p>
+</div>
 
 <ul>
   <li>

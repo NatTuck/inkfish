@@ -3,30 +3,12 @@ defmodule InkfishWeb.AttendanceChannelTest do
   import Inkfish.Factory
 
   setup do
-    # Create a course with attendance assignment
     course = insert(:course)
-
-    # Create a teamset for the course
-    teamset = insert(:teamset, course: course)
-
-    # Create attendance assignment for the course
-    bucket = insert(:bucket, course: course)
-    assignment = insert(:assignment, bucket: bucket, teamset: teamset)
-
-    # Update course to reference the attendance assignment
-    {:ok, course} =
-      Inkfish.Courses.update_course(course, %{
-        attendance_assignment_id: assignment.id
-      })
-
-    # Create user and registration
     user = insert(:user)
     reg = insert(:reg, user: user, course: course, is_student: true)
 
-    # Create a socket with proper user ID
     socket = socket(InkfishWeb.UserSocket, "user_id", %{user_id: user.id})
 
-    # Join the attendance channel with the course ID
     {:ok, reply, socket} =
       subscribe_and_join(
         socket,
@@ -83,32 +65,15 @@ defmodule InkfishWeb.AttendanceChannelTest do
 
   describe "broadcasts" do
     setup do
-      # Create a course with attendance assignment
       course = insert(:course)
-
-      # Create attendance assignment for the course
-      bucket = insert(:bucket, course: course)
-      assignment = insert(:assignment, bucket: bucket)
-
-      {:ok, course} =
-        Inkfish.Courses.update_course(course, %{
-          attendance_assignment_id: assignment.id
-        })
-
-      # Create meeting
       meeting = insert(:meeting, course: course, secret_code: "MEET123")
-
-      # Create user and registration
       user = insert(:user)
       reg = insert(:reg, user: user, course: course, is_student: true)
-
-      # Create another user for second socket (staff)
       staff_user = insert(:user)
 
       _staff_reg =
         insert(:reg, user: staff_user, course: course, is_staff: true)
 
-      # Student socket
       student_socket =
         socket(InkfishWeb.UserSocket, "user_id", %{user_id: user.id})
 
@@ -119,7 +84,6 @@ defmodule InkfishWeb.AttendanceChannelTest do
           "attendance:#{course.id}"
         )
 
-      # Staff socket
       staff_socket =
         socket(InkfishWeb.UserSocket, "user_id", %{user_id: staff_user.id})
 

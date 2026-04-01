@@ -1,8 +1,9 @@
 defmodule InkfishWeb.AttendanceChannel do
   use InkfishWeb, :channel
 
+  intercept ["state", "team_update"]
+
   alias Inkfish.Repo.Cache
-  alias Inkfish.Courses
   alias Inkfish.Courses.Course
   alias Inkfish.Users
   alias Inkfish.Users.User
@@ -19,13 +20,24 @@ defmodule InkfishWeb.AttendanceChannel do
   end
 
   @impl true
+  def handle_out("state", payload, socket) do
+    push(socket, "state", payload)
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_out("team_update", payload, socket) do
+    push(socket, "team_update", payload)
+    {:noreply, socket}
+  end
+
+  @impl true
   def join("attendance:" <> course_id, _payload, socket) do
     user_id = socket.assigns[:user_id]
 
     with {:ok, user} <- Cache.get(User, user_id),
          {:ok, course} <- Cache.get(Course, course_id),
          {:ok, reg} <- Users.find_reg(user, course),
-         {:ok, _asg} <- Courses.fetch_attendance_assignment(course),
          :ok <- PubSub.subscribe(Inkfish.PubSub, "attendance:#{course_id}") do
       meeting = Meetings.get_current_meeting(course)
       attendance = Attendances.get_attendance(meeting, reg)
@@ -36,6 +48,7 @@ defmodule InkfishWeb.AttendanceChannel do
         |> assign(:reg, reg)
         |> assign(:meeting, meeting)
         |> assign(:attendance, attendance)
+        |> assign(:note, nil)
 
       {:ok, attendance_view(socket), socket}
     else

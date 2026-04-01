@@ -61,7 +61,10 @@ function TeamManager({data: initialData}) {
   const handleAttendanceState = useCallback((stateData) => {
     setState(prev => freeze({
       ...prev,
-      meeting: { ...prev.meeting, students: stateData.meeting.attendances }
+      meeting: stateData.meeting ? {
+        ...prev.meeting,
+        students: stateData.meeting.attendances
+      } : prev.meeting
     }));
   }, []);
   
