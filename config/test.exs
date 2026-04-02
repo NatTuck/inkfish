@@ -25,10 +25,10 @@ config :inkfish, Inkfish.Repo,
 config :phoenix_integration,
   endpoint: InkfishWeb.Endpoint
 
-config :hound,
-  driver: "selenium",
-  browser: "firefox",
-  port: 4444
+config :phoenix_test,
+  endpoint: InkfishWeb.Endpoint,
+  otp_app: :inkfish,
+  base_url: "http://localhost:4002"
 
 config :ex_unit,
   tmp_dir: "/tmp/ex_unit"

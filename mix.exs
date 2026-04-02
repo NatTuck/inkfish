@@ -13,6 +13,12 @@ defmodule Inkfish.MixProject do
     ]
   end
 
+  def cli do
+    [
+      preferred_envs: [test_all: :test]
+    ]
+  end
+
   # Configuration for the OTP application.
   #
   # Type `mix help compile.app` for more information.
@@ -76,7 +82,7 @@ defmodule Inkfish.MixProject do
       {:dart_sass, "~> 0.6", runtime: Mix.env() == :dev},
       {:ex_machina, "~> 2.7", only: :test},
       {:phoenix_integration, "~> 0.9", only: :test},
-      {:hound, "~> 1.1", only: :test},
+      {:phoenix_test_playwright, "~> 0.1", only: :test},
       {:floki, ">= 0.30.0", only: :test},
       {:mimic, "~> 1.12", only: :test}
     ]
@@ -97,10 +103,19 @@ defmodule Inkfish.MixProject do
         "sass.install"
       ],
       setup: ["deps.get", "ecto.setup", "assets.install"],
-      "assets.install": ["cmd pnpm install --dir assets"],
+      "assets.install": ["cmd pnpm install --dir assets", "phx.copy katex"],
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
-      test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
+      test: [
+        "ecto.create --quiet",
+        "ecto.migrate --quiet",
+        "phx.copy katex",
+        "test"
+      ],
+      test_all: [
+        "test",
+        "cmd pnpm --dir assets test"
+      ],
       precommit: ["format --check-formatted", "compile --warnings-as-errors"],
       "assets.deploy": [
         "phx.copy default",

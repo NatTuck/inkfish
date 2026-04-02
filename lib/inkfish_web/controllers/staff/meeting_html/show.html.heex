@@ -11,7 +11,9 @@
   <:item title="Started at">{@meeting.started_at}</:item>
   <:item title="Teamset">
     <%= if @meeting.teamset_id do %>
-      {@meeting.teamset.name}
+      <.link href={~p"/staff/teamsets/#{@meeting.teamset}"}>
+        {@meeting.teamset.name}
+      </.link>
     <% else %>
       (No teamset)
     <% end %>

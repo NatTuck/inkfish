@@ -21,6 +21,21 @@ export function TeamSuggestions({data, active}) {
   return (<div>{suggs}</div>);
 }
 
+// Filter students by attendance status
+export function filterStudentsByAttendance(regs, attendanceMap) {
+  let presentIds = Set();
+  
+  if (attendanceMap) {
+    for (const [reg, att] of attendanceMap) {
+      if (att && att.status && att.status !== 'excused') {
+        presentIds = presentIds.add(reg.id);
+      }
+    }
+  }
+  
+  return regs.filter(reg => presentIds.has(reg.id));
+}
+
 function SectionSuggestions({data, active, section}) {
   let [pairs, setPairs] = useState([]);
 
@@ -31,9 +46,16 @@ function SectionSuggestions({data, active, section}) {
     }
   }
 
+  let presentRegs = [];
+  if (data.meeting && data.meeting.students) {
+    presentRegs = filterStudentsByAttendance(data.course.regs, data.meeting.students);
+  } else {
+    presentRegs = data.course.regs;
+  }
+
   let names = Map();
   let students = [];
-  for (let reg of data.course.regs) {
+  for (let reg of presentRegs) {
     if (reg.is_student && !busy.has(reg.user_id) &&
         (reg.section == section || section == "default")) {
       let user = reg.user;
@@ -57,6 +79,16 @@ function SectionSuggestions({data, active, section}) {
   
   useEffect(reroll_teams, []);
 
+  useEffect(() => {
+    setPairs(prevPairs => {
+      const currentIds = Set(prevPairs.flatMap(pair => pair.toArray()));
+      const studentSet = Set(students);
+      const newStudents = studentSet.subtract(currentIds).toArray();
+
+      return add_new_students_to_suggestions(prevPairs, newStudents, pastTeams);
+    });
+  }, [students, pastTeams]);
+
   let suggs = pairs.map((pair) => {
     let memberNames = pair.toArray().map((id) => names.get(id)).join(", ");
     let score = pastTeams.get(pair, 0);
@@ -79,7 +111,7 @@ function SectionSuggestions({data, active, section}) {
   );
 }
 
-function suggest_pairs(students, pastTeams) {
+export function suggest_pairs(students, pastTeams) {
   if (students.length == 0) {
     return [];
   }
@@ -101,4 +133,38 @@ function suggest_pairs(students, pastTeams) {
   let best = _.minBy(teams, (tt) => pastTeams.get(tt, 0));
   let rest = _.filter(students, (st) => !best.has(st));
   return [best].concat(suggest_pairs(rest, pastTeams));
+}
+
+export function add_new_students_to_suggestions(prevPairs, newStudents, pastTeams) {
+  if (newStudents.length === 0) {
+    return prevPairs;
+  }
+
+  let updatedPairs = prevPairs;
+
+  for (const studentId of newStudents) {
+    let added = false;
+
+    for (let i = 0; i < updatedPairs.length; i++) {
+      const pair = updatedPairs[i];
+      if (pair.size === 1) {
+        const potentialTeam = pair.add(studentId);
+        if (pastTeams.get(potentialTeam, 0) === 0) {
+          updatedPairs = [
+            ...updatedPairs.slice(0, i),
+            potentialTeam,
+            ...updatedPairs.slice(i + 1)
+          ];
+          added = true;
+          break;
+        }
+      }
+    }
+
+    if (!added) {
+      updatedPairs = [...updatedPairs, Set([studentId])];
+    }
+  }
+
+  return updatedPairs;
 }

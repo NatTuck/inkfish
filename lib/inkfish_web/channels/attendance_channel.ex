@@ -1,21 +1,35 @@
 defmodule InkfishWeb.AttendanceChannel do
   use InkfishWeb, :channel
 
+  intercept ["state", "team_update"]
+
   alias Inkfish.Repo.Cache
-  alias Inkfish.Courses
   alias Inkfish.Courses.Course
   alias Inkfish.Users
   alias Inkfish.Users.User
   alias Inkfish.Meetings
   alias Inkfish.Attendances
 
-  alias InkfishWeb.MeetingJSON
   alias InkfishWeb.AttendanceJSON
+  alias InkfishWeb.Staff.RegJSON
+  alias InkfishWeb.Staff.AttendanceJSON
 
   alias Phoenix.PubSub
 
   def poll(course_id) do
     PubSub.broadcast(Inkfish.PubSub, "attendance:#{course_id}", :poll)
+  end
+
+  @impl true
+  def handle_out("state", payload, socket) do
+    push(socket, "state", payload)
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_out("team_update", payload, socket) do
+    push(socket, "team_update", payload)
+    {:noreply, socket}
   end
 
   @impl true
@@ -25,7 +39,6 @@ defmodule InkfishWeb.AttendanceChannel do
     with {:ok, user} <- Cache.get(User, user_id),
          {:ok, course} <- Cache.get(Course, course_id),
          {:ok, reg} <- Users.find_reg(user, course),
-         {:ok, _asg} <- Courses.fetch_attendance_assignment(course),
          :ok <- PubSub.subscribe(Inkfish.PubSub, "attendance:#{course_id}") do
       meeting = Meetings.get_current_meeting(course)
       attendance = Attendances.get_attendance(meeting, reg)
@@ -36,6 +49,7 @@ defmodule InkfishWeb.AttendanceChannel do
         |> assign(:reg, reg)
         |> assign(:meeting, meeting)
         |> assign(:attendance, attendance)
+        |> assign(:note, nil)
 
       {:ok, attendance_view(socket), socket}
     else
@@ -48,12 +62,44 @@ defmodule InkfishWeb.AttendanceChannel do
     meeting = socket.assigns[:meeting]
     attendance = socket.assigns[:attendance]
     note = socket.assigns[:note]
+    course = socket.assigns[:course]
+
+    meeting_data = build_meeting_data(meeting, course)
 
     %{
       mode: "connected",
-      meeting: MeetingJSON.data(meeting),
+      meeting: meeting_data,
       attendance: AttendanceJSON.data(attendance),
       note: note
+    }
+  end
+
+  defp build_meeting_data(nil, _course) do
+    nil
+  end
+
+  defp build_meeting_data(meeting, course) do
+    meeting = Meetings.preload_attendances(meeting)
+    regs = Users.list_student_regs_for_course(course)
+
+    attendances =
+      for reg <- regs do
+        att =
+          Enum.find(
+            meeting.attendances || [],
+            &(&1.reg_id == reg.id)
+          )
+
+        [
+          RegJSON.data(reg),
+          AttendanceJSON.data(att)
+        ]
+      end
+
+    %{
+      started_at: meeting.started_at,
+      secret_code: meeting.secret_code,
+      attendances: attendances
     }
   end
 
@@ -75,6 +121,24 @@ defmodule InkfishWeb.AttendanceChannel do
     else
       {:error, "Bad code"}
     end
+  end
+
+  @impl true
+  def handle_in("team_created", %{"team" => team_data}, socket) do
+    broadcast(socket, "team_update", %{action: "created", team: team_data})
+    {:reply, :ok, socket}
+  end
+
+  @impl true
+  def handle_in("team_updated", %{"team" => team_data}, socket) do
+    broadcast(socket, "team_update", %{action: "updated", team: team_data})
+    {:reply, :ok, socket}
+  end
+
+  @impl true
+  def handle_in("team_deleted", %{"team" => team_data}, socket) do
+    broadcast(socket, "team_update", %{action: "deleted", team: team_data})
+    {:reply, :ok, socket}
   end
 
   # Channels can be used in a request/response fashion
@@ -99,6 +163,9 @@ defmodule InkfishWeb.AttendanceChannel do
         |> assign(:meeting, meeting)
         |> assign(:attendance, attendance)
 
+      # Broadcast state to all subscribers
+      broadcast(socket, "state", attendance_view(socket))
+
       {:reply, {:ok, attendance_view(socket)}, socket}
     else
       {:error, msg} ->
@@ -122,6 +189,13 @@ defmodule InkfishWeb.AttendanceChannel do
 
     push(socket, "state", attendance_view(socket))
 
+    {:noreply, socket}
+  end
+
+  # Handle team updates broadcast to all subscribers
+  @impl true
+  def handle_info({:team_update, data}, socket) do
+    push(socket, "team_update", data)
     {:noreply, socket}
   end
 end

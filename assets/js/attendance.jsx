@@ -73,18 +73,18 @@ function AttForm({state, setState}) {
   return (
     <Form onSubmit={sendCode}>
       <InputGroup className="mb-3 row">
-        <Form.Label htmlFor="code-input" className="mx-2 mt-1 col-1">
+        <Form.Label htmlFor="code-input" className="mx-2 mt-1 col-auto">
           Enter&nbsp;code:
         </Form.Label>
         <div className="col-3">
           <Form.Control id="code-input" type="text" 
             disabled={disabled} value={code} onChange={changeCode} />
         </div>
-        <Button variant="primary" className="mx-2 col-1" 
+        <Button variant="primary" className="mx-2 col-auto" 
           disabled={disabled} onClick={sendCode}>
           I'm&nbsp;Here!
         </Button>
-        <div className="mx-2 col-2 form-text">
+        <div className="mx-2 col-auto form-text">
           { msg } 
         </div>
       </InputGroup>
