@@ -89,4 +89,41 @@ defmodule Inkfish.MeetingsTest do
       assert %Ecto.Changeset{} = Meetings.change_meeting(meeting)
     end
   end
+
+  describe "get_current_meeting" do
+    test "factory created meeting is returned as current meeting" do
+      course = insert(:course)
+      meeting = insert(:meeting, course: course)
+
+      current = Meetings.get_current_meeting(course)
+
+      assert current != nil,
+             "get_current_meeting returned nil - meeting not detected as current"
+
+      assert current.id == meeting.id
+    end
+
+    test "meeting with explicit LocalTime.now started_at is returned as current" do
+      course = insert(:course)
+
+      meeting =
+        insert(:meeting, course: course, started_at: Inkfish.LocalTime.now())
+
+      current = Meetings.get_current_meeting(course)
+
+      assert current != nil, "get_current_meeting returned nil"
+      assert current.id == meeting.id
+    end
+
+    test "meeting older than 60 minutes is not returned as current" do
+      course = insert(:course)
+      old_started = DateTime.add(Inkfish.LocalTime.now(), -61 * 60, :second)
+      _meeting = insert(:meeting, course: course, started_at: old_started)
+
+      current = Meetings.get_current_meeting(course)
+
+      assert current == nil,
+             "get_current_meeting should return nil for old meeting"
+    end
+  end
 end

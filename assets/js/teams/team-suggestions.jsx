@@ -23,28 +23,17 @@ export function TeamSuggestions({data, active}) {
 
 // Filter students by attendance status
 export function filterStudentsByAttendance(regs, attendanceMap) {
-  const presentIds = new Set();
+  let presentIds = Set();
   
   if (attendanceMap) {
     for (const [reg, att] of attendanceMap) {
-      if (att && (att.status === 'present' || att.status === 'late' || att.status === 'on time')) {
-        presentIds.add(reg.id);
+      if (att && att.status && att.status !== 'excused') {
+        presentIds = presentIds.add(reg.id);
       }
     }
   }
   
-  console.log('presentIds:', presentIds);
-  console.log('regs:', regs);
-  
-  const result = regs.filter(reg => {
-    const isIncluded = presentIds.has(reg.id);
-    console.log(`Checking reg.id=${reg.id}, presentIds.has(${reg.id})=${isIncluded}`);
-    return isIncluded;
-  });
-  
-  console.log('Filtered result:', result);
-  
-  return result;
+  return regs.filter(reg => presentIds.has(reg.id));
 }
 
 function SectionSuggestions({data, active, section}) {
@@ -57,22 +46,16 @@ function SectionSuggestions({data, active, section}) {
     }
   }
 
-  // Filter to only present students based on attendance
   let presentRegs = [];
   if (data.meeting && data.meeting.students) {
     presentRegs = filterStudentsByAttendance(data.course.regs, data.meeting.students);
   } else {
-    // If no meeting or attendance data, include all students
     presentRegs = data.course.regs;
   }
 
   let names = Map();
   let students = [];
   for (let reg of presentRegs) {
-    // Only include students who are:
-    // 1. Actually students
-    // 2. Not already in active teams
-    // 3. In the correct section
     if (reg.is_student && !busy.has(reg.user_id) &&
         (reg.section == section || section == "default")) {
       let user = reg.user;
@@ -95,6 +78,16 @@ function SectionSuggestions({data, active, section}) {
   }
   
   useEffect(reroll_teams, []);
+
+  useEffect(() => {
+    setPairs(prevPairs => {
+      const currentIds = Set(prevPairs.flatMap(pair => pair.toArray()));
+      const studentSet = Set(students);
+      const newStudents = studentSet.subtract(currentIds).toArray();
+
+      return add_new_students_to_suggestions(prevPairs, newStudents, pastTeams);
+    });
+  }, [students, pastTeams]);
 
   let suggs = pairs.map((pair) => {
     let memberNames = pair.toArray().map((id) => names.get(id)).join(", ");
@@ -140,4 +133,38 @@ export function suggest_pairs(students, pastTeams) {
   let best = _.minBy(teams, (tt) => pastTeams.get(tt, 0));
   let rest = _.filter(students, (st) => !best.has(st));
   return [best].concat(suggest_pairs(rest, pastTeams));
+}
+
+export function add_new_students_to_suggestions(prevPairs, newStudents, pastTeams) {
+  if (newStudents.length === 0) {
+    return prevPairs;
+  }
+
+  let updatedPairs = prevPairs;
+
+  for (const studentId of newStudents) {
+    let added = false;
+
+    for (let i = 0; i < updatedPairs.length; i++) {
+      const pair = updatedPairs[i];
+      if (pair.size === 1) {
+        const potentialTeam = pair.add(studentId);
+        if (pastTeams.get(potentialTeam, 0) === 0) {
+          updatedPairs = [
+            ...updatedPairs.slice(0, i),
+            potentialTeam,
+            ...updatedPairs.slice(i + 1)
+          ];
+          added = true;
+          break;
+        }
+      }
+    }
+
+    if (!added) {
+      updatedPairs = [...updatedPairs, Set([studentId])];
+    }
+  }
+
+  return updatedPairs;
 }

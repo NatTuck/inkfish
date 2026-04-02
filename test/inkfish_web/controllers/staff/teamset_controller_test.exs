@@ -5,7 +5,15 @@ defmodule InkfishWeb.Staff.TeamsetControllerTest do
   setup %{conn: conn} do
     course = insert(:course)
     staff = insert(:user)
-    _sr = insert(:reg, course: course, user: staff, is_staff: true)
+
+    _sr =
+      insert(:reg,
+        course: course,
+        user: staff,
+        is_staff: true,
+        is_student: false
+      )
+
     teamset = insert(:teamset, course: course)
     conn = login(conn, staff.email)
     {:ok, conn: conn, course: course, teamset: teamset, staff: staff}
@@ -92,6 +100,94 @@ defmodule InkfishWeb.Staff.TeamsetControllerTest do
 
       conn = get(conn, ~p"/staff/teamsets/#{teamset}")
       assert redirected_to(conn) == ~p"/"
+    end
+  end
+
+  describe "show teamset with attendance" do
+    test "show includes meeting when current meeting exists", %{
+      conn: conn,
+      course: course
+    } do
+      teamset = insert(:teamset, course: course)
+      _meeting = insert(:meeting, course: course, teamset: teamset)
+
+      conn = get(conn, ~p"/staff/teamsets/#{teamset}")
+
+      html = html_response(conn, 200)
+      assert html =~ "Teamset:"
+      assert html =~ "window.meeting"
+      assert html =~ "window.attendances"
+    end
+
+    test "show includes student with existing attendance in attendances list",
+         %{conn: conn, course: course} do
+      teamset = insert(:teamset, course: course)
+      meeting = insert(:meeting, course: course, teamset: teamset)
+
+      student = insert(:user, given_name: "Alice", surname: "Student")
+
+      student_reg =
+        insert(:reg, course: course, user: student, is_student: true)
+
+      _attendance = insert(:attendance, meeting: meeting, reg: student_reg)
+
+      conn = get(conn, ~p"/staff/teamsets/#{teamset}")
+
+      html = html_response(conn, 200)
+
+      assert html =~ "Alice Student", "Student name should appear in page"
+      assert html =~ "window.attendances"
+    end
+
+    test "show includes student without attendance as missing", %{
+      conn: conn,
+      course: course
+    } do
+      teamset = insert(:teamset, course: course)
+      _meeting = insert(:meeting, course: course, teamset: teamset)
+
+      student = insert(:user, given_name: "Bob", surname: "Absent")
+
+      _student_reg =
+        insert(:reg, course: course, user: student, is_student: true)
+
+      conn = get(conn, ~p"/staff/teamsets/#{teamset}")
+
+      html = html_response(conn, 200)
+
+      assert html =~ "Bob Absent", "Student name should appear in page"
+    end
+
+    test "show assigns meeting and attendances with correct structure", %{
+      conn: conn,
+      course: course
+    } do
+      teamset = insert(:teamset, course: course)
+      meeting = insert(:meeting, course: course, teamset: teamset)
+
+      student = insert(:user, given_name: "Test", surname: "User")
+
+      student_reg =
+        insert(:reg, course: course, user: student, is_student: true)
+
+      _attendance = insert(:attendance, meeting: meeting, reg: student_reg)
+
+      regs = Inkfish.Users.list_student_regs_for_course(course)
+      assert length(regs) == 1, "Should find student reg: #{length(regs)} found"
+
+      conn = get(conn, ~p"/staff/teamsets/#{teamset}")
+
+      assert conn.assigns[:meeting] != nil, "Meeting should be assigned"
+      assert conn.assigns[:attendances] != nil, "Attendances should be assigned"
+      assert length(conn.assigns[:attendances]) == 1, "Should have one student"
+
+      [reg_json, att_json] = hd(conn.assigns[:attendances])
+      assert reg_json.user.name =~ "Test User"
+
+      assert att_json != nil,
+             "Attendance should exist for student who checked in"
+
+      assert att_json.status != nil, "Attendance status should be set"
     end
   end
 end

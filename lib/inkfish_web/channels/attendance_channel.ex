@@ -10,8 +10,9 @@ defmodule InkfishWeb.AttendanceChannel do
   alias Inkfish.Meetings
   alias Inkfish.Attendances
 
-  alias InkfishWeb.MeetingJSON
   alias InkfishWeb.AttendanceJSON
+  alias InkfishWeb.Staff.RegJSON
+  alias InkfishWeb.Staff.AttendanceJSON
 
   alias Phoenix.PubSub
 
@@ -61,12 +62,44 @@ defmodule InkfishWeb.AttendanceChannel do
     meeting = socket.assigns[:meeting]
     attendance = socket.assigns[:attendance]
     note = socket.assigns[:note]
+    course = socket.assigns[:course]
+
+    meeting_data = build_meeting_data(meeting, course)
 
     %{
       mode: "connected",
-      meeting: MeetingJSON.data(meeting),
+      meeting: meeting_data,
       attendance: AttendanceJSON.data(attendance),
       note: note
+    }
+  end
+
+  defp build_meeting_data(nil, _course) do
+    nil
+  end
+
+  defp build_meeting_data(meeting, course) do
+    meeting = Meetings.preload_attendances(meeting)
+    regs = Users.list_student_regs_for_course(course)
+
+    attendances =
+      for reg <- regs do
+        att =
+          Enum.find(
+            meeting.attendances || [],
+            &(&1.reg_id == reg.id)
+          )
+
+        [
+          RegJSON.data(reg),
+          AttendanceJSON.data(att)
+        ]
+      end
+
+    %{
+      started_at: meeting.started_at,
+      secret_code: meeting.secret_code,
+      attendances: attendances
     }
   end
 

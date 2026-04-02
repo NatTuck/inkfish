@@ -108,13 +108,58 @@ defmodule InkfishWeb.AttendanceChannelTest do
       student_socket: student_socket,
       meeting: _meeting
     } do
-      # Push code from student
       ref = push(student_socket, "code", %{"code" => "MEET123"})
       assert_reply ref, :ok, _reply, 1000
 
-      # Staff socket should receive a :poll message (broadcast)
-      # This will fail until we implement the broadcast in handle_in
       assert_broadcast "state", %{mode: "connected"}
+    end
+
+    test "student check-in broadcast includes meeting attendances list", %{
+      student_socket: student_socket,
+      course: _course,
+      reg: student_reg
+    } do
+      ref = push(student_socket, "code", %{"code" => "MEET123"})
+      assert_reply ref, :ok, _reply, 1000
+
+      assert_broadcast "state", payload, 1000
+
+      assert payload.mode == "connected"
+      assert payload.meeting != nil
+
+      assert is_list(payload.meeting.attendances)
+
+      attendances = payload.meeting.attendances
+      assert length(attendances) >= 1
+
+      [reg_data, att_data] = List.first(attendances)
+      assert reg_data.id == student_reg.id
+      assert att_data != nil
+      assert att_data.reg_id == student_reg.id
+      assert att_data.status in ["on time", "late", "very late", "too late"]
+    end
+
+    test "student check-in broadcast attendances use [reg, att] pair format", %{
+      student_socket: student_socket,
+      course: _course
+    } do
+      ref = push(student_socket, "code", %{"code" => "MEET123"})
+      assert_reply ref, :ok, _reply, 1000
+
+      assert_broadcast "state", %{meeting: %{attendances: attendances}}, 1000
+
+      for [reg_json, att_json] <- attendances do
+        assert is_map(reg_json)
+        assert reg_json.id != nil
+        assert reg_json.user != nil
+        assert reg_json.user.name != nil
+
+        if att_json != nil do
+          assert is_map(att_json)
+          assert att_json.reg_id != nil
+          assert att_json.status != nil
+        end
+      end
     end
 
     test "team_created broadcasts to channel", %{

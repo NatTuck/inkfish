@@ -18,6 +18,7 @@ export default function init() {
     let meeting = window.meeting;
     if (meeting) {
       meeting.students = window.attendances;
+      console.log("meeting", meeting);
     }
     data.new_team_regs = [];
     data.past = past;
@@ -56,7 +57,7 @@ function TeamManager({data: initialData}) {
       channel.leave();
     };
   }, [state.course.id]);
-  
+ 
   // Handlers
   const handleAttendanceState = useCallback((stateData) => {
     setState(prev => freeze({
@@ -245,6 +246,7 @@ function TeamManager({data: initialData}) {
 }
 
 export function WhosHere({meeting}) {
+  console.log("whoshere", meeting);
   if (!meeting) {
     return (<p>No active meeting.</p>);
   }
