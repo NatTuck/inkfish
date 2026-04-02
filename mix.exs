@@ -106,6 +106,7 @@ defmodule Inkfish.MixProject do
         "phx.copy katex",
         "test"
       ],
+      precommit: ["format --check-formatted", "compile --warnings-as-errors"],
       "assets.deploy": [
         "phx.copy default",
         "phx.copy bs_icons",

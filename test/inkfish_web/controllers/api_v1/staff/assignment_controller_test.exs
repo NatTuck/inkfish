@@ -265,6 +265,79 @@ defmodule InkfishWeb.ApiV1.Staff.AssignmentControllerTest do
       assert updated_sub.score != nil
     end
 
+    test "recalculates feedback grade scores from line comments", %{
+      conn: conn,
+      course: course
+    } do
+      %{conn: staff_conn, user: staff_user} = logged_in_user_with_api_key(conn)
+      insert(:reg, user: staff_user, course: course, is_staff: true)
+
+      %{assignment: assignment, bucket: _bucket, teamset: teamset} =
+        create_assignment(course)
+
+      student = insert(:user)
+
+      student_reg =
+        insert(:reg, user: student, course: course, is_student: true)
+
+      team = insert(:team, teamset: teamset, active: true)
+      insert(:team_member, team: team, reg: student_reg)
+
+      upload = insert(:upload, user: student)
+
+      sub =
+        insert(:sub,
+          assignment: assignment,
+          reg: student_reg,
+          team: team,
+          upload: upload,
+          active: true
+        )
+
+      gcol =
+        insert(:grade_column,
+          assignment: assignment,
+          kind: "feedback",
+          points: Decimal.new("50.0"),
+          base: Decimal.new("40.0")
+        )
+
+      grade =
+        insert(:grade, grade_column: gcol, sub: sub, score: Decimal.new("30.0"))
+
+      _lc1 =
+        insert(:line_comment,
+          grade: grade,
+          user: staff_user,
+          line: 1,
+          path: "main.c",
+          text: "Good work",
+          points: Decimal.new("5.0")
+        )
+
+      _lc2 =
+        insert(:line_comment,
+          grade: grade,
+          user: staff_user,
+          line: 2,
+          path: "main.c",
+          text: "Minor issue",
+          points: Decimal.new("-2.0")
+        )
+
+      conn =
+        post(
+          staff_conn,
+          ~p"/api/v1/staff/assignments/#{assignment.id}/recalc_grades"
+        )
+
+      assert response(conn, 204)
+
+      updated_grade = Inkfish.Repo.get(Inkfish.Grades.Grade, grade.id)
+      expected_score = Decimal.add(Decimal.new("40.0"), Decimal.new("3.0"))
+      assert Decimal.compare(updated_grade.score, expected_score) == :eq
+    end
+
     test "non-staff user cannot recalc grades", %{
       conn: conn,
       course: course
