@@ -13,6 +13,12 @@ defmodule Inkfish.MixProject do
     ]
   end
 
+  def cli do
+    [
+      preferred_envs: [test_all: :test]
+    ]
+  end
+
   # Configuration for the OTP application.
   #
   # Type `mix help compile.app` for more information.
@@ -105,6 +111,10 @@ defmodule Inkfish.MixProject do
         "ecto.migrate --quiet",
         "phx.copy katex",
         "test"
+      ],
+      test_all: [
+        "test",
+        "cmd pnpm --dir assets test"
       ],
       precommit: ["format --check-formatted", "compile --warnings-as-errors"],
       "assets.deploy": [

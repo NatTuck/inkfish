@@ -74,7 +74,7 @@ jobs:
     - name: Run JS tests
       run: pnpm --dir assets test
     - name: Install Playwright browsers
-      run: pnpm --dir assets exec playwright install firefox
+      run: pnpm --dir assets exec playwright install chromium
     - name: Install tmptmpfs
       run: (cd support/tmptmpfs && cargo build && sudo ./install.sh)
     - name: Setup

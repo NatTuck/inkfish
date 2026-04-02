@@ -30,12 +30,6 @@ config :phoenix_test,
   otp_app: :inkfish,
   base_url: "http://localhost:4002"
 
-config :phoenix_test_playwright,
-  cli: "assets/node_modules/.bin/playwright",
-  playwright: [
-    browser: :firefox
-  ]
-
 config :ex_unit,
   tmp_dir: "/tmp/ex_unit"
 
