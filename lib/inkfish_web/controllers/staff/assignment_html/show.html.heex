@@ -250,3 +250,22 @@
     <% end %>
   </tbody>
 </table>
+
+<p>
+  <.link
+    href={~p"/staff/assignments/#{@assignment}/rerun_script_grades"}
+    method="post"
+    class="btn btn-secondary"
+    data-confirm="Rerun all autograder scripts?"
+  >
+    Rerun Script Grades
+  </.link>
+  <.link
+    href={~p"/staff/assignments/#{@assignment}/recalc_grades"}
+    method="post"
+    class="btn btn-secondary"
+    data-confirm="Recalculate all grade totals?"
+  >
+    Recalculate Grade Totals
+  </.link>
+</p>
