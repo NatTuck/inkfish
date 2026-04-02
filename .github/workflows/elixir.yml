@@ -75,6 +75,14 @@ jobs:
       run: pnpm --dir assets test
     - name: Install Playwright browsers
       run: pnpm --dir assets exec playwright install chromium
+    - name: Compile assets
+      run: |
+        mkdir -p priv/static/assets priv/static/images
+        MIX_ENV=test mix phx.copy default
+        MIX_ENV=test mix phx.copy bs_icons
+        MIX_ENV=test mix phx.copy katex
+        MIX_ENV=test mix esbuild default
+        MIX_ENV=test mix sass default
     - name: Install tmptmpfs
       run: (cd support/tmptmpfs && cargo build && sudo ./install.sh)
     - name: Setup
