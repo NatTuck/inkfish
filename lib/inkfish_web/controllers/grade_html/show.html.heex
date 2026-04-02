@@ -6,5 +6,7 @@
 </div>
 
 <script phx-no-curly-interpolation>
-  window.code_view_data = <%= raw(Jason.encode!(@data)) %>;
+  window.code_view_data = JSON.parse(
+    "<%= raw(javascript_escape(Jason.encode!(@data))) %>"
+  );
 </script>
