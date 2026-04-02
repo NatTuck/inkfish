@@ -133,7 +133,7 @@ export default function FileViewer({path, data, grade, setGrade}) {
   let actions = { setGrade, putComment, delComment };
 
   let qs = null;
-  if (grade.score == null) {
+  if (data.edit && grade.score == null) {
     qs = <QuickSave data={data} actions={actions} />;
   }
   
