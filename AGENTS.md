@@ -1,5 +1,8 @@
 This is a web application written using the Phoenix web framework.
 
+ABSOLUTELY CRITICAL: NEVER EVER DOWNGRADE ANYTHING UNLESS THE USER EXPLICITLY
+DEMANDS IT.
+
 ## Inkfish Specific Rules
 
 - *Always* use LocalTime when possible. Specifically, the current time
@@ -339,5 +342,8 @@ And **never** do this:
 - You are FORBIDDEN from accessing the changeset in the template as it will cause errors
 - **Never** use `<.form let={f} ...>` in the template, instead **always use `<.form for={@form} ...>`**, then drive all form references from the form assign as in `@form[:field]`. The UI should **always** be driven by a `to_form/2` assigned in the LiveView module that is derived from a changeset
 <!-- phoenix:liveview-end -->
+
+ABSOLUTELY CRITICAL: NEVER EVER DOWNGRADE ANYTHING UNLESS THE USER EXPLICITLY
+DEMANDS IT.
 
 <!-- usage-rules-end -->

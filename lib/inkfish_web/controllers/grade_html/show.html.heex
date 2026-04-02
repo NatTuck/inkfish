@@ -5,6 +5,6 @@
   React code viewer loading...
 </div>
 
-<script>
+<script phx-no-curly-interpolation>
   window.code_view_data = <%= raw(Jason.encode!(@data)) %>;
 </script>

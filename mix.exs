@@ -112,7 +112,17 @@ defmodule Inkfish.MixProject do
         "phx.copy katex",
         "test"
       ],
+      "setup.test": [
+        "deps.get",
+        "cmd pnpm install --dir assets",
+        "cmd pnpm --dir assets exec playwright install chromium",
+        "phx.copy katex",
+        "ecto.create --quiet",
+        "ecto.migrate --quiet"
+      ],
       test_all: [
+        "esbuild default",
+        "sass default",
         "test",
         "cmd pnpm --dir assets test"
       ],
