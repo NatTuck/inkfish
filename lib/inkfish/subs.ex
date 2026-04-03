@@ -61,7 +61,7 @@ defmodule Inkfish.Subs do
         limit: 100,
         offset: ^offset,
         where: sub.reg_id == ^reg_id,
-        preload: [:upload]
+        preload: [:upload, team: [:teamset, regs: [:user]]]
       )
     )
   end
@@ -76,7 +76,7 @@ defmodule Inkfish.Subs do
         limit: 100,
         offset: ^offset,
         where: sub.active,
-        preload: [:upload, reg: [:user]]
+        preload: [:upload, reg: [:user], team: [:teamset, regs: [:user]]]
       )
     )
   end
@@ -189,7 +189,7 @@ defmodule Inkfish.Subs do
   end
 
   def preload_upload(%Sub{} = sub) do
-    Repo.preload(sub, [:upload])
+    Repo.preload(sub, [:upload, team: [:teamset, regs: [:user]]])
   end
 
   @doc """

@@ -3,6 +3,7 @@ defmodule InkfishWeb.ApiV1.SubJSON do
 
   alias Inkfish.Subs.Sub
   alias Inkfish.Uploads.Upload
+  alias InkfishWeb.ApiV1.TeamJSON
 
   @doc """
   Renders a list of subs.
@@ -24,6 +25,7 @@ defmodule InkfishWeb.ApiV1.SubJSON do
 
   def data(%Sub{} = sub) do
     upload = get_assoc(sub, :upload)
+    team = get_assoc(sub, :team)
 
     %{
       id: sub.id,
@@ -33,7 +35,8 @@ defmodule InkfishWeb.ApiV1.SubJSON do
       hours_spent: sub.hours_spent,
       note: sub.note,
       ignore_late_penalty: sub.ignore_late_penalty,
-      upload: Upload.upload_url(upload)
+      upload: Upload.upload_url(upload),
+      team: TeamJSON.data(team)
     }
   end
 end

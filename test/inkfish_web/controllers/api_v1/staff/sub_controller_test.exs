@@ -130,6 +130,54 @@ defmodule InkfishWeb.ApiV1.Staff.SubControllerTest do
     end
   end
 
+  describe "show sub with team info" do
+    test "staff user sees team with correct member names for a two-member team",
+         %{
+           conn: conn,
+           course: course
+         } do
+      %{conn: staff_conn, user: staff_user} = logged_in_user_with_api_key(conn)
+      insert(:reg, user: staff_user, course: course, is_staff: true)
+
+      user1 = insert(:user, given_name: "Alice", surname: "Anderson")
+      user2 = insert(:user, given_name: "Bob", surname: "Baker")
+      reg1 = insert(:reg, user: user1, course: course)
+      reg2 = insert(:reg, user: user2, course: course)
+
+      bucket = insert(:bucket, course: course)
+      teamset = insert(:teamset, course: course)
+      assignment = insert(:assignment, bucket: bucket, teamset: teamset)
+
+      team = insert(:team, teamset: teamset)
+      insert(:team_member, team: team, reg: reg1)
+      insert(:team_member, team: team, reg: reg2)
+
+      sub =
+        insert(:sub,
+          assignment: assignment,
+          reg: reg1,
+          team: team,
+          upload: insert(:upload, user: user1)
+        )
+
+      conn = get(staff_conn, ~p"/api/v1/staff/subs/#{sub.id}")
+
+      response = json_response(conn, 200)["data"]
+
+      assert response["team"]["id"] == team.id
+      assert response["team"]["teamset_id"] == teamset.id
+      assert response["team"]["active"] == team.active
+
+      members = response["team"]["members"]
+      assert length(members) == 2
+
+      member_names = Enum.map(members, & &1["name"]) |> Enum.sort()
+      expected_names = ["Alice Anderson", "Bob Baker"] |> Enum.sort()
+
+      assert member_names == expected_names
+    end
+  end
+
   describe "show sub" do
     test "staff user can see any sub in their course", %{
       conn: conn,

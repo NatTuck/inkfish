@@ -37,13 +37,13 @@
 ```bash
 # List submissions
 curl -H "x-auth: KEY" "http://localhost:4000/api/v1/subs?assignment_id=22"
-# Returns: {"data":[{"id":"1","active":true,"score":85.5,"upload":"/uploads/uuid/file.zip"}]}
+# Returns: {"data":[{"id":"1","active":true,"score":85.5,"upload":"/uploads/uuid/file.zip","team":{"id":1,"teamset_id":2,"active":true,"members":[{"id":1,"user_id":3,"name":"Alice Smith"},{"id":2,"user_id":4,"name":"Bob Jones"}]}}]}
 
 # Upload submission
 curl -X POST -H "x-auth: KEY" \
   -F "sub[upload]=@file.zip" -F "sub[assignment_id]=22" \
   "http://localhost:4000/api/v1/subs"
-# Returns: {"data":{"id":"1","active":true,"score":null}}
+# Returns: {"data":{"id":"1","active":true,"score":null,"team":{"id":1,"teamset_id":2,"active":true,"members":[{"id":1,"user_id":3,"name":"Alice Smith"}]}}}
 
 # Staff dashboard
 curl -H "x-auth: KEY" "http://localhost:4000/api/v1/staff/dashboard"
@@ -73,11 +73,11 @@ curl -X POST -H "x-auth: KEY" "http://localhost:4000/api/v1/staff/assignments/1/
 
 # List submissions (staff)
 curl -H "x-auth: KEY" "http://localhost:4000/api/v1/staff/subs?assignment_id=22"
-# Returns: {"data":[{"id":"1","active":true,"score":85.5,"reg":{"id":"1","user":{"email":"..."}}}]}
+# Returns: {"data":[{"id":"1","active":true,"score":85.5,"reg":{"id":"1","user":{"email":"..."}},"team":{"id":1,"teamset_id":2,"active":true,"members":[{"id":1,"user_id":3,"name":"Alice Smith"},{"id":2,"user_id":4,"name":"Bob Jones"}]}}]}
 
 # Get submission (staff)
 curl -H "x-auth: KEY" "http://localhost:4000/api/v1/staff/subs/1"
-# Returns: {"data":{"id":"1","active":true,"score":85.5,"reg":{...},"upload":"/uploads/..."}}
+# Returns: {"data":{"id":"1","active":true,"score":85.5,"reg":{...},"upload":"/uploads/...","team":{"id":1,"teamset_id":2,"active":true,"members":[{"id":1,"user_id":3,"name":"Alice Smith"},{"id":2,"user_id":4,"name":"Bob Jones"}]}}}
 
 # List grades
 curl -H "x-auth: KEY" "http://localhost:4000/api/v1/staff/grades?sub_id=1"
@@ -110,3 +110,51 @@ Success: `{"data": {...}}`
 Error: `{"errors": {"field": ["message"]}}`
 
 Status codes: 200, 201, 204, 400, 403, 404, 422
+
+## Response Fields
+
+### Sub
+
+| Field | Type | Description |
+|-------|------|-------------|
+| id | integer | Submission ID |
+| active | boolean | Whether submission is active |
+| late_penalty | decimal \| null | Late penalty applied |
+| score | decimal \| null | Final score |
+| hours_spent | decimal | Hours spent on assignment |
+| note | string \| null | Student note |
+| ignore_late_penalty | boolean | Whether late penalty is ignored |
+| upload | string | Upload URL path |
+| team | object \| null | Team information |
+
+### Team
+
+| Field | Type | Description |
+|-------|------|-------------|
+| id | integer | Team ID |
+| teamset_id | integer | Teamset ID |
+| active | boolean | Whether team is active |
+| members | array | List of team members |
+
+### Team Member
+
+| Field | Type | Description |
+|-------|------|-------------|
+| id | integer | Registration ID |
+| user_id | integer | User ID |
+| name | string | User display name |
+
+### Reg (Staff API only)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| id | integer | Registration ID |
+| is_grader | boolean | Whether user is grader |
+| is_staff | boolean | Whether user is staff |
+| is_prof | boolean | Whether user is professor |
+| is_student | boolean | Whether user is student |
+| user_id | integer | User ID |
+| user | object | User information |
+| course_id | integer | Course ID |
+| course | object | Course information |
+| section | string \| null | Section name |
