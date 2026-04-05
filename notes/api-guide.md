@@ -29,8 +29,7 @@
 | GET | `/api/v1/staff/subs/:id` | |
 | GET | `/api/v1/staff/grades` | `sub_id` |
 | GET | `/api/v1/staff/grades/:id` | |
-| POST | `/api/v1/staff/grades` | `sub_id`, `grade_column_id`, `grade{score \| line_comments}` |
-| DELETE | `/api/v1/staff/grades/:id` | |
+| POST | `/api/v1/staff/grades` | `sub_id`, `grade{grade_column_id, score \| line_comments}` |
 
 ## curl Examples with Responses
 
@@ -90,20 +89,16 @@ curl -H "x-auth: KEY" "http://localhost:4000/api/v1/staff/grades/1"
 # Create number grade (for grade columns of type "number")
 # Note: Number grades require a score value
 curl -X POST -H "x-auth: KEY" -H "Content-Type: application/json" \
-  -d '{"grade_column_id":"5","score":"8.5"}' \
+  -d '{"grade":{"grade_column_id":"5","score":"8.5"}}' \
   "http://localhost:4000/api/v1/staff/grades?sub_id=1"
 # Returns: {"data":{"id":"2","score":"8.5","grade_column_id":5,"grade_column":{...},"line_comments":[]}}
 
 # Create feedback grade (for grade columns of type "feedback")
 # Note: Score is calculated automatically from line_comments
 curl -X POST -H "x-auth: KEY" -H "Content-Type: application/json" \
-  -d '{"grade_column_id":"3","line_comments":[{"path":"main.c","line":10,"points":"-5.0","text":"Style issue"},{"path":"main.c","line":15,"points":"-3.0","text":"Logic error"}]}' \
+  -d '{"grade":{"grade_column_id":"3","line_comments":[{"path":"main.c","line":10,"points":"-5.0","text":"Style issue"},{"path":"main.c","line":15,"points":"-3.0","text":"Logic error"}]}}' \
   "http://localhost:4000/api/v1/staff/grades?sub_id=1"
 # Returns: {"data":{"id":"3","score":"32.0","grade_column_id":3,"grade_column":{...},"line_comments":[{"path":"main.c","line":10,"points":"-5.0","text":"Style issue",...}]}}
-
-# Delete grade
-curl -X DELETE -H "x-auth: KEY" "http://localhost:4000/api/v1/staff/grades/1"
-# Returns: 204 No Content
 
 # Create teamset
 curl -X POST -H "x-auth: KEY" -H "Content-Type: application/json" \
