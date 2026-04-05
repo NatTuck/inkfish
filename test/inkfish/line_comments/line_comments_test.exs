@@ -297,4 +297,110 @@ defmodule Inkfish.LineCommentsTest do
       assert lc.line == 15
     end
   end
+
+  describe "text validation" do
+    alias Inkfish.LineComments.LineComment
+
+    test "create_line_comment/1 with empty text returns error" do
+      stock = stock_course()
+      grade = stock.grade
+      user = insert(:user)
+
+      params = %{
+        grade_id: grade.id,
+        user_id: user.id,
+        path: "Ω_grading_extra.txt",
+        line: 3,
+        points: -5,
+        text: ""
+      }
+
+      assert {:error, %Ecto.Changeset{} = changeset} =
+               LineComments.create_line_comment(params, :auto, :auto)
+
+      assert "Comment text cannot be empty" in errors_on(changeset).text
+    end
+
+    test "create_line_comment/1 with whitespace-only text returns error" do
+      stock = stock_course()
+      grade = stock.grade
+      user = insert(:user)
+
+      params = %{
+        grade_id: grade.id,
+        user_id: user.id,
+        path: "Ω_grading_extra.txt",
+        line: 3,
+        points: -5,
+        text: "   \t\n  "
+      }
+
+      assert {:error, %Ecto.Changeset{} = changeset} =
+               LineComments.create_line_comment(params, :auto, :auto)
+
+      assert "Comment text cannot be empty" in errors_on(changeset).text
+    end
+
+    test "create_line_comment/1 with valid text succeeds" do
+      stock = stock_course()
+      grade = stock.grade
+      user = insert(:user)
+
+      params = %{
+        grade_id: grade.id,
+        user_id: user.id,
+        path: "Ω_grading_extra.txt",
+        line: 3,
+        points: -5,
+        text: "Good comment"
+      }
+
+      assert {:ok, %LineComment{} = lc} =
+               LineComments.create_line_comment(params, :auto, :auto)
+
+      assert lc.text == "Good comment"
+    end
+
+    test "update_line_comment/2 with empty text returns error" do
+      stock = stock_course()
+      grade = stock.grade
+      user = insert(:user)
+
+      line_comment =
+        insert(:line_comment, %{
+          grade: grade,
+          user: user,
+          path: "Ω_grading_extra.txt",
+          line: 3,
+          text: "Original text"
+        })
+
+      attrs = %{text: ""}
+
+      assert {:error, %Ecto.Changeset{} = changeset} =
+               LineComments.update_line_comment(line_comment, attrs)
+
+      assert "Comment text cannot be empty" in errors_on(changeset).text
+    end
+
+    test "existing line comments with empty text can be displayed" do
+      grade = insert(:grade)
+      user = insert(:user)
+
+      # Bypass validation to simulate legacy data
+      {:ok, lc} =
+        %LineComment{
+          grade_id: grade.id,
+          user_id: user.id,
+          path: "Ω_grading_extra.txt",
+          line: 3,
+          points: Decimal.new("-5"),
+          text: ""
+        }
+        |> Repo.insert()
+
+      fetched = LineComments.get_line_comment!(lc.id)
+      assert fetched.text == ""
+    end
+  end
 end
