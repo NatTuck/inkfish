@@ -19,14 +19,14 @@ defmodule InkfishWeb.Staff.GradeJSON do
 
   def data(nil), do: nil
 
-  def data(%Grade{} = grade, valid_paths \\ nil) do
+  def data(%Grade{} = grade, valid_paths \\ nil, valid_line_counts \\ nil) do
     gc = get_assoc(grade, :grade_column)
     lcs = get_assoc(grade, :line_comments) || []
     sub = get_assoc(grade, :sub)
 
     {invalid_lcs, valid_lcs} =
       if valid_paths do
-        LineComments.filter_for_display(lcs, valid_paths)
+        LineComments.filter_for_display(lcs, valid_paths, valid_line_counts)
       else
         {[], lcs}
       end

@@ -20,13 +20,17 @@ defmodule InkfishWeb.ApiV1.Staff.GradeJSON do
     %{data: data(grade)}
   end
 
-  defp data(%Grade{} = grade, valid_paths \\ nil) do
+  defp data(%Grade{} = grade, valid_paths \\ nil, valid_line_counts \\ nil) do
     grade_column = get_assoc(grade, :grade_column)
 
     lcs =
       if valid_paths && Ecto.assoc_loaded?(grade.line_comments) do
         {invalid_lcs, valid_lcs} =
-          LineComments.filter_for_display(grade.line_comments, valid_paths)
+          LineComments.filter_for_display(
+            grade.line_comments,
+            valid_paths,
+            valid_line_counts
+          )
 
         Enum.reverse(valid_lcs) ++ Enum.reverse(invalid_lcs)
       else

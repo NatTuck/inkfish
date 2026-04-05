@@ -142,4 +142,30 @@ defmodule Inkfish.Uploads.Data do
     {type, 0} = System.cmd("file", ["-ib", path])
     type =~ ~r/^text/i || type =~ ~r/ASCII/
   end
+
+  def extract_line_counts(%Upload{} = upload) do
+    data = read_data(upload)
+    build_line_counts_map(data)
+  end
+
+  defp build_line_counts_map(%{nodes: nodes}) do
+    build_line_counts_map(nodes, %{})
+  end
+
+  defp build_line_counts_map([], acc), do: acc
+
+  defp build_line_counts_map([%{key: key, text: text} | rest], acc)
+       when is_binary(text) do
+    line_count = String.split(text, "\n") |> length()
+    build_line_counts_map(rest, Map.put(acc, key, line_count))
+  end
+
+  defp build_line_counts_map([%{nodes: nodes} | rest], acc) do
+    acc = build_line_counts_map(nodes, acc)
+    build_line_counts_map(rest, acc)
+  end
+
+  defp build_line_counts_map([_ | rest], acc) do
+    build_line_counts_map(rest, acc)
+  end
 end

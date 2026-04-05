@@ -274,6 +274,7 @@ defmodule Inkfish.Grades do
     delete_comments_for_user(grade, grader)
 
     valid_paths = get_valid_paths(grade.sub_id)
+    valid_line_counts = get_line_counts(grade.sub_id)
 
     result =
       OK.map_all(comments, fn lc ->
@@ -283,7 +284,7 @@ defmodule Inkfish.Grades do
           |> Map.put("user_id", grader.id)
 
         %LineComment{}
-        |> LineComment.changeset(lc, valid_paths)
+        |> LineComment.changeset(lc, valid_paths, valid_line_counts)
         |> Repo.insert()
       end)
 
@@ -300,6 +301,11 @@ defmodule Inkfish.Grades do
     sub = Inkfish.Subs.get_sub!(sub_id)
     data = Inkfish.Subs.read_sub_data(sub)
     extract_path_keys(data.files)
+  end
+
+  defp get_line_counts(sub_id) do
+    sub = Inkfish.Subs.get_sub!(sub_id)
+    Inkfish.Uploads.Data.extract_line_counts(sub.upload)
   end
 
   defp extract_path_keys(%{nodes: nodes}) do
