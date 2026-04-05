@@ -169,6 +169,42 @@ defmodule InkfishWeb.ApiV1.Staff.GradeControllerTest do
       assert error_message =~ "Feedback grades are calculated automatically"
       assert error_message =~ "Score cannot be set directly"
     end
+
+    test "rejects feedback grade with empty text in line comment", %{
+      conn: conn
+    } do
+      stock = stock_course()
+      sub = stock.sub
+      grade_column = stock.grade_column
+      staff = stock.staff
+
+      api_key = insert(:api_key, user: staff)
+      conn = put_req_header(conn, "x-auth", api_key.key)
+
+      line_comments = [
+        %{
+          "path" => "Ω_grading_extra.txt",
+          "line" => 3,
+          "points" => "-5.0",
+          "text" => ""
+        }
+      ]
+
+      create_attrs = %{
+        sub_id: sub.id,
+        grade_column_id: grade_column.id,
+        line_comments: line_comments
+      }
+
+      conn =
+        post(conn, ~p"/api/v1/staff/grades?sub_id=#{sub.id}",
+          grade: create_attrs
+        )
+
+      assert %{"errors" => errors} = json_response(conn, 422)
+      assert errors["text"]
+      assert "Comment text cannot be empty" in errors["text"]
+    end
   end
 
   describe "create number grade" do

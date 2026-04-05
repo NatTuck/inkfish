@@ -28,6 +28,7 @@ defmodule Inkfish.LineComments.LineComment do
     line_comment
     |> cast(attrs, [:path, :line, :points, :text, :grade_id, :user_id])
     |> validate_required([:path, :line, :points, :grade_id, :user_id])
+    |> validate_text()
     |> validate_path(valid_paths)
     |> validate_line_number(valid_line_counts)
   end
@@ -64,6 +65,27 @@ defmodule Inkfish.LineComments.LineComment do
         else
           changeset
         end
+    end
+  end
+
+  defp validate_text(changeset) do
+    text = get_field(changeset, :text)
+
+    case text do
+      nil ->
+        add_error(changeset, :text, "Comment text cannot be empty")
+
+      text when is_binary(text) ->
+        trimmed = String.trim(text)
+
+        if trimmed == "" do
+          add_error(changeset, :text, "Comment text cannot be empty")
+        else
+          changeset
+        end
+
+      _ ->
+        add_error(changeset, :text, "Comment text cannot be empty")
     end
   end
 
