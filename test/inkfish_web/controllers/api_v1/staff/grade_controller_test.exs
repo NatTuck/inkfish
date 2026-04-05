@@ -406,25 +406,4 @@ defmodule InkfishWeb.ApiV1.Staff.GradeControllerTest do
       assert second_new_comment["points"] == "-1.0"
     end
   end
-
-  describe "delete grade" do
-    test "deletes chosen grade", %{conn: conn} do
-      stock = stock_course()
-      grade = stock.grade
-      staff = stock.staff
-
-      api_key = insert(:api_key, user: staff)
-      conn = put_req_header(conn, "x-auth", api_key.key)
-
-      conn = delete(conn, ~p"/api/v1/staff/grades/#{grade}")
-      assert response(conn, 204)
-
-      conn =
-        Phoenix.ConnTest.build_conn()
-        |> put_req_header("x-auth", api_key.key)
-
-      conn = get(conn, ~p"/api/v1/staff/grades/#{grade}")
-      assert json_response(conn, 404)
-    end
-  end
 end

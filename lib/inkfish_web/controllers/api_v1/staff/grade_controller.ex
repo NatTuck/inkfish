@@ -2,7 +2,6 @@ defmodule InkfishWeb.ApiV1.Staff.GradeController do
   use InkfishWeb, :controller
 
   alias Inkfish.Grades
-  alias Inkfish.Grades.Grade
   alias Inkfish.Grades.GradeColumn
   alias Inkfish.Subs
   alias Inkfish.Subs.Sub
@@ -15,7 +14,7 @@ defmodule InkfishWeb.ApiV1.Staff.GradeController do
 
   plug Plugs.FetchItem,
        [grade: "id"]
-       when action in [:show, :delete]
+       when action in [:show]
 
   plug Plugs.FetchItem,
        [sub: "sub_id"]
@@ -115,13 +114,5 @@ defmodule InkfishWeb.ApiV1.Staff.GradeController do
   def show(conn, %{"id" => id}) do
     grade = Grades.get_grade!(id)
     render(conn, :show, grade: grade)
-  end
-
-  def delete(conn, %{"id" => id}) do
-    grade = Grades.get_grade!(id)
-
-    with {:ok, %Grade{}} <- Grades.delete_grade(grade) do
-      send_resp(conn, :no_content, "")
-    end
   end
 end

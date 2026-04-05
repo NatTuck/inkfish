@@ -234,8 +234,7 @@ defmodule InkfishWeb.Router do
 
     resources "/subs", SubController, only: [:index, :show]
 
-    resources "/grades", GradeController,
-      only: [:index, :show, :create, :delete]
+    resources "/grades", GradeController, only: [:index, :show, :create]
 
     resources "/courses", CourseController, only: [] do
       resources "/teamsets", TeamsetController, only: [:create]
