@@ -79,9 +79,10 @@ defmodule InkfishWeb.Staff.GradeController do
 
     sub_data = Inkfish.Subs.read_sub_data(grade.sub_id)
     valid_paths = extract_path_keys(sub_data.files)
+    valid_line_counts = extract_line_counts(sub_data.files)
 
     grade_json =
-      InkfishWeb.Staff.GradeJSON.data(grade, valid_paths)
+      InkfishWeb.Staff.GradeJSON.data(grade, valid_paths, valid_line_counts)
 
     grader = conn.assigns[:current_user]
     grader_json = InkfishWeb.UserJSON.data(grader)
@@ -123,6 +124,27 @@ defmodule InkfishWeb.Staff.GradeController do
 
   defp extract_path_keys([%{key: key} | rest], acc) do
     extract_path_keys(rest, [key | acc])
+  end
+
+  defp extract_line_counts(%{nodes: nodes}) do
+    build_line_counts_map(nodes, %{})
+  end
+
+  defp build_line_counts_map([], acc), do: acc
+
+  defp build_line_counts_map([%{key: key, text: text} | rest], acc)
+       when is_binary(text) do
+    line_count = String.split(text, "\n") |> length()
+    build_line_counts_map(rest, Map.put(acc, key, line_count))
+  end
+
+  defp build_line_counts_map([%{nodes: nodes} | rest], acc) do
+    acc = build_line_counts_map(nodes, acc)
+    build_line_counts_map(rest, acc)
+  end
+
+  defp build_line_counts_map([_ | rest], acc) do
+    build_line_counts_map(rest, acc)
   end
 
   def update(conn, %{"id" => id, "grade" => grade_params}) do

@@ -3,6 +3,7 @@ defmodule Inkfish.LineCommentsTest do
   import Inkfish.Factory
 
   alias Inkfish.LineComments
+  alias Inkfish.LineComments.LineComment
 
   describe "line_comments" do
     alias Inkfish.LineComments.LineComment
@@ -159,6 +160,141 @@ defmodule Inkfish.LineCommentsTest do
       assert length(valid) == 1
       assert hd(valid).path == "Ω_grading_extra.txt"
       assert hd(valid).line == 10
+    end
+
+    test "invalid line numbers are adjusted to last valid line" do
+      grade = insert(:grade)
+      user = insert(:user)
+
+      lc_with_invalid_line =
+        insert(:line_comment, %{
+          grade: grade,
+          user: user,
+          path: "hw03/main.c",
+          line: 100,
+          points: -5,
+          text: "Line exceeds file length"
+        })
+
+      lc_with_valid_line =
+        insert(:line_comment, %{
+          grade: grade,
+          user: user,
+          path: "hw03/main.c",
+          line: 10,
+          points: -3,
+          text: "Valid line"
+        })
+
+      valid_paths = ["hw03/main.c"]
+      valid_line_counts = %{"hw03/main.c" => 20}
+
+      {invalid, valid} =
+        LineComments.filter_for_display(
+          [lc_with_invalid_line, lc_with_valid_line],
+          valid_paths,
+          valid_line_counts
+        )
+
+      assert length(invalid) == 0
+      assert length(valid) == 2
+
+      adjusted_lc =
+        Enum.find(valid, fn lc -> lc.text == "Line exceeds file length" end)
+
+      assert adjusted_lc.line == 20
+
+      unchanged_lc = Enum.find(valid, fn lc -> lc.text == "Valid line" end)
+      assert unchanged_lc.line == 10
+    end
+  end
+
+  describe "line number validation" do
+    alias Inkfish.LineComments.LineComment
+
+    test "create_line_comment/1 with line exceeding file length returns error" do
+      grade = insert(:grade)
+      user = insert(:user)
+
+      params = %{
+        grade_id: grade.id,
+        user_id: user.id,
+        path: "hw03/main.c",
+        line: 100,
+        points: -5,
+        text: "test"
+      }
+
+      valid_paths = ["hw03/main.c"]
+      valid_line_counts = %{"hw03/main.c" => 20}
+
+      assert {:error, %Ecto.Changeset{} = changeset} =
+               LineComments.create_line_comment(
+                 params,
+                 valid_paths,
+                 valid_line_counts
+               )
+
+      assert "exceeds file length (max line: 20)" in errors_on(changeset).line
+    end
+
+    test "create_line_comment/1 with valid line succeeds" do
+      grade = insert(:grade)
+      user = insert(:user)
+
+      params = %{
+        grade_id: grade.id,
+        user_id: user.id,
+        path: "hw03/main.c",
+        line: 10,
+        points: -5,
+        text: "test"
+      }
+
+      valid_paths = ["hw03/main.c"]
+      valid_line_counts = %{"hw03/main.c" => 20}
+
+      assert {:ok, %LineComment{} = lc} =
+               LineComments.create_line_comment(
+                 params,
+                 valid_paths,
+                 valid_line_counts
+               )
+
+      assert lc.line == 10
+      assert lc.path == "hw03/main.c"
+    end
+
+    test "update_line_comment changeset validates line numbers" do
+      line_comment = insert(:line_comment, %{path: "hw03/main.c", line: 10})
+      valid_line_counts = %{"hw03/main.c" => 20}
+
+      changeset =
+        LineComment.changeset(
+          line_comment,
+          %{line: 100},
+          nil,
+          valid_line_counts
+        )
+
+      assert {:error, changeset} = Repo.update(changeset)
+      assert "exceeds file length (max line: 20)" in errors_on(changeset).line
+    end
+
+    test "update_line_comment changeset allows valid line numbers" do
+      line_comment = insert(:line_comment, %{path: "hw03/main.c", line: 10})
+      valid_line_counts = %{"hw03/main.c" => 20}
+
+      changeset =
+        LineComment.changeset(
+          line_comment,
+          %{line: 15, points: "25.0"},
+          nil,
+          valid_line_counts
+        )
+
+      assert {:ok, lc} = Repo.update(changeset)
+      assert lc.line == 15
     end
   end
 end

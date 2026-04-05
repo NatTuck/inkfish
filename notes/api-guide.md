@@ -29,7 +29,7 @@
 | GET | `/api/v1/staff/subs/:id` | |
 | GET | `/api/v1/staff/grades` | `sub_id` |
 | GET | `/api/v1/staff/grades/:id` | |
-| POST | `/api/v1/staff/grades` | `sub_id`, `grade{score,line_comments}` |
+| POST | `/api/v1/staff/grades` | `sub_id`, `grade_column_id`, `grade{score \| line_comments}` |
 | DELETE | `/api/v1/staff/grades/:id` | |
 
 ## curl Examples with Responses
@@ -81,17 +81,25 @@ curl -H "x-auth: KEY" "http://localhost:4000/api/v1/staff/subs/1"
 
 # List grades
 curl -H "x-auth: KEY" "http://localhost:4000/api/v1/staff/grades?sub_id=1"
-# Returns: {"data":[{"id":"1","score":85.5,"line_comments":[{"line":10,"comment":"Good","points":5}]}]}
+# Returns: {"data":[{"id":"1","score":"85.5","grade_column_id":3,"grade_column":{...},"line_comments":[{"path":"main.c","line":10,"points":"-5.0","text":"Style issue"}]}]}
 
 # Get grade
 curl -H "x-auth: KEY" "http://localhost:4000/api/v1/staff/grades/1"
-# Returns: {"data":{"id":"1","score":85.5,"log_uuid":"uuid","line_comments":[...]}}
+# Returns: {"data":{"id":"1","score":"85.5","grade_column_id":3,"grade_column":{...},"log_uuid":"uuid","line_comments":[{"path":"main.c","line":10,"points":"-5.0","text":"Style issue",...}]}}
 
-# Create grade
+# Create number grade (for grade columns of type "number")
+# Note: Number grades require a score value
 curl -X POST -H "x-auth: KEY" -H "Content-Type: application/json" \
-  -d '{"sub_id":"1","grade":{"score":90}}' \
-  "http://localhost:4000/api/v1/staff/grades"
-# Returns: {"data":{"id":"1","score":90,"line_comments":[]}}
+  -d '{"grade_column_id":"5","score":"8.5"}' \
+  "http://localhost:4000/api/v1/staff/grades?sub_id=1"
+# Returns: {"data":{"id":"2","score":"8.5","grade_column_id":5,"grade_column":{...},"line_comments":[]}}
+
+# Create feedback grade (for grade columns of type "feedback")
+# Note: Score is calculated automatically from line_comments
+curl -X POST -H "x-auth: KEY" -H "Content-Type: application/json" \
+  -d '{"grade_column_id":"3","line_comments":[{"path":"main.c","line":10,"points":"-5.0","text":"Style issue"},{"path":"main.c","line":15,"points":"-3.0","text":"Logic error"}]}' \
+  "http://localhost:4000/api/v1/staff/grades?sub_id=1"
+# Returns: {"data":{"id":"3","score":"32.0","grade_column_id":3,"grade_column":{...},"line_comments":[{"path":"main.c","line":10,"points":"-5.0","text":"Style issue",...}]}}
 
 # Delete grade
 curl -X DELETE -H "x-auth: KEY" "http://localhost:4000/api/v1/staff/grades/1"
@@ -158,3 +166,37 @@ Status codes: 200, 201, 204, 400, 403, 404, 422
 | course_id | integer | Course ID |
 | course | object | Course information |
 | section | string \| null | Section name |
+
+### Grade
+
+| Field | Type | Description |
+|-------|------|-------------|
+| id | integer | Grade ID |
+| score | decimal \| null | Final score |
+| grade_column_id | integer | Grade column ID |
+| grade_column | object | Grade column information |
+| log_uuid | string \| null | Log UUID for grading script output |
+| line_comments | array | List of line comments |
+
+### Line Comment
+
+| Field | Type | Description |
+|-------|------|-------------|
+| id | integer | Line comment ID |
+| path | string | File path: for single file submissions, the filename; for archive submissions, the path within the archive |
+| line | integer | Line number in the file |
+| points | decimal | Point adjustment (can be negative) |
+| text | string | Comment text |
+| user_id | integer | User ID of the grader |
+| user | object | User information |
+| grade_id | integer | Grade ID |
+
+### Grade Column
+
+| Field | Type | Description |
+|-------|------|-------------|
+| id | integer | Grade column ID |
+| name | string | Grade column name |
+| kind | string | Column type: "number", "feedback", or "script" |
+| points | decimal | Points available |
+| base | decimal | Starting points before grading |
