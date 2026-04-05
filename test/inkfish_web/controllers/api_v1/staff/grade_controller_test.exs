@@ -57,13 +57,13 @@ defmodule InkfishWeb.ApiV1.Staff.GradeControllerTest do
       line_comments = [
         %{
           "path" => "Ω_grading_extra.txt",
-          "line" => 10,
+          "line" => 3,
           "points" => "-5.0",
           "text" => "Style issue"
         },
         %{
           "path" => "Ω_grading_extra.txt",
-          "line" => 15,
+          "line" => 5,
           "points" => "-3.0",
           "text" => "Logic error"
         }
@@ -282,10 +282,9 @@ defmodule InkfishWeb.ApiV1.Staff.GradeControllerTest do
 
       existing_staff_comment =
         insert(:line_comment,
-          grade: grade,
           user: staff,
           path: "Ω_grading_extra.txt",
-          line: 10,
+          line: 4,
           points: Decimal.new("-3.0"),
           text: "Existing comment by staff"
         )
@@ -293,13 +292,13 @@ defmodule InkfishWeb.ApiV1.Staff.GradeControllerTest do
       new_line_comments = [
         %{
           "path" => "Ω_grading_extra.txt",
-          "line" => 15,
+          "line" => 2,
           "points" => "-4.0",
           "text" => "New comment by staff"
         },
         %{
           "path" => "Ω_grading_extra.txt",
-          "line" => 20,
+          "line" => 6,
           "points" => "-1.0",
           "text" => "Another new comment by staff"
         }
