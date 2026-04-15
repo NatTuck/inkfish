@@ -1,4 +1,4 @@
-ExUnit.start()
+ExUnit.start(exclude: [:docker, :skip])
 Ecto.Adapters.SQL.Sandbox.mode(Inkfish.Repo, :manual)
 
 Application.put_env(:phoenix_test, :base_url, InkfishWeb.Endpoint.url())

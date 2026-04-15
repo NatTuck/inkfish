@@ -3,6 +3,7 @@ defmodule Inkfish.AgJobsTest do
   import Inkfish.Factory
 
   alias Inkfish.AgJobs
+  alias Inkfish.AgJobs.Server
 
   def ag_job_fixture() do
     insert(:ag_job)
@@ -70,6 +71,65 @@ defmodule Inkfish.AgJobsTest do
     test "change_ag_job/1 returns a ag_job changeset" do
       ag_job = ag_job_fixture()
       assert %Ecto.Changeset{} = AgJobs.change_ag_job(ag_job)
+    end
+  end
+
+  describe "get_limits/1" do
+    test "returns defaults for empty limits" do
+      grade = %{grade_column: %{limits: ""}}
+      limits = Server.get_limits(grade)
+      assert limits.cores == 1
+      assert limits.megs == 1024
+      assert limits.seconds == 300
+      assert limits.allow_fuse == false
+    end
+
+    test "returns defaults for nil limits" do
+      grade = %{grade_column: %{limits: nil}}
+      limits = Server.get_limits(grade)
+      assert limits.cores == 1
+      assert limits.megs == 1024
+      assert limits.seconds == 300
+      assert limits.allow_fuse == false
+    end
+
+    test "parses all fields from JSON" do
+      grade = %{
+        grade_column: %{
+          limits:
+            "{\"cores\":2,\"megs\":2048,\"seconds\":600,\"allow_fuse\":true}"
+        }
+      }
+
+      limits = Server.get_limits(grade)
+      assert limits.cores == 2
+      assert limits.megs == 2048
+      assert limits.seconds == 600
+      assert limits.allow_fuse == true
+    end
+
+    test "uses defaults for missing fields" do
+      grade = %{grade_column: %{limits: "{\"cores\":2}"}}
+      limits = Server.get_limits(grade)
+      assert limits.cores == 2
+      assert limits.megs == 1024
+      assert limits.seconds == 300
+      assert limits.allow_fuse == false
+    end
+
+    test "handles invalid JSON with defaults" do
+      grade = %{grade_column: %{limits: "not json"}}
+      limits = Server.get_limits(grade)
+      assert limits.cores == 1
+      assert limits.megs == 1024
+      assert limits.seconds == 300
+      assert limits.allow_fuse == false
+    end
+
+    test "ensures cores minimum of 0.5" do
+      grade = %{grade_column: %{limits: "{\"cores\":0.1}"}}
+      limits = Server.get_limits(grade)
+      assert limits.cores == 0.5
     end
   end
 end

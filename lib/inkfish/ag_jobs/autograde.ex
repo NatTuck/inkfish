@@ -58,6 +58,8 @@ defmodule Inkfish.AgJobs.Autograde do
   end
 
   def start_container_task(%AgJob{} = ag_job, %Grade{} = grade) do
+    limits = AgJobs.Server.get_limits(grade)
+
     on_exit = fn rv ->
       {:ok, {passed, tests}} = Tap.score(rv.result)
 
@@ -85,13 +87,16 @@ defmodule Inkfish.AgJobs.Autograde do
     conf = %{
       cmd: "perl '#{grade_script}'",
       img: "sandbox:#{ag_job.id}",
-      cores: AgJobs.Server.cores_needed(ag_job)
+      cores: limits.cores,
+      megs: limits.megs,
+      allow_fuse: limits.allow_fuse
     }
 
     %Task{
       label: "Run container",
       action: {:run_container, conf},
-      on_exit: on_exit
+      on_exit: on_exit,
+      env: %{"SECONDS" => to_string(limits.seconds)}
     }
   end
 end
