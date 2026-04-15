@@ -129,15 +129,21 @@ defmodule Inkfish.AgJobs.Server do
   end
 
   def get_cores_limit(grade) do
-    case Jason.decode(grade.grade_column.limits || "") do
-      {:ok, %{"cores" => cores}} ->
-        max(0.5, cores)
+    get_limits(grade).cores
+  end
 
-      # |> IO.inspect(label: "requested cores")
+  def get_limits(grade) do
+    case Jason.decode(grade.grade_column.limits || "") do
+      {:ok, parsed} ->
+        %{
+          cores: max(0.5, parsed["cores"] || 1),
+          megs: parsed["megs"] || 1024,
+          seconds: parsed["seconds"] || 300,
+          allow_fuse: parsed["allow_fuse"] || false
+        }
 
       _other ->
-        # IO.inspect({:limits, other})
-        1
+        %{cores: 1, megs: 1024, seconds: 300, allow_fuse: false}
     end
   end
 

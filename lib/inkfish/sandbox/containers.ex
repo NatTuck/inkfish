@@ -55,16 +55,32 @@ defmodule Inkfish.Sandbox.Containers do
 
   def expand_config(conf) do
     disk = conf[:disk] || 512
+    megs_limit = conf[:megs] || 1024
 
     conf =
       if conf[:cores] do
         cores = conf[:cores]
 
         conf
-        |> Map.put(:ram, 1024 * cores)
         |> Map.put(:cpus, cores)
       else
         conf
+      end
+
+    {devices, caps} =
+      if conf[:allow_fuse] do
+        {
+          [
+            %{
+              "PathOnHost" => "/dev/fuse",
+              "PathInContainer" => "/dev/fuse",
+              "CgroupPermissions" => "rwm"
+            }
+          ],
+          ["SYS_ADMIN"]
+        }
+      else
+        {[], []}
       end
 
     %{
@@ -75,23 +91,19 @@ defmodule Inkfish.Sandbox.Containers do
         "inkfish.sandbox" => "true"
       },
       "HostConfig" => %{
-        # Bytes
-        "Memory" => megs(conf[:ram] || 1024),
-        "MemorySwap" => 2 * megs(conf[:ram] || 1024),
+        "Memory" => megs(megs_limit),
+        "MemorySwap" => 2 * megs(megs_limit),
         "NanoCpus" => billion(conf[:cpus] || 1.0),
-        "Devices" => conf[:devices] || [],
+        "Devices" => devices,
         "PidsLimit" => 1024,
         "AutoRemove" => true,
-        "CapAdd" => conf[:caps] || [],
+        "CapAdd" => caps,
         "SecurityOpt" => ["apparmor:unconfined"],
         "Tmpfs" => %{
           "/home/student" => "rw,exec,size=#{disk}m,mode=0777",
           "/tmp" => "rw,size=10m,mode=0777"
         },
         "ReadonlyRootFs" => true
-
-        # TODO: Fully disable network.
-        # "NetworkMode" => "none"
       }
     }
   end

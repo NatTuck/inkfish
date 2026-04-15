@@ -1,50 +1,68 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import ReactDOM from 'react-dom/client';
 import $ from 'cash-dom';
 
 import { Row, Col, Form } from 'react-bootstrap';
 
-function Limits({target}) {
-  let state0 = {cores: 1, megs: 1024, seconds: 300};
+const DEFAULTS = { cores: 1, megs: 1024, seconds: 300, allow_fuse: false };
+
+export function Limits({target}) {
   let elem = document.getElementById(target);
+  let state0 = DEFAULTS;
+
   try {
-    state0 = JSON.parse(elem.value);
+    let parsed = JSON.parse(elem.value);
+    state0 = {
+      cores: parsed.cores ?? DEFAULTS.cores,
+      megs: parsed.megs ?? DEFAULTS.megs,
+      seconds: parsed.seconds ?? DEFAULTS.seconds,
+      allow_fuse: parsed.allow_fuse ?? DEFAULTS.allow_fuse,
+    };
+    elem.value = JSON.stringify(state0);
   }
   catch {
     elem.value = JSON.stringify(state0);  
   }
   const [state, setState] = useState(state0);
 
-  function set(name) {
+  function setNumber(name) {
     return function(ev) {
       let st1 = Object.assign({}, state);
-      st1[name] = ev.target.value;
+      st1[name] = parseFloat(ev.target.value) || DEFAULTS[name];
       setState(st1);
+      elem.value = JSON.stringify(st1);
+    }
+  }
 
-      let st2 = {};
-      for (let kk of Object.keys(st1)) {
-        st2[kk] = parseFloat(st1[kk]); 
-      }
-
-      let elem = document.getElementById(target);
-      elem.value = JSON.stringify(st2);
+  function setCheckbox(name) {
+    return function(ev) {
+      let st1 = Object.assign({}, state);
+      st1[name] = ev.target.checked;
+      setState(st1);
+      elem.value = JSON.stringify(st1);
     }
   }
 
   return (
     <Row className="mx-4">
       <Col>
-        Cores 
-
-        <Form.Control value={state.cores} onChange={set('cores')} />
+        <Form.Label>Cores</Form.Label>
+        <Form.Control type="number" value={state.cores} onChange={setNumber('cores')} />
       </Col>
       <Col>
-        Megs 
-        <Form.Control value={state.megs} onChange={set('megs')} />
+        <Form.Label>Megs</Form.Label>
+        <Form.Control type="number" value={state.megs} onChange={setNumber('megs')} />
       </Col>
       <Col>
-        Seconds 
-        <Form.Control value={state.seconds} onChange={set('seconds')} />
+        <Form.Label>Seconds</Form.Label>
+        <Form.Control type="number" value={state.seconds} onChange={setNumber('seconds')} />
+      </Col>
+      <Col>
+        <Form.Label>Allow FUSE</Form.Label>
+        <Form.Switch 
+          checked={state.allow_fuse} 
+          onChange={setCheckbox('allow_fuse')} 
+        />
       </Col>
     </Row>
   );
