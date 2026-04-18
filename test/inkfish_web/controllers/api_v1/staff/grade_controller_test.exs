@@ -615,7 +615,6 @@ defmodule InkfishWeb.ApiV1.Staff.GradeControllerTest do
 
       assert %{"id" => id} = json_response(conn, 201)["data"]
 
-      # Verify grade is unconfirmed and score is null
       conn =
         Phoenix.ConnTest.build_conn()
         |> put_req_header("x-auth", api_key.key)
@@ -658,7 +657,6 @@ defmodule InkfishWeb.ApiV1.Staff.GradeControllerTest do
 
       assert %{"id" => id} = json_response(conn, 201)["data"]
 
-      # Verify grade is confirmed
       conn =
         Phoenix.ConnTest.build_conn()
         |> put_req_header("x-auth", api_key.key)
@@ -678,7 +676,6 @@ defmodule InkfishWeb.ApiV1.Staff.GradeControllerTest do
       api_key = insert(:api_key, user: staff)
       conn = put_req_header(conn, "x-auth", api_key.key)
 
-      # Add a line comment first
       {:ok, _lc} =
         Inkfish.LineComments.create_line_comment(
           %{
@@ -692,7 +689,6 @@ defmodule InkfishWeb.ApiV1.Staff.GradeControllerTest do
           ["Ω_grading_extra.txt"]
         )
 
-      # Confirm the grade via API
       conn = post(conn, ~p"/api/v1/staff/grades/#{grade.id}/confirm")
       response_data = json_response(conn, 200)["data"]
 
@@ -724,6 +720,123 @@ defmodule InkfishWeb.ApiV1.Staff.GradeControllerTest do
 
       conn = post(conn, ~p"/api/v1/staff/grades/999999/confirm")
       assert json_response(conn, 404)
+    end
+
+    test "updates existing grade with new line_comments preserving student comments",
+         %{conn: conn} do
+      stock = stock_course()
+      sub = stock.sub
+      grade_column = stock.grade_column
+      staff = stock.staff
+      student = stock.student
+
+      {:ok, grade} =
+        Inkfish.Grades.create_grade(%{
+          sub_id: sub.id,
+          grade_column_id: grade_column.id
+        })
+
+      insert(:line_comment,
+        grade: grade,
+        user: student,
+        path: "Ω_grading_extra.txt",
+        line: 5,
+        points: Decimal.new("-2.0"),
+        text: "Existing comment by student"
+      )
+
+      existing_staff_comment =
+        insert(:line_comment,
+          user: staff,
+          path: "Ω_grading_extra.txt",
+          line: 4,
+          points: Decimal.new("-3.0"),
+          text: "Existing comment by staff"
+        )
+
+      new_line_comments = [
+        %{
+          "path" => "Ω_grading_extra.txt",
+          "line" => 2,
+          "points" => "-4.0",
+          "text" => "New comment by staff"
+        },
+        %{
+          "path" => "Ω_grading_extra.txt",
+          "line" => 6,
+          "points" => "-1.0",
+          "text" => "Another new comment by staff"
+        }
+      ]
+
+      update_attrs = %{
+        grade_column_id: grade_column.id,
+        line_comments: new_line_comments
+      }
+
+      api_key = insert(:api_key, user: staff)
+      conn = put_req_header(conn, "x-auth", api_key.key)
+
+      conn =
+        post(conn, ~p"/api/v1/staff/grades?sub_id=#{sub.id}",
+          grade: update_attrs
+        )
+
+      response_data = json_response(conn, 201)["data"]
+
+      assert %{
+               "id" => fetched_id,
+               "score" => nil,
+               "preview_score" => "33.0"
+             } = response_data
+
+      assert fetched_id == grade.id
+
+      assert response_data["grade_column_id"] == grade_column.id
+      assert response_data["grade_column"]["id"] == grade_column.id
+      assert response_data["grade_column"]["name"] == grade_column.name
+      assert response_data["grade_column"]["kind"] == grade_column.kind
+
+      assert length(response_data["line_comments"]) == 3
+
+      student_comment =
+        Enum.find(response_data["line_comments"], fn lc ->
+          lc["user"]["id"] == student.id
+        end)
+
+      assert student_comment
+      assert student_comment["text"] == "Existing comment by student"
+      assert student_comment["points"] == "-2.0"
+
+      old_staff_comment =
+        Enum.find(response_data["line_comments"], fn lc ->
+          lc["id"] == existing_staff_comment.id
+        end)
+
+      refute old_staff_comment
+
+      new_staff_comments =
+        Enum.filter(response_data["line_comments"], fn lc ->
+          lc["user"]["id"] == staff.id and lc["id"] != existing_staff_comment.id
+        end)
+
+      assert length(new_staff_comments) == 2
+
+      first_new_comment =
+        Enum.find(response_data["line_comments"], fn lc ->
+          lc["text"] == "New comment by staff"
+        end)
+
+      assert first_new_comment
+      assert first_new_comment["points"] == "-4.0"
+
+      second_new_comment =
+        Enum.find(response_data["line_comments"], fn lc ->
+          lc["text"] == "Another new comment by staff"
+        end)
+
+      assert second_new_comment
+      assert second_new_comment["points"] == "-1.0"
     end
   end
 end

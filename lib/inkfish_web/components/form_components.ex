@@ -319,32 +319,26 @@ defmodule InkfishWeb.FormComponents do
   end
 
   attr :field, Phoenix.HTML.FormField, required: true
+  attr :id, :string, default: nil
   attr :rest, :global, include: ~w(class placeholder readonly)
 
-  def text_input(assigns) do
+  def text_input(%{field: %Phoenix.HTML.FormField{} = field} = assigns) do
+    assigns = assign(assigns, :id, assigns.id || field.id)
+
     ~H"""
-    <input
-      type="text"
-      name={@field.name}
-      id={@field.id}
-      value={@field.value}
-      {@rest}
-    />
+    <input type="text" name={@field.name} id={@id} value={@field.value} {@rest} />
     """
   end
 
   attr :field, Phoenix.HTML.FormField, required: true
+  attr :id, :string, default: nil
   attr :rest, :global, include: ~w(class placeholder readonly step min max)
 
-  def number_input(assigns) do
+  def number_input(%{field: %Phoenix.HTML.FormField{} = field} = assigns) do
+    assigns = assign(assigns, :id, assigns.id || field.id)
+
     ~H"""
-    <input
-      type="number"
-      name={@field.name}
-      id={@field.id}
-      value={@field.value}
-      {@rest}
-    />
+    <input type="number" name={@field.name} id={@id} value={@field.value} {@rest} />
     """
   end
 
