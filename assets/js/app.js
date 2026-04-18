@@ -9,6 +9,7 @@ import "./search";
 import "./collapse";
 import "./grades/number-input";
 import "./code-view/init";
+import "./code-view/confirm-review";
 import "./dates/init";
 import "./uploads/init";
 import "./tasks/init";

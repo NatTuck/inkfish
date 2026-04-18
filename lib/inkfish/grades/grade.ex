@@ -9,6 +9,7 @@ defmodule Inkfish.Grades.Grade do
   schema "grades" do
     field(:score, :decimal)
     field(:log_uuid, :string)
+    field(:confirmed, :boolean, default: true)
     belongs_to(:sub, Inkfish.Subs.Sub)
     belongs_to(:grade_column, Inkfish.Grades.GradeColumn)
     has_many(:line_comments, Inkfish.LineComments.LineComment)
@@ -25,15 +26,17 @@ defmodule Inkfish.Grades.Grade do
   @doc false
   def changeset(grade, attrs) do
     grade
-    |> cast(attrs, [:grade_column_id, :sub_id, :score, :log_uuid])
+    |> cast(attrs, [:grade_column_id, :sub_id, :score, :log_uuid, :confirmed])
     |> validate_required([:grade_column_id, :sub_id])
   end
 
   def api_changeset(grade, attrs) do
     grade
-    |> cast(attrs, [:grade_column_id, :sub_id])
+    |> cast(attrs, [:grade_column_id, :sub_id, :confirmed])
     |> validate_required([:grade_column_id, :sub_id])
   end
+
+  def confirmed?(grade), do: grade.confirmed
 
   def to_map(grade) do
     grade = Map.drop(grade, [:__struct__, :__meta__, :sub, :grade_column])

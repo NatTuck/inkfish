@@ -38,4 +38,69 @@ defmodule InkfishWeb.SubControllerTest do
       assert html_response(conn, 200) =~ "New Sub"
     end
   end
+
+  describe "show sub with feedback grade" do
+    test "grade link visible even before grades released", %{conn: conn} do
+      due = Inkfish.LocalTime.in_days(1)
+      course = insert(:course)
+      bucket = insert(:bucket, course: course)
+      teamset = insert(:teamset, course: course)
+
+      asgn =
+        insert(:assignment,
+          bucket: bucket,
+          teamset: teamset,
+          due: due,
+          force_show_grades: false
+        )
+
+      feedback_gcol =
+        insert(:grade_column,
+          kind: "feedback",
+          assignment: asgn,
+          name: "Code Review"
+        )
+
+      student = insert(:user)
+
+      student_reg =
+        insert(:reg, course: course, user: student, is_student: true)
+
+      team = insert(:team, teamset: teamset, active: true)
+      insert(:team_member, team: team, reg: student_reg)
+
+      upload = insert(:upload, user: student)
+
+      sub =
+        insert(:sub,
+          assignment: asgn,
+          reg: student_reg,
+          team: team,
+          upload: upload
+        )
+
+      grade =
+        insert(:grade,
+          grade_column: feedback_gcol,
+          sub: sub,
+          confirmed: true,
+          score: Decimal.new("8.0")
+        )
+
+      insert(:line_comment,
+        grade: grade,
+        path: "main.c",
+        line: 5,
+        text: "Good work here"
+      )
+
+      conn = login(conn, student)
+      conn = get(conn, ~p"/subs/#{sub}")
+
+      html = html_response(conn, 200)
+
+      assert html =~ "Code Review"
+      assert html =~ ~p"/grades/#{grade}"
+    end
+  end
 end

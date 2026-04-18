@@ -63,4 +63,23 @@ defmodule InkfishWeb.Staff.LineCommentController do
       render(conn, "show.json", line_comment: %{line_comment | grade: grade})
     end
   end
+
+  def autosave(conn, %{"id" => _id, "line_comment" => line_comment_params}) do
+    line_comment = conn.assigns[:line_comment]
+
+    case LineComments.update_line_comment(line_comment, line_comment_params) do
+      {:ok, %LineComment{}} ->
+        json(conn, %{saved: true})
+
+      {:error, :grade_already_confirmed} ->
+        conn
+        |> put_status(:forbidden)
+        |> json(%{error: "grade_already_confirmed"})
+
+      {:error, %Ecto.Changeset{}} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{saved: false, errors: %{}})
+    end
+  end
 end

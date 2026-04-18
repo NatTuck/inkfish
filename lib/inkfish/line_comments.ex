@@ -8,6 +8,22 @@ defmodule Inkfish.LineComments do
 
   alias Inkfish.LineComments.LineComment
   alias Inkfish.Grades
+  alias Inkfish.Grades.Grade
+
+  defp check_grade_confirmed(nil) do
+    # No grade_id provided, let the changeset validation handle it
+    :ok
+  end
+
+  defp check_grade_confirmed(grade_id) do
+    grade = Grades.get_grade!(grade_id)
+
+    if Grade.confirmed?(grade) do
+      {:error, :grade_already_confirmed}
+    else
+      :ok
+    end
+  end
 
   @doc """
   Returns the list of line_comments.
@@ -74,34 +90,37 @@ defmodule Inkfish.LineComments do
       ) do
     grade_id = attrs["grade_id"] || attrs[:grade_id]
 
-    valid_paths =
-      if valid_paths == :auto do
-        lookup_valid_paths(grade_id)
-      else
-        valid_paths
+    # Check if grade is confirmed
+    with :ok <- check_grade_confirmed(grade_id) do
+      valid_paths =
+        if valid_paths == :auto do
+          lookup_valid_paths(grade_id)
+        else
+          valid_paths
+        end
+
+      valid_line_counts =
+        if valid_line_counts == :auto do
+          lookup_line_counts(grade_id)
+        else
+          valid_line_counts
+        end
+
+      lc =
+        %LineComment{}
+        |> LineComment.changeset(attrs, valid_paths, valid_line_counts)
+        |> Repo.insert()
+
+      case lc do
+        {:ok, lc} ->
+          {:ok, grade} = Inkfish.Grades.update_feedback_score(lc.grade_id)
+          grade = Grades.get_grade!(grade.id)
+          lc = Repo.preload(lc, :user)
+          {:ok, %{lc | grade: grade}}
+
+        error ->
+          error
       end
-
-    valid_line_counts =
-      if valid_line_counts == :auto do
-        lookup_line_counts(grade_id)
-      else
-        valid_line_counts
-      end
-
-    lc =
-      %LineComment{}
-      |> LineComment.changeset(attrs, valid_paths, valid_line_counts)
-      |> Repo.insert()
-
-    case lc do
-      {:ok, lc} ->
-        {:ok, grade} = Inkfish.Grades.update_feedback_score(lc.grade_id)
-        grade = Grades.get_grade!(grade.id)
-        lc = Repo.preload(lc, :user)
-        {:ok, %{lc | grade: grade}}
-
-      error ->
-        error
     end
   end
 
@@ -155,24 +174,27 @@ defmodule Inkfish.LineComments do
 
   """
   def update_line_comment(%LineComment{} = line_comment, attrs) do
-    valid_line_counts = lookup_line_counts(line_comment.grade_id)
+    # Check if grade is confirmed
+    with :ok <- check_grade_confirmed(line_comment.grade_id) do
+      valid_line_counts = lookup_line_counts(line_comment.grade_id)
 
-    result =
-      line_comment
-      |> LineComment.changeset(attrs, nil, valid_line_counts)
-      |> Repo.update()
-      |> Repo.Cache.updated()
+      result =
+        line_comment
+        |> LineComment.changeset(attrs, nil, valid_line_counts)
+        |> Repo.update()
+        |> Repo.Cache.updated()
 
-    case result do
-      {:ok, %LineComment{} = lc} ->
-        {:ok, grade} = Inkfish.Grades.update_feedback_score(lc.grade_id)
-        grade = Grades.get_grade!(grade.id)
-        Inkfish.Subs.save_sub_dump!(grade.sub.id)
-        lc = Repo.preload(lc, :user)
-        {:ok, %{lc | grade: grade}}
+      case result do
+        {:ok, %LineComment{} = lc} ->
+          {:ok, grade} = Inkfish.Grades.update_feedback_score(lc.grade_id)
+          grade = Grades.get_grade!(grade.id)
+          Inkfish.Subs.save_sub_dump!(grade.sub.id)
+          lc = Repo.preload(lc, :user)
+          {:ok, %{lc | grade: grade}}
 
-      other ->
-        other
+        other ->
+          other
+      end
     end
   end
 
@@ -189,15 +211,18 @@ defmodule Inkfish.LineComments do
 
   """
   def delete_line_comment(%LineComment{} = lc) do
-    case Repo.delete(lc) do
-      {:ok, lc} ->
-        :ok = Repo.Cache.drop(lc)
-        {:ok, grade} = Inkfish.Grades.update_feedback_score(lc.grade_id)
-        Inkfish.Subs.save_sub_dump!(grade.sub.id)
-        {:ok, %{lc | grade: grade}}
+    # Check if grade is confirmed
+    with :ok <- check_grade_confirmed(lc.grade_id) do
+      case Repo.delete(lc) do
+        {:ok, lc} ->
+          :ok = Repo.Cache.drop(lc)
+          {:ok, grade} = Inkfish.Grades.update_feedback_score(lc.grade_id)
+          Inkfish.Subs.save_sub_dump!(grade.sub.id)
+          {:ok, %{lc | grade: grade}}
 
-      other ->
-        other
+        other ->
+          other
+      end
     end
   end
 

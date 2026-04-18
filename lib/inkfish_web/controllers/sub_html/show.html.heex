@@ -63,7 +63,7 @@
     <% grade = Enum.find(@sub.grades, &(&1.grade_column_id == grade_column.id)) %>
     <tr>
       <td>
-        <%= if grade && !grade_hidden?(@conn, @assignment) do %>
+        <%= if grade do %>
           <%= if grade_column.kind == "feedback" do %>
             <.link href={~p"/grades/#{grade.id}"}>{grade_column.name}</.link>
             ({length(grade.line_comments)} note(s))

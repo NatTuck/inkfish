@@ -1,5 +1,37 @@
 <h1>Edit Grade</h1>
 
+<div class="grade-status mb-3">
+  <%= if @grade.confirmed do %>
+    <span class="badge bg-success">Confirmed</span>
+    <span class="ms-2">
+      Score: {if @grade.score,
+        do: InkfishWeb.ViewHelpers.show_score(@grade, @grade.grade_column),
+        else: "--"}
+    </span>
+    <.form
+      for={%{}}
+      action={~p"/staff/grades/#{@grade}/unconfirm"}
+      method="post"
+      class="ms-2"
+    >
+      <button type="submit" class="btn btn-outline-secondary btn-sm">
+        Unlock
+      </button>
+    </.form>
+  <% else %>
+    <span class="badge bg-warning">Draft</span>
+    <span class="ms-2">
+      Score: -- (preview: {InkfishWeb.ViewHelpers.show_preview_score(@grade)})
+    </span>
+    <.link
+      href={~p"/staff/grades/#{@grade}/confirm-review"}
+      class="btn btn-primary btn-sm ms-2"
+    >
+      Review and Confirm
+    </.link>
+  <% end %>
+</div>
+
 <%= if @rubric do %>
   <% path = ~p"/uploads/#{@rubric}?show=true" %>
   <p>Rubric: <.link href={path} target="_blank">{@rubric.name}</.link></p>

@@ -17,6 +17,10 @@ defmodule InkfishWeb.ApiV1.Staff.GradeController do
        when action in [:show]
 
   plug Plugs.FetchItem,
+       [grade: "grade_id"]
+       when action in [:confirm, :unconfirm]
+
+  plug Plugs.FetchItem,
        [sub: "sub_id"]
        when action in [:index, :create]
 
@@ -38,6 +42,21 @@ defmodule InkfishWeb.ApiV1.Staff.GradeController do
       |> put_status(:created)
       |> put_resp_header("location", ~p"/api/v1/staff/grades/#{grade}")
       |> render(:show, grade: grade)
+    else
+      {:error, :grade_already_confirmed} ->
+        conn
+        |> put_status(:forbidden)
+        |> put_view(InkfishWeb.ErrorJSON)
+        |> render(:error, message: "grade_already_confirmed")
+
+      {:error, message} when is_binary(message) ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> put_view(InkfishWeb.ErrorJSON)
+        |> render(:error, message: message)
+
+      error ->
+        error
     end
   end
 
@@ -114,5 +133,27 @@ defmodule InkfishWeb.ApiV1.Staff.GradeController do
   def show(conn, %{"id" => id}) do
     grade = Grades.get_grade!(id)
     render(conn, :show, grade: grade)
+  end
+
+  def confirm(conn, %{"grade_id" => id}) do
+    with {:ok, grade} <- Grades.confirm_grade(id) do
+      render(conn, :show, grade: grade)
+    else
+      {:error, :not_found} ->
+        conn
+        |> put_status(:not_found)
+        |> render(InkfishWeb.ErrorsJSON, :not_found)
+    end
+  end
+
+  def unconfirm(conn, %{"grade_id" => id}) do
+    with {:ok, grade} <- Grades.unconfirm_grade(id) do
+      render(conn, :show, grade: grade)
+    else
+      {:error, :not_found} ->
+        conn
+        |> put_status(:not_found)
+        |> render(InkfishWeb.ErrorsJSON, :not_found)
+    end
   end
 end

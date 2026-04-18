@@ -23,5 +23,6 @@ defmodule Inkfish.JoinReqs.JoinReq do
     |> foreign_key_constraint(:course_id)
     |> foreign_key_constraint(:user_id)
     |> validate_required([:course_id, :user_id])
+    |> unique_constraint([:user_id, :course_id])
   end
 end

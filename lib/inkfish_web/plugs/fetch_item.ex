@@ -17,7 +17,7 @@ defmodule InkfishWeb.Plugs.FetchItem do
       conn
     else
       _error ->
-        # IO.inspect({:fetch_item, {target, param}, _error})
+        # IO.inspect({:fetch_item_error, {target, param}, _error, conn.params})
 
         if conn.assigns[:client_mode] == :browser do
           conn

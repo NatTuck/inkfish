@@ -256,16 +256,25 @@ defmodule InkfishWeb.Staff.AssignmentControllerTest do
       staff: staff,
       assignment: assignment,
       sub: sub,
-      grade: _grade,
-      grade_column: grade_column
+      grade: grade,
+      grade_column: grade_column,
+      confirmed_grade: confirmed_grade
     } do
       Inkfish.Repo.update!(
         Ecto.Changeset.change(grade_column, base: Decimal.new("35.0"))
       )
 
+      # Set the number grade score to 0 so total is just feedback grade
+      Inkfish.Repo.update!(
+        Ecto.Changeset.change(confirmed_grade, score: Decimal.new("0.0"))
+      )
+
       Inkfish.Repo.update!(
         Ecto.Changeset.change(sub, score: Decimal.new("20.0"))
       )
+
+      # Confirm the feedback grade so its score is calculated
+      {:ok, _} = Inkfish.Grades.confirm_grade(grade.id)
 
       conn =
         conn

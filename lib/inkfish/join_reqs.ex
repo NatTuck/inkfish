@@ -68,9 +68,46 @@ defmodule Inkfish.JoinReqs do
 
   """
   def create_join_req(attrs \\ %{}) do
-    %JoinReq{}
-    |> JoinReq.changeset(attrs)
-    |> Repo.insert()
+    user_id = attrs[:user_id] || attrs["user_id"]
+    course_id = attrs[:course_id] || attrs["course_id"]
+
+    cond do
+      is_nil(user_id) or is_nil(course_id) ->
+        %JoinReq{}
+        |> JoinReq.changeset(attrs)
+        |> Repo.insert(
+          on_conflict: [
+            set: [
+              note: attrs[:note] || attrs["note"] || "",
+              staff_req: attrs[:staff_req] || attrs["staff_req"] || false
+            ]
+          ],
+          conflict_target: [:user_id, :course_id]
+        )
+
+      Inkfish.Users.get_reg_by_user_and_course(user_id, course_id) ->
+        {:error,
+         %Ecto.Changeset{
+           errors: [
+             already_registered: {"user already registered for course", []}
+           ],
+           data: %JoinReq{},
+           valid?: false
+         }}
+
+      true ->
+        %JoinReq{}
+        |> JoinReq.changeset(attrs)
+        |> Repo.insert(
+          on_conflict: [
+            set: [
+              note: attrs[:note] || attrs["note"] || "",
+              staff_req: attrs[:staff_req] || attrs["staff_req"] || false
+            ]
+          ],
+          conflict_target: [:user_id, :course_id]
+        )
+    end
   end
 
   @doc """

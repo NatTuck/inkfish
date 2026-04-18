@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useMemo, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { createRoot } from 'react-dom/client';
-import { Card, Button } from 'react-bootstrap';
+import { Card } from 'react-bootstrap';
 import _ from 'lodash';
 
 import CodeMirror from '@uiw/react-codemirror';
@@ -12,7 +12,6 @@ import LineComment from './line-comment';
 import { detectLangModes } from './langs';
 
 import { make_lc, same_lc, lcs_del, lcs_put } from './lc-utils';
-import { create_line_comment } from '../ajax';
 
 import { EditorView, WidgetType, Decoration,
          ViewUpdate, ViewPlugin } from '@codemirror/view';
@@ -40,11 +39,12 @@ const lcState = StateField.define({
 });
 
 class LineCommentWidget extends WidgetType {
-  constructor(lc, edit, actions) {
+  constructor(lc, edit, actions, gradeConfirmed) {
     super();
     this.lc = lc;
     this.edit = edit;
     this.actions = actions;
+    this.gradeConfirmed = gradeConfirmed;
   }
 
   eq(that) {
@@ -81,36 +81,11 @@ class LineCommentWidget extends WidgetType {
         data={this.lc}
         edit={this.edit}
         actions={actions}
+        gradeConfirmed={this.gradeConfirmed}
       />
     );
     return lc_div;
   }
-}
-
-function QuickSave({data, actions}) {
-  function saveGrade(ev) {
-    ev.preventDefault();
-
-    let path = "Ω_grading_extra.txt";
-    create_line_comment(data.grade.id, path, 1, 0, "okay")
-      .then((resp) => {
-        console.log("create resp", resp);
-        actions.setGrade(resp.data.grade);
-        window.location.reload();
-      })
-      .catch((resp) => {
-        console.log("error creating", resp);
-        let msg = JSON.stringify(resp);
-        setStatus(msg);
-      });
-  }
-  
-  return (
-    <p>
-      <Button variant="info"
-              onClick={saveGrade}>Full Credit</Button>
-    </p>
-  );
 }
 
 export default function FileViewer({path, data, grade, setGrade}) {
@@ -120,7 +95,7 @@ export default function FileViewer({path, data, grade, setGrade}) {
   const [comments, setComments] = useState(data.grade.line_comments);
 
   let pathComments = comments.filter((lc) => lc.path == path);
-  data = {...data, text, path, grade, comments: pathComments};
+  data = {...data, text, path, grade, comments: pathComments, gradeConfirmed: grade.confirmed};
 
   function putComment(lc) {
     setComments(lcs_put(comments, lc));
@@ -132,16 +107,10 @@ export default function FileViewer({path, data, grade, setGrade}) {
   
   let actions = { setGrade, putComment, delComment };
 
-  let qs = null;
-  if (data.edit && grade.score == null) {
-    qs = <QuickSave data={data} actions={actions} />;
-  }
-  
   console.log(grade);
 
   return (
     <div>
-      { qs }
       <OneFile key={path} data={data} actions={actions} />
     </div>
   );
@@ -234,6 +203,10 @@ function OneFile({data, actions}) {
   function gutter_click(view, info, ev) {
     ev.preventDefault();
 
+    if (data.gradeConfirmed) {
+      return;
+    }
+
     let line = view.state.doc.lineAt(info.from).number;
     let new_lc = make_lc(line, data.path, data.grade, data.grader);
 
@@ -248,7 +221,7 @@ function OneFile({data, actions}) {
     let lcs = state.field(lcState);
 
     let ranges = lcs.map((lc) => {
-      let lcw = new LineCommentWidget(lc, data.edit, actions);
+      let lcw = new LineCommentWidget(lc, data.edit, actions, data.gradeConfirmed);
       let lv = Decoration.widget({widget: lcw, block: true});
       let line = state.doc.line(lc.line);
       return lv.range(line.from);
@@ -259,7 +232,7 @@ function OneFile({data, actions}) {
   
   let extensions = detectLangModes(data.path, data.text);
 
-  if (data.edit) {
+  if (data.edit && !data.gradeConfirmed) {
     extensions.push(lineNumbers({domEventHandlers: { click: gutter_click } }));
   }
   else {
