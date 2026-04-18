@@ -57,7 +57,7 @@ export default function FileTree({data, grade, activePath, pickFile}) {
   );
 }
 
-function GradeInfo({grade}) {
+export function GradeInfo({grade}) {
   let count = grade.line_comments.length;
   let sum   = _.sumBy(grade.line_comments, (lc) => +lc.points);
   if (sum > 0) {
@@ -66,13 +66,24 @@ function GradeInfo({grade}) {
 
   let team_users = _.map(grade.sub.team.regs, (reg) => reg.user.name);
 
+  let badge = grade.confirmed 
+    ? <span className="badge bg-success">Confirmed</span>
+    : <span className="badge bg-warning">Draft</span>;
+
+  let scoreDisplay;
+  if (grade.confirmed) {
+    scoreDisplay = grade.score || '--';
+  } else {
+    scoreDisplay = `-- (preview: ${grade.preview_score || grade.grade_column.base})`;
+  }
+
   return (
     <div className="card">
       <div className="card-body">
-        <h4 className="card-title">Grade Info</h4>
+        <h4 className="card-title">Grade Info {badge}</h4>
         <p>Base: {grade.grade_column.base}</p>
         <p>Comments: {count} ({sum})</p>
-        <p>Total: {grade.score} / {grade.grade_column.points}</p>
+        <p>Total: {scoreDisplay} / {grade.grade_column.points}</p>
 
         <h4>Submitter</h4>
         <p>Team: {team_users.join(', ')}</p>

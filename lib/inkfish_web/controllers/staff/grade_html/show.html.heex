@@ -1,7 +1,15 @@
 <h1>Show Grade</h1>
 
 <p>
-  <.link href={~p"/staff/grades/#{@grade}/edit"}>Edit</.link>
+  <.link href={~p"/staff/grades/#{@grade}/edit"} class="btn btn-primary">
+    Edit Grade
+  </.link>
+  <.link
+    href={~p"/staff/assignments/#{@grade.grade_column.assignment}"}
+    class="btn btn-secondary ms-2"
+  >
+    Show Assignment
+  </.link>
 </p>
 
 <ul>

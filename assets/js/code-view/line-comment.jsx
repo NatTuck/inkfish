@@ -1,82 +1,90 @@
-import React, { useState, useEffect } from 'react';
-import ReactDOM from 'react-dom';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, Row, Col, Form, Button } from 'react-bootstrap';
-import { AlertTriangle, Check, Save, Trash } from 'react-feather';
+import { AlertTriangle, Check, Clock, Trash } from 'react-feather';
+import { debounce } from 'lodash';
 
 import { create_line_comment, delete_line_comment,
-         update_line_comment} from '../ajax';
+         autosave_line_comment } from '../ajax';
 
-export default function LineComment({data, edit, actions}) {
+export default function LineComment({data, edit, actions, gradeConfirmed}) {
   const [id, setId] = useState(data.id);
   const [points, setPoints] = useState(data.points);
   const [text, setText] = useState(data.text);
   const [status, setStatus] = useState(null);
+  const [isModified, setIsModified] = useState(false);
+  const lastSavedRef = useRef({ points: data.points, text: data.text });
 
   let {line, path} = data;
 
-  let color = line_comment_color(points);
-  let icons = [];
+  const isLocked = gradeConfirmed === true;
 
-  if (status) {
-    if (status == "ok") {
-      // TODO: Make this actually display.
-      icons.push(<Check key="ok" />);
-    }
-    else {
-      // TODO: Show error message.
-      icons.push(<AlertTriangle key="err" />);
-    }
-  }
+  const doSave = (commentId, commentData, gradeId, path, line) => {
+    if (isLocked) return;
+    if (commentData.points === lastSavedRef.current.points && 
+        commentData.text === lastSavedRef.current.text) return;
 
-  function clearStatus() {
-    window.setTimeout(() => setStatus(null), 5);
-  }
+    setStatus("saving");
 
-  function handle_enter(ev) {
-    if (ev.which == 13) {
-      ev.preventDefault();
-      save(ev);
-    }
-  }
-
-  function save_comment(ev) {
-    ev.preventDefault();
-    if (id) {
-      update_line_comment(id, points, text)
+    if (commentId) {
+      autosave_line_comment(commentId, commentData)
         .then((resp) => {
-          console.log("update resp", resp);
-          setStatus("ok");
-          actions.setGrade(resp.data.grade);
-          actions.updateThisComment(resp.data);
+          if (resp.saved) {
+            setStatus("saved");
+            setIsModified(false);
+            lastSavedRef.current = { points: commentData.points, text: commentData.text };
+            window.setTimeout(() => setStatus(null), 2000);
+          }
         })
         .catch((resp) => {
-          console.log("error saving", resp);
-          let msg = JSON.stringify(resp);
-          setStatus(msg);
+          console.log("autosave error", resp);
+          if (resp.error === "grade_already_confirmed") {
+            setStatus("error: grade confirmed");
+          } else {
+            setStatus("error");
+          }
         });
-    }
-    else {
-      console.log("aa");
-      // First save
-      create_line_comment(data.grade.id, path, line, points, text)
+    } else if (gradeId) {
+      create_line_comment(gradeId, path, line, commentData.points, commentData.text)
         .then((resp) => {
-          console.log("create resp", resp);
           setId(resp.data.id);
-          setStatus("ok");
+          setStatus("saved");
+          setIsModified(false);
+          lastSavedRef.current = { points: commentData.points, text: commentData.text };
           actions.setGrade(resp.data.grade);
           actions.updateThisComment({...resp.data, uuid: data.uuid});
+          window.setTimeout(() => setStatus(null), 2000);
         })
         .catch((resp) => {
-          console.log("error creating", resp);
-          let msg = JSON.stringify(resp);
-          setStatus(msg);
+          console.log("create error", resp);
+          setStatus("error");
         });
     }
+  };
+
+  const debouncedSaveRef = useRef(debounce(doSave, 5000));
+
+  const gradeId = data.grade_id || (data.grade && data.grade.id);
+
+  useEffect(() => {
+    if (!isLocked && text && (points !== lastSavedRef.current.points || text !== lastSavedRef.current.text)) {
+      setIsModified(true);
+      debouncedSaveRef.current(id, { points, text }, gradeId, path, line);
+    }
+  }, [points, text, id, isLocked]);
+
+  let color = line_comment_color(points);
+
+  function saveNow(ev) {
+    ev.preventDefault();
+    debouncedSaveRef.current.cancel();
+    doSave(id, { points, text }, gradeId, path, line);
   }
 
   function delete_comment(ev) {
     ev.preventDefault();
     console.log("delete", data);
+
+    debouncedSaveRef.current.cancel();
 
     if (id) {
       delete_line_comment(id)
@@ -91,14 +99,17 @@ export default function LineComment({data, edit, actions}) {
     }
   }
 
-  function Buttons({edit}) {
-    if (edit) {
+  function Buttons({edit, locked, modified, saving}) {
+    if (edit && !locked) {
       return (
         <span>
-          <Button variant="success"
-                  disabled={points == data.points && text == data.text}>
-            <Save onClick={save_comment} />
-          </Button>
+          {saving ? (
+            <span className="px-2">...</span>
+          ) : modified ? (
+            <Button variant="secondary" onClick={saveNow}>
+              <Clock />
+            </Button>
+          ) : null}
           <Button variant="danger">
             <Trash onClick={delete_comment} />
           </Button>
@@ -118,33 +129,31 @@ export default function LineComment({data, edit, actions}) {
             <p>Grader: {data.user.name}</p>
           </Col>
           <Col sm={3}>
-            <p>id: {id || "(unsaved)"}</p>
+            <p>id: {id || "(new)"}</p>
           </Col>
           <Col sm={3} className="text-right">
-            { icons }
+            {status === "saved" ? <Check /> : null}
+            {status && status.startsWith("error") ? <AlertTriangle /> : null}
             &nbsp;
-            <Buttons edit={edit} />
+            <Buttons edit={edit} locked={isLocked} modified={isModified} saving={status === "saving"} />
           </Col>
         </Row>
         <Row>
           <Col sm={2}>
             <Form.Control type="number"
-                          onKeyPress={handle_enter}
                           value={points}
-                          disabled={!edit}
+                          disabled={!edit || isLocked}
                           onChange={(ev) => {
                             setPoints(ev.target.value);
-                            clearStatus();
                           }} />
           </Col>
           <Col sm={10}>
             <Form.Control as="textarea"
                           rows="3"
                           value={text}
-                          disabled={!edit}
+                          disabled={!edit || isLocked}
                           onChange={(ev) => {
                             setText(ev.target.value);
-                            clearStatus();
                           }} />
           </Col>
         </Row>

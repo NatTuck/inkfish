@@ -110,6 +110,53 @@ defmodule InkfishWeb.LineCommentControllerTest do
     end
   end
 
+  describe "autosave line_comment" do
+    test "autosaves comment with partial data", %{
+      conn: conn,
+      line_comment: %LineComment{id: id} = line_comment,
+      staff: staff
+    } do
+      params = %{text: "Updated comment text"}
+
+      conn =
+        conn
+        |> login(staff)
+        |> patch(~p"/ajax/staff/line_comments/#{line_comment}/autosave",
+          line_comment: params
+        )
+
+      assert %{"saved" => true} = json_response(conn, 200)
+
+      # Verify the comment was updated
+      conn = get(conn, ~p"/ajax/staff/line_comments/#{id}")
+
+      assert %{"text" => "Updated comment text"} =
+               json_response(conn, 200)["data"]
+    end
+
+    test "returns 403 when grade is confirmed", %{
+      conn: conn,
+      staff: staff,
+      grade: grade
+    } do
+      # Use the grade from setup but confirm it first
+      {:ok, confirmed_grade} = Inkfish.Grades.confirm_grade(grade.id)
+
+      lc = insert(:line_comment, grade: confirmed_grade, user: staff)
+
+      params = %{text: "Should not save"}
+
+      conn =
+        conn
+        |> login(staff)
+        |> patch(~p"/ajax/staff/line_comments/#{lc}/autosave",
+          line_comment: params
+        )
+
+      assert json_response(conn, 403)["error"] == "grade_already_confirmed"
+    end
+  end
+
   describe "delete line_comment" do
     test "deletes chosen line_comment", %{
       conn: conn,

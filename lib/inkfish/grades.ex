@@ -234,6 +234,32 @@ defmodule Inkfish.Grades do
 
   """
   def create_grade(attrs \\ %{}) do
+    # Normalize keys to atoms for internal processing
+    attrs =
+      case Map.keys(attrs) do
+        [] ->
+          attrs
+
+        [key | _] when is_atom(key) ->
+          attrs
+
+        _ ->
+          Enum.reduce(attrs, %{}, fn {k, v}, acc ->
+            Map.put(acc, String.to_atom(k), v)
+          end)
+      end
+
+    # Determine confirmed default based on grade column kind
+    confirmed =
+      if attrs[:grade_column_id] do
+        gcol = get_grade_column!(attrs[:grade_column_id])
+        gcol.kind != "feedback"
+      else
+        true
+      end
+
+    attrs = Map.put(attrs, :confirmed, Map.get(attrs, :confirmed, confirmed))
+
     %Grade{}
     |> Grade.changeset(attrs)
     |> Repo.insert(
@@ -245,6 +271,9 @@ defmodule Inkfish.Grades do
   def put_grade_with_comments(attrs, %User{} = grader) do
     attrs = with_string_keys(attrs)
 
+    # Ensure confirmed is false for feedback grades (editing comments)
+    attrs = Map.put(attrs, "confirmed", false)
+
     Repo.transact(fn ->
       result =
         %Grade{}
@@ -255,9 +284,16 @@ defmodule Inkfish.Grades do
           returning: true
         )
 
-      with {:ok, grade} <- result,
-           {:ok, _lcs} <- put_comments(grade, attrs["line_comments"], grader) do
-        update_feedback_score(grade.id)
+      with {:ok, grade} <- result do
+        # Check if grade is confirmed (shouldn't happen since we set confirmed: false)
+        if Grade.confirmed?(grade) do
+          Repo.rollback(:grade_already_confirmed)
+        else
+          with {:ok, _lcs} <-
+                 put_comments(grade, attrs["line_comments"], grader) do
+            update_feedback_score(grade.id)
+          end
+        end
       end
     end)
   end
@@ -419,10 +455,39 @@ defmodule Inkfish.Grades do
       end)
 
     score = Decimal.add(gcol.base, delta)
+
+    # Only store score if grade is confirmed
+    score = if grade.confirmed, do: score, else: nil
+
     {:ok, grade} = update_grade(grade, %{score: score})
 
     Inkfish.Subs.calc_sub_score!(grade.sub_id)
     {:ok, %{grade | grade_column: gcol}}
+  end
+
+  @doc """
+  Confirms a grade, calculates and stores the score.
+  """
+  def confirm_grade(grade_id) do
+    with %Grade{} = grade <- Repo.get(Grade, grade_id) do
+      {:ok, grade} = update_grade(grade, %{confirmed: true})
+      update_feedback_score(grade.id)
+    else
+      nil -> {:error, :not_found}
+    end
+  end
+
+  @doc """
+  Unconfirms a grade, clears the score.
+  """
+  def unconfirm_grade(grade_id) do
+    with %Grade{} = grade <- Repo.get(Grade, grade_id) do
+      {:ok, grade} = update_grade(grade, %{confirmed: false, score: nil})
+      Inkfish.Subs.calc_sub_score!(grade.sub_id)
+      {:ok, grade}
+    else
+      nil -> {:error, :not_found}
+    end
   end
 
   def recalc_feedback_grades_for_sub!(sub_id) do

@@ -58,6 +58,184 @@ defmodule Inkfish.GradesTest do
     end
   end
 
+  describe "confirmation workflow" do
+    alias Inkfish.Grades.Grade
+
+    test "create_grade sets confirmed=true for non-feedback grades" do
+      sub = insert(:sub)
+
+      grade_column =
+        insert(:grade_column, kind: "number", assignment: sub.assignment)
+
+      params = %{
+        sub_id: sub.id,
+        grade_column_id: grade_column.id,
+        score: Decimal.new("42.0")
+      }
+
+      assert {:ok, %Grade{} = grade} = Grades.create_grade(params)
+      assert grade.confirmed == true
+      assert grade.score == Decimal.new("42.0")
+    end
+
+    test "create_grade sets confirmed=false for feedback grades" do
+      sub = insert(:sub)
+
+      grade_column =
+        insert(:grade_column, kind: "feedback", assignment: sub.assignment)
+
+      params = %{
+        sub_id: sub.id,
+        grade_column_id: grade_column.id,
+        score: nil
+      }
+
+      assert {:ok, %Grade{} = grade} = Grades.create_grade(params)
+      assert grade.confirmed == false
+      assert grade.score == nil
+    end
+
+    test "confirm_grade/1 sets confirmed=true and calculates score" do
+      stock = stock_course()
+      grade = stock.grade
+      staff = stock.staff
+
+      # Add a line comment
+      insert(:line_comment,
+        grade: grade,
+        user: staff,
+        path: "Ω_grading_extra.txt",
+        line: 3,
+        points: Decimal.new("-5.0"),
+        text: "Style issue"
+      )
+
+      assert grade.confirmed == false
+      assert grade.score == nil
+
+      assert {:ok, %Grade{} = confirmed_grade} = Grades.confirm_grade(grade.id)
+      assert confirmed_grade.confirmed == true
+      assert confirmed_grade.score == Decimal.new("35.0")
+    end
+
+    test "unconfirm_grade/1 sets confirmed=false and clears score" do
+      stock = stock_course()
+      confirmed_grade = stock.confirmed_grade
+
+      assert confirmed_grade.confirmed == true
+      assert confirmed_grade.score != nil
+
+      assert {:ok, %Grade{} = unconfirmed_grade} =
+               Grades.unconfirm_grade(confirmed_grade.id)
+
+      assert unconfirmed_grade.confirmed == false
+      assert unconfirmed_grade.score == nil
+    end
+
+    test "confirm_grade/1 returns error for non-existent grade" do
+      assert {:error, :not_found} = Grades.confirm_grade(999_999)
+    end
+
+    test "unconfirm_grade/1 returns error for non-existent grade" do
+      assert {:error, :not_found} = Grades.unconfirm_grade(999_999)
+    end
+  end
+
+  describe "update_feedback_score with confirmation" do
+    alias Inkfish.Grades.Grade
+
+    test "calculates and stores score when grade is confirmed" do
+      stock = stock_course()
+      staff = stock.staff
+
+      # Create a confirmed feedback grade
+      grade_column =
+        insert(:grade_column, kind: "feedback", assignment: stock.assignment)
+
+      {:ok, grade} =
+        Grades.create_grade(%{
+          sub_id: stock.sub.id,
+          grade_column_id: grade_column.id,
+          confirmed: true
+        })
+
+      insert(:line_comment,
+        grade: grade,
+        user: staff,
+        path: "Ω_grading_extra.txt",
+        line: 3,
+        points: Decimal.new("-5.0"),
+        text: "Style issue"
+      )
+
+      assert {:ok, %Grade{} = updated_grade} =
+               Grades.update_feedback_score(grade.id)
+
+      assert updated_grade.confirmed == true
+      assert updated_grade.score == Decimal.new("35.0")
+    end
+
+    test "sets score to nil when grade is unconfirmed" do
+      stock = stock_course()
+      staff = stock.staff
+      grade = stock.grade
+
+      insert(:line_comment,
+        grade: grade,
+        user: staff,
+        path: "Ω_grading_extra.txt",
+        line: 3,
+        points: Decimal.new("-5.0"),
+        text: "Style issue"
+      )
+
+      assert grade.confirmed == false
+
+      assert {:ok, %Grade{} = updated_grade} =
+               Grades.update_feedback_score(grade.id)
+
+      assert updated_grade.confirmed == false
+      assert updated_grade.score == nil
+    end
+
+    test "recalculates score after confirming" do
+      stock = stock_course()
+      grade = stock.grade
+      staff = stock.staff
+
+      insert(:line_comment,
+        grade: grade,
+        user: staff,
+        path: "Ω_grading_extra.txt",
+        line: 3,
+        points: Decimal.new("-5.0"),
+        text: "Style issue"
+      )
+
+      # Initially unconfirmed, score should be nil
+      assert {:ok, %Grade{} = grade} = Grades.update_feedback_score(grade.id)
+      assert grade.score == nil
+
+      # Confirm and recalculate
+      {:ok, confirmed} = Grades.confirm_grade(grade.id)
+      assert confirmed.score == Decimal.new("35.0")
+    end
+  end
+
+  describe "confirmed? helper" do
+    alias Inkfish.Grades.Grade
+
+    test "returns true when grade is confirmed" do
+      grade = insert(:grade, confirmed: true)
+      assert Grade.confirmed?(grade) == true
+    end
+
+    test "returns false when grade is unconfirmed" do
+      grade = insert(:grade, confirmed: false)
+      assert Grade.confirmed?(grade) == false
+    end
+  end
+
   describe "put_grade_with_comments" do
     alias Inkfish.Grades.Grade
 

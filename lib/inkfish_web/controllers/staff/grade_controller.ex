@@ -1,6 +1,8 @@
 defmodule InkfishWeb.Staff.GradeController do
   use InkfishWeb, :controller
 
+  import Ecto.Query
+
   alias Inkfish.Grades
 
   plug InkfishWeb.Plugs.FetchItem,
@@ -67,7 +69,10 @@ defmodule InkfishWeb.Staff.GradeController do
   end
 
   def show(conn, %{"id" => id}) do
-    grade = Grades.get_grade!(id)
+    grade =
+      Grades.get_grade!(id)
+      |> Inkfish.Repo.preload(grade_column: [:assignment])
+
     render(conn, "show.html", grade: grade)
   end
 
@@ -162,6 +167,129 @@ defmodule InkfishWeb.Staff.GradeController do
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, "edit.html", grade: grade, changeset: changeset)
     end
+  end
+
+  def confirm_review(conn, %{"id" => id}) do
+    {id, _} = Integer.parse(id)
+    grade = Grades.get_grade!(id)
+
+    # Preload necessary associations
+    grade =
+      Inkfish.Repo.preload(grade, [
+        :grade_column,
+        :line_comments,
+        sub: [:upload]
+      ])
+
+    # Get line comments with context
+    _sub_data = Inkfish.Subs.read_sub_data(grade.sub_id)
+    unpacked_path = Inkfish.Uploads.Upload.unpacked_path(grade.sub.upload)
+
+    comments_with_context =
+      grade.line_comments
+      |> Enum.sort_by(&{&1.path, &1.line})
+      |> Enum.with_index()
+      |> Enum.map(fn {lc, index} ->
+        context = get_line_context(unpacked_path, lc.path, lc.line)
+
+        stats =
+          get_comment_usage_stats(
+            grade.grade_column.assignment_id,
+            lc.path,
+            lc.line,
+            lc.text
+          )
+
+        %{comment: lc, context: context, stats: stats, index: index}
+      end)
+
+    # Calculate preview score
+    preview_score = InkfishWeb.ViewHelpers.show_preview_score(grade)
+
+    # Serialize comments for React widgets
+    comments_json =
+      comments_with_context
+      |> Enum.map(fn %{comment: lc} ->
+        InkfishWeb.Staff.LineCommentJSON.data(lc)
+      end)
+
+    render(conn, "confirm_review.html",
+      grade: grade,
+      comments_with_context: comments_with_context,
+      preview_score: preview_score,
+      comments_json: comments_json,
+      grade_confirmed: grade.confirmed,
+      csrf_token: Plug.CSRFProtection.get_csrf_token()
+    )
+  end
+
+  def confirm(conn, %{"id" => id}) do
+    {id, _} = Integer.parse(id)
+
+    case Grades.confirm_grade(id) do
+      {:ok, grade} ->
+        conn
+        |> put_flash(:info, "Grade confirmed successfully.")
+        |> redirect(to: ~p"/staff/grades/#{grade}")
+
+      {:error, :not_found} ->
+        conn
+        |> put_flash(:error, "Grade not found.")
+        |> redirect(to: ~p"/dashboard")
+    end
+  end
+
+  def unconfirm(conn, %{"id" => id}) do
+    {id, _} = Integer.parse(id)
+
+    case Grades.unconfirm_grade(id) do
+      {:ok, grade} ->
+        conn
+        |> put_flash(:info, "Grade unlocked for editing.")
+        |> redirect(to: ~p"/staff/grades/#{grade}/edit")
+
+      {:error, :not_found} ->
+        conn
+        |> put_flash(:error, "Grade not found.")
+        |> redirect(to: ~p"/dashboard")
+    end
+  end
+
+  defp get_line_context(unpacked_path, file_path, line_number) do
+    file_path = Path.join(unpacked_path, file_path)
+
+    if File.exists?(file_path) do
+      content = File.read!(file_path)
+      lines = String.split(content, "\n")
+
+      # Get +/- 2 lines around the comment
+      start_line = max(1, line_number - 2)
+      end_line = min(length(lines), line_number + 2)
+
+      lines
+      |> Enum.slice(start_line - 1, end_line - start_line + 1)
+      |> Enum.with_index(start_line)
+      |> Enum.map(fn {text, num} ->
+        %{line: num, text: text, is_commented: num == line_number}
+      end)
+    else
+      []
+    end
+  end
+
+  defp get_comment_usage_stats(assignment_id, path, line, text) do
+    # Count how many other submissions have similar comments
+    from(lc in Inkfish.LineComments.LineComment,
+      join: grade in assoc(lc, :grade),
+      join: gcol in assoc(grade, :grade_column),
+      join: sub in assoc(grade, :sub),
+      where: gcol.assignment_id == ^assignment_id,
+      where: lc.path == ^path,
+      where: lc.line == ^line,
+      where: lc.text == ^text,
+      select: count(sub.id)
+    )
+    |> Inkfish.Repo.one()
   end
 
   def save_sub_dump!(sub_id) do

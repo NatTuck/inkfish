@@ -54,7 +54,20 @@ defmodule Inkfish.Factory do
       insert(:grade,
         grade_column: grade_column,
         sub: sub,
-        score: Decimal.new("25.0")
+        score: nil,
+        confirmed: false
+      )
+
+    # Also create a confirmed grade with a number grade column
+    number_grade_column =
+      insert(:grade_column, kind: "number", assignment: asgn)
+
+    confirmed_grade =
+      insert(:grade,
+        grade_column: number_grade_column,
+        sub: sub,
+        score: Decimal.new("42.0"),
+        confirmed: true
       )
 
     %{
@@ -62,13 +75,15 @@ defmodule Inkfish.Factory do
       bucket: bucket,
       assignment: asgn,
       grade_column: grade_column,
+      number_grade_column: number_grade_column,
       student: student,
       student_reg: student_reg,
       staff: staff,
       staff_reg: staff_reg,
       team: team,
       sub: sub,
-      grade: grade
+      grade: grade,
+      confirmed_grade: confirmed_grade
     }
   end
 
@@ -214,6 +229,7 @@ defmodule Inkfish.Factory do
   def grade_factory do
     %Grade{
       score: Decimal.new("45.7"),
+      confirmed: true,
       sub: build(:sub),
       grade_column: build(:grade_column)
     }
@@ -225,7 +241,7 @@ defmodule Inkfish.Factory do
       path: "hw03/main.c",
       points: Decimal.new("-5.0"),
       text: "Don't mix tabs and spaces",
-      grade: build(:grade),
+      grade: build(:grade, confirmed: false),
       user: build(:user)
     }
   end

@@ -213,6 +213,23 @@ defmodule InkfishWeb.ViewHelpers do
     end
   end
 
+  def show_preview_score(%Grade{} = grade) do
+    if grade.confirmed do
+      "--"
+    else
+      gcol = grade.grade_column
+      lcs = grade.line_comments || []
+
+      delta =
+        Enum.reduce(lcs, Decimal.new("0.0"), fn lc, acc ->
+          Decimal.add(lc.points, acc)
+        end)
+
+      preview = Decimal.add(gcol.base, delta)
+      show_score(preview)
+    end
+  end
+
   def grades_show_date(conn, %Assignment{} = asgn) do
     if asgn.force_show_grades do
       asgn.due

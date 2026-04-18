@@ -1,0 +1,68 @@
+<h1>Review and Confirm Grade</h1>
+
+<div class="grade-status mb-3">
+  <span class="badge bg-warning">Draft</span>
+  <span class="ms-2">
+    Base Score: {InkfishWeb.ViewHelpers.show_score(@grade.grade_column.base)}
+  </span>
+  <span class="ms-2">
+    Preview Score: {@preview_score}
+  </span>
+</div>
+
+<h2>Line Comments</h2>
+
+<%= if @comments_with_context == [] do %>
+  <p>No line comments to review.</p>
+<% else %>
+  <div class="line-comments-review">
+    <%= for %{comment: comment, context: context, stats: stats, index: index} <- @comments_with_context do %>
+      <div class="card mb-3">
+        <div class="card-header">
+          <strong>{comment.path}</strong>
+          - Line {comment.line}
+          <span class="ms-2 text-muted">
+            Points: {InkfishWeb.ViewHelpers.show_score(comment.points)}
+          </span>
+        </div>
+        <div class="card-body">
+          <%= if context != [] do %>
+            <pre class="code-context"><%= for line_ctx <- context do %><%= if line_ctx.is_commented do %><mark>{line_ctx.line}: {line_ctx.text}</mark><% else %>{line_ctx.line}: {line_ctx.text}<% end %>
+<% end %></pre>
+          <% end %>
+
+          <div id={"line-comment-#{index}"} class="line-comment-container mt-2">
+            <!-- React LineComment widget -->
+          </div>
+
+          <%= if stats > 1 do %>
+            <p class="text-muted small mt-2">
+              Used on {stats - 1} other submission(s)
+            </p>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+<% end %>
+
+<div class="mt-4">
+  <.form for={%{}} action={~p"/staff/grades/#{@grade}/confirm"} method="post">
+    <button type="submit" class="btn btn-primary">
+      Confirm Comments and Deductions
+    </button>
+  </.form>
+
+  <.link href={~p"/staff/grades/#{@grade}/edit"} class="btn btn-secondary ms-2">
+    Back to Editing
+  </.link>
+</div>
+
+<script phx-no-curly-interpolation>
+  window.csrf_token = "<%= @csrf_token %>";
+  window.confirm_review_comments = JSON.parse(
+    "<%= raw(javascript_escape(Jason.encode!(@comments_json))) %>"
+  );
+  window.confirm_review_grade_id = <%= @grade.id %>;
+  window.confirm_review_grade_confirmed = <%= @grade.confirmed %>;
+</script>

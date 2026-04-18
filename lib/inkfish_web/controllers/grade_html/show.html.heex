@@ -1,5 +1,23 @@
 <h1>Show Grade: {@grade.grade_column.name}</h1>
 
+<div class="grade-status mb-3">
+  <%= if @grade.confirmed do %>
+    <span class="badge bg-success">Confirmed</span>
+    <%= if @show_score do %>
+      <span class="ms-2">
+        Score: {InkfishWeb.ViewHelpers.show_score(@grade.score)}
+      </span>
+    <% else %>
+      <span class="ms-2 text-muted">
+        Score available after grades are released
+      </span>
+    <% end %>
+  <% else %>
+    <span class="badge bg-warning">Draft</span>
+    <span class="ms-2">Score: --</span>
+  <% end %>
+</div>
+
 <div class="code-viewer">
   <!-- assets/js/code-viewer -->
   React code viewer loading...

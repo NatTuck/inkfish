@@ -24,23 +24,26 @@ defmodule InkfishWeb.GradeController do
     # Re-fetch grade for line comments.
     grade = Grades.get_grade!(id)
 
-    if grade_hidden?(conn, conn.assigns[:assignment]) do
-      conn
-      |> put_flash(:error, "Grade not ready yet.")
-      |> redirect(to: ~p"/subs/#{conn.assigns[:sub]}")
-    else
-      {id, _} = Integer.parse(id)
+    {id, _} = Integer.parse(id)
 
-      grade_json =
-        InkfishWeb.Staff.GradeJSON.data(grade)
+    assignment = conn.assigns[:assignment]
+    show_score = grade.confirmed && !grade_hidden?(conn, assignment)
 
-      data =
-        Inkfish.Subs.read_sub_data(grade.sub_id)
-        |> Map.put(:edit, false)
-        |> Map.put(:grade_id, id)
-        |> Map.put(:grade, grade_json)
+    grade_json =
+      InkfishWeb.Staff.GradeJSON.data(grade)
+      |> Map.put(:preview_score, nil)
 
-      render(conn, "show.html", fluid_grid: true, grade: grade, data: data)
-    end
+    data =
+      Inkfish.Subs.read_sub_data(grade.sub_id)
+      |> Map.put(:edit, false)
+      |> Map.put(:grade_id, id)
+      |> Map.put(:grade, grade_json)
+
+    render(conn, "show.html",
+      fluid_grid: true,
+      grade: grade,
+      data: data,
+      show_score: show_score
+    )
   end
 end

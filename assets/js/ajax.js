@@ -84,3 +84,11 @@ export function delete_line_comment(lc_id) {
   let path = "/staff/line_comments/" + lc_id;
   return mutate('DELETE', path, {});
 }
+
+export function autosave_line_comment(lc_id, data) {
+  let path = "/staff/line_comments/" + lc_id + "/autosave";
+  let body = {
+    line_comment: data,
+  };
+  return mutate('PATCH', path, body);
+}

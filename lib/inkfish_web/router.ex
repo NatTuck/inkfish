@@ -168,6 +168,9 @@ defmodule InkfishWeb.Router do
     post("/subs/:id/toggle_late_penalty", SubController, :toggle_late_penalty)
 
     resources("/grades", GradeController, only: [:edit, :show])
+    get("/grades/:id/confirm-review", GradeController, :confirm_review)
+    post("/grades/:id/confirm", GradeController, :confirm)
+    post("/grades/:id/unconfirm", GradeController, :unconfirm)
   end
 
   scope "/admin", InkfishWeb.Admin, as: :admin do
@@ -204,6 +207,8 @@ defmodule InkfishWeb.Router do
       only: [:show, :update, :delete]
     )
 
+    patch("/line_comments/:id/autosave", LineCommentController, :autosave)
+
     resources "/teamsets", TeamsetController, only: [] do
       resources("/teams", TeamController, only: [:index, :create])
     end
@@ -234,7 +239,14 @@ defmodule InkfishWeb.Router do
 
     resources "/subs", SubController, only: [:index, :show]
 
-    resources "/grades", GradeController, only: [:index, :show, :create]
+    resources "/grades", GradeController, only: [:index, :show, :create] do
+      post "/confirm", GradeController, :confirm
+      post "/unconfirm", GradeController, :unconfirm
+      resources "/line_comments", LineCommentController, only: [:create]
+    end
+
+    resources "/line_comments", LineCommentController,
+      only: [:show, :update, :delete]
 
     resources "/courses", CourseController, only: [] do
       resources "/teamsets", TeamsetController, only: [:create]

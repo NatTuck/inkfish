@@ -27,7 +27,17 @@ defmodule Inkfish.LineCommentsTest do
     end
 
     test "create_line_comment/1 with valid data creates a line_comment" do
-      params = params_with_assocs(:line_comment)
+      grade = insert(:grade, confirmed: false)
+      user = insert(:user)
+
+      params = %{
+        grade_id: grade.id,
+        user_id: user.id,
+        path: "hw03/main.c",
+        line: 10,
+        points: Decimal.new("-5.0"),
+        text: "Don't mix tabs and spaces"
+      }
 
       assert {:ok, %LineComment{} = line_comment} =
                LineComments.create_line_comment(params, ["hw03/main.c"])
@@ -43,7 +53,7 @@ defmodule Inkfish.LineCommentsTest do
     end
 
     test "create_line_comment/1 with path not in submission returns error" do
-      grade = insert(:grade)
+      grade = insert(:grade, confirmed: false)
       user = insert(:user)
 
       params = %{
@@ -62,7 +72,7 @@ defmodule Inkfish.LineCommentsTest do
     end
 
     test "create_line_comment/1 with valid path in submission succeeds" do
-      grade = insert(:grade)
+      grade = insert(:grade, confirmed: false)
       user = insert(:user)
 
       params = %{
@@ -125,7 +135,7 @@ defmodule Inkfish.LineCommentsTest do
     alias Inkfish.LineComments.LineComment
 
     test "invalid path line comments are shown at line 1 in omega file" do
-      grade = insert(:grade)
+      grade = insert(:grade, confirmed: false)
       user = insert(:user)
 
       invalid_lc =
@@ -163,7 +173,7 @@ defmodule Inkfish.LineCommentsTest do
     end
 
     test "invalid line numbers are adjusted to last valid line" do
-      grade = insert(:grade)
+      grade = insert(:grade, confirmed: false)
       user = insert(:user)
 
       lc_with_invalid_line =
@@ -209,11 +219,135 @@ defmodule Inkfish.LineCommentsTest do
     end
   end
 
+  describe "comment operations on unconfirmed grade" do
+    test "create_line_comment succeeds on unconfirmed grade" do
+      stock = stock_course()
+      grade = stock.grade
+      staff = stock.staff
+
+      assert grade.confirmed == false
+
+      params = %{
+        grade_id: grade.id,
+        user_id: staff.id,
+        path: "Ω_grading_extra.txt",
+        line: 3,
+        points: -5,
+        text: "Test comment"
+      }
+
+      assert {:ok, %LineComment{} = lc} =
+               LineComments.create_line_comment(params, :auto, :auto)
+
+      assert lc.text == "Test comment"
+    end
+
+    test "update_line_comment succeeds on unconfirmed grade" do
+      stock = stock_course()
+      grade = stock.grade
+      user = insert(:user)
+
+      line_comment =
+        insert(:line_comment, %{
+          grade: grade,
+          user: user,
+          path: "Ω_grading_extra.txt",
+          line: 3,
+          text: "Original"
+        })
+
+      assert {:ok, %LineComment{} = lc} =
+               LineComments.update_line_comment(line_comment, %{text: "Updated"})
+
+      assert lc.text == "Updated"
+    end
+
+    test "delete_line_comment succeeds on unconfirmed grade" do
+      stock = stock_course()
+      grade = stock.grade
+      user = insert(:user)
+
+      line_comment =
+        insert(:line_comment, %{
+          grade: grade,
+          user: user,
+          path: "Ω_grading_extra.txt",
+          line: 3,
+          text: "To delete"
+        })
+
+      assert {:ok, %LineComment{}} =
+               LineComments.delete_line_comment(line_comment)
+
+      assert_raise Ecto.NoResultsError, fn ->
+        LineComments.get_line_comment!(line_comment.id)
+      end
+    end
+  end
+
+  describe "comment operations on confirmed grade" do
+    test "create_line_comment fails on confirmed grade" do
+      stock = stock_course()
+      confirmed_grade = stock.confirmed_grade
+      user = insert(:user)
+
+      assert confirmed_grade.confirmed == true
+
+      params = %{
+        grade_id: confirmed_grade.id,
+        user_id: user.id,
+        path: "Ω_grading_extra.txt",
+        line: 3,
+        points: -5,
+        text: "Should fail"
+      }
+
+      assert {:error, :grade_already_confirmed} =
+               LineComments.create_line_comment(params, :auto, :auto)
+    end
+
+    test "update_line_comment fails on confirmed grade" do
+      stock = stock_course()
+      confirmed_grade = stock.confirmed_grade
+      user = insert(:user)
+
+      line_comment =
+        insert(:line_comment, %{
+          grade: confirmed_grade,
+          user: user,
+          path: "Ω_grading_extra.txt",
+          line: 3,
+          text: "Original"
+        })
+
+      assert {:error, :grade_already_confirmed} =
+               LineComments.update_line_comment(line_comment, %{text: "Updated"})
+    end
+
+    test "delete_line_comment fails on confirmed grade" do
+      stock = stock_course()
+      confirmed_grade = stock.confirmed_grade
+      user = insert(:user)
+
+      line_comment =
+        insert(:line_comment, %{
+          grade: confirmed_grade,
+          user: user,
+          path: "Ω_grading_extra.txt",
+          line: 3,
+          text: "To delete"
+        })
+
+      assert {:error, :grade_already_confirmed} =
+               LineComments.delete_line_comment(line_comment)
+    end
+  end
+
   describe "line number validation" do
     alias Inkfish.LineComments.LineComment
 
     test "create_line_comment/1 with line exceeding file length returns error" do
-      grade = insert(:grade)
+      grade = insert(:grade, confirmed: false)
       user = insert(:user)
 
       params = %{
@@ -239,7 +373,7 @@ defmodule Inkfish.LineCommentsTest do
     end
 
     test "create_line_comment/1 with valid line succeeds" do
-      grade = insert(:grade)
+      grade = insert(:grade, confirmed: false)
       user = insert(:user)
 
       params = %{
@@ -384,7 +518,7 @@ defmodule Inkfish.LineCommentsTest do
     end
 
     test "existing line comments with empty text can be displayed" do
-      grade = insert(:grade)
+      grade = insert(:grade, confirmed: false)
       user = insert(:user)
 
       # Bypass validation to simulate legacy data
