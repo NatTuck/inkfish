@@ -1,0 +1,15 @@
+export function elixir() { return []; }
+export function cpp() { return []; }
+export function java() { return []; }
+export function python() { return []; }
+export function javascript() { return []; }
+export function rust() { return []; }
+export function css() { return []; }
+export function html() { return []; }
+export function json() { return []; }
+export function xml() { return []; }
+export function markdown() { return []; }
+export function markdownLanguage() { return {}; }
+export function languages() { return []; }
+export function gas() { return []; }
+export function perl() { return []; }

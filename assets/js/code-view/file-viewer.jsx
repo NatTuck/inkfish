@@ -1,22 +1,18 @@
-import React, { useEffect, useRef, useMemo, useState } from 'react';
-import ReactDOM from 'react-dom';
+import React, { useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Card, Button } from 'react-bootstrap';
-import _ from 'lodash';
 
 import CodeMirror from '@uiw/react-codemirror';
 import { lineNumbers, highlightSpecialChars, scrollPastEnd } from '@codemirror/view';
-import { foldGutter, syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language';
+import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language';
 
 import LineComment from './line-comment';
 import { detectLangModes } from './langs';
 
 import { make_lc, same_lc, lcs_del, lcs_put } from './lc-utils';
 
-import { EditorView, WidgetType, Decoration,
-         ViewUpdate, ViewPlugin } from '@codemirror/view';
-import { EditorState, Range, RangeSet,
-         StateField, StateEffect } from '@codemirror/state';
+import { EditorView, WidgetType, Decoration } from '@codemirror/view';
+import { EditorState, RangeSet, StateField, StateEffect } from '@codemirror/state';
 
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
@@ -25,7 +21,7 @@ import markedKatex from 'marked-katex-extension';
 const lcSetState = StateEffect.define({});
 
 const lcState = StateField.define({
-  create(state) {
+  create() {
     return [];
   },
   update(lcs0, tx) {
@@ -107,8 +103,6 @@ export default function FileViewer({path, data, grade, setGrade}) {
   
   let actions = { setGrade, putComment, delComment };
 
-  console.log(grade);
-
   return (
     <div>
       <OneFile key={path} data={data} actions={actions} />
@@ -180,12 +174,12 @@ function PreviewButtons({showRendered, setShowRendered}) {
 }
 
 function OneFile({data, actions}) {
+  const isMarkdown = data.path.toLowerCase().endsWith('.md');
+  const [showRendered, setShowRendered] = useState(isMarkdown);
+
   if (data.path == "") {
     return <NoFile />;
   }
-
-  const isMarkdown = data.path.toLowerCase().endsWith('.md');
-  const [showRendered, setShowRendered] = useState(isMarkdown);
 
   if (isMarkdown && showRendered) {
     return (
