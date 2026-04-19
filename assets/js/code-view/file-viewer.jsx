@@ -213,11 +213,13 @@ function OneFile({data, actions}) {
 
   function makeLcWidgets(state) {
     let lcs = state.field(lcState);
+    let doc_lines = state.doc.lines;
 
     let ranges = lcs.map((lc) => {
+      let line_num = Math.max(1, Math.min(lc.line || 1, doc_lines));
       let lcw = new LineCommentWidget(lc, data.edit, actions, data.gradeConfirmed);
       let lv = Decoration.widget({widget: lcw, block: true});
-      let line = state.doc.line(lc.line);
+      let line = state.doc.line(line_num);
       return lv.range(line.from);
     });
 

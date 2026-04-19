@@ -50,13 +50,23 @@ defmodule Inkfish.LineComments.LineComment do
   defp validate_line_number(changeset, valid_line_counts) do
     path = get_field(changeset, :path)
     line = get_field(changeset, :line)
+    id = get_field(changeset, :id)
 
-    case Map.get(valid_line_counts, path) do
-      nil ->
+    cond do
+      line == nil or line < 1 ->
+        if id == nil do
+          add_error(changeset, :line, "line number must be at least 1")
+        else
+          changeset
+        end
+
+      valid_line_counts == nil ->
         changeset
 
-      max_lines ->
-        if line > max_lines do
+      true ->
+        max_lines = Map.get(valid_line_counts, path)
+
+        if max_lines && line > max_lines do
           add_error(
             changeset,
             :line,
