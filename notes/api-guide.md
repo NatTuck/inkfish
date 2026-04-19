@@ -30,6 +30,12 @@
 | GET | `/api/v1/staff/grades` | `sub_id` |
 | GET | `/api/v1/staff/grades/:id` | |
 | POST | `/api/v1/staff/grades` | `sub_id`, `grade{grade_column_id, score \| line_comments}` |
+| POST | `/api/v1/staff/grades/:id/confirm` | **Note: Agents shouldn't use unless explicitly requested** |
+| POST | `/api/v1/staff/grades/:id/unconfirm` | |
+| POST | `/api/v1/staff/grades/:grade_id/line_comments` | `line_comment{path, line, points, text}` |
+| GET | `/api/v1/staff/line_comments/:id` | |
+| PATCH | `/api/v1/staff/line_comments/:id` | `line_comment{path, line, points, text}` |
+| DELETE | `/api/v1/staff/line_comments/:id` | |
 
 ## curl Examples with Responses
 
@@ -100,6 +106,40 @@ curl -X POST -H "x-auth: KEY" -H "Content-Type: application/json" \
   "http://localhost:4000/api/v1/staff/grades?sub_id=1"
 # Returns: {"data":{"id":"3","score":"32.0","grade_column_id":3,"grade_column":{...},"line_comments":[{"path":"main.c","line":10,"points":"-5.0","text":"Style issue",...}]}}
 
+# Create line comment on existing grade
+# Note: Grade must be unconfirmed. Returns grade with updated preview_score.
+curl -X POST -H "x-auth: KEY" -H "Content-Type: application/json" \
+  -d '{"line_comment":{"path":"main.c","line":20,"points":"-2.0","text":"Minor issue"}}' \
+  "http://localhost:4000/api/v1/staff/grades/3/line_comments"
+# Returns: {"data":{"id":"123","path":"main.c","line":20,"points":"-2.0","text":"Minor issue","grade":{"id":"3","preview_score":"30.0",...}}}
+
+# Get line comment
+curl -H "x-auth: KEY" "http://localhost:4000/api/v1/staff/line_comments/123"
+# Returns: {"data":{"id":"123","path":"main.c","line":20,"points":"-2.0","text":"Minor issue","grade":{...},"user":{...}}}
+
+# Update line comment
+# Note: Grade must be unconfirmed. Returns grade with updated preview_score.
+curl -X PATCH -H "x-auth: KEY" -H "Content-Type: application/json" \
+  -d '{"line_comment":{"points":"-1.0","text":"Updated comment"}}' \
+  "http://localhost:4000/api/v1/staff/line_comments/123"
+# Returns: {"data":{"id":"123","points":"-1.0","text":"Updated comment","grade":{"preview_score":"31.0",...}}}
+
+# Delete line comment
+# Note: Grade must be unconfirmed. Returns grade with updated preview_score.
+curl -X DELETE -H "x-auth: KEY" "http://localhost:4000/api/v1/staff/line_comments/123"
+# Returns: {"data":{"grade":{"id":"3","preview_score":"32.0",...}}}
+
+# Confirm grade
+# Note: Agents shouldn't use this endpoint unless explicitly requested by user.
+# Finalizes the grade score from line comments.
+curl -X POST -H "x-auth: KEY" "http://localhost:4000/api/v1/staff/grades/3/confirm"
+# Returns: {"data":{"id":"3","confirmed":true,"score":"32.0",...}}
+
+# Unconfirm grade
+# Reverts grade to draft state with null score and preview_score.
+curl -X POST -H "x-auth: KEY" "http://localhost:4000/api/v1/staff/grades/3/unconfirm"
+# Returns: {"data":{"id":"3","confirmed":false,"score":null,"preview_score":"32.0",...}}
+
 # Create teamset
 curl -X POST -H "x-auth: KEY" -H "Content-Type: application/json" \
   -d '{"teamset":{"name":"Teams","size":3}}' \
@@ -167,7 +207,9 @@ Status codes: 200, 201, 204, 400, 403, 404, 422
 | Field | Type | Description |
 |-------|------|-------------|
 | id | integer | Grade ID |
-| score | decimal \| null | Final score |
+| confirmed | boolean | Whether grade is finalized |
+| score | decimal \| null | Final score (null if unconfirmed) |
+| preview_score | decimal \| null | Preview score from line comments (null if confirmed) |
 | grade_column_id | integer | Grade column ID |
 | grade_column | object | Grade column information |
 | log_uuid | string \| null | Log UUID for grading script output |

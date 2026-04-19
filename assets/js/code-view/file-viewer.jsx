@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useMemo, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { createRoot } from 'react-dom/client';
-import { Card } from 'react-bootstrap';
+import { Card, Button } from 'react-bootstrap';
 import _ from 'lodash';
 
 import CodeMirror from '@uiw/react-codemirror';
