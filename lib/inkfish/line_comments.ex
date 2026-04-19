@@ -259,6 +259,8 @@ defmodule Inkfish.LineComments do
   defp adjust_line_number(lc, nil), do: lc
 
   defp adjust_line_number(lc, valid_line_counts) do
+    lc = if lc.line == nil or lc.line < 1, do: %{lc | line: 1}, else: lc
+
     case Map.get(valid_line_counts, lc.path) do
       nil -> lc
       max_lines when lc.line > max_lines -> %{lc | line: max_lines}
