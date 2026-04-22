@@ -49,7 +49,7 @@
     "react-redux": "^9.2.0",
     "react-simple-tree-menu": "^1.1.18",
     "redux": "^5.0.1",
-    "uuid": "^9.0.1"
+    "uuid": "^14.0.0"
   },
   "devDependencies": {
     "@babel/eslint-parser": "^7.28.6",
