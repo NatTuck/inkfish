@@ -1,6 +1,5 @@
 
 import $ from 'cash-dom';
-import { v4 as uuid } from 'uuid';
 
 import socket from './socket';
 
@@ -30,7 +29,7 @@ function scroll_down(elem) {
 }
 
 function setup_cloner() {
-  let ch_id = uuid();
+  let ch_id = crypto.randomUUID();
   let channel = join_channel(ch_id);
   console.log("joined channel: clone:" + ch_id);
 

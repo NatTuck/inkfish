@@ -2,6 +2,7 @@ defmodule InkfishWeb.LineCommentEditTest do
   use PhoenixTest.Playwright.Case
 
   import Inkfish.Factory
+  import ExUnit.CaptureLog
 
   alias PhoenixTest.Playwright.Config
   alias PhoenixTest.Playwright.EventListener
@@ -107,6 +108,36 @@ defmodule InkfishWeb.LineCommentEditTest do
     :ok
   end
 
+  defp assert_no_http_errors_in_logs(logs) do
+    http_errors = parse_http_errors_from_logs(logs)
+
+    for {url, status} <- http_errors do
+      method = get_request_method(url)
+      flunk("HTTP error #{status} on #{method} #{url}")
+    end
+
+    :ok
+  end
+
+  defp parse_http_errors_from_logs(logs) do
+    logs
+    |> String.split("\n")
+    |> Enum.filter(&String.contains?(&1, "Failed to load resource"))
+    |> Enum.filter(&String.contains?(&1, "status of"))
+    |> Enum.map(fn line ->
+      case Regex.run(~r/status of (\d+)/, line) do
+        [_, status_str] ->
+          status = String.to_integer(status_str)
+          case Regex.run(~r/\((http[^\)]+)\)$/, line) do
+            [_, url] -> {url, status}
+            nil -> nil
+          end
+        nil -> nil
+      end
+    end)
+    |> Enum.reject(&is_nil/1)
+  end
+
   describe "line comment creation and editing with console error detection" do
     setup [:setup_grade_with_files]
 
@@ -117,103 +148,121 @@ defmodule InkfishWeb.LineCommentEditTest do
 
       {:ok, agent} = Agent.start_link(fn -> [] end)
 
-      conn =
-        unwrap(conn, fn %{page_id: page_id} ->
-          filter = &match?(%{method: :console}, &1)
+      logs =
+        capture_log(fn ->
+          conn =
+            unwrap(conn, fn %{page_id: page_id} ->
+              filter = &match?(%{method: :console}, &1)
 
-          callback = fn %{params: %{type: type, text: text}} ->
-            if type == "error" do
-              Agent.update(agent, fn errors -> [{text, type} | errors] end)
-            end
-          end
+              callback = fn %{params: %{type: type, text: text}} ->
+                if type == "error" do
+                  Agent.update(agent, fn errors -> [{text, type} | errors] end)
+                end
+              end
 
-          {:ok, _} =
-            EventListener.start_link(
-              %{guid: page_id, filter: filter, callback: callback},
-              name: :console_listener
-            )
+              {:ok, _} =
+                EventListener.start_link(
+                  %{guid: page_id, filter: filter, callback: callback},
+                  name: :console_listener
+                )
 
-          {:ok, _} =
-            Page.update_subscription(page_id,
-              event: :console,
-              enabled: true,
-              timeout: timeout
-            )
-        end)
+              {:ok, _} =
+                Page.update_subscription(page_id,
+                  event: :console,
+                  enabled: true,
+                  timeout: timeout
+                )
+            end)
 
-      conn =
-        conn
-        |> add_session_cookie([value: %{user_id: staff.id}], @session_options)
-        |> visit("/staff/grades/#{grade.id}/edit")
-        |> assert_has("h1", text: "Edit Grade")
-        |> assert_has("span.badge", text: "Draft")
+          conn =
+            conn
+            |> add_session_cookie([value: %{user_id: staff.id}], @session_options)
+            |> visit("/staff/grades/#{grade.id}/edit")
+            |> assert_has("h1", text: "Edit Grade")
+            |> assert_has("span.badge", text: "Draft")
 
-      conn =
-        step(conn, "Click file hello.c in file tree", fn conn ->
+          conn =
+            step(conn, "Click file hello.c in file tree", fn conn ->
+              conn
+              |> assert_has(".list-group-item", text: "hello.c")
+              |> click(".list-group-item", "hello.c")
+              |> assert_has(".cm-editor")
+            end)
+
+          conn =
+            step(conn, "Create new line comment on line 5", fn conn ->
+              conn
+              |> click(".cm-gutterElement:nth-child(5)")
+              |> assert_has(".comment-card")
+            end)
+
+          conn =
+            step(conn, "Fill new comment points and text", fn conn ->
+              conn
+              |> press(".comment-card input[type=\"number\"]", "Control+a")
+              |> type(".comment-card input[type=\"number\"]", "-2.0")
+              |> press(".comment-card textarea", "Control+a")
+              |> type(
+                ".comment-card textarea",
+                "Missing error check on return value"
+              )
+            end)
+
+          conn =
+            step(conn, "Save new comment", fn conn ->
+              Process.sleep(100)
+              conn |> click(".comment-card button.btn-secondary")
+            end)
+
+          conn =
+            step(conn, "Wait for save confirmation", fn conn ->
+              Process.sleep(500)
+              conn
+            end)
+
+          conn =
+            step(conn, "Click file Makefile", fn conn ->
+              conn
+              |> click(".list-group-item", "Makefile")
+              |> assert_has(".cm-editor")
+            end)
+
+          conn =
+            step(conn, "Edit existing comment", fn conn ->
+              conn
+              |> press(".comment-card input[type=\"number\"]", "Control+a")
+              |> type(".comment-card input[type=\"number\"]", "-0.5")
+              |> press(".comment-card textarea", "Control+a")
+              |> type(".comment-card textarea", "Minor style: add clean target")
+            end)
+
+          conn =
+            step(conn, "Save edited comment", fn conn ->
+              Process.sleep(100)
+              conn |> click(".comment-card button.btn-secondary")
+            end)
+
+          conn =
+            step(conn, "Wait for save confirmation", fn conn ->
+              Process.sleep(500)
+              conn
+            end)
+
+          assert_no_console_errors(agent)
+
           conn
-          |> assert_has(".list-group-item", text: "hello.c")
-          |> click(".list-group-item", "hello.c")
-          |> assert_has(".cm-editor")
         end)
 
-      conn =
-        step(conn, "Create new line comment on line 5", fn conn ->
-          conn
-          |> click(".cm-gutterElement:nth-child(5)")
-          |> assert_has(".comment-card")
-        end)
+      assert_no_http_errors_in_logs(logs)
+    end
+  end
 
-      conn =
-        step(conn, "Fill new comment points and text", fn conn ->
-          conn
-          |> type(".comment-card input[type=\"number\"]", "-2.0")
-          |> type(
-            ".comment-card textarea",
-            "Missing error check on return value"
-          )
-        end)
-
-      conn =
-        step(conn, "Save new comment", fn conn ->
-          Process.sleep(100)
-          conn |> click(".comment-card button.btn-secondary")
-        end)
-
-      conn =
-        step(conn, "Wait for save confirmation", fn conn ->
-          Process.sleep(500)
-          conn
-        end)
-
-      conn =
-        step(conn, "Click file Makefile", fn conn ->
-          conn
-          |> click(".list-group-item", "Makefile")
-          |> assert_has(".cm-editor")
-        end)
-
-      conn =
-        step(conn, "Edit existing comment", fn conn ->
-          conn
-          |> type(".comment-card input[type=\"number\"]", "-0.5")
-          |> type(".comment-card textarea", "Minor style: add clean target")
-        end)
-
-      conn =
-        step(conn, "Save edited comment", fn conn ->
-          Process.sleep(100)
-          conn |> click(".comment-card button.btn-secondary")
-        end)
-
-      conn =
-        step(conn, "Wait for save confirmation", fn conn ->
-          Process.sleep(500)
-          conn
-        end)
-
-      assert_no_console_errors(agent)
-
-      conn
+  defp get_request_method(url) do
+    cond do
+      String.contains?(url, "/autosave") -> "PATCH"
+      String.contains?(url, "/line_comments") and not String.contains?(url, "/grades/") -> "PATCH/PUT/DELETE"
+      String.contains?(url, "/grades/") and String.contains?(url, "/line_comments") -> "POST"
+      true -> "UNKNOWN"
     end
   end
 end
