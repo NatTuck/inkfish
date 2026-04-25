@@ -212,7 +212,8 @@ defmodule Inkfish.Subs do
 
     case result do
       {:ok, sub} ->
-        set_one_sub_active!(sub)
+        # Ensure one sub is active; fall back to most recent if needed
+        {:ok, _active_sub} = set_one_sub_active(sub)
 
         if has_autograders?(sub) do
           autograde!(sub)
@@ -325,47 +326,127 @@ defmodule Inkfish.Subs do
     Inkfish.AgJobs.Server.poll()
   end
 
-  def set_one_sub_active!(new_sub) do
-    prev = active_sub_for_team(new_sub.assignment_id, new_sub.team_id)
-    # If the active sub has been graded or late penalty ignored, we keep it.
-    if prev && (prev.score || prev.ignore_late_penalty) do
-      set_sub_active!(prev)
-    else
-      set_sub_active!(new_sub)
+  @doc """
+  Sets exactly one sub active for the given team and assignment.
+
+  If the previous active sub has a score or ignore_late_penalty set,
+  it remains active. Otherwise, the new sub is activated.
+
+  If activation fails, falls back to activating the new sub, then
+  falls back to activating the most recent sub. Guarantees that
+  if subs exist, exactly one will be active.
+
+  Returns {:ok, active_sub} on success.
+  """
+  def set_one_sub_active(new_sub) do
+    asg_id = new_sub.assignment_id
+    team_id = new_sub.team_id
+    prev = active_sub_for_team(asg_id, team_id)
+
+    # Determine preferred target: keep graded sub, or activate new
+    target =
+      if prev && (prev.score || prev.ignore_late_penalty) do
+        prev
+      else
+        new_sub
+      end
+
+    # Try to activate preferred target
+    result =
+      case set_sub_active(target) do
+        {:ok, sub} ->
+          {:ok, sub}
+
+        {:error, _} ->
+          # Fallback: try activating the new sub
+          case set_sub_active(new_sub) do
+            {:ok, sub} -> {:ok, sub}
+            {:error, _} -> activate_most_recent_sub(asg_id, team_id)
+          end
+      end
+
+    # Verify invariant: if subs exist, exactly one should be active
+    case result do
+      {:ok, sub} ->
+        # Double-check
+        if active_sub_for_team(asg_id, team_id) do
+          {:ok, sub}
+        else
+          activate_most_recent_sub(asg_id, team_id)
+        end
+
+      {:error, _} ->
+        activate_most_recent_sub(asg_id, team_id)
     end
   end
 
-  def set_sub_active!(new_sub) do
+  @doc """
+  Activates a specific sub, deactivating all others in the same
+  assignment/team scope.
+
+  Returns {:ok, sub} on success, {:error, reason} on failure.
+  """
+  def set_sub_active(%Sub{} = new_sub) do
     asg_id = new_sub.assignment_id
     team_id = new_sub.team_id
-    team = Teams.get_team!(team_id)
 
-    # This should be the active sub for each member of the
-    # team.
+    case Teams.get_team(team_id) do
+      nil ->
+        {:error, :team_not_found}
 
-    member_ids = Enum.map(team.team_members, & &1.reg_id)
+      team ->
+        member_ids = Enum.map(team.team_members, & &1.reg_id)
 
-    teams =
-      Repo.all(
-        from(tt in Team,
-          left_join: members in assoc(tt, :team_members),
-          where: members.reg_id in ^member_ids
+        teams =
+          Repo.all(
+            from(tt in Team,
+              left_join: members in assoc(tt, :team_members),
+              where: members.reg_id in ^member_ids
+            )
+          )
+
+        team_ids = Enum.map(teams, & &1.id)
+
+        subs_query =
+          from(sub in Sub,
+            where: sub.assignment_id == ^asg_id,
+            where: sub.team_id in ^team_ids
+          )
+
+        result =
+          Ecto.Multi.new()
+          |> Ecto.Multi.update_all(:subs, subs_query, set: [active: false])
+          |> Ecto.Multi.update(:sub, Sub.make_active(new_sub))
+          |> Repo.transaction()
+
+        case result do
+          {:ok, %{sub: sub}} -> {:ok, sub}
+          {:error, _failed_op, changeset, _changes} -> {:error, changeset}
+        end
+    end
+  end
+
+  @doc """
+  Activates the most recent sub for a given assignment and team.
+  Used as a fallback when normal activation fails.
+
+  Returns {:ok, sub} on success, {:error, reason} if no subs exist.
+  """
+  def activate_most_recent_sub(asg_id, team_id) do
+    most_recent =
+      Repo.one(
+        from(sub in Sub,
+          where: sub.assignment_id == ^asg_id,
+          where: sub.team_id == ^team_id,
+          order_by: [desc: sub.inserted_at],
+          limit: 1
         )
       )
 
-    team_ids = Enum.map(teams, & &1.id)
-
-    subs =
-      from(sub in Sub,
-        where: sub.assignment_id == ^asg_id,
-        where: sub.team_id in ^team_ids
-      )
-
-    {:ok, _} =
-      Ecto.Multi.new()
-      |> Ecto.Multi.update_all(:subs, subs, set: [active: false])
-      |> Ecto.Multi.update(:sub, Sub.make_active(new_sub))
-      |> Repo.transaction()
+    case most_recent do
+      nil -> {:error, :no_subs_exist}
+      sub -> set_sub_active(sub)
+    end
   end
 
   @doc """

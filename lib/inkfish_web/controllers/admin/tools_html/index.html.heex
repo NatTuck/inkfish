@@ -1,0 +1,23 @@
+<div class="container mx-auto px-4 py-8">
+  <h1 class="text-3xl font-bold mb-6">Admin Tools</h1>
+
+  <div class="bg-white shadow rounded-lg p-6 mb-6">
+    <h2 class="text-xl font-semibold mb-4">Fix Active Subs</h2>
+    <p class="text-gray-600 mb-4">
+      This tool finds submission groups (assignment + team combinations) that have
+      subs but no active sub, and activates the most recent one according to the
+      standard logic.
+    </p>
+    <p class="text-gray-600 mb-4">
+      <strong>Current orphaned groups:</strong> {@orphaned_count}
+    </p>
+    <.form for={%{}} action={~p"/admin/tools/fix_active_subs"} method="post">
+      <button
+        type="submit"
+        class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded"
+      >
+        Fix Active Subs
+      </button>
+    </.form>
+  </div>
+</div>

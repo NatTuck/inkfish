@@ -128,11 +128,14 @@ defmodule InkfishWeb.LineCommentEditTest do
       case Regex.run(~r/status of (\d+)/, line) do
         [_, status_str] ->
           status = String.to_integer(status_str)
+
           case Regex.run(~r/\((http[^\)]+)\)$/, line) do
             [_, url] -> {url, status}
             nil -> nil
           end
-        nil -> nil
+
+        nil ->
+          nil
       end
     end)
     |> Enum.reject(&is_nil/1)
@@ -176,7 +179,10 @@ defmodule InkfishWeb.LineCommentEditTest do
 
           conn =
             conn
-            |> add_session_cookie([value: %{user_id: staff.id}], @session_options)
+            |> add_session_cookie(
+              [value: %{user_id: staff.id}],
+              @session_options
+            )
             |> visit("/staff/grades/#{grade.id}/edit")
             |> assert_has("h1", text: "Edit Grade")
             |> assert_has("span.badge", text: "Draft")
@@ -259,10 +265,19 @@ defmodule InkfishWeb.LineCommentEditTest do
 
   defp get_request_method(url) do
     cond do
-      String.contains?(url, "/autosave") -> "PATCH"
-      String.contains?(url, "/line_comments") and not String.contains?(url, "/grades/") -> "PATCH/PUT/DELETE"
-      String.contains?(url, "/grades/") and String.contains?(url, "/line_comments") -> "POST"
-      true -> "UNKNOWN"
+      String.contains?(url, "/autosave") ->
+        "PATCH"
+
+      String.contains?(url, "/line_comments") and
+          not String.contains?(url, "/grades/") ->
+        "PATCH/PUT/DELETE"
+
+      String.contains?(url, "/grades/") and
+          String.contains?(url, "/line_comments") ->
+        "POST"
+
+      true ->
+        "UNKNOWN"
     end
   end
 end
