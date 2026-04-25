@@ -6,6 +6,9 @@
       <div class="float-right">
         <p>
           <.link href={~p"/courses"}>List All Courses</.link>
+          <%= if has_staff_role?(@regs, @current_user) do %>
+            | <.link href={~p"/staff/dashboard"}>Staff Dashboard</.link>
+          <% end %>
         </p>
       </div>
     </div>

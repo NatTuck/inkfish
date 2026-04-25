@@ -92,6 +92,8 @@ defmodule InkfishWeb.Router do
   scope "/staff", InkfishWeb.Staff, as: :staff do
     pipe_through([:browser, :require_user_session])
 
+    get("/dashboard", DashboardController, :index)
+
     resources "/courses", CourseController,
       only: [:index, :show, :edit, :update] do
       resources("/regs", RegController, only: [:index, :new, :create])
