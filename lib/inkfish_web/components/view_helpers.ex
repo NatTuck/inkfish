@@ -58,6 +58,10 @@ defmodule InkfishWeb.ViewHelpers do
     reg.is_staff || reg.is_prof || user.is_admin
   end
 
+  def has_staff_role?(regs, user) do
+    user.is_admin || Enum.any?(regs, fn reg -> reg.is_staff || reg.is_prof end)
+  end
+
   def show_reg_role(%Reg{} = reg) do
     cond do
       reg.is_prof ->

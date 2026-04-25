@@ -1,0 +1,77 @@
+<h1>Staff Dashboard</h1>
+
+<%= if @courses == [] do %>
+  <p>
+    No courses found. You need to be staff or professor for at least one course.
+  </p>
+<% else %>
+  <%= for course <- @courses do %>
+    <h2>
+      <.link href={~p"/staff/courses/#{course.id}"}>{course.name}</.link>
+    </h2>
+
+    <%= if course.past_assignments_with_ungraded != [] do %>
+      <h3>Past Assignments with Ungraded Submissions</h3>
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>Assignment</th>
+            <th>Bucket</th>
+            <th>Due</th>
+            <th>Ungraded</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <%= for asg <- course.past_assignments_with_ungraded do %>
+            <tr class={["bg-white", asg.overdue && "bg-warning-subtle"]}>
+              <td>
+                <.link href={~p"/staff/assignments/#{asg.id}"}>
+                  {asg.name}
+                </.link>
+                <%= if asg.overdue do %>
+                  <span class="badge bg-warning">overdue</span>
+                <% end %>
+              </td>
+              <td>{asg.bucket_name}</td>
+              <td class="human-date">{asg.due}</td>
+              <td>{asg.ungraded_count}</td>
+              <td>{asg.total_count}</td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% end %>
+
+    <%= if course.upcoming_by_bucket != %{} do %>
+      <h3>Upcoming Assignments</h3>
+      <%= for {bucket_name, assignments} <- course.upcoming_by_bucket do %>
+        <h4>{bucket_name}</h4>
+        <%= if assignments == [] do %>
+          <p class="text-muted">No upcoming assignments.</p>
+        <% else %>
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>Assignment</th>
+                <th>Due</th>
+              </tr>
+            </thead>
+            <tbody>
+              <%= for asg <- assignments do %>
+                <tr>
+                  <td>
+                    <.link href={~p"/staff/assignments/#{asg.id}"}>
+                      {asg.name}
+                    </.link>
+                  </td>
+                  <td class="human-date">{asg.due}</td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        <% end %>
+      <% end %>
+    <% end %>
+  <% end %>
+<% end %>
