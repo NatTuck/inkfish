@@ -186,6 +186,9 @@ defmodule InkfishWeb.Router do
     post("/docker_tags/:id/build", DockerTagController, :build)
     post("/docker_tags/:id/clean", DockerTagController, :clean)
     live_dashboard("/live_dashboard", metrics: InkfishWeb.Telemetry)
+
+    get("/tools", ToolsController, :index)
+    post("/tools/fix_active_subs", ToolsController, :fix_active_subs)
   end
 
   scope "/ajax", InkfishWeb, as: :ajax do

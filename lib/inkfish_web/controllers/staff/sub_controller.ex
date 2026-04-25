@@ -79,11 +79,18 @@ defmodule InkfishWeb.Staff.SubController do
 
   def activate(conn, %{"id" => _id}) do
     sub = conn.assigns[:sub]
-    Subs.set_sub_active!(sub)
 
-    conn
-    |> put_flash(:info, "Set sub active: ##{sub.id}.")
-    |> redirect(to: ~p"/staff/subs/#{sub}")
+    case Subs.set_one_sub_active(sub) do
+      {:ok, active_sub} ->
+        conn
+        |> put_flash(:info, "Set sub active: ##{active_sub.id}.")
+        |> redirect(to: ~p"/staff/subs/#{sub}")
+
+      {:error, reason} ->
+        conn
+        |> put_flash(:error, "Failed to set sub active: #{inspect(reason)}")
+        |> redirect(to: ~p"/staff/subs/#{sub}")
+    end
   end
 
   def toggle_late_penalty(conn, %{"id" => _id}) do
