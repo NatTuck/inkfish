@@ -20,4 +20,103 @@
       </button>
     </.form>
   </div>
+
+  <%= if @orphaned_count > 0 do %>
+    <div class="bg-white shadow rounded-lg p-6 mb-6">
+      <h3 class="text-lg font-semibold mb-4">Orphaned Groups</h3>
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+              Course
+            </th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+              Assignment
+            </th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+              Team ID
+            </th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+              Team Members
+            </th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          <%= for group <- @orphaned_groups do %>
+            <tr>
+              <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                {group.course_name}
+              </td>
+              <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                {group.assignment_name} (ID: {group.assignment_id})
+              </td>
+              <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                {group.team_id}
+              </td>
+              <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
+                {group.team_member_names}
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% end %>
+
+  <%= if @fix_results do %>
+    <div class="bg-white shadow rounded-lg p-6 mb-6">
+      <h3 class="text-lg font-semibold mb-4">Fix Results</h3>
+      <div class="mb-4">
+        <span class="font-semibold">Total:</span> {@fix_results.total} |
+        <span class="font-semibold text-green-600">Fixed:</span> {@fix_results.fixed_count} |
+        <span class="font-semibold text-red-600">Failed:</span> {@fix_results.failed_count}
+      </div>
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+              Status
+            </th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+              Course
+            </th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+              Assignment
+            </th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+              Team Members
+            </th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+              Message
+            </th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          <%= for result <- @fix_results.results do %>
+            <tr class={
+              if result.status == :ok, do: "bg-green-50", else: "bg-red-50"
+            }>
+              <td class="px-4 py-2 whitespace-nowrap text-sm">
+                <%= if result.status == :ok do %>
+                  <span class="text-green-600 font-semibold">✓ OK</span>
+                <% else %>
+                  <span class="text-red-600 font-semibold">✗ Error</span>
+                <% end %>
+              </td>
+              <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                {result.group.course_name}
+              </td>
+              <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                {result.group.assignment_name} (ID: {result.group.assignment_id})
+              </td>
+              <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
+                {result.group.team_member_names}
+              </td>
+              <td class="px-4 py-2 text-sm text-gray-700">{result.message}</td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% end %>
 </div>

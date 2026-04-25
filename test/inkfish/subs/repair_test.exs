@@ -32,8 +32,10 @@ defmodule Inkfish.Subs.RepairTest do
       assert Repair.count_orphaned_sub_groups() == 1
 
       # Fix it
-      fixed_count = Repair.fix_active_subs()
-      assert fixed_count == 1
+      result = Repair.fix_active_subs()
+      assert result.total == 1
+      assert result.fixed_count == 1
+      assert result.failed_count == 0
 
       # Verify it's no longer orphaned
       assert Repair.count_orphaned_sub_groups() == 0
@@ -52,8 +54,10 @@ defmodule Inkfish.Subs.RepairTest do
       assert Repair.count_orphaned_sub_groups() == 2
 
       # Fix them
-      fixed_count = Repair.fix_active_subs()
-      assert fixed_count == 2
+      result = Repair.fix_active_subs()
+      assert result.total == 2
+      assert result.fixed_count == 2
+      assert result.failed_count == 0
 
       # Verify none are orphaned
       assert Repair.count_orphaned_sub_groups() == 0
@@ -69,8 +73,10 @@ defmodule Inkfish.Subs.RepairTest do
       # Create a normal active sub
       _sub = insert(:sub, active: true)
 
-      fixed_count = Repair.fix_active_subs()
-      assert fixed_count == 0
+      result = Repair.fix_active_subs()
+      assert result.total == 0
+      assert result.fixed_count == 0
+      assert result.failed_count == 0
     end
 
     test "fix_active_subs/0 handles multiple subs in same group (activates most recent)" do
