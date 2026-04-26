@@ -124,6 +124,13 @@ defmodule InkfishWeb.ApiV1.Staff.CourseControllerTest do
 
       sub = insert(:sub, assignment: assignment, reg: student_reg, team: team)
 
+      # Create active_sub record for the new logic
+      insert(:active_sub,
+        reg: student_reg,
+        assignment: assignment,
+        sub: sub
+      )
+
       _grade_col =
         insert(:grade_column,
           assignment: assignment,

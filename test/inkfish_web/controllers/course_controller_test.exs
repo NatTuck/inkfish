@@ -113,6 +113,13 @@ defmodule InkfishWeb.CourseControllerTest do
         score: Decimal.new("20.0")
       )
 
+    # Create active_sub record for sub1
+    insert(:active_sub,
+      reg: student_reg,
+      assignment: assignment1,
+      sub: sub1
+    )
+
     sub2 =
       insert(:sub,
         assignment: assignment2,
@@ -122,6 +129,13 @@ defmodule InkfishWeb.CourseControllerTest do
         # 100% of 25
         score: Decimal.new("25.0")
       )
+
+    # Create active_sub record for sub2
+    insert(:active_sub,
+      reg: student_reg,
+      assignment: assignment2,
+      sub: sub2
+    )
 
     sub3 =
       insert(:sub,

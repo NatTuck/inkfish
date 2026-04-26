@@ -3,6 +3,7 @@ defmodule InkfishWeb.CourseController do
 
   alias Inkfish.Courses
   alias Inkfish.Subs
+  alias Inkfish.Subs.Sub
   alias Inkfish.Users
   alias Inkfish.Assignments.Assignment
 
@@ -44,7 +45,7 @@ defmodule InkfishWeb.CourseController do
       {s, p} =
         Enum.reduce(bucket.assignments, base, fn as, {s, p} ->
           zero_sub = Subs.make_zero_sub(as)
-          sub = Enum.find(as.subs, zero_sub, & &1.active)
+          sub = Enum.find(as.subs, zero_sub, fn sub -> Sub.is_active?(sub) end)
           score = sub.score || Decimal.new("0.0")
           weight = fix_weight(as.weight)
           points = Assignment.assignment_total_points(as)

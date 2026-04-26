@@ -62,13 +62,13 @@
 
         <%= for sub <- Enum.reverse((@subs[as.id] || [])) do %>
           <tr>
-            <td>{if sub.active, do: "✓"}</td>
+            <td>{if Inkfish.Subs.Sub.is_active?(sub), do: "✓"}</td>
             <td>
               <.link href={~p"/staff/subs/#{sub}"}>{sub.inserted_at}</.link>
             </td>
             <td>{sub.score || "∅"} / {assignment_total_points(as)}</td>
             <td>
-              <%= unless sub.active do %>
+              <%= unless Inkfish.Subs.Sub.is_active?(sub) do %>
                 <% cset = Inkfish.Subs.change_sub(%{sub | active: true}) %>
                 <.form :let={f} for={cset} action={~p"/staff/subs/#{sub}"}>
                   <.hidden_input field={f[:active]} />

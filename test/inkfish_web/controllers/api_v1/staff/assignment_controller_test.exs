@@ -243,6 +243,13 @@ defmodule InkfishWeb.ApiV1.Staff.AssignmentControllerTest do
           active: true
         )
 
+      # Create active_sub record for the new logic
+      insert(:active_sub,
+        reg: student_reg,
+        assignment: assignment,
+        sub: sub
+      )
+
       gcol =
         insert(:grade_column,
           assignment: assignment,
@@ -293,6 +300,13 @@ defmodule InkfishWeb.ApiV1.Staff.AssignmentControllerTest do
           upload: upload,
           active: true
         )
+
+      # Create active_sub record for the new logic
+      insert(:active_sub,
+        reg: student_reg,
+        assignment: assignment,
+        sub: sub
+      )
 
       gcol =
         insert(:grade_column,

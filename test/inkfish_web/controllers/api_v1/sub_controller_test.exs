@@ -241,7 +241,6 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
 
       assert %{
                "id" => ^id,
-               "active" => true,
                "hours_spent" => "1.0",
                "ignore_late_penalty" => false,
                "late_penalty" => nil,

@@ -23,12 +23,23 @@ defmodule Inkfish.Subs.Sub do
     belongs_to :grader, Inkfish.Users.Reg
     has_many :grades, Inkfish.Grades.Grade
     has_one :ag_job, Inkfish.AgJobs.AgJob
+    has_one :active_sub, Inkfish.Subs.ActiveSub, foreign_key: :sub_id
 
     timestamps()
   end
 
   def parent(), do: :assignment
   def standard_preloads(), do: [:team]
+
+  @doc """
+  Returns true if this sub has an active_sub record, meaning it's
+  the current active submission for at least one team member.
+  """
+  def is_active?(%__MODULE__{} = sub) do
+    not is_nil(sub.active_sub)
+  end
+
+  def is_active?(_), do: false
 
   @doc false
   def changeset(sub, attrs) do
@@ -94,7 +105,8 @@ defmodule Inkfish.Subs.Sub do
           :team,
           :upload,
           :grader,
-          :ag_job
+          :ag_job,
+          :active_sub
         ]
       )
 

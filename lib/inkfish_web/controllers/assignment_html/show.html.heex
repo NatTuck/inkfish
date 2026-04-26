@@ -87,7 +87,9 @@
   <tbody>
     <%= for sub <- @subs do %>
       <tr>
-        <td style="text-align: center">{if sub.active, do: "✓"}</td>
+        <td style="text-align: center">
+          {if Inkfish.Subs.Sub.is_active?(sub), do: "✓"}
+        </td>
         <td>{sub.inserted_at}</td>
         <%= for gcol <- @assignment.grade_columns do %>
           <% grade = Enum.find(sub.grades, &(&1.grade_column_id == gcol.id)) %>

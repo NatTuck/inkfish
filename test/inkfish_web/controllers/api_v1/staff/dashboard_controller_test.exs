@@ -135,7 +135,7 @@ defmodule InkfishWeb.ApiV1.Staff.DashboardControllerTest do
 
       upload = insert(:upload, user: student)
 
-      _sub =
+      sub =
         insert(:sub,
           assignment: past_asg,
           reg: student_reg,
@@ -143,6 +143,13 @@ defmodule InkfishWeb.ApiV1.Staff.DashboardControllerTest do
           upload: upload,
           active: true
         )
+
+      # Create active_sub record for the new logic
+      insert(:active_sub,
+        reg: student_reg,
+        assignment: past_asg,
+        sub: sub
+      )
 
       # No grade - so should be ungraded
       conn = get(conn, ~p"/api/v1/staff/dashboard")
@@ -196,12 +203,20 @@ defmodule InkfishWeb.ApiV1.Staff.DashboardControllerTest do
       insert(:team_member, team: team, reg: student_reg)
       upload = insert(:upload, user: student)
 
-      insert(:sub,
-        assignment: asg,
+      sub =
+        insert(:sub,
+          assignment: asg,
+          reg: student_reg,
+          team: team,
+          upload: upload,
+          active: true
+        )
+
+      # Create active_sub record for the new logic
+      insert(:active_sub,
         reg: student_reg,
-        team: team,
-        upload: upload,
-        active: true
+        assignment: asg,
+        sub: sub
       )
 
       conn = get(conn, ~p"/api/v1/staff/dashboard")
@@ -345,6 +360,13 @@ defmodule InkfishWeb.ApiV1.Staff.DashboardControllerTest do
           upload: upload,
           active: true
         )
+
+      # Create active_sub record for the new logic
+      insert(:active_sub,
+        reg: student_reg,
+        assignment: past_asg,
+        sub: sub
+      )
 
       # Create a grade for the submission
       insert(:grade, sub: sub, grade_column: grade_col, score: Decimal.new("8"))

@@ -21,6 +21,7 @@ defmodule InkfishWeb.Staff.CourseController do
   alias Inkfish.Grades.Gradesheet
   alias Inkfish.GradingTasks
   alias Inkfish.Assignments.Assignment
+  alias Inkfish.Subs.Sub
 
   def index(conn, _params) do
     courses = Courses.list_courses()
@@ -100,7 +101,7 @@ defmodule InkfishWeb.Staff.CourseController do
 
               mine = !reg.is_grader || sub.grader_id == reg.id
               done = grade && grade.score
-              sub.active && mine && !done
+              Sub.is_active?(sub) && mine && !done
             end)
 
           {asg.id, length(subs)}
