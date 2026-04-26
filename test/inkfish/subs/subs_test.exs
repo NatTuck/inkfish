@@ -3,6 +3,7 @@ defmodule Inkfish.SubsTest do
   import Inkfish.Factory
 
   alias Inkfish.Subs
+  alias Inkfish.Repo
 
   describe "subs" do
     alias Inkfish.Subs.Sub
@@ -22,10 +23,18 @@ defmodule Inkfish.SubsTest do
     end
 
     test "create_sub/1 with valid data creates a sub" do
-      attrs = params_with_assocs(:sub)
+      # Create a team with members so activation can work
+      reg = insert(:reg)
+      team = insert(:team)
+      insert(:team_member, team: team, reg: reg)
+
+      attrs = params_with_assocs(:sub, reg: reg, team: team)
       assert {:ok, %Sub{} = sub} = Subs.create_sub(attrs)
-      assert sub.active == false
       assert sub.hours_spent == Decimal.new("4.5")
+
+      # Verify active_sub record was created
+      active_sub = Repo.get_by(Subs.ActiveSub, sub_id: sub.id)
+      assert active_sub != nil
     end
 
     test "create_sub/1 with invalid data returns error changeset" do
@@ -37,7 +46,6 @@ defmodule Inkfish.SubsTest do
       sub = sub_fixture()
       attrs = %{"ignore_late_penalty" => true}
       assert %Sub{} = sub = Subs.update_sub_ignore_late(sub, attrs)
-      assert sub.active == true
       assert sub.ignore_late_penalty == true
     end
 

@@ -12,6 +12,7 @@ defmodule Inkfish.Assignments do
   alias Inkfish.Grades
   alias Inkfish.LocalTime
   alias Inkfish.Subs.Sub
+  alias Inkfish.Subs.ActiveSub
   alias Inkfish.Users.Reg
   alias Inkfish.Teams.Team
 
@@ -80,16 +81,17 @@ defmodule Inkfish.Assignments do
         where: sub.assignment_id == ^as_id,
         where: sub.reg_id == ^reg_id or sub.team_id in ^team_ids,
         left_join: grades in assoc(sub, :grades),
+        left_join: active_sub in assoc(sub, :active_sub),
         order_by: [desc: :inserted_at],
-        preload: [grades: grades]
+        preload: [grades: grades, active_sub: active_sub]
     )
   end
 
   def list_active_subs(%Assignment{} = as) do
     Repo.all(
       from sub in Sub,
-        where: sub.assignment_id == ^as.id,
-        where: sub.active,
+        join: asub in ActiveSub,
+        on: asub.sub_id == sub.id and asub.assignment_id == ^as.id,
         left_join: grades in assoc(sub, :grades),
         left_join: reg in assoc(sub, :reg),
         left_join: user in assoc(reg, :user),
@@ -126,13 +128,15 @@ defmodule Inkfish.Assignments do
         left_join: bucket in assoc(as, :bucket),
         left_join: grade_columns in assoc(as, :grade_columns),
         left_join: subs in assoc(as, :subs),
+        left_join: active_sub in ActiveSub,
+        on: active_sub.assignment_id == as.id and active_sub.sub_id == subs.id,
+        where: not is_nil(active_sub.id),
         left_join: grades in assoc(subs, :grades),
         left_join: ggcol in assoc(grades, :grade_column),
         left_join: reg in assoc(subs, :reg),
         left_join: user in assoc(reg, :user),
         left_join: grader in assoc(subs, :grader),
         left_join: guser in assoc(grader, :user),
-        where: subs.active,
         where: reg.is_student,
         preload: [
           bucket: bucket,
@@ -364,7 +368,7 @@ defmodule Inkfish.Assignments do
       Enum.map(assignment_rows, fn %{due: due} = row ->
         asg =
           Repo.get!(Assignment, row.id)
-          |> Repo.preload([:grade_columns, subs: :grades])
+          |> Repo.preload([:grade_columns, subs: [:grades, :active_sub]])
 
         required_kinds = ~w(feedback number)
 
@@ -374,11 +378,11 @@ defmodule Inkfish.Assignments do
           |> MapSet.new()
 
         total_count =
-          Enum.count(asg.subs, fn s -> s.active end)
+          Enum.count(asg.subs, fn s -> Sub.is_active?(s) end)
 
         graded_count =
           Enum.count(asg.subs, fn s ->
-            s.active &&
+            Sub.is_active?(s) &&
               Enum.all?(required_gcol_ids, fn gcol_id ->
                 Enum.any?(s.grades, fn g ->
                   g.grade_column_id == gcol_id && g.score != nil

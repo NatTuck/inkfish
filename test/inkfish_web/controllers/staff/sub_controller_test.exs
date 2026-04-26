@@ -2,6 +2,9 @@ defmodule InkfishWeb.Staff.SubControllerTest do
   use InkfishWeb.ConnCase
   import Inkfish.Factory
 
+  alias Inkfish.Repo
+  alias Inkfish.Subs
+
   setup %{conn: conn} do
     %{staff: staff, assignment: assignment, sub: sub} = stock_course()
     conn = login(conn, staff)
@@ -42,8 +45,8 @@ defmodule InkfishWeb.Staff.SubControllerTest do
           upload: upload
         )
 
-      # The sub should start as inactive
-      refute sub.active
+      # The sub should start as inactive (no active_sub record)
+      refute Repo.get_by(Subs.ActiveSub, sub_id: sub.id)
 
       # Call the activate action
       conn = post(conn, ~p"/staff/subs/#{sub}/activate")
@@ -84,8 +87,8 @@ defmodule InkfishWeb.Staff.SubControllerTest do
           upload: upload
         )
 
-      # The sub should start as inactive
-      refute sub.active
+      # The sub should start as inactive (no active_sub record)
+      refute Repo.get_by(Subs.ActiveSub, sub_id: sub.id)
 
       # Call the toggle_late_penalty action
       conn = post(conn, ~p"/staff/subs/#{sub}/toggle_late_penalty")
@@ -108,8 +111,8 @@ defmodule InkfishWeb.Staff.SubControllerTest do
            conn: conn,
            sub: sub
          } do
-      # The sub should start as active (from factory) and ignore_late_penalty as false
-      assert sub.active
+      # The sub should start as active (has active_sub record from stock_course) and ignore_late_penalty as false
+      assert Repo.get_by(Subs.ActiveSub, sub_id: sub.id)
       refute sub.ignore_late_penalty
 
       # Call the toggle_late_penalty action

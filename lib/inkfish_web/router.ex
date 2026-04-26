@@ -221,6 +221,13 @@ defmodule InkfishWeb.Router do
     resources("/teams", TeamController, only: [:show, :update, :delete])
   end
 
+  scope "/api/v1/admin", InkfishWeb.ApiV1.Admin, as: :api_v1_admin do
+    pipe_through :api
+
+    get "/orphaned_sub_groups", OrphanedSubGroupsController, :index
+    post "/fix_active_subs", OrphanedSubGroupsController, :fix
+  end
+
   scope "/api/v1", InkfishWeb.ApiV1, as: :api_v1 do
     pipe_through :api
 

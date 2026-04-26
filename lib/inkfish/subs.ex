@@ -7,9 +7,9 @@ defmodule Inkfish.Subs do
   alias Inkfish.Repo
 
   alias Inkfish.Subs.Sub
+  alias Inkfish.Subs.ActiveSub
   alias Inkfish.Users.Reg
   alias Inkfish.Teams
-  alias Inkfish.Teams.Team
   alias Inkfish.Grades
   alias Inkfish.Grades.GradeColumn
   alias Inkfish.Grades.Grade
@@ -46,7 +46,9 @@ defmodule Inkfish.Subs do
         inner_join: team in assoc(sub, :team),
         inner_join: tregs in assoc(team, :regs),
         where: tregs.id == ^reg_id,
-        order_by: [desc: sub.inserted_at]
+        left_join: active_sub in assoc(sub, :active_sub),
+        order_by: [desc: sub.inserted_at],
+        preload: [active_sub: active_sub]
       )
     )
   end
@@ -75,8 +77,13 @@ defmodule Inkfish.Subs do
         order_by: [desc: sub.inserted_at],
         limit: 100,
         offset: ^offset,
-        where: sub.active,
-        preload: [:upload, reg: [:user], team: [:teamset, regs: [:user]]]
+        left_join: as in assoc(sub, :active_sub),
+        preload: [
+          :upload,
+          :active_sub,
+          reg: [:user],
+          team: [:teamset, regs: [:user]]
+        ]
       )
     )
   end
@@ -87,24 +94,41 @@ defmodule Inkfish.Subs do
 
   def active_sub_for_reg(asg_id, reg_id) do
     Repo.one(
-      from(sub in Sub,
-        where: sub.reg_id == ^reg_id,
-        where: sub.assignment_id == ^asg_id,
-        where: sub.active,
+      from(as in ActiveSub,
+        where: as.reg_id == ^reg_id,
+        where: as.assignment_id == ^asg_id,
+        join: sub in assoc(as, :sub),
+        preload: [sub: sub],
         limit: 1
       )
     )
+    |> case do
+      nil -> nil
+      as -> as.sub
+    end
   end
 
   def active_sub_for_team(asg_id, team_id) do
+    # Get the team with members
+    team = Teams.get_team(team_id)
+    member_reg_ids = Enum.map(team.team_members, & &1.reg_id)
+
+    # Find subs that are active for any team member
     Repo.one(
-      from(sub in Sub,
+      from(as in ActiveSub,
+        where: as.assignment_id == ^asg_id,
+        where: as.reg_id in ^member_reg_ids,
+        join: sub in assoc(as, :sub),
         where: sub.team_id == ^team_id,
-        where: sub.assignment_id == ^asg_id,
-        where: sub.active,
+        preload: [sub: sub],
+        order_by: [desc: as.inserted_at],
         limit: 1
       )
     )
+    |> case do
+      nil -> nil
+      as -> as.sub
+    end
   end
 
   def count_subs_for_grader(asgs, reg) do
@@ -112,9 +136,9 @@ defmodule Inkfish.Subs do
 
     Repo.one(
       from(sub in Sub,
+        join: as in assoc(sub, :active_sub),
         where: sub.grader_id == ^reg.id,
         where: sub.assignment_id in ^as_ids,
-        where: sub.active,
         select: count(sub.id)
       )
     )
@@ -151,6 +175,7 @@ defmodule Inkfish.Subs do
         left_join: lcs in assoc(grades, :line_comments),
         left_join: gc in assoc(grades, :grade_column),
         left_join: ag_job in assoc(sub, :ag_job),
+        left_join: active_sub in assoc(sub, :active_sub),
         preload: [
           ag_job: ag_job,
           upload: upload,
@@ -158,7 +183,8 @@ defmodule Inkfish.Subs do
           grades: {grades, grade_column: gc, line_comments: lcs},
           reg: {reg, user: user},
           grader: {grader, user: gruser},
-          assignment: {as, bucket: {bucket, course: course}}
+          assignment: {as, bucket: {bucket, course: course}},
+          active_sub: active_sub
         ]
       )
     )
@@ -381,10 +407,13 @@ defmodule Inkfish.Subs do
   end
 
   @doc """
-  Activates a specific sub, deactivating all others in the same
-  assignment/team scope.
+  Activates a specific sub by creating active_sub records for all team members,
+  deleting any existing active_sub records for those members on this assignment.
 
   Returns {:ok, sub} on success, {:error, reason} on failure.
+
+  If the team has no members, returns {:ok, sub} without creating active_sub records.
+  This can happen in tests or edge cases.
   """
   def set_sub_active(%Sub{} = new_sub) do
     asg_id = new_sub.assignment_id
@@ -395,33 +424,41 @@ defmodule Inkfish.Subs do
         {:error, :team_not_found}
 
       team ->
-        member_ids = Enum.map(team.team_members, & &1.reg_id)
+        member_reg_ids = Enum.map(team.team_members, & &1.reg_id)
 
-        teams =
-          Repo.all(
-            from(tt in Team,
-              left_join: members in assoc(tt, :team_members),
-              where: members.reg_id in ^member_ids
+        # If team has no members, just return ok without creating active_sub records
+        # This can happen in tests or edge cases
+        if Enum.empty?(member_reg_ids) do
+          {:ok, new_sub}
+        else
+          result =
+            Ecto.Multi.new()
+            |> Ecto.Multi.delete_all(
+              :delete_existing,
+              from(as in ActiveSub,
+                where: as.assignment_id == ^asg_id,
+                where: as.reg_id in ^member_reg_ids
+              )
             )
-          )
+            |> Ecto.Multi.insert_all(:insert_new, ActiveSub, fn _changes ->
+              now = DateTime.utc_now() |> DateTime.truncate(:second)
 
-        team_ids = Enum.map(teams, & &1.id)
+              Enum.map(member_reg_ids, fn reg_id ->
+                %{
+                  reg_id: reg_id,
+                  assignment_id: asg_id,
+                  sub_id: new_sub.id,
+                  inserted_at: now,
+                  updated_at: now
+                }
+              end)
+            end)
+            |> Repo.transaction()
 
-        subs_query =
-          from(sub in Sub,
-            where: sub.assignment_id == ^asg_id,
-            where: sub.team_id in ^team_ids
-          )
-
-        result =
-          Ecto.Multi.new()
-          |> Ecto.Multi.update_all(:subs, subs_query, set: [active: false])
-          |> Ecto.Multi.update(:sub, Sub.make_active(new_sub))
-          |> Repo.transaction()
-
-        case result do
-          {:ok, %{sub: sub}} -> {:ok, sub}
-          {:error, _failed_op, changeset, _changes} -> {:error, changeset}
+          case result do
+            {:ok, _} -> {:ok, new_sub}
+            {:error, _failed_op, changeset, _changes} -> {:error, changeset}
+          end
         end
     end
   end

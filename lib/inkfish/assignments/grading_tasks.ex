@@ -6,6 +6,7 @@ defmodule Inkfish.Assignments.GradingTasks do
   alias Inkfish.Assignments
   alias Inkfish.Grades
   alias Inkfish.Grades.Grade
+  alias Inkfish.Subs.ActiveSub
 
   def unassign_inactive_subs(as) do
     qq =
@@ -13,9 +14,11 @@ defmodule Inkfish.Assignments.GradingTasks do
         inner_join: gcol in assoc(grade, :grade_column),
         inner_join: sub in assoc(grade, :sub),
         inner_join: asg in assoc(sub, :assignment),
+        left_join: active_sub in ActiveSub,
+        on: active_sub.sub_id == sub.id,
         where: gcol.kind == "feedback",
         where: asg.id == ^as.id,
-        where: sub.active == false
+        where: is_nil(active_sub.id)
 
     Repo.update_all(qq, set: [grader_id: nil])
   end

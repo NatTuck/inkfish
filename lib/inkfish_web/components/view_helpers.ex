@@ -185,7 +185,7 @@ defmodule InkfishWeb.ViewHelpers do
   end
 
   def show_score(conn, %Assignment{} = asgn) do
-    sub = Enum.find(asgn.subs, & &1.active)
+    sub = Enum.find(asgn.subs, fn sub -> Sub.is_active?(sub) end)
     show_score(conn, asgn, sub && sub.score)
   end
 

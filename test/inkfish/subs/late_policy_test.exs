@@ -7,6 +7,7 @@ defmodule Inkfish.LatePolicyTest do
   alias Inkfish.Subs.Sub
   alias Inkfish.Uploads.Upload
   alias Inkfish.Grades
+  alias Inkfish.Repo
 
   def create_assignment(hours_due, hd) do
     asgn =
@@ -17,10 +18,18 @@ defmodule Inkfish.LatePolicyTest do
   end
 
   def create_sub_and_grade(asgn) do
-    sub_attrs = params_with_assocs(:sub, assignment: asgn)
+    # Create a team with members for the sub to be activatable
+    reg = insert(:reg)
+    team = insert(:team)
+    insert(:team_member, team: team, reg: reg)
+
+    sub_attrs = params_with_assocs(:sub, assignment: asgn, reg: reg, team: team)
     assert {:ok, %Sub{} = sub} = Subs.create_sub(sub_attrs)
-    Inkfish.Repo.Cache.drop(Sub, sub.id)
-    {:ok, sub} = Inkfish.Repo.Cache.get(Sub, sub.id)
+    Repo.Cache.drop(Sub, sub.id)
+    {:ok, sub} = Repo.Cache.get(Sub, sub.id)
+
+    # Verify active_sub record was created
+    assert Repo.get_by(Subs.ActiveSub, sub_id: sub.id)
 
     gcol = hd(sub.assignment.grade_columns)
 
@@ -48,7 +57,6 @@ defmodule Inkfish.LatePolicyTest do
     test "no penalty if not late, standard" do
       asgn = create_assignment(4, false)
       sub = create_sub_and_grade(asgn)
-      assert sub.active
 
       {sc, lp} = Subs.calc_score_and_late_penalty(sub)
       assert Decimal.equal?(sc, Decimal.new("25.0"))
@@ -58,7 +66,6 @@ defmodule Inkfish.LatePolicyTest do
     test "no penalty if not late, hard deadline" do
       asgn = create_assignment(4, true)
       sub = create_sub_and_grade(asgn)
-      assert sub.active
 
       {sc, lp} = Subs.calc_score_and_late_penalty(sub)
       assert Decimal.equal?(sc, Decimal.new("25.0"))
@@ -68,7 +75,6 @@ defmodule Inkfish.LatePolicyTest do
     test "penalty if late, standard" do
       asgn = create_assignment(-4, false)
       sub = create_sub_and_grade(asgn)
-      assert sub.active
 
       {sc, lp} = Subs.calc_score_and_late_penalty(sub)
       assert Decimal.equal?(sc, Decimal.new("23.0"))
@@ -78,7 +84,6 @@ defmodule Inkfish.LatePolicyTest do
     test "penalty if late, hard deadline" do
       asgn = create_assignment(-4, true)
       sub = create_sub_and_grade(asgn)
-      assert sub.active
 
       {sc, lp} = Subs.calc_score_and_late_penalty(sub)
       assert Decimal.equal?(sc, Decimal.new("0.0"))

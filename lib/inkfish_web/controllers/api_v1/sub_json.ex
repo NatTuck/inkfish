@@ -27,9 +27,17 @@ defmodule InkfishWeb.ApiV1.SubJSON do
     upload = get_assoc(sub, :upload)
     team = get_assoc(sub, :team)
 
+    # Check if active_sub is loaded and present
+    active =
+      case sub.active_sub do
+        %Ecto.Association.NotLoaded{} -> false
+        nil -> false
+        _ -> true
+      end
+
     %{
       id: sub.id,
-      active: sub.active,
+      active: active,
       late_penalty: sub.late_penalty,
       score: sub.score,
       hours_spent: sub.hours_spent,

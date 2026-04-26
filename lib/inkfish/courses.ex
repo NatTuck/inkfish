@@ -14,6 +14,8 @@ defmodule Inkfish.Courses do
   alias Inkfish.Users.Reg
   alias Inkfish.Teams.Teamset
   alias Inkfish.Assignments.Assignment
+  alias Inkfish.Subs.Sub
+  alias Inkfish.Subs.ActiveSub
 
   @doc """
   Returns the list of courses.
@@ -130,7 +132,9 @@ defmodule Inkfish.Courses do
         left_join: student in assoc(regs, :user),
         left_join: teams in assoc(regs, :teams),
         left_join: subs in assoc(teams, :subs),
-        where: subs.active or is_nil(subs.active),
+        left_join: active_sub in ActiveSub,
+        on: active_sub.reg_id == regs.id and active_sub.sub_id == subs.id,
+        where: not is_nil(active_sub.id) or is_nil(subs.id),
         order_by: student.surname,
         preload: [
           regs: {regs, user: student, teams: {teams, subs: subs}},
@@ -189,29 +193,54 @@ defmodule Inkfish.Courses do
   end
 
   def reload_course_with_student_subs!(%Course{} = course, %Reg{} = reg) do
-    team_ids =
-      reg.teams
-      |> Enum.map(& &1.id)
+    # First get the course with buckets and assignments
+    course_with_assignments =
+      Repo.one!(
+        from cc in Course,
+          where: cc.id == ^course.id,
+          left_join: buckets in assoc(cc, :buckets),
+          left_join: assignments in assoc(buckets, :assignments),
+          left_join: gcols in assoc(assignments, :grade_columns),
+          order_by: [asc: buckets.name, asc: assignments.due],
+          preload: [
+            buckets: {buckets, assignments: {assignments, grade_columns: gcols}}
+          ]
+      )
 
-    Repo.one!(
-      from cc in Course,
-        where: cc.id == ^course.id,
-        left_join: buckets in assoc(cc, :buckets),
-        left_join: assignments in assoc(buckets, :assignments),
-        left_join: subs in assoc(assignments, :subs),
-        on: subs.active and subs.team_id in ^team_ids,
-        left_join: grades in assoc(subs, :grades),
-        left_join: gcols in assoc(assignments, :grade_columns),
-        order_by: [asc: buckets.name, asc: assignments.due],
-        preload: [
-          buckets:
-            {buckets,
-             assignments: {
-               assignments,
-               subs: subs, grade_columns: gcols
-             }}
-        ]
-    )
+    # Then get active subs for this student separately
+    active_subs =
+      Repo.all(
+        from sub in Sub,
+          join: active_sub in ActiveSub,
+          on: active_sub.reg_id == ^reg.id and active_sub.sub_id == sub.id,
+          join: assignment in assoc(sub, :assignment),
+          join: bucket in assoc(assignment, :bucket),
+          where: bucket.course_id == ^course.id,
+          left_join: grades in assoc(sub, :grades),
+          left_join: gcols in assoc(assignment, :grade_columns),
+          preload: [
+            grades: grades,
+            assignment: {assignment, grade_columns: gcols, bucket: bucket}
+          ]
+      )
+
+    # Merge active subs into assignments
+    buckets_with_subs =
+      Enum.map(course_with_assignments.buckets, fn bucket ->
+        assignments_with_subs =
+          Enum.map(bucket.assignments, fn assignment ->
+            assignment_subs =
+              Enum.filter(active_subs, fn sub ->
+                sub.assignment_id == assignment.id
+              end)
+
+            %{assignment | subs: assignment_subs}
+          end)
+
+        %{bucket | assignments: assignments_with_subs}
+      end)
+
+    %{course_with_assignments | buckets: buckets_with_subs}
   end
 
   def reload_course_with_assignments!(%Course{} = course) do

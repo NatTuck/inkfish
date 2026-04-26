@@ -12,6 +12,7 @@ defmodule Inkfish.Factory do
   alias Inkfish.Teams.Team
   alias Inkfish.Teams.TeamMember
   alias Inkfish.Subs.Sub
+  alias Inkfish.Subs.ActiveSub
   alias Inkfish.Grades.GradeColumn
   alias Inkfish.Grades.Grade
   alias Inkfish.LineComments.LineComment
@@ -49,6 +50,9 @@ defmodule Inkfish.Factory do
     student_reg = insert(:reg, course: course, user: student, is_student: true)
     {:ok, team} = Inkfish.Teams.get_active_team(asgn, student_reg)
     sub = insert(:sub, assignment: asgn, reg: student_reg, team: team)
+
+    # Create active_sub record for the sub to make it "active"
+    insert(:active_sub, reg: student_reg, assignment: asgn, sub: sub)
 
     grade =
       insert(:grade,
@@ -205,7 +209,7 @@ defmodule Inkfish.Factory do
 
   def sub_factory do
     %Sub{
-      active: true,
+      active: false,
       hours_spent: Decimal.new("4.5"),
       note: "",
       assignment: build(:assignment),
@@ -213,6 +217,14 @@ defmodule Inkfish.Factory do
       team: build(:team),
       upload: build(:upload),
       grader: build(:reg)
+    }
+  end
+
+  def active_sub_factory do
+    %ActiveSub{
+      reg: build(:reg),
+      assignment: build(:assignment),
+      sub: build(:sub)
     }
   end
 
