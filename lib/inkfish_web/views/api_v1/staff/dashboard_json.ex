@@ -25,6 +25,7 @@ defmodule InkfishWeb.ApiV1.Staff.DashboardJSON do
       due: asg.due,
       bucket_name: asg.bucket_name,
       course_id: asg.course_id,
+      drafts_count: asg.drafts_count,
       ungraded_count: asg.ungraded_count,
       total_count: asg.total_count,
       overdue: asg.overdue

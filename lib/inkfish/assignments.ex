@@ -390,6 +390,12 @@ defmodule Inkfish.Assignments do
               end)
           end)
 
+        drafts_count =
+          Enum.count(asg.subs, fn s ->
+            Sub.is_active?(s) &&
+              Enum.any?(s.grades, fn g -> g.confirmed == false end)
+          end)
+
         %{
           id: row.id,
           name: row.name,
@@ -398,6 +404,7 @@ defmodule Inkfish.Assignments do
           course_id: row.course_id,
           total_count: total_count,
           graded_count: graded_count,
+          drafts_count: drafts_count,
           ungraded_count: total_count - graded_count,
           overdue: NaiveDateTime.compare(due, four_days_ago) == :lt
         }
