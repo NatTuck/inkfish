@@ -411,7 +411,7 @@ defmodule Inkfish.Assignments do
       end)
 
     Enum.filter(assignment_data, fn row ->
-      row.ungraded_count > 0 or row.total_count == 0
+      row.ungraded_count > 0
     end)
   end
 

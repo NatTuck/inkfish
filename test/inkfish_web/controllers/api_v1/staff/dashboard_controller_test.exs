@@ -39,6 +39,30 @@ defmodule InkfishWeb.ApiV1.Staff.DashboardControllerTest do
         base: "0"
       )
 
+      student = insert(:user)
+
+      student_reg =
+        insert(:reg, user: student, course: course, is_student: true)
+
+      team = insert(:team, teamset: teamset, active: true)
+      insert(:team_member, team: team, reg: student_reg)
+      upload = insert(:upload, user: student)
+
+      sub =
+        insert(:sub,
+          assignment: past_asg,
+          reg: student_reg,
+          team: team,
+          upload: upload,
+          active: true
+        )
+
+      insert(:active_sub,
+        reg: student_reg,
+        assignment: past_asg,
+        sub: sub
+      )
+
       conn = get(conn, ~p"/api/v1/staff/dashboard")
       response = json_response(conn, 200)
 
@@ -379,6 +403,43 @@ defmodule InkfishWeb.ApiV1.Staff.DashboardControllerTest do
       # Should not include this assignment since it's fully graded
       past_assignments = course_data["past_assignments_with_ungraded"]
       assert past_assignments == []
+    end
+
+    test "past assignments with zero submissions are not included", %{
+      conn: conn
+    } do
+      user = insert(:user)
+      api_key = insert(:api_key, user: user)
+      conn = put_req_header(conn, "x-auth", api_key.key)
+
+      course = insert(:course)
+      insert(:reg, user: user, course: course, is_staff: true)
+
+      bucket = insert(:bucket, course: course)
+      teamset = insert(:teamset, course: course)
+
+      past_asg =
+        insert(:assignment,
+          bucket: bucket,
+          teamset: teamset,
+          name: "Past HW No Subs",
+          due: Inkfish.LocalTime.in_days(-5)
+        )
+
+      insert(:grade_column,
+        assignment: past_asg,
+        kind: "feedback",
+        name: "Feedback",
+        points: "10",
+        base: "0"
+      )
+
+      conn = get(conn, ~p"/api/v1/staff/dashboard")
+      response = json_response(conn, 200)
+
+      [course_data] = response["courses"]
+
+      assert course_data["past_assignments_with_ungraded"] == []
     end
 
     test "requires valid API key", %{conn: conn} do

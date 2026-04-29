@@ -80,7 +80,7 @@ defmodule InkfishWeb.Staff.SubController do
   def activate(conn, %{"id" => _id}) do
     sub = conn.assigns[:sub]
 
-    case Subs.set_one_sub_active(sub) do
+    case Subs.set_sub_active(sub) do
       {:ok, active_sub} ->
         conn
         |> put_flash(:info, "Set sub active: ##{active_sub.id}.")
