@@ -69,7 +69,7 @@ defmodule InkfishWeb.Staff.DashboardControllerTest do
       insert(:team_member, team: team, reg: student_reg)
       upload = insert(:upload, user: student)
 
-      _sub =
+      sub =
         insert(:sub,
           assignment: past_asg,
           reg: student_reg,
@@ -77,6 +77,12 @@ defmodule InkfishWeb.Staff.DashboardControllerTest do
           upload: upload,
           active: true
         )
+
+      insert(:active_sub,
+        reg: student_reg,
+        assignment: past_asg,
+        sub: sub
+      )
 
       conn = get(conn, ~p"/staff/dashboard")
       assert html_response(conn, 200) =~ "Past HW"
@@ -152,6 +158,33 @@ defmodule InkfishWeb.Staff.DashboardControllerTest do
       refute html_response(conn, 200) =~ "Archived Course"
     end
 
+    test "does not show past assignments with zero submissions", %{
+      conn: conn,
+      course: course
+    } do
+      bucket = insert(:bucket, course: course, name: "Homework")
+      teamset = insert(:teamset, course: course)
+
+      past_asg =
+        insert(:assignment,
+          bucket: bucket,
+          teamset: teamset,
+          name: "Past HW No Subs",
+          due: Inkfish.LocalTime.in_days(-5)
+        )
+
+      insert(:grade_column,
+        assignment: past_asg,
+        kind: "feedback",
+        name: "Feedback",
+        points: "10",
+        base: "0"
+      )
+
+      conn = get(conn, ~p"/staff/dashboard")
+      refute html_response(conn, 200) =~ "Past HW No Subs"
+    end
+
     test "shows overdue status for old ungraded assignments", %{
       conn: conn,
       course: course
@@ -184,7 +217,7 @@ defmodule InkfishWeb.Staff.DashboardControllerTest do
       insert(:team_member, team: team, reg: student_reg)
       upload = insert(:upload, user: student)
 
-      _sub =
+      sub =
         insert(:sub,
           assignment: past_asg,
           reg: student_reg,
@@ -192,6 +225,12 @@ defmodule InkfishWeb.Staff.DashboardControllerTest do
           upload: upload,
           active: true
         )
+
+      insert(:active_sub,
+        reg: student_reg,
+        assignment: past_asg,
+        sub: sub
+      )
 
       conn = get(conn, ~p"/staff/dashboard")
       assert html_response(conn, 200) =~ "Overdue HW"

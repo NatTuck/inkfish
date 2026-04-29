@@ -217,22 +217,28 @@ We're not using Phoenix LiveView in this project. Stick to dead views with React
 ## Testing Infrastructure
 
 ### JavaScript Tests
+
 - **Location**: `assets/js/tests/*.test.js`
 - **Framework**: Jest (configured in `assets/package.json`)
 - **Run**: `pnpm --dir assets test`
 
 ### Integration/Playwright Tests
+
 - **Location**: `test/inkfish_web/integration/*_test.exs`
 - **Framework**: PhoenixTest.Playwright (Elixir wrapper around Playwright)
 - **Setup**: `mix setup.test` (installs Playwright Chromium)
 - **Run**: `mix test test/inkfish_web/integration/`
 
 ### Backend Unit Tests
+
 - **Location**: `test/inkfish/**/*_test.exs` and `test/inkfish_web/**/*_test.exs`
 - **Framework**: ExUnit
 - **Run**: `mix test`
 
 ABSOLUTELY CRITICAL: NEVER EVER DOWNGRADE ANYTHING UNLESS THE USER EXPLICITLY
 DEMANDS IT.
+
+IMPORTANT: NEVER CHANGE WHAT THE TESTS ARE TESTING FOR UNLESS THE USER
+EXPLICITLY REQUESTS THAT SPECIFIC CHANGE.
 
 <!-- usage-rules-end -->
