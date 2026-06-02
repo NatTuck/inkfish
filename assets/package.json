@@ -21,7 +21,7 @@
     "@codemirror/view": "^6.36.8",
     "@uiw/react-codemirror": "^4.23.12",
     "ansi_up": "^6.0.5",
-    "axios": "^1.15.0",
+    "axios": "^1.16.1",
     "bootstrap": "^5.3.6",
     "bootstrap-icons": "^1.13.1",
     "bootswatch": "^5.3.6",
@@ -33,9 +33,9 @@
     "filesize": "^10.1.6",
     "html-react-parser": "^5.2.5",
     "icepick": "^2.4.0",
-    "immutable": "^5.1.2",
+    "immutable": "^5.1.5",
     "katex": "^0.16.28",
-    "lodash": "^4.17.21",
+    "lodash": "^4.18.1",
     "marked": "^17.0.1",
     "marked-katex-extension": "^5.1.6",
     "promise-file-reader": "^1.0.3",
@@ -53,12 +53,12 @@
   "devDependencies": {
     "@babel/eslint-parser": "^7.28.6",
     "@babel/preset-env": "^7.27.2",
-    "@babel/preset-react": "^7.27.1",
-    "@babel/runtime": "^7.26.10",
+    "@babel/preset-react": "^7.28.5",
+    "@babel/runtime": "^7.27.1",
     "@eslint/js": "^9.39.4",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16",
+    "@testing-library/react": "^16.3.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "eslint": "^9.39.4",
@@ -67,8 +67,8 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "jest": "^30.3.0",
     "jest-environment-jsdom": "^30.3.0",
-    "playwright": "^1.55.0"
+    "playwright": "^1.59.1"
   },
-  "packageManager": "pnpm@10.33.0+sha512.10568bb4a6afb58c9eb3630da90cc9516417abebd3fabbe6739f0ae795728da1491e9db5a544c76ad8eb7570f5c4bb3d6c637b2cb41bfdcdb47fa823c8649319",
+  "packageManager": "pnpm@11.5.1+sha512.93f7b57422ea7068257235b4c16eb60762eb68e1dc23723199cc739043ea9be2c4143274a399d8c6defa2b1176226d9ca1c4b63482d6200c1a8fbaa78c1d1485",
   "browserslist": "> 0.25%, not dead"
 }
