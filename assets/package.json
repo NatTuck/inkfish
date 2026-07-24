@@ -33,7 +33,7 @@
     "filesize": "^10.1.6",
     "html-react-parser": "^5.2.5",
     "icepick": "^2.4.0",
-    "immutable": "^5.1.5",
+    "immutable": "^5.1.8",
     "katex": "^0.16.28",
     "lodash": "^4.18.1",
     "marked": "^17.0.1",
