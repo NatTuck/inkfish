@@ -122,8 +122,8 @@ importers:
         specifier: ^2.4.0
         version: 2.4.0
       immutable:
-        specifier: ^5.1.5
-        version: 5.1.5
+        specifier: ^5.1.8
+        version: 5.1.8
       katex:
         specifier: ^0.16.28
         version: 0.16.28
@@ -2479,8 +2479,8 @@ packages:
     resolution: {integrity: sha512-hsBTNUqQTDwkWtcdYI2i06Y/nUBEsNEDJKjWdigLvegy8kDuJAS8uRlpkkcQpyEXL0Z/pjDy5HBmMjRCJ2gq+g==}
     engines: {node: '>= 4'}
 
-  immutable@5.1.5:
-    resolution: {integrity: sha512-t7xcm2siw+hlUM68I+UEOK+z84RzmN59as9DZ7P1l0994DKUWV7UXBMQZVxaoMSRQ+PBZbHCOoBt7a2wxOMt+A==}
+  immutable@5.1.8:
+    resolution: {integrity: sha512-TM5YqrGeTsVIPPpILzeqZ8D2Zc2TvNgSDi88zPF2a4cyqQdWV/wVWBDRDbNzzrLeRWScrFcOX9lW2iX6GOtUDw==}
 
   import-fresh@3.3.1:
     resolution: {integrity: sha512-TR3KfrTZTYLPB6jUjfx6MF9WcWrHL9su5TObK4ZkYgBdWKPOFoSoQIdEuTuR82pmtxH2spWG9h6etwfr1pLBqQ==}
@@ -6721,7 +6721,7 @@ snapshots:
 
   ignore@5.3.2: {}
 
-  immutable@5.1.5: {}
+  immutable@5.1.8: {}
 
   import-fresh@3.3.1:
     dependencies:
