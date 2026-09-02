@@ -2,14 +2,17 @@
 set -e
 
 echo "Git clone config"
-echo " - max size: $SIZE"
+echo " - clone size: $CLONE_SIZE"
+echo " - submit size: $SUBMIT_SIZE"
 echo " - repo: $REPO"
 
-echo "Creating temp dir..."
-TMP1=$(tmptmpfs start -s $SIZE)
-echo "  TMP1=$TMP1"
+echo "Creating temp dirs..."
+CLONE_TMP=$(tmptmpfs start -s $CLONE_SIZE)
+echo "  CLONE_TMP=$CLONE_TMP"
+PERSIST_TMP=$(tmptmpfs start -s $SUBMIT_SIZE)
+echo "  PERSIST_TMP=$PERSIST_TMP"
 
-cd "$TMP1"
+cd "$CLONE_TMP"
 NAME=$(basename "$REPO" .git)
 mkdir -p "$NAME"
 cd "$NAME"
@@ -22,8 +25,14 @@ HEAD=$(git rev-parse FETCH_HEAD)
 echo "  NAME=$NAME"
 echo "  HEAD=$HEAD"
 
-# Safety margin (KB) left free on the tmpfs for the git pack/objects and
-# directory entries, so a blob that *just* fits doesn't push the mount over.
+# The git repo (with fetched objects) lives in the roomy CLONE_TMP. The
+# materialized working tree is written into PERSIST_TMP, which is the real
+# budget for what stays persistent for the submission.
+OUT="$PERSIST_TMP/$NAME"
+mkdir -p "$OUT"
+
+# Safety margin (KB) left free on the persistent tmpfs for directory entries
+# and the trimmed git metadata, so a blob that *just* fits doesn't overflow.
 MARGIN_KB=512
 
 echo "Checking out files (budget-aware)..."
@@ -44,15 +53,15 @@ while IFS= read -r -d '' line; do
   size=$(git cat-file -s "$object")
   size_kb=$(( (size + 1023) / 1024 ))
 
-  mkdir -p "$(dirname "$path")"
+  mkdir -p "$OUT/$(dirname "$path")"
 
-  avail_kb=$(df -k . | awk 'NR==2 { print $4 }')
+  avail_kb=$(df -k "$OUT" | awk 'NR==2 { print $4 }')
 
   if [ "$size_kb" -le $((avail_kb - MARGIN_KB)) ]; then
-    git cat-file blob "$object" > "$path"
+    git cat-file blob "$object" > "$OUT/$path"
   else
     hash=$(git cat-file blob "$object" | sha256sum | cut -d' ' -f1)
-    echo "$hash  $path" > "$path.csum"
+    echo "$hash  $path" > "$OUT/$path.csum"
     echo "  replaced: $path -> $path.csum"
     replaced=$((replaced + 1))
   fi
@@ -60,17 +69,23 @@ done < <(git ls-tree -r -z "$HEAD")
 
 echo "  replaced files: $replaced"
 
+echo "Preserving git metadata (trimmed) for the persistent tree..."
+mkdir -p "$OUT/.git"
+for f in config HEAD shallow FETCH_HEAD; do
+  if [ -f ".git/$f" ]; then
+    cp ".git/$f" "$OUT/.git/$f"
+  fi
+done
+
 echo "Creating tarball..."
-TMP2=$(tmptmpfs start -s $SIZE)
 TARB="$NAME.tar.gz"
-echo "  TMP2=$TMP2"
 echo "  TARB=$TARB"
-cd "$TMP1" && tar czvf "$TMP2/$TARB" "$NAME"
+tar -czf "$CLONE_TMP/$TARB" -C "$PERSIST_TMP" "$NAME"
 
 echo ""
 echo "Git checkout succeeded."
 
 echo ""
 echo "$COOKIE"
-echo "dir: $TMP1/$NAME"
-echo "tar: $TMP2/$TARB"
+echo "dir: $OUT"
+echo "tar: $CLONE_TMP/$TARB"

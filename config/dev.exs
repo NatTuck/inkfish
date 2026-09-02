@@ -5,6 +5,11 @@ import Config
 config :inkfish, :env, :dev
 config :inkfish, :download_host, "http://#{hostname}:4000"
 
+# Git-URL submissions: CLONE_SIZE is the RAM tmpfs for the temporary git
+# checkout; SUBMIT_SIZE is the budget for what actually persists for the sub.
+config :inkfish, :git_clone_size, "100m"
+config :inkfish, :git_submit_size, "5m"
+
 # Configure your database
 config :inkfish, Inkfish.Repo,
   username: "inkfish",

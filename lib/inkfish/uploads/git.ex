@@ -82,7 +82,21 @@ defmodule Inkfish.Uploads.Git do
       :code.priv_dir(:inkfish)
       |> Path.join("scripts/upload_git_clone.sh")
 
-    {:ok, _uuid} = Inkfish.Ittys.run(script, REPO: url, SIZE: "5m")
+    env = [
+      REPO: url,
+      CLONE_SIZE: clone_size(),
+      SUBMIT_SIZE: submit_size()
+    ]
+
+    {:ok, _uuid} = Inkfish.Ittys.run(script, env)
+  end
+
+  defp clone_size do
+    Application.get_env(:inkfish, :git_clone_size, "100m")
+  end
+
+  defp submit_size do
+    Application.get_env(:inkfish, :git_submit_size, "5m")
   end
 
   def get_results(uuid) do

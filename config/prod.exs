@@ -20,6 +20,9 @@ config :inkfish, Inkfish.Users.User,
 config :inkfish, download_host: "https://inkfish.homework.quest"
 config :inkfish, :env, :prod
 
+config :inkfish, :git_clone_size, "100m"
+config :inkfish, :git_submit_size, "5m"
+
 # Do not print debug messages in production
 config :logger, level: :info
 # config :logger, level: :debug
