@@ -16,7 +16,10 @@
   <% end %>
 
   <%= if status == :ready do %>
-    <p>Job in queue since {@sub.ag_job.started_at}</p>
+    <p>
+      Job in queue since
+      <span class="human-date">{@sub.ag_job.started_at}</span>
+    </p>
   <% end %>
 
   <%= if status == :done do %>

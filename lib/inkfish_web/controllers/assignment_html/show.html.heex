@@ -90,7 +90,7 @@
         <td style="text-align: center">
           {if Inkfish.Subs.Sub.is_active?(sub), do: "✓"}
         </td>
-        <td>{sub.inserted_at}</td>
+        <td><span class="human-date">{sub.inserted_at}</span></td>
         <%= for gcol <- @assignment.grade_columns do %>
           <% grade = Enum.find(sub.grades, &(&1.grade_column_id == gcol.id)) %>
           <td>

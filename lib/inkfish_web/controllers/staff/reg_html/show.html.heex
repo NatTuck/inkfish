@@ -64,7 +64,9 @@
           <tr>
             <td>{if Inkfish.Subs.Sub.is_active?(sub), do: "✓"}</td>
             <td>
-              <.link href={~p"/staff/subs/#{sub}"}>{sub.inserted_at}</.link>
+              <.link class="human-date" href={~p"/staff/subs/#{sub}"}>
+                {sub.inserted_at}
+              </.link>
             </td>
             <td>{sub.score || "∅"} / {assignment_total_points(as)}</td>
             <td>

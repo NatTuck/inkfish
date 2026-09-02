@@ -8,7 +8,9 @@
 </.header>
 
 <.list>
-  <:item title="Started at">{@meeting.started_at}</:item>
+  <:item title="Started at">
+    <span class="human-date">{@meeting.started_at}</span>
+  </:item>
   <:item title="Teamset">
     <%= if @meeting.teamset_id do %>
       <.link href={~p"/staff/teamsets/#{@meeting.teamset}"}>

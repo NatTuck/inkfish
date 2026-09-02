@@ -18,7 +18,9 @@
   rows={@meetings}
   row_click={&JS.navigate(~p"/staff/meetings/#{&1}")}
 >
-  <:col :let={meeting} label="Started at">{meeting.started_at}</:col>
+  <:col :let={meeting} label="Started at">
+    <span class="human-date">{meeting.started_at}</span>
+  </:col>
   <:action :let={meeting}>
     <div class="sr-only">
       <.link navigate={~p"/staff/meetings/#{meeting}"}>Show</.link>
