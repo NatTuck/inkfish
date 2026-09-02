@@ -23,32 +23,43 @@ defmodule InkfishWeb.CloneChannel do
   end
 
   def got_exit(socket) do
-    {:ok, results} = Git.get_results(socket.assigns[:uuid])
+    case Git.get_results(socket.assigns[:uuid]) do
+      {:ok, results} -> push_done(socket, results)
+      {:error, reason} -> push_error(socket, reason)
+    end
+  end
 
-    {:ok, upload} =
-      Git.create_upload(
-        results,
-        socket.assigns[:kind],
-        socket.assigns[:user_id]
-      )
+  defp push_done(socket, results) do
+    case Git.create_upload(
+           results,
+           socket.assigns[:kind],
+           socket.assigns[:user_id]
+         ) do
+      {:ok, upload} ->
+        upinfo = %{
+          "id" => upload.id,
+          "name" => upload.name,
+          "size" => upload.size
+        }
 
-    upinfo = %{
-      "id" => upload.id,
-      "name" => upload.name,
-      "size" => upload.size
-    }
+        socket = assign(socket, :upload, upinfo)
 
-    socket = assign(socket, :upload, upinfo)
+        data = %{
+          status: "normal",
+          results: results,
+          upload: socket.assigns[:upload]
+        }
 
-    data = %{
-      status: "normal",
-      results: results,
-      upload: socket.assigns[:upload]
-    }
+        push(socket, "done", data)
 
-    IO.inspect({:got_exit, results, data, socket.assigns})
+      {:error, reason} ->
+        push_error(socket, reason)
+    end
+  end
 
-    push(socket, "done", data)
+  defp push_error(socket, reason) do
+    IO.inspect({:clone_error, reason})
+    push(socket, "done", %{status: "error", error: to_string(reason)})
   end
 
   def handle_in("clone", %{"url" => url}, socket) do

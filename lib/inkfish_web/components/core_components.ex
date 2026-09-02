@@ -131,8 +131,7 @@ defmodule InkfishWeb.CoreComponents do
             type="button"
             class="btn-close d-inline text-end"
             aria-label={gettext("Close")}
-          >
-          </button>
+          ></button>
         </div>
       </div>
       <p class="mb-0">{msg}</p>

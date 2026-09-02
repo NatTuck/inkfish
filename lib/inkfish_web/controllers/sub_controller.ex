@@ -131,7 +131,12 @@ defmodule InkfishWeb.SubController do
       |> Map.put(:edit, false)
       |> Map.put(:grade, %{line_comments: [], sub: sub_data, grade_column: gcol})
 
-    render(conn, "files.html", fluid_grid: true, sub: sub, data: data)
+    git =
+      Inkfish.Uploads.Git.repo_info(
+        Inkfish.Uploads.Upload.unpacked_path(sub.upload)
+      )
+
+    render(conn, "files.html", fluid_grid: true, sub: sub, data: data, git: git)
   end
 
   def rerun_scripts(conn, %{"id" => _id}) do

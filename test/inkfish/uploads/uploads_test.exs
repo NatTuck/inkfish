@@ -102,6 +102,7 @@ defmodule Inkfish.UploadsTest do
 
     test "create_git_upload/1 with student user creating 50 unowned sub uploads results in no more than 6 unowned uploads" do
       user = insert(:user)
+
       attrs = %{kind: "sub", user_id: user.id, name: "test.tar.gz", size: 100}
 
       for _ <- 1..50 do
