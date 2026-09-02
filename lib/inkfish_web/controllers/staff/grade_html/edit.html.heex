@@ -39,6 +39,18 @@
   <p>Rubric: Not available.</p>
 <% end %>
 
+<%= if @git do %>
+  <div class="alert alert-info d-flex align-items-center">
+    <span class="me-2">
+      This submission was cloned from
+      <a href={@git.url} target="_blank" rel="noopener noreferrer">
+        {@git.url}
+      </a>
+      at commit <code><%= String.slice(@git.commit, 0, 8) %></code>.
+    </span>
+  </div>
+<% end %>
+
 <div class="code-viewer">
   <!-- assets/js/code-viewer -->
   React code viewer loading...

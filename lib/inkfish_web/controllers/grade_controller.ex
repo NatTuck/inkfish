@@ -39,11 +39,19 @@ defmodule InkfishWeb.GradeController do
       |> Map.put(:grade_id, id)
       |> Map.put(:grade, grade_json)
 
+    sub = Inkfish.Subs.get_sub!(grade.sub_id)
+
+    git =
+      Inkfish.Uploads.Git.repo_info(
+        Inkfish.Uploads.Upload.unpacked_path(sub.upload)
+      )
+
     render(conn, "show.html",
       fluid_grid: true,
       grade: grade,
       data: data,
-      show_score: show_score
+      show_score: show_score,
+      git: git
     )
   end
 end

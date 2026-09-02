@@ -101,13 +101,19 @@ defmodule InkfishWeb.Staff.GradeController do
 
     sub = Inkfish.Subs.get_sub!(grade.sub_id)
 
+    git =
+      Inkfish.Uploads.Git.repo_info(
+        Inkfish.Uploads.Upload.unpacked_path(sub.upload)
+      )
+
     render(conn, "edit.html",
       fluid_grid: true,
       grade: grade,
       sub: sub,
       changeset: changeset,
       data: data,
-      rubric: rubric
+      rubric: rubric,
+      git: git
     )
   end
 
