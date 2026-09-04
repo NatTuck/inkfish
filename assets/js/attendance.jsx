@@ -15,7 +15,15 @@ function connect(course_id, setState) {
     .receive("error", (msg) => {
       console.log("error joining attendence", msg);
     });
-  channel.on("state", setState);
+  // Broadcasts carry only the shared meeting roster; they must not clobber
+  // this student's own attendance (which arrives via the join/own-code reply).
+  channel.on("state", (roster) => {
+    setState(prev => ({
+      ...prev,
+      mode: roster.mode,
+      meeting: roster.meeting
+    }));
+  });
 }
 
 function disconnect() {

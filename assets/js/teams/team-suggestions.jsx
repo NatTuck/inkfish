@@ -79,13 +79,14 @@ function SectionSuggestions({data, active, section}) {
   
   useEffect(reroll_teams, []);
 
+  // Reconcile the suggestion pairs with the current set of eligible students
+  // (present and not already on a team). This both adds newly eligible
+  // students and prunes students who have since become busy or stopped being
+  // present, so suggestions never go stale.
   useEffect(() => {
     setPairs(prevPairs => {
-      const currentIds = Set(prevPairs.flatMap(pair => pair.toArray()));
-      const studentSet = Set(students);
-      const newStudents = studentSet.subtract(currentIds).toArray();
-
-      return add_new_students_to_suggestions(prevPairs, newStudents, pastTeams);
+      const next = reconcile_suggestions(prevPairs, students, pastTeams);
+      return samePairs(prevPairs, next) ? prevPairs : next;
     });
   }, [students, pastTeams]);
 
@@ -167,4 +168,34 @@ export function add_new_students_to_suggestions(prevPairs, newStudents, pastTeam
   }
 
   return updatedPairs;
+}
+
+// Keep suggestion pairs aligned with the currently eligible students. Any
+// student who is no longer eligible (now on a team, absent, or excused) is
+// dropped from their pairs; any newly eligible student is folded in.
+export function reconcile_suggestions(pairs, eligibleIds, pastTeams) {
+  const eligible = Set(eligibleIds);
+
+  let pruned = [];
+  for (const pair of pairs) {
+    const kept = pair.toArray().filter(id => eligible.has(id));
+    if (kept.length > 0) {
+      pruned.push(Set(kept));
+    }
+  }
+
+  const covered = Set(pruned.flatMap(pair => pair.toArray()));
+  const newStudents = eligible.subtract(covered).toArray();
+
+  return add_new_students_to_suggestions(pruned, newStudents, pastTeams);
+}
+
+function samePairs(a, b) {
+  if (a.length !== b.length) {
+    return false;
+  }
+  const norm = list => list.map(set => set.toArray().sort().join(",")).sort();
+  const na = norm(a);
+  const nb = norm(b);
+  return na.every((x, i) => x === nb[i]);
 }

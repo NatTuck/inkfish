@@ -67,6 +67,7 @@ defmodule InkfishWeb.AttendanceChannelTest do
     setup do
       course = insert(:course)
       meeting = insert(:meeting, course: course, secret_code: "MEET123")
+      teamset = insert(:teamset, course: course)
       user = insert(:user)
       reg = insert(:reg, user: user, course: course, is_student: true)
       staff_user = insert(:user)
@@ -97,6 +98,7 @@ defmodule InkfishWeb.AttendanceChannelTest do
       %{
         course: course,
         meeting: meeting,
+        teamset: teamset,
         user: user,
         reg: reg,
         student_socket: student_socket,
@@ -162,51 +164,68 @@ defmodule InkfishWeb.AttendanceChannelTest do
       end
     end
 
+    test "student check-in broadcast does not leak personal attendance", %{
+      student_socket: student_socket
+    } do
+      ref = push(student_socket, "code", %{"code" => "MEET123"})
+      assert_reply ref, :ok, _reply, 1000
+
+      assert_broadcast "state", payload, 1000
+      # Broadcast carries only the shared roster; the acting student's personal
+      # attendance is delivered via the reply, never to the whole topic.
+      refute Map.has_key?(payload, :attendance)
+      refute Map.has_key?(payload, :note)
+      assert payload.mode == "connected"
+      assert payload.meeting != nil
+      assert is_list(payload.meeting.attendances)
+    end
+
     test "team_created broadcasts to channel", %{
       staff_socket: staff_socket,
-      course: _course
+      teamset: teamset
     } do
-      team_data = %{
-        "id" => 123,
-        "name" => "Team 1",
-        "active" => true,
-        "reg_ids" => [1, 2]
-      }
-
-      # Push team_created from staff
-      ref = push(staff_socket, "team_created", %{"team" => team_data})
+      # Push team_created from staff, identifying the teamset that changed.
+      ref = push(staff_socket, "team_created", %{"teamset_id" => teamset.id})
       assert_reply ref, :ok, %{}, 1000
 
-      # Both sockets should receive team_update broadcast
-      # This will fail until we implement team_created handler
-      assert_broadcast "team_update", %{action: "created", team: _team_data}
+      # The server reloads the teamset and broadcasts authoritative data.
+      assert_broadcast "team_update", payload, 1000
+      assert payload.id == teamset.id
+      assert is_list(payload.teams)
+      assert payload.course != nil
     end
 
     test "team_updated broadcasts to channel", %{
-      staff_socket: staff_socket
+      staff_socket: staff_socket,
+      teamset: teamset
     } do
-      team_data = %{
-        "id" => 123,
-        "active" => false
-      }
-
-      ref = push(staff_socket, "team_updated", %{"team" => team_data})
+      ref = push(staff_socket, "team_updated", %{"teamset_id" => teamset.id})
       assert_reply ref, :ok, %{}, 1000
 
-      # This will fail until we implement team_updated handler
-      assert_broadcast "team_update", %{action: "updated", team: _team_data}
+      assert_broadcast "team_update", payload, 1000
+      assert payload.id == teamset.id
+      assert is_list(payload.teams)
     end
 
     test "team_deleted broadcasts to channel", %{
-      staff_socket: staff_socket
+      staff_socket: staff_socket,
+      teamset: teamset
     } do
-      team_data = %{"id" => 123}
-
-      ref = push(staff_socket, "team_deleted", %{"team" => team_data})
+      ref = push(staff_socket, "team_deleted", %{"teamset_id" => teamset.id})
       assert_reply ref, :ok, %{}, 1000
 
-      # This will fail until we implement team_deleted handler
-      assert_broadcast "team_update", %{action: "deleted", team: _team_data}
+      assert_broadcast "team_update", payload, 1000
+      assert payload.id == teamset.id
+      assert is_list(payload.teams)
+    end
+
+    test "team update from a non-staff member is rejected", %{
+      student_socket: student_socket,
+      teamset: teamset
+    } do
+      ref = push(student_socket, "team_created", %{"teamset_id" => teamset.id})
+      assert_reply ref, :error, %{reason: "Forbidden"}, 1000
+      refute_broadcast "team_update", _payload
     end
   end
 end

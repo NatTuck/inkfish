@@ -9,10 +9,13 @@ defmodule InkfishWeb.AttendanceChannel do
   alias Inkfish.Users.User
   alias Inkfish.Meetings
   alias Inkfish.Attendances
+  alias Inkfish.Teams
+  alias Inkfish.Teams.Teamset
 
   alias InkfishWeb.AttendanceJSON
   alias InkfishWeb.Staff.RegJSON
   alias InkfishWeb.Staff.AttendanceJSON
+  alias InkfishWeb.Staff.TeamsetJSON
 
   alias Phoenix.PubSub
 
@@ -28,7 +31,12 @@ defmodule InkfishWeb.AttendanceChannel do
 
   @impl true
   def handle_out("team_update", payload, socket) do
-    push(socket, "team_update", payload)
+    # Only deliver team membership updates to staff. Student sockets are on the
+    # same topic but have no use for (and should not receive) team data.
+    if socket.assigns[:reg] && socket.assigns[:reg].is_staff do
+      push(socket, "team_update", payload)
+    end
+
     {:noreply, socket}
   end
 
@@ -71,6 +79,19 @@ defmodule InkfishWeb.AttendanceChannel do
       meeting: meeting_data,
       attendance: AttendanceJSON.data(attendance),
       note: note
+    }
+  end
+
+  # Shared, non-personalized view broadcast to every subscriber on check-in.
+  # Individual clients derive their own attendance from the join reply and
+  # from their own "code" reply, never from this broadcast.
+  def roster_view(socket) do
+    meeting = socket.assigns[:meeting]
+    course = socket.assigns[:course]
+
+    %{
+      mode: "connected",
+      meeting: build_meeting_data(meeting, course)
     }
   end
 
@@ -124,22 +145,16 @@ defmodule InkfishWeb.AttendanceChannel do
   end
 
   @impl true
-  def handle_in("team_created", %{"team" => team_data}, socket) do
-    broadcast(socket, "team_update", %{action: "created", team: team_data})
-    {:reply, :ok, socket}
-  end
+  def handle_in("team_created", %{"teamset_id" => teamset_id}, socket),
+    do: broadcast_teamset(teamset_id, socket)
 
   @impl true
-  def handle_in("team_updated", %{"team" => team_data}, socket) do
-    broadcast(socket, "team_update", %{action: "updated", team: team_data})
-    {:reply, :ok, socket}
-  end
+  def handle_in("team_updated", %{"teamset_id" => teamset_id}, socket),
+    do: broadcast_teamset(teamset_id, socket)
 
   @impl true
-  def handle_in("team_deleted", %{"team" => team_data}, socket) do
-    broadcast(socket, "team_update", %{action: "deleted", team: team_data})
-    {:reply, :ok, socket}
-  end
+  def handle_in("team_deleted", %{"teamset_id" => teamset_id}, socket),
+    do: broadcast_teamset(teamset_id, socket)
 
   # Channels can be used in a request/response fashion
   # by sending replies to requests from the client
@@ -163,8 +178,10 @@ defmodule InkfishWeb.AttendanceChannel do
         |> assign(:meeting, meeting)
         |> assign(:attendance, attendance)
 
-      # Broadcast state to all subscribers
-      broadcast(socket, "state", attendance_view(socket))
+      # Broadcast only the shared roster to all subscribers. The acting
+      # student's personal attendance is delivered via the reply below; we
+      # must not leak one student's personal state onto every other client.
+      broadcast(socket, "state", roster_view(socket))
 
       {:reply, {:ok, attendance_view(socket)}, socket}
     else
@@ -197,5 +214,26 @@ defmodule InkfishWeb.AttendanceChannel do
   def handle_info({:team_update, data}, socket) do
     push(socket, "team_update", data)
     {:noreply, socket}
+  end
+
+  # After a team create/update/delete the acting client has already committed
+  # the change via the REST API. We ignore whatever (possibly stale) team data
+  # the client echoes and instead reload the authoritative teamset from the DB
+  # so every staff subscriber reconciles to the same state.
+  defp broadcast_teamset(teamset_id, socket) do
+    reg = socket.assigns[:reg]
+
+    if reg && reg.is_staff do
+      case Teams.get_teamset(teamset_id) do
+        %Teamset{} = teamset ->
+          broadcast(socket, "team_update", TeamsetJSON.data(teamset))
+          {:reply, :ok, socket}
+
+        nil ->
+          {:reply, {:error, %{reason: "Teamset not found"}}, socket}
+      end
+    else
+      {:reply, {:error, %{reason: "Forbidden"}}, socket}
+    end
   end
 end

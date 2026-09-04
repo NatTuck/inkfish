@@ -70,8 +70,19 @@ function TeamManager({data: initialData}) {
   }, []);
   
   const handleTeamUpdate = useCallback((data) => {
-    // Refresh teams list or update specific team
-    loadTeams();
+    // Server sends the authoritative teamset after any team create/update/
+    // delete. Reconcile local state so every staff client sees the same
+    // teams (and thus the same suggestions / "Extra Students").
+    setState(prev => {
+      if (prev.id !== data.id || !data.teams) {
+        return prev;
+      }
+      return freeze({
+        ...prev,
+        teams: data.teams,
+        creating: false
+      });
+    });
   }, []);
   
   // Convert class methods to functions
@@ -121,10 +132,11 @@ function TeamManager({data: initialData}) {
       .then((data) => {
         console.log("created", data);
         reset_data(data.data.teamset);
-        
-        // After successful creation, push to channel
+
+        // Notify the channel; the server reloads the teamset and re-broadcasts
+        // the authoritative state to all staff subscribers.
         if (attendanceChannelRef.current) {
-          attendanceChannelRef.current.push("team_created", { team: data.data.team });
+          attendanceChannelRef.current.push("team_created", { teamset_id: state.id });
         }
       });
   }, [state.id, state.new_team_regs, reset_data]);
@@ -134,26 +146,26 @@ function TeamManager({data: initialData}) {
       .then((data) => {
         console.log("set_active", data);
         reset_data(data.data.teamset);
-        
+
         // After successful update, push to channel
         if (attendanceChannelRef.current) {
-          attendanceChannelRef.current.push("team_updated", { team: data.data.team });
+          attendanceChannelRef.current.push("team_updated", { teamset_id: state.id });
         }
       });
-  }, [reset_data]);
+  }, [reset_data, state.id]);
   
   const destroyTeam = useCallback((team) => {
     ajax.delete_team(team)
       .then((data) => {
         console.log("deleted", data);
         reset_data(data.data.teamset);
-        
+
         // After successful deletion, push to channel
         if (attendanceChannelRef.current) {
-          attendanceChannelRef.current.push("team_deleted", { team: {id: team.id} });
+          attendanceChannelRef.current.push("team_deleted", { teamset_id: state.id });
         }
       });
-  }, [reset_data]);
+  }, [reset_data, state.id]);
   
   const student_teams_map = useCallback(() => {
     let student_teams = new Map();
@@ -193,12 +205,6 @@ function TeamManager({data: initialData}) {
   const inactive_teams = useCallback(() => {
     return _.filter(state.teams, (team) => !team.active);
   }, [state.teams]);
-  
-  // Load teams function (to be implemented)
-  const loadTeams = useCallback(() => {
-    // TODO: Implement loading teams from server
-    console.log("Loading teams...");
-  }, []);
   
   // Memoize computed values
   const extraStudents = useMemo(() => extra_students(), [extra_students]);
