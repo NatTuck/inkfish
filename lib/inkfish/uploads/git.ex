@@ -85,7 +85,8 @@ defmodule Inkfish.Uploads.Git do
     env = [
       REPO: url,
       CLONE_SIZE: clone_size(),
-      SUBMIT_SIZE: submit_size()
+      SUBMIT_SIZE: submit_size(),
+      GIT_ALLOW_PROTOCOL: allowed_protocols()
     ]
 
     {:ok, _uuid} = Inkfish.Ittys.run(script, env)
@@ -97,6 +98,10 @@ defmodule Inkfish.Uploads.Git do
 
   defp submit_size do
     Application.get_env(:inkfish, :git_submit_size, "5m")
+  end
+
+  defp allowed_protocols do
+    Application.get_env(:inkfish, :git_allowed_protocols, "https:http:git")
   end
 
   def get_results(uuid) do

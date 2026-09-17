@@ -68,6 +68,24 @@ defmodule Inkfish.UploadsTest do
       assert {:error, %Ecto.Changeset{}} = Uploads.create_upload(%{})
     end
 
+    test "create_upload/1 rejects zip archives" do
+      path =
+        Path.join(
+          System.tmp_dir!(),
+          "inkfish_zip_#{System.unique_integer([:positive])}.zip"
+        )
+
+      File.write!(path, "PK\x03\x04 not really a zip")
+      on_exit(fn -> File.rm(path) end)
+
+      attrs =
+        params_with_assocs(:upload)
+        |> Map.put(:upload, %{path: path, filename: "evil.zip"})
+
+      assert {:error, changeset} = Uploads.create_upload(attrs)
+      assert "zip archives are not supported" in errors_on(changeset).upload
+    end
+
     test "delete_upload/1 deletes the upload" do
       upload = upload_fixture()
       assert {:ok, %Upload{}} = Uploads.delete_upload(upload)
