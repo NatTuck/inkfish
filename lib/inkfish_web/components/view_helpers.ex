@@ -254,14 +254,21 @@ defmodule InkfishWeb.ViewHelpers do
     Inkfish.Assignments.Assignment.assignment_total_points(as)
   end
 
+  # MDExGFM + smartypants + raw HTML match the retired Earmark defaults.
+  @markdown_opts [
+    plugins: [MDExGFM],
+    parse: [smart: true],
+    render: [unsafe: true]
+  ]
+
   def trusted_markdown(nil), do: "∅"
 
   def trusted_markdown(code) do
-    case Earmark.as_html(code) do
-      {:ok, html, []} ->
+    case MDEx.to_html(code, @markdown_opts) do
+      {:ok, html} ->
         raw(html)
 
-      {:error, _html, _msgs} ->
+      {:error, _reason} ->
         raw("error rendering markdown")
     end
   end
@@ -269,11 +276,11 @@ defmodule InkfishWeb.ViewHelpers do
   def sanitize_markdown(nil), do: "∅"
 
   def sanitize_markdown(code) do
-    case Earmark.as_html(code) do
-      {:ok, html, []} ->
+    case MDEx.to_html(code, @markdown_opts) do
+      {:ok, html} ->
         raw(HtmlSanitizeEx.basic_html(html))
 
-      {:error, _html, _msgs} ->
+      {:error, _reason} ->
         raw("error rendering markdown")
     end
   end
