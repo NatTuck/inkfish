@@ -22,6 +22,7 @@ config :inkfish, :env, :prod
 
 config :inkfish, :git_clone_size, "100m"
 config :inkfish, :git_submit_size, "5m"
+config :inkfish, :git_allowed_protocols, "https:http:git"
 
 # Do not print debug messages in production
 config :logger, level: :info

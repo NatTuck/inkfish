@@ -9,6 +9,7 @@ config :inkfish, :download_host, "http://#{hostname}:4000"
 # checkout; SUBMIT_SIZE is the budget for what actually persists for the sub.
 config :inkfish, :git_clone_size, "100m"
 config :inkfish, :git_submit_size, "5m"
+config :inkfish, :git_allowed_protocols, "https:http:git"
 
 # Configure your database
 config :inkfish, Inkfish.Repo,

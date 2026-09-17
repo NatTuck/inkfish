@@ -1,4 +1,6 @@
 defmodule Inkfish.Sandbox.Archive do
+  require Logger
+
   alias Inkfish.Sandbox
   alias Sandbox.TempFs
   alias Sandbox.Traverse
@@ -15,7 +17,12 @@ defmodule Inkfish.Sandbox.Archive do
     case unpack(archive, tdir) do
       :ok ->
         sanitize_links!(tdir)
-        {_, 0} = System.cmd("bash", ["-c", ~s(cp -r "#{tdir}"/* "#{target}")])
+
+        # Copying `tdir/.` includes dotfiles, unlike a `tdir/*` glob. With
+        # -r, cp copies symlinks as symlinks (rather than following them)
+        # and does not preserve setuid/setgid bits. `target` is created by
+        # the caller.
+        {_, 0} = System.cmd("bash", ["-c", ~s(cp -r "#{tdir}/." "#{target}")])
         :ok
 
       {:error, text} ->
@@ -34,18 +41,36 @@ defmodule Inkfish.Sandbox.Archive do
   end
 
   def sanitize_link!(path, base) do
+    case File.read_link(path) do
+      {:ok, raw} ->
+        if String.starts_with?(raw, "/") do
+          # Absolute targets are unsafe even when they resolve inside the
+          # current tmpfs: after the tmpfs is unmounted they point outside
+          # the upload store. Only relative, in-tree links are preserved.
+          Logger.warning("removing absolute link: '#{path}' => '#{raw}'")
+          File.rm!(path)
+        else
+          sanitize_relative_link!(path, base)
+        end
+
+      _readlink_failed ->
+        Logger.warning("removing invalid link: '#{path}'")
+        File.rm!(path)
+    end
+  end
+
+  defp sanitize_relative_link!(path, base) do
     case System.cmd("readlink", ["-f", path]) do
       {targ, 0} ->
         targ = String.trim(targ)
-        pref = String.slice(targ, 0, String.length(base))
 
-        if pref != base do
-          IO.puts("removing unsafe link: '#{path}' => '#{targ}'")
+        if targ != base and not String.starts_with?(targ, base <> "/") do
+          Logger.warning("removing unsafe link: '#{path}' => '#{targ}'")
           File.rm!(path)
         end
 
       _readlink_failed ->
-        IO.puts("removing invalid link: '#{path}'")
+        Logger.warning("removing invalid link: '#{path}'")
         File.rm!(path)
     end
   end
@@ -56,7 +81,7 @@ defmodule Inkfish.Sandbox.Archive do
         untar(archive, target)
 
       Regex.match?(~r/\.zip$/, archive) ->
-        raise "TODO: zip archives"
+        {:error, "zip archives are not supported"}
 
       true ->
         name = Path.basename(archive)
@@ -68,6 +93,9 @@ defmodule Inkfish.Sandbox.Archive do
   def untar(archive, target) do
     File.mkdir_p!(target)
 
+    # Do not add -P/--absolute-names or -h/--dereference here: tar's default
+    # refusal to follow links that escape the working directory is what keeps
+    # a crafted archive from writing outside the tmpfs.
     Shell.run_script("""
     cd "#{target}" && tar xvf "#{archive}"
     """)

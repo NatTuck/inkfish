@@ -51,6 +51,7 @@ defmodule Inkfish.Uploads.Upload do
     |> normalize_name()
     |> validate_required([:upload, :kind, :user_id, :name])
     |> validate_kind()
+    |> validate_archive_kind()
     |> validate_file_size()
     |> validate_required([:size])
   end
@@ -92,6 +93,16 @@ defmodule Inkfish.Uploads.Upload do
       cset
     else
       add_error(cset, :kind, "invalid upload kind: #{kind}")
+    end
+  end
+
+  def validate_archive_kind(%Ecto.Changeset{} = cset) do
+    name = get_field(cset, :name)
+
+    if is_binary(name) and String.ends_with?(String.downcase(name), ".zip") do
+      add_error(cset, :upload, "zip archives are not supported")
+    else
+      cset
     end
   end
 
