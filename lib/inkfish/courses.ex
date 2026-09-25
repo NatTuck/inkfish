@@ -57,10 +57,9 @@ defmodule Inkfish.Courses do
 
   """
   def get_course!(id) do
-    course = Repo.get!(Course, id)
+    course = %Course{} = Repo.get!(Course, id)
 
     if course.solo_teamset_id == nil do
-      %Course{} = course
       ts = Inkfish.Teams.create_solo_teamset!(course)
       %Course{course | solo_teamset_id: ts.id}
     else

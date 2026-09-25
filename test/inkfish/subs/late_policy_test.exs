@@ -40,7 +40,7 @@ defmodule Inkfish.LatePolicyTest do
     }
 
     {:ok, grade} = Grades.create_grade(grade_attrs)
-    %Sub{sub | grades: [grade]}
+    %{sub | grades: [grade]}
   end
 
   describe "late penalties" do

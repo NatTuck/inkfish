@@ -107,7 +107,8 @@ defmodule InkfishWeb.ViewHelpers do
   end
 
   def show_pct(%Decimal{} = score) do
-    ctx = %Decimal.Context{Decimal.Context.get() | precision: 3}
+    ctx = %Decimal.Context{} = Decimal.Context.get()
+    ctx = %{ctx | precision: 3}
 
     Decimal.Context.with(ctx, fn ->
       score
@@ -148,7 +149,8 @@ defmodule InkfishWeb.ViewHelpers do
   end
 
   def show_score(%Decimal{} = score) do
-    ctx = %Decimal.Context{Decimal.Context.get() | precision: 3}
+    ctx = %Decimal.Context{} = Decimal.Context.get()
+    ctx = %{ctx | precision: 3}
 
     Decimal.Context.with(ctx, fn ->
       score

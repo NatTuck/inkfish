@@ -44,8 +44,8 @@ secret_key_base =
 
 config :inkfish, InkfishWeb.Endpoint,
   http: [
-    port: String.to_integer(System.get_env("PORT") || "4000"),
-    transport_options: [socket_opts: [:inet6]]
+    :inet6,
+    port: String.to_integer(System.get_env("PORT") || "4000")
   ],
   secret_key_base: secret_key_base
 

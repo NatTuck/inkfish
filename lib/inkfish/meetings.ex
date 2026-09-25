@@ -75,11 +75,11 @@ defmodule Inkfish.Meetings do
 
     ats =
       for at <- mm.attendances do
-        %Attendance{at | meeting: mm}
+        %{at | meeting: mm}
         |> Attendance.put_status()
       end
 
-    %Meeting{mm | attendances: ats}
+    %{mm | attendances: ats}
   end
 
   @doc """

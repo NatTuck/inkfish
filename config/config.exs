@@ -21,6 +21,7 @@ config :inkfish, Inkfish.AgJobs, resources: [cores: 4, megs: 8192]
 
 # Configures the endpoint
 config :inkfish, InkfishWeb.Endpoint,
+  adapter: Bandit.PhoenixAdapter,
   url: [host: "localhost"],
   secret_key_base:
     "V2mJIKEOJpyjppjtVUT2Zl4Rc24vEyI9FPA0DUQE/UW9ZmPLr/uRsgofj5E3yJnp",
@@ -32,6 +33,7 @@ config :inkfish, InkfishWeb.Endpoint,
   live_view: [signing_salt: "37rUe00e"]
 
 config :inkfish, Inkfish.Mailer, adapter: Swoosh.Adapters.Local
+config :swoosh, :api_client, Swoosh.ApiClient.Req
 
 # Configures Elixir's Logger
 config :logger, :console,
@@ -47,10 +49,7 @@ config :inkfish, :time_zone, "America/New_York"
 config :local_time, :time_zone, "America/New_York"
 
 # Use more recent docker API.
-config :docker, version: "v1.44"
-
-# Nonsense
-config :tesla, disable_deprecated_builder_warning: true
+config :inkfish, :docker, version: "v1.44"
 
 config :esbuild,
   version: "0.17.11",
@@ -87,7 +86,7 @@ config :phoenix_copy,
   ]
 
 # Default to local llama.cpp
-config :ex_openai,
+config :inkfish, :openai,
   api_key: "",
   organization_key: "",
   # Optional settings
