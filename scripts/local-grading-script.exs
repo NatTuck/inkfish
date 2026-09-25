@@ -1,8 +1,48 @@
+defmodule LocalOpenAI do
+  def create_chat_completion(messages, model) do
+    req =
+      Req.new(
+        base_url: base_url(),
+        headers: auth_headers(),
+        receive_timeout: receive_timeout(),
+        retry: false
+      )
+
+    case Req.post(req, url: "/chat/completions", json: %{model: model, messages: messages}) do
+      {:ok, %Req.Response{status: status, body: body}} when status in 200..299 ->
+        {:ok, body}
+
+      {:ok, %Req.Response{} = resp} ->
+        {:error, resp}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp config() do
+    Application.get_env(:inkfish, :openai, [])
+  end
+
+  defp base_url() do
+    config()[:base_url] || "http://localhost:8080/v1"
+  end
+
+  defp auth_headers() do
+    case config()[:api_key] do
+      key when is_binary(key) and key != "" -> [{"authorization", "Bearer #{key}"}]
+      _ -> []
+    end
+  end
+
+  defp receive_timeout() do
+    config()
+    |> Keyword.get(:http_options, [])
+    |> Keyword.get(:recv_timeout, 900_000)
+  end
+end
+
 defmodule LocalGrading do
-  alias ExOpenAI.Components.ChatCompletionRequestSystemMessage, as: SystemMsg
-  alias ExOpenAI.Components.ChatCompletionRequestUserMessage, as: UserMsg
-  #alias ExOpenAI.Components.ChatCompletionRequestAssistantMessage, as: AstMsg
-  
   def api_base() do
     "http://localhost:4000/api/v1"
   end
@@ -101,16 +141,17 @@ defmodule LocalGrading do
     """
 
     messages = [
-      %SystemMsg{role: :system, content: system_msg},
-      %UserMsg{role: :user, content: prompt},
+      %{"role" => "system", "content" => system_msg},
+      %{"role" => "user", "content" => prompt}
     ]
 
     IO.inspect(messages)
 
-    {:ok, resp} = ExOpenAI.Chat.create_chat_completion(messages, "default")
+    {:ok, resp} = LocalOpenAI.create_chat_completion(messages, "default")
 
-    {:ok, data} = hd(resp.choices)[:message][:content]
-    |> extract_json_response()
+    {:ok, data} =
+      hd(resp["choices"])["message"]["content"]
+      |> extract_json_response()
 
     IO.inspect({:data, data})
   end

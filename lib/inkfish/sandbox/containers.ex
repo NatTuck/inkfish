@@ -1,4 +1,6 @@
 defmodule Inkfish.Sandbox.Containers do
+  alias Inkfish.Docker
+
   def list_sandboxes() do
     # FIXME: This doesn't work.
 
@@ -18,7 +20,7 @@ defmodule Inkfish.Sandbox.Containers do
   end
 
   def get_image_by_tag(tag) do
-    Docker.Images.list()
+    Docker.list_images()
     |> Enum.find(&Enum.member?(&1["RepoTags"], tag))
   end
 
@@ -39,7 +41,7 @@ defmodule Inkfish.Sandbox.Containers do
 
     id =
       conf
-      |> Docker.Containers.create()
+      |> Docker.create_container()
       |> just_id()
 
     {id, conf}

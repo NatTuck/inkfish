@@ -114,7 +114,7 @@ defmodule InkfishWeb.Staff.CourseController do
 
   defp list_assignments(course) do
     Enum.flat_map(course.buckets, fn bb ->
-      Enum.map(bb.assignments, fn asg ->
+      Enum.map(bb.assignments, fn %Assignment{} = asg ->
         %Assignment{asg | bucket: bb}
       end)
     end)

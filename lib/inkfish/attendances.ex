@@ -46,7 +46,7 @@ defmodule Inkfish.Attendances do
       at = Enum.find(as, &(&1.meeting_id == mm.id))
 
       if at do
-        {mm, %Attendance{at | meeting: mm}}
+        {mm, %{at | meeting: mm}}
       else
         {mm, at}
       end
@@ -79,7 +79,7 @@ defmodule Inkfish.Attendances do
       )
 
     if at do
-      %Attendance{at | reg: reg, meeting: mm}
+      %{at | reg: reg, meeting: mm}
       |> Attendance.put_status()
       |> Repo.Info.with_local_time()
     else

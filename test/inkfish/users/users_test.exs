@@ -15,7 +15,7 @@ defmodule Inkfish.UsersTest do
     end
 
     test "get_user!/1 returns the user with given id" do
-      user = %User{insert(:user) | password: nil, password_confirmation: nil}
+      user = %{insert(:user) | password: nil, password_confirmation: nil}
       assert drop_assocs(Users.get_user!(user.id)) == drop_assocs(user)
     end
 
@@ -284,7 +284,7 @@ defmodule Inkfish.UsersTest do
   def user_fixture(attrs \\ %{}) do
     attrs = valid_user_attributes(attrs)
     {:ok, user} = Inkfish.Users.create_user(attrs)
-    %User{user | password: attrs[:password]}
+    %{user | password: attrs[:password]}
   end
 
   def extract_user_token(fun) do

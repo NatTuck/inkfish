@@ -12,7 +12,6 @@ defmodule Inkfish.Subs do
   alias Inkfish.Teams
   alias Inkfish.Grades
   alias Inkfish.Grades.GradeColumn
-  alias Inkfish.Grades.Grade
   alias Inkfish.Uploads
 
   def make_zero_sub(as) do
@@ -329,13 +328,13 @@ defmodule Inkfish.Subs do
 
     if grade1 do
       if is_nil(grade1.log_uuid) do
-        %Grade{grade1 | sub: sub, grade_column: gc, log_uuid: "HUH?"}
+        %{grade1 | sub: sub, grade_column: gc, log_uuid: "HUH?"}
       else
-        %Grade{grade1 | sub: sub, grade_column: gc}
+        %{grade1 | sub: sub, grade_column: gc}
       end
     else
       {:ok, gr} = Grades.create_autograde(sub.id, gc.id)
-      %Grade{gr | sub: sub, grade_column: gc}
+      %{gr | sub: sub, grade_column: gc}
     end
   end
 
