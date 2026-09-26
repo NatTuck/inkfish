@@ -1,7 +1,21 @@
 defmodule InkfishWeb.CloneChannelTest do
   use InkfishWeb.ChannelCase
 
+  import Inkfish.GitFixtures
+
   setup do
+    assert System.find_executable("git")
+    assert System.find_executable("tmptmpfs")
+
+    base =
+      Path.join(
+        System.tmp_dir!(),
+        "clone_channel_test_#{System.unique_integer([:positive])}"
+      )
+
+    File.mkdir_p!(base)
+    on_exit(fn -> File.rm_rf!(base) end)
+
     user = Inkfish.Users.get_user_by_email!("bob@example.com")
     nonce = Base.encode16(:crypto.strong_rand_bytes(32))
 
@@ -19,15 +33,17 @@ defmodule InkfishWeb.CloneChannelTest do
         %{"token" => token}
       )
 
-    {:ok, socket: socket, nonce: nonce, token: token}
+    {:ok, socket: socket, base: base}
   end
 
-  ## FIXME: FIXME FIXME
-  @tag :skip
-  test "clone clones a git repo", %{socket: socket} do
-    pancake = "https://github.com/NatTuck/pancake.git"
-    _ref = push(socket, "clone", %{"url" => pancake})
-    assert_push "done", %{status: "normal"}, 2_000
+  test "clone clones a git repo", %{socket: socket, base: base} do
+    bare =
+      make_repo(base, "pancake", fn src ->
+        File.write!(Path.join(src, "hello.txt"), "hello, world\n")
+      end)
+
+    _ref = push(socket, "clone", %{"url" => "file://#{bare}"})
+    assert_push "done", %{status: "normal"}, 30_000
   end
 
   test "broadcasts are pushed to the client", %{socket: socket} do

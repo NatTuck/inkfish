@@ -1,6 +1,8 @@
 defmodule Inkfish.Uploads.GitCloneScriptTest do
   use ExUnit.Case, async: false
 
+  import Inkfish.GitFixtures
+
   @script Path.join(:code.priv_dir(:inkfish), "scripts/upload_git_clone.sh")
 
   setup do
@@ -82,21 +84,6 @@ defmodule Inkfish.Uploads.GitCloneScriptTest do
     end
   end
 
-  defp make_repo(base, name, setup) do
-    src = Path.join(base, name)
-    File.mkdir_p!(src)
-    git!(["init", "-q"], cd: src)
-    git!(["config", "user.email", "test@example.com"], cd: src)
-    git!(["config", "user.name", "Test"], cd: src)
-    setup.(src)
-    git!(["add", "-A"], cd: src)
-    git!(["commit", "-qm", "init"], cd: src)
-
-    bare = Path.join(base, "#{name}.git")
-    git!(["clone", "-q", "--bare", src, bare])
-    bare
-  end
-
   defp make_evil_repo(base) do
     bare = Path.join(base, "evil.git")
     File.mkdir_p!(bare)
@@ -129,10 +116,5 @@ defmodule Inkfish.Uploads.GitCloneScriptTest do
     git!(["update-ref", "refs/heads/master", commit], cd: bare)
     git!(["symbolic-ref", "HEAD", "refs/heads/master"], cd: bare)
     bare
-  end
-
-  defp git!(args, opts \\ []) do
-    {out, 0} = System.cmd("git", args, opts)
-    String.trim(out)
   end
 end
