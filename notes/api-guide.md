@@ -37,6 +37,10 @@
 | PATCH | `/api/v1/staff/line_comments/:id` | `line_comment{path, line, points, text}` |
 | DELETE | `/api/v1/staff/line_comments/:id` | |
 
+**Note**: line comments created or updated through the API are marked as
+machine written: their text starts and ends with 🤖 (for example
+`🤖 Style issue 🤖`). Comments typed by a human in the web UI are not marked.
+
 ## curl Examples with Responses
 
 ```bash

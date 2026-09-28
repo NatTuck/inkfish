@@ -10,6 +10,75 @@ defmodule Inkfish.LineComments do
   alias Inkfish.Grades
   alias Inkfish.Grades.Grade
 
+  # Comments through the API are marked as machine written.
+  @bot_marker "🤖"
+
+  @doc """
+  The marker used to flag comments that came in through the API.
+  """
+  def bot_marker, do: @bot_marker
+
+  @doc """
+  Wraps text in the bot marker to show that a machine wrote it.
+
+  Idempotent: text that is already marked is returned unchanged.
+  """
+  def mark_automated(nil), do: nil
+
+  def mark_automated(text) when is_binary(text) do
+    text = String.trim(text)
+
+    cond do
+      text == "" -> text
+      automated_text?(text) -> text
+      true -> "#{@bot_marker} #{text} #{@bot_marker}"
+    end
+  end
+
+  def mark_automated(text), do: text
+
+  @doc """
+  True if text starts and ends with the bot marker.
+  """
+  def automated_text?(nil), do: false
+
+  def automated_text?(text) when is_binary(text) do
+    text = String.trim(text)
+
+    String.starts_with?(text, @bot_marker) and
+      String.ends_with?(text, @bot_marker)
+  end
+
+  def automated_text?(_text), do: false
+
+  @doc """
+  Marks comment attrs as machine written when they came from the API.
+
+  Human comments, such as those typed in the browser, are left alone.
+  """
+  def mark_automated_attrs(attrs, opts) do
+    if Keyword.get(opts, :source) == :api do
+      mark_attrs_text(attrs)
+    else
+      attrs
+    end
+  end
+
+  defp mark_attrs_text(attrs) when is_map(attrs) do
+    cond do
+      Map.has_key?(attrs, "text") ->
+        Map.update!(attrs, "text", &mark_automated/1)
+
+      Map.has_key?(attrs, :text) ->
+        Map.update!(attrs, :text, &mark_automated/1)
+
+      true ->
+        attrs
+    end
+  end
+
+  defp mark_attrs_text(attrs), do: attrs
+
   defp check_grade_confirmed(nil) do
     # No grade_id provided, let the changeset validation handle it
     :ok
@@ -86,8 +155,11 @@ defmodule Inkfish.LineComments do
   def create_line_comment(
         attrs \\ %{},
         valid_paths \\ nil,
-        valid_line_counts \\ nil
+        valid_line_counts \\ nil,
+        opts \\ []
       ) do
+    attrs = mark_automated_attrs(attrs, opts)
+
     grade_id = attrs["grade_id"] || attrs[:grade_id]
 
     # Check if grade is confirmed
@@ -173,7 +245,9 @@ defmodule Inkfish.LineComments do
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_line_comment(%LineComment{} = line_comment, attrs) do
+  def update_line_comment(%LineComment{} = line_comment, attrs, opts \\ []) do
+    attrs = mark_automated_attrs(attrs, opts)
+
     # Check if grade is confirmed
     with :ok <- check_grade_confirmed(line_comment.grade_id) do
       valid_line_counts = lookup_line_counts(line_comment.grade_id)

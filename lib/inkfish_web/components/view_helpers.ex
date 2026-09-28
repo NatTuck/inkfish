@@ -9,6 +9,7 @@ defmodule InkfishWeb.ViewHelpers do
   alias Inkfish.Subs.Sub
   alias Inkfish.Grades.Grade
   alias Inkfish.Grades.GradeColumn
+  alias Inkfish.LineComments.LineComment
   alias Inkfish.Assignments.Assignment
   alias Inkfish.Teams.Team
   alias Inkfish.Attendances.Attendance
@@ -255,6 +256,58 @@ defmodule InkfishWeb.ViewHelpers do
   def assignment_total_points(as) do
     Inkfish.Assignments.Assignment.assignment_total_points(as)
   end
+
+  @doc """
+  Feedback items for a sub or assignment.
+
+  Includes line comments from both draft (unconfirmed) and confirmed
+  feedback grades, so students can see feedback as soon as it is entered.
+  """
+  def feedback_items(nil), do: []
+
+  def feedback_items(%Assignment{} = asgn) do
+    case active_sub(asgn) do
+      nil -> []
+      sub -> Inkfish.Grades.list_feedback_items(sub)
+    end
+  end
+
+  def feedback_items(%Sub{} = sub) do
+    Inkfish.Grades.list_feedback_items(sub)
+  end
+
+  def active_sub(%Assignment{} = asgn) do
+    subs =
+      if Ecto.assoc_loaded?(asgn.subs) do
+        asgn.subs
+      else
+        []
+      end
+
+    Enum.find(subs, &Sub.is_active?/1)
+  end
+
+  def draft_count(items) do
+    Enum.count(items, &(&1.status == :draft))
+  end
+
+  @doc """
+  Score for a feedback grade, which is only final once confirmed.
+  """
+  def feedback_score(conn, %Grade{} = grade) do
+    if grade.confirmed do
+      show_score(conn, grade)
+    else
+      "pending"
+    end
+  end
+
+  def automated_comment?(%LineComment{} = lc) do
+    Inkfish.LineComments.automated_text?(lc.text)
+  end
+
+  def count_items(1, word), do: "1 #{word}"
+  def count_items(nn, word), do: "#{nn} #{word}s"
 
   # MDExGFM + smartypants + raw HTML match the retired Earmark defaults.
   @markdown_opts [

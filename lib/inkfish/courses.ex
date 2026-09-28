@@ -134,7 +134,12 @@ defmodule Inkfish.Courses do
         left_join: active_sub in ActiveSub,
         on: active_sub.reg_id == regs.id and active_sub.sub_id == subs.id,
         where: not is_nil(active_sub.id) or is_nil(subs.id),
-        order_by: student.surname,
+        order_by: [
+          asc: student.surname,
+          asc: buckets.name,
+          desc: asgs.due,
+          asc: asgs.name
+        ],
         preload: [
           regs: {regs, user: student, teams: {teams, subs: subs}},
           buckets: {buckets, assignments: asgs}
@@ -200,7 +205,11 @@ defmodule Inkfish.Courses do
           left_join: buckets in assoc(cc, :buckets),
           left_join: assignments in assoc(buckets, :assignments),
           left_join: gcols in assoc(assignments, :grade_columns),
-          order_by: [asc: buckets.name, asc: assignments.due],
+          order_by: [
+            asc: buckets.name,
+            desc: assignments.due,
+            asc: assignments.name
+          ],
           preload: [
             buckets: {buckets, assignments: {assignments, grade_columns: gcols}}
           ]
@@ -216,9 +225,11 @@ defmodule Inkfish.Courses do
           join: bucket in assoc(assignment, :bucket),
           where: bucket.course_id == ^course.id,
           left_join: grades in assoc(sub, :grades),
+          left_join: gc in assoc(grades, :grade_column),
+          left_join: lcs in assoc(grades, :line_comments),
           left_join: gcols in assoc(assignment, :grade_columns),
           preload: [
-            grades: grades,
+            grades: {grades, grade_column: gc, line_comments: lcs},
             assignment: {assignment, grade_columns: gcols, bucket: bucket}
           ]
       )
@@ -249,6 +260,11 @@ defmodule Inkfish.Courses do
         left_join: buckets in assoc(cc, :buckets),
         left_join: assignments in assoc(buckets, :assignments),
         left_join: gcols in assoc(assignments, :grade_columns),
+        order_by: [
+          asc: buckets.name,
+          desc: assignments.due,
+          asc: assignments.name
+        ],
         preload: [
           buckets: {buckets, assignments: {assignments, grade_columns: gcols}}
         ]

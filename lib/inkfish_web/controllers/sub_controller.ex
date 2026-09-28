@@ -19,7 +19,7 @@ defmodule InkfishWeb.SubController do
 
   plug(
     Plugs.RequireSubmitter
-    when action in [:show]
+    when action in [:show, :feedback]
   )
 
   alias InkfishWeb.Plugs.Breadcrumb
@@ -129,7 +129,12 @@ defmodule InkfishWeb.SubController do
     data =
       Inkfish.Subs.read_sub_data(sub.id)
       |> Map.put(:edit, false)
-      |> Map.put(:grade, %{line_comments: [], sub: sub_data, grade_column: gcol})
+      |> Map.put(:grade, %{
+        confirmed: true,
+        line_comments: feedback_comments(sub),
+        sub: sub_data,
+        grade_column: gcol
+      })
 
     git =
       Inkfish.Uploads.Git.repo_info(
@@ -137,6 +142,73 @@ defmodule InkfishWeb.SubController do
       )
 
     render(conn, "files.html", fluid_grid: true, sub: sub, data: data, git: git)
+  end
+
+  def feedback(conn, %{"id" => id}) do
+    sub = Subs.get_sub!(id)
+    unpacked = Inkfish.Uploads.Upload.unpacked_path(sub.upload)
+
+    items = Inkfish.Grades.list_feedback_items(sub)
+
+    groups =
+      items
+      |> Enum.map(fn item ->
+        context =
+          Inkfish.LineComments.Context.get(
+            unpacked,
+            item.comment.path,
+            item.comment.line
+          )
+
+        Map.put(item, :context, context)
+      end)
+      |> Enum.group_by(fn item -> item.grade.id end)
+      |> Enum.map(fn {_grade_id, group_items} ->
+        first = hd(group_items)
+
+        %{
+          grade: first.grade,
+          grade_column: first.grade_column,
+          status: first.status,
+          items: group_items
+        }
+      end)
+      |> Enum.sort_by(fn group -> {group.grade_column.name, group.grade.id} end)
+
+    render(conn, "feedback.html",
+      sub: sub,
+      assignment: conn.assigns[:assignment],
+      groups: groups,
+      item_count: length(items)
+    )
+  end
+
+  # Comments for the viewer: both draft and confirmed feedback, so
+  # students can see comments as soon as they are entered.
+  defp feedback_comments(sub) do
+    items = Inkfish.Grades.list_feedback_items(sub)
+
+    comments =
+      items
+      |> Enum.map(& &1.comment)
+      |> Inkfish.Repo.preload(:user)
+
+    items
+    |> Enum.zip(comments)
+    |> Enum.map(fn {item, comment} -> comment_json(item, comment) end)
+  end
+
+  defp comment_json(item, comment) do
+    %{
+      id: comment.id,
+      path: comment.path,
+      line: comment.line,
+      points: comment.points,
+      text: comment.text,
+      grade_id: comment.grade_id,
+      draft: item.status == :draft,
+      user: InkfishWeb.UserJSON.data(comment.user)
+    }
   end
 
   def rerun_scripts(conn, %{"id" => _id}) do

@@ -64,9 +64,14 @@
     <tr>
       <td>
         <%= if grade do %>
+          <% notes =
+            Enum.filter(feedback_items(@sub), &(&1.grade.id == grade.id)) %>
           <%= if grade_column.kind == "feedback" do %>
             <.link href={~p"/grades/#{grade.id}"}>{grade_column.name}</.link>
-            ({length(grade.line_comments)} note(s))
+            ({count_items(length(notes), "note")}
+            <%= if draft_count(notes) > 0 do %>
+              , {count_items(draft_count(notes), "draft")}
+            <% end %>)
           <% else %>
             {grade_column.name}
           <% end %>

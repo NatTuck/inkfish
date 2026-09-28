@@ -262,25 +262,7 @@ defmodule InkfishWeb.Staff.GradeController do
   end
 
   defp get_line_context(unpacked_path, file_path, line_number) do
-    file_path = Path.join(unpacked_path, file_path)
-
-    if File.exists?(file_path) do
-      content = File.read!(file_path)
-      lines = String.split(content, "\n")
-
-      # Get +/- 2 lines around the comment
-      start_line = max(1, line_number - 2)
-      end_line = min(length(lines), line_number + 2)
-
-      lines
-      |> Enum.slice(start_line - 1, end_line - start_line + 1)
-      |> Enum.with_index(start_line)
-      |> Enum.map(fn {text, num} ->
-        %{line: num, text: text, is_commented: num == line_number}
-      end)
-    else
-      []
-    end
+    Inkfish.LineComments.Context.get(unpacked_path, file_path, line_number)
   end
 
   defp get_comment_usage_stats(assignment_id, path, line, text) do

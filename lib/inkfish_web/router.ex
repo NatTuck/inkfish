@@ -79,6 +79,7 @@ defmodule InkfishWeb.Router do
 
     resources("/subs", SubController, only: [:show])
     get("/subs/:id/files", SubController, :files)
+    get("/subs/:id/feedback", SubController, :feedback)
     post("/subs/:id/rerun_scripts", SubController, :rerun_scripts)
     # resources "/grade_columns", GradeColumnController, only: [:show]
     resources("/grades", GradeController, only: [:show])

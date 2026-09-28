@@ -116,6 +116,22 @@ describe('LineComment', () => {
     expect(textArea).not.toBeDisabled();
   });
 
+  test('shows a draft badge for only draft comments', () => {
+    const draftData = { ...baseData, draft: true };
+
+    render(<LineComment data={draftData} edit={false} actions={mockActions} gradeConfirmed={false} />);
+
+    expect(screen.getByText('Draft')).toBeInTheDocument();
+  });
+
+  test('does not show a draft badge while editing', () => {
+    const draftData = { ...baseData, draft: true };
+
+    render(<LineComment data={draftData} edit={true} actions={mockActions} gradeConfirmed={false} />);
+
+    expect(screen.queryByText('Draft')).not.toBeInTheDocument();
+  });
+
   test('disables inputs when edit is false', () => {
     render(<LineComment data={baseData} edit={false} actions={mockActions} gradeConfirmed={false} />);
     

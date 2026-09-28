@@ -17,6 +17,7 @@ export default function LineComment({data, edit, actions, gradeConfirmed}) {
   let {line, path} = data;
 
   const isLocked = gradeConfirmed === true;
+  const isDraft = data.draft === true && !edit;
 
   const doSave = (commentId, commentData, gradeId, path, line) => {
     if (isLocked) return;
@@ -126,7 +127,10 @@ export default function LineComment({data, edit, actions, gradeConfirmed}) {
       <Card.Body className={color}>
         <Row>
           <Col sm={6}>
-            <p>Grader: {data.user.name}</p>
+            <p>
+              Grader: {data.user.name}
+              {isDraft ? <span className="badge bg-warning ms-2">Draft</span> : null}
+            </p>
           </Col>
           <Col sm={3}>
             <p>id: {id || "(new)"}</p>

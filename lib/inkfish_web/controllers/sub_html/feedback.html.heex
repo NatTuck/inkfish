@@ -1,0 +1,55 @@
+<h1>Feedback: {@assignment.name}</h1>
+
+<p>
+  <.link href={~p"/subs/#{@sub}/files"} class="btn btn-primary">
+    View whole submission and feedback
+  </.link>
+</p>
+
+<p class="text-muted">
+  {count_items(@item_count, "comment")} on this submission.
+  Comments marked <span class="badge bg-warning">Draft</span>
+  are not final yet, so you can still fix things and submit again.
+</p>
+
+<%= if @groups == [] do %>
+  <div class="alert alert-info">
+    No feedback yet.
+  </div>
+<% else %>
+  <%= for group <- @groups do %>
+    <h2>
+      {group.grade_column.name}
+      <%= if group.status == :draft do %>
+        <span class="badge bg-warning">Draft</span>
+      <% end %>
+      <span class="ms-2 text-muted small">
+        {feedback_score(@conn, group.grade)} / {show_score(
+          group.grade_column.points
+        )}
+      </span>
+    </h2>
+
+    <%= for item <- group.items do %>
+      <div class="card mb-3">
+        <div class="card-header">
+          <strong>{item.comment.path}</strong>
+          - Line {item.comment.line}
+          <span class="ms-2 text-muted">
+            Points: {show_score(item.comment.points)}
+          </span>
+          <%= if automated_comment?(item.comment) do %>
+            <span class="badge bg-secondary ms-2">🤖 Automated</span>
+          <% end %>
+        </div>
+        <div class="card-body">
+          <%= if item.context != [] do %>
+            <pre class="code-context"><%= for line_ctx <- item.context do %><%= if line_ctx.is_commented do %><mark>{line_ctx.line}: {line_ctx.text}</mark><% else %>{line_ctx.line}: {line_ctx.text}<% end %>
+<% end %></pre>
+          <% end %>
+          <p class="feedback-comment mb-0">{item.comment.text}</p>
+        </div>
+      </div>
+    <% end %>
+  <% end %>
+<% end %>

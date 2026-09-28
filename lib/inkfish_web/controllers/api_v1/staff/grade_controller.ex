@@ -101,7 +101,7 @@ defmodule InkfishWeb.ApiV1.Staff.GradeController do
       {:error,
        "Feedback grades are calculated automatically from line comments. Score cannot be set directly."}
     else
-      Grades.put_grade_with_comments(params, user)
+      Grades.put_grade_with_comments(params, user, source: :api)
     end
   end
 

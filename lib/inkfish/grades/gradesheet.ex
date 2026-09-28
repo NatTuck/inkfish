@@ -154,10 +154,7 @@ defmodule Inkfish.Grades.Gradesheet do
   end
 
   def percent(score, points) do
-    Decimal.mult(
-      Decimal.new("100.0"),
-      Decimal.div(score, points)
-    )
+    Decimal.mult(Decimal.new("100.0"), safe_div(score, points))
   end
 
   defp safe_div(nn, dd) do

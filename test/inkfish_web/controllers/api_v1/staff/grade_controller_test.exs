@@ -325,7 +325,7 @@ defmodule InkfishWeb.ApiV1.Staff.GradeControllerTest do
                "path" => "Ω_grading_extra.txt",
                "line" => 5,
                "points" => "-3.0",
-               "text" => "Logic error",
+               "text" => "🤖 Logic error 🤖",
                "grade" => grade_data
              } = json_response(conn, 201)["data"]
 
@@ -366,7 +366,7 @@ defmodule InkfishWeb.ApiV1.Staff.GradeControllerTest do
 
       assert %{
                "id" => comment_id,
-               "text" => "Updated text",
+               "text" => "🤖 Updated text 🤖",
                "points" => "-2.0",
                "grade" => grade_data
              } = json_response(conn, 200)["data"]
@@ -824,7 +824,7 @@ defmodule InkfishWeb.ApiV1.Staff.GradeControllerTest do
 
       first_new_comment =
         Enum.find(response_data["line_comments"], fn lc ->
-          lc["text"] == "New comment by staff"
+          lc["text"] == "🤖 New comment by staff 🤖"
         end)
 
       assert first_new_comment
@@ -832,7 +832,7 @@ defmodule InkfishWeb.ApiV1.Staff.GradeControllerTest do
 
       second_new_comment =
         Enum.find(response_data["line_comments"], fn lc ->
-          lc["text"] == "Another new comment by staff"
+          lc["text"] == "🤖 Another new comment by staff 🤖"
         end)
 
       assert second_new_comment

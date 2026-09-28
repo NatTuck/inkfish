@@ -31,15 +31,31 @@
         <th>Due</th>
         <th>Weight</th>
         <th>Score</th>
+        <th>Feedback</th>
       </tr>
     </thead>
     <tbody>
       <%= for as <- bucket.assignments, !as.hide do %>
+        <% items = feedback_items(as) %>
         <tr>
           <td><.link href={~p"/assignments/#{as}"}>{as.name}</.link></td>
           <td class="human-date">{show_timestamp(as.due)}</td>
           <td>{as.weight}</td>
           <td>{show_score(@conn, as)} / {as.points}</td>
+          <td>
+            <%= if items == [] do %>
+              <span class="text-muted">—</span>
+            <% else %>
+              <.link href={~p"/subs/#{active_sub(as).id}/feedback"}>
+                {count_items(length(items), "item")}
+              </.link>
+              <%= if draft_count(items) > 0 do %>
+                <span class="badge bg-warning ms-1">
+                  {count_items(draft_count(items), "draft")}
+                </span>
+              <% end %>
+            <% end %>
+          </td>
         </tr>
       <% end %>
       <tr>
@@ -47,6 +63,7 @@
         <td>weight = {bucket.weight}</td>
         <td>Total:</td>
         <td>{show_score(@totals[bucket.id])}%</td>
+        <td>&nbsp;</td>
       </tr>
     </tbody>
   </table>

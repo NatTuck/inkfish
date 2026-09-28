@@ -10,6 +10,8 @@ defmodule Inkfish.Grades do
   alias Inkfish.Users.User
   alias Inkfish.Grades.Grade
   alias Inkfish.LineComments.LineComment
+  alias Inkfish.LineComments
+  alias Inkfish.Subs.Sub
 
   @doc """
   Returns the list of grade_columns.
@@ -268,7 +270,7 @@ defmodule Inkfish.Grades do
     )
   end
 
-  def put_grade_with_comments(attrs, %User{} = grader) do
+  def put_grade_with_comments(attrs, %User{} = grader, opts \\ []) do
     attrs = with_string_keys(attrs)
 
     # Ensure confirmed is false for feedback grades (editing comments)
@@ -290,13 +292,26 @@ defmodule Inkfish.Grades do
           Repo.rollback(:grade_already_confirmed)
         else
           with {:ok, _lcs} <-
-                 put_comments(grade, attrs["line_comments"], grader) do
+                 put_comments(
+                   grade,
+                   mark_automated_comments(attrs["line_comments"], opts),
+                   grader
+                 ) do
             update_feedback_score(grade.id)
           end
         end
       end
     end)
   end
+
+  # Comments that came in through the API are marked as machine written.
+  defp mark_automated_comments(comments, opts) when is_list(comments) do
+    Enum.map(comments, fn comment ->
+      LineComments.mark_automated_attrs(comment, opts)
+    end)
+  end
+
+  defp mark_automated_comments(comments, _opts), do: comments
 
   defp with_string_keys(mm) do
     mm
@@ -515,6 +530,69 @@ defmodule Inkfish.Grades do
     score = Decimal.add(grade.grade_column.base, delta)
     update_grade(grade, %{score: score})
   end
+
+  @doc """
+  Returns the feedback items for a sub.
+
+  Feedback items are line comments on the sub's feedback grade columns.
+  Both draft (unconfirmed) and confirmed grades are included, so students
+  can see feedback as soon as it is entered.
+
+  Returns a list of maps:
+
+      %{
+        comment: LineComment.t(),
+        grade: Grade.t(),
+        grade_column: GradeColumn.t(),
+        status: :draft | :confirmed
+      }
+  """
+  def list_feedback_items(%Sub{} = sub) do
+    sub = preload_feedback!(sub)
+
+    sub.grades
+    |> Enum.filter(&feedback_grade?/1)
+    |> Enum.flat_map(fn grade ->
+      status = if Grade.confirmed?(grade), do: :confirmed, else: :draft
+
+      grade.line_comments
+      |> Enum.sort_by(fn lc -> {lc.path || "", lc.line || 0} end)
+      |> Enum.map(fn lc ->
+        %{
+          comment: lc,
+          grade: grade,
+          grade_column: grade.grade_column,
+          status: status
+        }
+      end)
+    end)
+  end
+
+  def list_feedback_items(_sub), do: []
+
+  defp feedback_grade?(%Grade{} = grade) do
+    Ecto.assoc_loaded?(grade.grade_column) and
+      grade.grade_column.kind == "feedback"
+  end
+
+  defp feedback_grade?(_grade), do: false
+
+  defp preload_feedback!(%Sub{} = sub) do
+    if feedback_loaded?(sub) do
+      sub
+    else
+      Repo.preload(sub, grades: [:grade_column, line_comments: [:user]])
+    end
+  end
+
+  defp feedback_loaded?(%Sub{grades: grades}) when is_list(grades) do
+    Enum.all?(grades, fn grade ->
+      Ecto.assoc_loaded?(grade.grade_column) and
+        Ecto.assoc_loaded?(grade.line_comments)
+    end)
+  end
+
+  defp feedback_loaded?(_sub), do: false
 
   def set_grade_log!(uuid, log) do
     grade =

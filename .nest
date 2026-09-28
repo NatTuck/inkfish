@@ -1,0 +1,4 @@
+[[mount]]
+path   = "~/.local/data/inkfish/uploads/test"
+mode   = "rw"
+create = true

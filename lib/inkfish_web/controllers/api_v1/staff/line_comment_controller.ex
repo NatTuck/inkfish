@@ -27,7 +27,7 @@ defmodule InkfishWeb.ApiV1.Staff.LineCommentController do
       |> Map.put("grade_id", grade_id)
       |> Map.put("user_id", user.id)
 
-    case LineComments.create_line_comment(params, :auto, :auto) do
+    case LineComments.create_line_comment(params, :auto, :auto, source: :api) do
       {:ok, %LineComment{} = comment} ->
         conn
         |> put_status(:created)
@@ -55,7 +55,7 @@ defmodule InkfishWeb.ApiV1.Staff.LineCommentController do
   def update(conn, %{"id" => id, "line_comment" => comment_params}) do
     comment = LineComments.get_line_comment!(id)
 
-    case LineComments.update_line_comment(comment, comment_params) do
+    case LineComments.update_line_comment(comment, comment_params, source: :api) do
       {:ok, %LineComment{} = updated_comment} ->
         render(conn, :show, line_comment: updated_comment)
 
