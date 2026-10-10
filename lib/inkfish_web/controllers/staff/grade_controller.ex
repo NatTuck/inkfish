@@ -219,24 +219,44 @@ defmodule InkfishWeb.Staff.GradeController do
         InkfishWeb.Staff.LineCommentJSON.data(lc)
       end)
 
+    next_grade =
+      if grade.confirmed do
+        nil
+      else
+        Grades.next_grade_for_review(grade, conn.assigns.current_reg)
+      end
+
     render(conn, "confirm_review.html",
       grade: grade,
       comments_with_context: comments_with_context,
       preview_score: preview_score,
       comments_json: comments_json,
       grade_confirmed: grade.confirmed,
+      next_grade: next_grade,
       csrf_token: Plug.CSRFProtection.get_csrf_token()
     )
   end
 
-  def confirm(conn, %{"id" => id}) do
+  def confirm(conn, %{"id" => id} = params) do
     {id, _} = Integer.parse(id)
 
     case Grades.confirm_grade(id) do
       {:ok, grade} ->
+        next =
+          if params["next"] in ["true", "1"] do
+            Grades.next_grade_for_review(grade, conn.assigns.current_reg)
+          end
+
+        target =
+          if next do
+            ~p"/staff/grades/#{next.id}/confirm-review"
+          else
+            ~p"/staff/grades/#{grade}"
+          end
+
         conn
         |> put_flash(:info, "Grade confirmed successfully.")
-        |> redirect(to: ~p"/staff/grades/#{grade}")
+        |> redirect(to: target)
 
       {:error, :not_found} ->
         conn

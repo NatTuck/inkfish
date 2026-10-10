@@ -141,6 +141,162 @@ defmodule Inkfish.GradesTest do
     end
   end
 
+  describe "next_grade_for_review/2" do
+    test "returns nil when the grade is alone" do
+      stock = stock_course()
+
+      assert Grades.next_grade_for_review(stock.grade, stock.staff_reg) == nil
+    end
+
+    test "returns the other unconfirmed grade in the same column when its sub is unassigned" do
+      stock = stock_course()
+
+      sub2 = insert(:sub, assignment: stock.assignment, grader: nil)
+
+      grade2 =
+        insert(:grade,
+          grade_column: stock.grade_column,
+          sub: sub2,
+          confirmed: false
+        )
+
+      assert Grades.next_grade_for_review(stock.grade, stock.staff_reg).id ==
+               grade2.id
+    end
+
+    test "returns the other unconfirmed grade when its sub is assigned to the reg" do
+      stock = stock_course()
+
+      sub2 =
+        insert(:sub, assignment: stock.assignment, grader: stock.staff_reg)
+
+      grade2 =
+        insert(:grade,
+          grade_column: stock.grade_column,
+          sub: sub2,
+          confirmed: false
+        )
+
+      assert Grades.next_grade_for_review(stock.grade, stock.staff_reg).id ==
+               grade2.id
+    end
+
+    test "returns nil when the candidate's sub is assigned to a different reg" do
+      stock = stock_course()
+      other_reg = insert(:reg, is_grader: true)
+
+      sub2 = insert(:sub, assignment: stock.assignment, grader: other_reg)
+
+      _grade2 =
+        insert(:grade,
+          grade_column: stock.grade_column,
+          sub: sub2,
+          confirmed: false
+        )
+
+      assert Grades.next_grade_for_review(stock.grade, stock.staff_reg) == nil
+    end
+
+    test "ignores a confirmed grade in the same column" do
+      stock = stock_course()
+
+      sub2 = insert(:sub, assignment: stock.assignment, grader: nil)
+
+      _grade2 =
+        insert(:grade,
+          grade_column: stock.grade_column,
+          sub: sub2,
+          confirmed: true
+        )
+
+      assert Grades.next_grade_for_review(stock.grade, stock.staff_reg) == nil
+    end
+
+    test "ignores unconfirmed grades in a different column or assignment" do
+      stock = stock_course()
+
+      # Same assignment, but a different grade column.
+      other_gcol =
+        insert(:grade_column, kind: "feedback", assignment: stock.assignment)
+
+      sub2 = insert(:sub, assignment: stock.assignment, grader: nil)
+
+      _grade2 =
+        insert(:grade, grade_column: other_gcol, sub: sub2, confirmed: false)
+
+      # A completely different assignment.
+      other_asgn = insert(:assignment)
+
+      other_gcol2 =
+        insert(:grade_column, kind: "feedback", assignment: other_asgn)
+
+      sub3 = insert(:sub, assignment: other_asgn, grader: nil)
+
+      _grade3 =
+        insert(:grade, grade_column: other_gcol2, sub: sub3, confirmed: false)
+
+      assert Grades.next_grade_for_review(stock.grade, stock.staff_reg) == nil
+    end
+
+    test "never returns the input grade itself" do
+      stock = stock_course()
+
+      # Assign the input grade's sub to the reg so the input grade would
+      # otherwise satisfy every filter except the id exclusion.
+      {:ok, _sub} =
+        Inkfish.Subs.update_sub_grader(stock.sub, stock.staff_reg.id)
+
+      sub2 =
+        insert(:sub, assignment: stock.assignment, grader: stock.staff_reg)
+
+      grade2 =
+        insert(:grade,
+          grade_column: stock.grade_column,
+          sub: sub2,
+          confirmed: false
+        )
+
+      next = Grades.next_grade_for_review(stock.grade, stock.staff_reg)
+
+      assert next.id == grade2.id
+      refute next.id == stock.grade.id
+    end
+
+    test "a non-grader reg sees any candidate regardless of sub.grader_id" do
+      stock = stock_course()
+      non_grader = insert(:reg, is_grader: false)
+      other_reg = insert(:reg, is_grader: true)
+
+      sub2 = insert(:sub, assignment: stock.assignment, grader: other_reg)
+
+      grade2 =
+        insert(:grade,
+          grade_column: stock.grade_column,
+          sub: sub2,
+          confirmed: false
+        )
+
+      assert Grades.next_grade_for_review(stock.grade, non_grader).id ==
+               grade2.id
+    end
+
+    test "returns a candidate when reg is nil" do
+      stock = stock_course()
+      other_reg = insert(:reg, is_grader: true)
+
+      sub2 = insert(:sub, assignment: stock.assignment, grader: other_reg)
+
+      grade2 =
+        insert(:grade,
+          grade_column: stock.grade_column,
+          sub: sub2,
+          confirmed: false
+        )
+
+      assert Grades.next_grade_for_review(stock.grade, nil).id == grade2.id
+    end
+  end
+
   describe "update_feedback_score with confirmation" do
     alias Inkfish.Grades.Grade
 

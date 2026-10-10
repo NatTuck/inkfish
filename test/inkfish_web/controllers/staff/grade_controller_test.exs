@@ -333,4 +333,128 @@ defmodule InkfishWeb.Staff.GradeControllerTest do
       assert html =~ "32"
     end
   end
+
+  describe "confirm and show next" do
+    test "shows the next button when another unconfirmed grade is ready", %{
+      conn: conn,
+      grade: grade
+    } do
+      asgn = grade.grade_column.assignment
+      sub2 = insert(:sub, assignment: asgn, grader: nil)
+
+      _grade2 =
+        insert(:grade,
+          grade_column: grade.grade_column,
+          sub: sub2,
+          confirmed: false
+        )
+
+      conn = get(conn, ~p"/staff/grades/#{grade}/confirm-review")
+      html = html_response(conn, 200)
+
+      assert html =~ "Confirm and show next"
+      assert html =~ "confirm-and-next"
+    end
+
+    test "hides the next button when there is no eligible candidate", %{
+      conn: conn,
+      grade: grade
+    } do
+      conn = get(conn, ~p"/staff/grades/#{grade}/confirm-review")
+      html = html_response(conn, 200)
+
+      refute html =~ "Confirm and show next"
+      refute html =~ "confirm-and-next"
+    end
+
+    test "hides the next button when the grade is already confirmed", %{
+      conn: conn,
+      grade: grade
+    } do
+      asgn = grade.grade_column.assignment
+      sub2 = insert(:sub, assignment: asgn, grader: nil)
+
+      _grade2 =
+        insert(:grade,
+          grade_column: grade.grade_column,
+          sub: sub2,
+          confirmed: false
+        )
+
+      {:ok, _} = Inkfish.Grades.confirm_grade(grade.id)
+
+      conn = get(conn, ~p"/staff/grades/#{grade}/confirm-review")
+      html = html_response(conn, 200)
+
+      refute html =~ "Confirm and show next"
+      refute html =~ "confirm-and-next"
+    end
+
+    test "hides the next button when the candidate belongs to a different grader",
+         %{conn: conn, grade: grade} do
+      asgn = grade.grade_column.assignment
+      other_reg = insert(:reg, is_grader: true)
+      sub2 = insert(:sub, assignment: asgn, grader: other_reg)
+
+      _grade2 =
+        insert(:grade,
+          grade_column: grade.grade_column,
+          sub: sub2,
+          confirmed: false
+        )
+
+      conn = get(conn, ~p"/staff/grades/#{grade}/confirm-review")
+      html = html_response(conn, 200)
+
+      refute html =~ "Confirm and show next"
+      refute html =~ "confirm-and-next"
+    end
+
+    test "POST confirm with next redirects to the next grade's review page", %{
+      conn: conn,
+      grade: grade
+    } do
+      asgn = grade.grade_column.assignment
+      sub2 = insert(:sub, assignment: asgn, grader: nil)
+
+      grade2 =
+        insert(:grade,
+          grade_column: grade.grade_column,
+          sub: sub2,
+          confirmed: false
+        )
+
+      conn =
+        post(conn, ~p"/staff/grades/#{grade}/confirm", %{"next" => "true"})
+
+      assert redirected_to(conn) ==
+               ~p"/staff/grades/#{grade2}/confirm-review"
+
+      assert Inkfish.Grades.get_grade!(grade.id).confirmed == true
+    end
+
+    test "POST confirm with next falls back to the show page with no candidate",
+         %{conn: conn, grade: grade} do
+      conn =
+        post(conn, ~p"/staff/grades/#{grade}/confirm", %{"next" => "true"})
+
+      assert redirected_to(conn) == ~p"/staff/grades/#{grade}"
+    end
+
+    test "POST confirm without next stays on the show page even when a candidate exists",
+         %{conn: conn, grade: grade} do
+      sub2 =
+        insert(:sub, assignment: grade.grade_column.assignment, grader: nil)
+
+      _grade2 =
+        insert(:grade,
+          grade_column: grade.grade_column,
+          sub: sub2,
+          confirmed: false
+        )
+
+      conn = post(conn, ~p"/staff/grades/#{grade}/confirm", %{})
+      assert redirected_to(conn) == ~p"/staff/grades/#{grade}"
+    end
+  end
 end

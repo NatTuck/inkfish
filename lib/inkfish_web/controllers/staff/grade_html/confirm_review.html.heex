@@ -1,4 +1,4 @@
-<h1>Review and Confirm Grade</h1>
+<h1 id={"grade-confirm-review-#{@grade.id}"}>Review and Confirm Grade</h1>
 
 <div class="grade-status mb-3">
   <span class="badge bg-warning">Draft</span>
@@ -51,6 +51,18 @@
     <button type="submit" class="btn btn-primary">
       Confirm Comments and Deductions
     </button>
+
+    <%= if @next_grade do %>
+      <button
+        type="submit"
+        name="next"
+        value="true"
+        id="confirm-and-next"
+        class="btn btn-outline-primary ms-2"
+      >
+        Confirm and show next
+      </button>
+    <% end %>
   </.form>
 
   <.link href={~p"/staff/grades/#{@grade}/edit"} class="btn btn-secondary ms-2">
