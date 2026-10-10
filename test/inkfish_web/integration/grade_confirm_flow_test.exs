@@ -268,6 +268,94 @@ defmodule InkfishWeb.GradeConfirmFlowTest do
       |> click_button("Confirm Comments and Deductions")
       |> assert_has("h1", text: "Show Grade")
     end
+
+    test "staff confirms and is taken to the next grade", %{conn: conn} do
+      course = insert(:course)
+      teamset = insert(:teamset, course: course)
+      bucket = insert(:bucket, course: course)
+
+      assignment =
+        insert(:assignment,
+          bucket: bucket,
+          teamset: teamset,
+          force_show_grades: true,
+          due: Inkfish.LocalTime.in_days(-1)
+        )
+
+      feedback_gcol =
+        insert(:grade_column,
+          kind: "feedback",
+          assignment: assignment,
+          name: "Feedback",
+          points: Decimal.new("10.0"),
+          base: Decimal.new("10.0")
+        )
+
+      staff = insert(:user, email: "staff9@test.com")
+      insert(:reg, course: course, user: staff, is_staff: true, is_grader: true)
+
+      student_a = insert(:user, email: "student9a@test.com")
+
+      student_reg_a =
+        insert(:reg, course: course, user: student_a, is_student: true)
+
+      team_a = insert(:team, teamset: teamset, active: true)
+      insert(:team_member, team: team_a, reg: student_reg_a)
+
+      upload_a = insert(:upload, user: student_a)
+
+      sub_a =
+        insert(:sub,
+          assignment: assignment,
+          reg: student_reg_a,
+          team: team_a,
+          upload: upload_a
+        )
+
+      grade_a =
+        insert(:grade,
+          grade_column: feedback_gcol,
+          sub: sub_a,
+          score: nil,
+          confirmed: false
+        )
+
+      student_b = insert(:user, email: "student9b@test.com")
+
+      student_reg_b =
+        insert(:reg, course: course, user: student_b, is_student: true)
+
+      team_b = insert(:team, teamset: teamset, active: true)
+      insert(:team_member, team: team_b, reg: student_reg_b)
+
+      upload_b = insert(:upload, user: student_b)
+
+      sub_b =
+        insert(:sub,
+          assignment: assignment,
+          reg: student_reg_b,
+          team: team_b,
+          upload: upload_b,
+          grader: nil
+        )
+
+      grade_b =
+        insert(:grade,
+          grade_column: feedback_gcol,
+          sub: sub_b,
+          score: nil,
+          confirmed: false
+        )
+
+      conn
+      |> add_session_cookie([value: %{user_id: staff.id}], @session_options)
+      |> visit("/staff/grades/#{grade_a.id}/confirm-review")
+      |> assert_has("#confirm-and-next")
+      |> click_button("Confirm and show next")
+      |> assert_has("#grade-confirm-review-#{grade_b.id}")
+
+      assert Inkfish.Grades.get_grade!(grade_a.id).confirmed == true
+    end
   end
 
   describe "student grade view when not yet released" do

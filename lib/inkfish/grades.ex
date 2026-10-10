@@ -493,6 +493,38 @@ defmodule Inkfish.Grades do
   end
 
   @doc """
+  The next grade in the same review queue as `grade` that still needs review:
+  same grade column, not yet confirmed, excluding `grade` itself, and limited
+  to subs that are unassigned or assigned to `reg`. Returns `nil` when there
+  is none.
+
+  A reg whose `is_grader` flag is false intentionally sees *all* unconfirmed
+  grades in the column, regardless of `sub.grader_id`, so non-graders
+  (professors, staff) can sweep the whole review queue. Passing `nil` for
+  `reg` behaves the same way.
+  """
+  def next_grade_for_review(%Grade{} = grade, reg) do
+    any_sub = is_nil(reg) || !reg.is_grader
+
+    # Ecto rejects `field == ^nil` when building the query, so `reg_id` must
+    # never be nil. When any sub is acceptable the comparison is irrelevant
+    # anyway, so use an id no real grader can have (reg ids are positive
+    # serials, FK-enforced).
+    reg_id = if any_sub, do: -1, else: reg.id
+
+    from(g in Grade,
+      join: sub in assoc(g, :sub),
+      where: g.grade_column_id == ^grade.grade_column_id,
+      where: g.confirmed == false,
+      where: g.id != ^grade.id,
+      where: ^any_sub or is_nil(sub.grader_id) or sub.grader_id == ^reg_id,
+      order_by: [asc: g.id],
+      limit: 1
+    )
+    |> Repo.one()
+  end
+
+  @doc """
   Unconfirms a grade, clears the score.
   """
   def unconfirm_grade(grade_id) do
