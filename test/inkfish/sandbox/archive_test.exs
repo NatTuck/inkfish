@@ -5,11 +5,17 @@ defmodule Inkfish.Sandbox.ArchiveTest do
 
   alias Inkfish.Sandbox.Archive
   alias Inkfish.Sandbox.TempFs
+  alias Inkfish.Uploads.Upload
 
   setup do
+    # Under the upload base, not the temp dir. `safe_extract/3` extracts into a
+    # staging directory under the upload base and then *renames* it into place,
+    # so the target has to be on the same filesystem -- which is what the real
+    # caller guarantees, since `Upload.unpacked_path/1` is under the upload base
+    # too. A target anywhere else is not a configuration this code supports.
     base =
       Path.join(
-        System.tmp_dir!(),
+        Upload.upload_base(),
         "archive_test_#{System.unique_integer([:positive])}"
       )
 
@@ -30,81 +36,25 @@ defmodule Inkfish.Sandbox.ArchiveTest do
     Path.expand("../../scripts/data/twenty.tar.gz", __DIR__)
   end
 
-  # Run `fun` with the four steps of `Archive.elixir_bin/0`'s resolution chain
-  # (the `:elixir_bin` config, `INKFISH_ELIXIR_BIN`, `PATH`, and the mise shim
-  # under `$HOME`) all moved, then restore every one of them. All four are
-  # VM-global, so they are restored before `fun` returns -- and again in
-  # `on_exit` as a safety net -- to leave the rest of the suite untouched.
-  #
-  # A step is starved by passing `nil`, which means "unset": no config entry, no
-  # environment variable, no shim. `path:` is the whole `PATH`, so a test that
-  # wants `PATH` starved passes a directory with nothing in it.
-  defp with_elixir_env(env, fun) do
-    saved = %{
-      path: System.get_env("PATH"),
-      home: System.get_env("HOME"),
-      env_bin: System.get_env("INKFISH_ELIXIR_BIN"),
-      config: Application.get_env(:inkfish, :elixir_bin)
-    }
+  # Every staged copy of `marker` still under the staging root. A success moves
+  # the staged tree into place, so the marker must not be under it any more;
+  # only a tree that never made it to its target is still there.
+  defp staged_markers(marker) do
+    Path.wildcard(Path.join(Archive.staging_root(), "*/#{marker}"))
+  end
 
-    restore = fn ->
-      put_env_or_delete("PATH", saved.path)
-      put_env_or_delete("HOME", saved.home)
-      put_env_or_delete("INKFISH_ELIXIR_BIN", saved.env_bin)
+  # Poll `paths` as fast as the scheduler allows until told to stop, then answer
+  # whether any of them was ever there. `File.lstat/1`, not `File.exists?/1`:
+  # these are symlinks that point outside the tree, so a dangling one is
+  # exactly the thing that must never appear at the final path.
+  defp watch(paths, seen?) do
+    seen? = seen? or Enum.any?(paths, &match?({:ok, _}, File.lstat(&1)))
 
-      case saved.config do
-        nil -> Application.delete_env(:inkfish, :elixir_bin)
-        value -> Application.put_env(:inkfish, :elixir_bin, value)
-      end
-    end
-
-    on_exit(restore)
-
-    put_env_or_delete("PATH", Keyword.get(env, :path))
-    put_env_or_delete("HOME", Keyword.get(env, :home))
-    put_env_or_delete("INKFISH_ELIXIR_BIN", Keyword.get(env, :env_bin))
-
-    case Keyword.get(env, :config) do
-      nil -> Application.delete_env(:inkfish, :elixir_bin)
-      value -> Application.put_env(:inkfish, :elixir_bin, value)
-    end
-
-    try do
-      fun.()
+    receive do
+      {:stop, from} -> send(from, {:seen, seen?})
     after
-      restore.()
+      0 -> watch(paths, seen?)
     end
-  end
-
-  defp put_env_or_delete(name, nil), do: System.delete_env(name)
-  defp put_env_or_delete(name, value), do: System.put_env(name, value)
-
-  # An executable file at `root/rel`, returned as an absolute path.
-  defp touch(root, rel) do
-    path = Path.join(root, rel)
-    File.mkdir_p!(Path.dirname(path))
-    File.write!(path, "#!/bin/sh\nexit 0\n")
-    File.chmod!(path, 0o755)
-    path
-  end
-
-  # Run `fun` with no `elixir` resolvable by any of the four steps: no
-  # `:elixir_bin` config, no `INKFISH_ELIXIR_BIN`, a `PATH` pointing at an
-  # existing but empty directory, and a `HOME` with no mise shims under it.
-  # `HOME` has to be moved as well: this machine really has
-  # `~/.local/share/mise/shims/elixir`, so leaving `HOME` alone would make the
-  # missing-`elixir` tests pass for the wrong reason.
-  defp without_elixir(base, fun) do
-    empty_bin = Path.join(base, "empty-bin")
-    File.mkdir_p!(empty_bin)
-
-    empty_home = Path.join(base, "empty-home")
-    File.mkdir_p!(empty_home)
-
-    with_elixir_env(
-      [path: empty_bin, home: empty_home, env_bin: nil, config: nil],
-      fun
-    )
   end
 
   test "safe_extract does not write through an escaping symlink", %{base: base} do
@@ -190,6 +140,87 @@ defmodule Inkfish.Sandbox.ArchiveTest do
 
     refute log =~ "removing"
     assert File.read!(Path.join(target, ".gitignore")) == "*.beam\n"
+  end
+
+  # The upload id is handed to the user, so the final path must never hold an
+  # escaping symlink -- not even for the instant between the unpack and the
+  # sanitize. That is why the tree is extracted to a staging directory and the
+  # sanitized staging tree is then *renamed* into place. This watches the final
+  # path for the whole call, and asserts that the link is never there and that
+  # the staged copy is gone once the call returns.
+  test "the final path never holds an escaping symlink", %{base: base} do
+    stage = Path.join(base, "stage")
+    target = Path.join(base, "target")
+    marker = "ordering-#{System.unique_integer([:positive])}"
+    File.mkdir_p!(stage)
+    File.mkdir_p!(target)
+
+    File.write!(Path.join(stage, marker), "hi")
+    File.ln_s!("/etc/passwd", Path.join(stage, "leak"))
+    File.ln_s!("../outside/secret", Path.join(stage, "escape"))
+
+    archive =
+      tar!(Path.join(base, "ordering.tar.gz"), stage, [
+        "escape",
+        "leak",
+        marker
+      ])
+
+    watched = [Path.join(target, "leak"), Path.join(target, "escape")]
+    watcher = spawn_link(fn -> watch(watched, false) end)
+
+    assert :ok = Archive.safe_extract(archive, target, "10M")
+
+    send(watcher, {:stop, self()})
+    assert_receive {:seen, seen?}, 5_000
+
+    refute seen?,
+           "an escaping symlink was at the final path before it was sanitized"
+
+    # The final path is the sanitized tree ...
+    assert {:error, :enoent} = File.lstat(Path.join(target, "leak"))
+    assert {:error, :enoent} = File.lstat(Path.join(target, "escape"))
+    assert File.read!(Path.join(target, marker)) == "hi"
+
+    # ... and the staged copy it came from is gone, not left beside it.
+    assert staged_markers(marker) == []
+  end
+
+  # The ordering is not an accident of timing: the staged tree is sanitized
+  # *before* anything is moved. This makes the move fail on purpose -- the
+  # target's parent is a regular file, so it cannot be created -- and then
+  # inspects what the failure left behind: the staged tree, already sanitized.
+  # That staging directory is also exactly what a failure is supposed to leave
+  # behind; nothing deletes it.
+  test "the staged tree is sanitized before the move", %{base: base} do
+    stage = Path.join(base, "stage")
+    marker = "staged-#{System.unique_integer([:positive])}"
+    File.mkdir_p!(stage)
+
+    File.write!(Path.join(stage, marker), "hi")
+    File.ln_s!("/etc/passwd", Path.join(stage, "leak"))
+    archive = tar!(Path.join(base, "staged.tar.gz"), stage, ["leak", marker])
+
+    File.write!(Path.join(base, "not-a-dir"), "")
+    target = Path.join(base, "not-a-dir/target")
+
+    log =
+      capture_log(fn ->
+        assert {:error, message} = Archive.safe_extract(archive, target, "10M")
+        assert message =~ "could not prepare"
+      end)
+
+    # The escaping symlink was removed before the move was attempted ...
+    assert log =~ "removing absolute link"
+    refute File.exists?(target)
+
+    # ... and the staged tree is still there, with the symlink gone from it.
+    assert [staged_marker] = staged_markers(marker)
+    staged = Path.dirname(staged_marker)
+    on_exit(fn -> File.rm_rf!(staged) end)
+
+    assert File.read!(staged_marker) == "hi"
+    assert {:error, :enoent} = File.lstat(Path.join(staged, "leak"))
   end
 
   describe "sanitize_link!/2" do
@@ -279,185 +310,6 @@ defmodule Inkfish.Sandbox.ArchiveTest do
 
       assert msg =~ "exited 2"
 
-      assert File.ls!(target) == []
-    end
-  end
-
-  # `elixir_bin/0` walks four steps, and a suite that only ever exercised one of
-  # them would not notice the others going away. Each test below pins one step
-  # in place and starves the rest, so it fails both when that step stops being
-  # consulted and when a step that should have lost starts winning.
-  describe "the elixir resolution chain" do
-    test "the :elixir_bin config wins over every other step", %{base: base} do
-      config_bin = touch(base, "config/elixir")
-      env_bin = touch(base, "env/elixir")
-      path_bin = touch(base, "path/elixir")
-      home = Path.join(base, "home")
-      touch(home, ".local/share/mise/shims/elixir")
-
-      result =
-        with_elixir_env(
-          [
-            config: config_bin,
-            env_bin: env_bin,
-            path: Path.dirname(path_bin),
-            home: home
-          ],
-          fn -> Archive.elixir_bin() end
-        )
-
-      assert {:ok, ^config_bin} = result
-    end
-
-    test "INKFISH_ELIXIR_BIN wins when the config is unset", %{base: base} do
-      env_bin = touch(base, "env/elixir")
-      path_bin = touch(base, "path/elixir")
-      home = Path.join(base, "home")
-      touch(home, ".local/share/mise/shims/elixir")
-
-      result =
-        with_elixir_env(
-          [
-            config: nil,
-            env_bin: env_bin,
-            path: Path.dirname(path_bin),
-            home: home
-          ],
-          fn -> Archive.elixir_bin() end
-        )
-
-      assert {:ok, ^env_bin} = result
-    end
-
-    test "elixir on PATH wins when the config and the environment are unset", %{
-      base: base
-    } do
-      path_bin = touch(base, "path/elixir")
-      home = Path.join(base, "home")
-      touch(home, ".local/share/mise/shims/elixir")
-
-      result =
-        with_elixir_env(
-          [config: nil, env_bin: nil, path: Path.dirname(path_bin), home: home],
-          fn -> Archive.elixir_bin() end
-        )
-
-      assert {:ok, ^path_bin} = result
-    end
-
-    test "the mise shim is used when nothing else resolves", %{base: base} do
-      # This is the case the step exists for: a release started by systemd has
-      # neither a login shell's PATH nor `mise activate`'s environment, so the
-      # shim has to be found from `$HOME` alone.
-      empty_bin = Path.join(base, "empty-bin")
-      File.mkdir_p!(empty_bin)
-      home = Path.join(base, "home")
-      shim = touch(home, ".local/share/mise/shims/elixir")
-
-      result =
-        with_elixir_env(
-          [config: nil, env_bin: nil, path: empty_bin, home: home],
-          fn -> Archive.elixir_bin() end
-        )
-
-      assert {:ok, ^shim} = result
-    end
-
-    test "an empty config or environment value counts as unset", %{base: base} do
-      # `INKFISH_ELIXIR_BIN=""` in an environment file, or a shell that exported
-      # an empty expansion, must not be read as "run the empty path".
-      path_bin = touch(base, "path/elixir")
-      empty_home = Path.join(base, "empty-home")
-      File.mkdir_p!(empty_home)
-
-      result =
-        with_elixir_env(
-          [
-            config: "",
-            env_bin: "",
-            path: Path.dirname(path_bin),
-            home: empty_home
-          ],
-          fn -> Archive.elixir_bin() end
-        )
-
-      assert {:ok, ^path_bin} = result
-    end
-
-    test "a dangling mise shim is not used", %{base: base} do
-      # `File.regular?/1` follows the link, so a shim pointing at something that
-      # is not there is refused here rather than inside the namespace, where the
-      # failure would surface as a failed unpack instead.
-      empty_bin = Path.join(base, "empty-bin")
-      File.mkdir_p!(empty_bin)
-      home = Path.join(base, "home")
-      shims = Path.join(home, ".local/share/mise/shims")
-      File.mkdir_p!(shims)
-      File.ln_s!(Path.join(base, "no-such-mise"), Path.join(shims, "elixir"))
-
-      result =
-        with_elixir_env(
-          [config: nil, env_bin: nil, path: empty_bin, home: home],
-          fn -> Archive.elixir_bin() end
-        )
-
-      assert {:error, reason} = result
-      assert Archive.missing_elixir?(reason)
-    end
-  end
-
-  # A missing `elixir` binary is a deployment misconfiguration, not a bad
-  # archive: it has to be detectable, and it has to say which binary is missing
-  # rather than looking like an ordinary unpack failure.
-  describe "a missing elixir binary" do
-    test "is reported by elixir_bin/0", %{base: base} do
-      result = without_elixir(base, fn -> Archive.elixir_bin() end)
-
-      assert {:error, reason} = result
-      assert Archive.missing_elixir?(reason)
-
-      assert {:elixir_bin_missing, message} = reason
-      assert message =~ "elixir"
-      assert message =~ ":elixir_bin"
-      assert message =~ "PATH"
-    end
-
-    test "carries a single-sentence reason, not a paragraph", %{base: base} do
-      # This reason is appended to the error a user sees, so it has to stay one
-      # sentence: the paragraph-length deployment guidance is log only. Keep it
-      # specific while it is short -- it still has to name the missing binary
-      # and both ways to resolve it.
-      assert {:error, {:elixir_bin_missing, message}} =
-               without_elixir(base, fn -> Archive.elixir_bin() end)
-
-      refute String.contains?(message, "\n")
-      assert String.length(message) < 200
-
-      assert message =~ "elixir"
-      assert message =~ ":elixir_bin"
-      assert message =~ "PATH"
-
-      assert String.length(Archive.missing_elixir_log_message()) >
-               String.length(message)
-    end
-
-    test "is surfaced by safe_extract/3 instead of a generic failure", %{
-      base: base
-    } do
-      stage = Path.join(base, "stage")
-      target = Path.join(base, "target")
-      File.mkdir_p!(stage)
-      File.mkdir_p!(target)
-      File.write!(Path.join(stage, "hello.txt"), "hi")
-      archive = tar!(Path.join(base, "plain.tar.gz"), stage, ["hello.txt"])
-
-      result =
-        without_elixir(base, fn ->
-          Archive.safe_extract(archive, target, "10M")
-        end)
-
-      assert {:error, reason} = result
-      assert Archive.missing_elixir?(reason)
       assert File.ls!(target) == []
     end
   end

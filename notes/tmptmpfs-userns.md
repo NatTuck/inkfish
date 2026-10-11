@@ -82,24 +82,25 @@ A non-zero exit becomes `{:error, reason}` carrying the output (`:456-477`,
 `:492-497`); a timeout kills the whole process group (`:479-490`, `:510-522`).
 `bin/0` (`:184-186`) is the bare name `unshare`; `unshare_bin/0` (`:195-197`)
 resolves it through `PATH`, and `check_userns/1` (`:240-254`) is what
-`Inkfish.Application` runs once at boot (`lib/inkfish/application.ex:89-97`):
+`Inkfish.Application` runs once at boot (`lib/inkfish/application.ex:74-82`):
 it runs `unshare -Urm -- true`, so the check fails on a host that has the binary
 but refuses the namespace, not only on one where `unshare` is missing. A caller
 that needs a specific binary passes `:bin` to `run_in_tempfs/4` (`:312-322`).
 
 ## 2. Why the trailing-slash / absolute-path detail matters
 
-The exported mount path is handed to the sanitizer, and the sanitizer compares a
-**raw** base string against `readlink -f` output:
+The base the sanitizer is handed is compared as a **raw** string against
+`readlink -f` output:
 
 - `Inkfish.Sandbox.SanitizeLinks.sanitize_links!/1`
-  (`priv/sandbox/sanitize_logic.exs:35-43`) computes `full = Path.expand(base)`
-  (`:36`) and **walks the expanded path** (`:38`), but passes the **raw** `base`
-  to `sanitize_link!/2` (`:40`).
-- The relative-link check (`priv/sandbox/sanitize_logic.exs:64-72`) compares the
-  result of `readlink -f path` (`:65-67`) against that raw `base`, keeping the
-  link only when `targ == base` or `String.starts_with?(targ, base <> "/")`
-  (`:69`). `readlink -f` always returns an **absolute, resolved** path.
+  (`lib/inkfish/sandbox/sanitize_links.ex:32-40`) computes
+  `full = Path.expand(base)` (`:33`) and **walks the expanded path** (`:35`), but
+  passes the **raw** `base` to `sanitize_link!/2` (`:37`).
+- The relative-link check (`lib/inkfish/sandbox/sanitize_links.ex:61-75`)
+  compares the result of `readlink -f path` (`:62-64`) against that raw `base`,
+  keeping the link only when `targ == base` or
+  `String.starts_with?(targ, base <> "/")` (`:66`). `readlink -f` always returns
+  an **absolute, resolved** path.
 
 So if `base` is relative, or ends in `/`, no resolved target can ever satisfy
 that comparison and **every** in-tree relative symlink is deleted. Measured: **9
@@ -110,6 +111,13 @@ building the mount paths from it (`lib/inkfish/sandbox/temp_fs.ex:349-376`): a
 `TMPDIR` that is relative or ends in a slash still yields absolute, slash-free
 mount paths. The Elixir API documents the same contract (`:130-139`) and the
 test asserts it (`test/inkfish/sandbox/temp_fs_test.exs:32-49`).
+
+The extraction's base is no longer a mount path -- the sanitizer runs in the
+BEAM, on the staging directory (`lib/inkfish/sandbox/archive.ex:21-31`) -- so
+the same property is now the staging directory's: it is built with `Path.join`
+(absolute, no trailing slash) and then passed through `realpath -m` to resolve
+any symlinked component (`lib/inkfish/sandbox/archive.ex:135-150`), because
+`Path.expand/1` is lexical and would leave a symlinked `$HOME` unresolved.
 
 ## 3. Why `tar --no-same-owner` is required
 
@@ -123,40 +131,39 @@ tar: ...: Cannot change ownership to uid 1000: Invalid argument
 
 and `tar` exits non-zero, aborting the extraction. Hence the extraction script
 passes `tar xvf "$INKFISH_ARCHIVE" --no-same-owner`
-(`lib/inkfish/sandbox/archive.ex:192`; comment at `:176-186`).
+(`lib/inkfish/sandbox/archive.ex:185`; comment at `:169-180`).
 
 The same hazard applies to anything else that restores metadata. The copy-out
 must be `cp -r`, never `cp -a`/`cp -p`: the archive's ownership is not ours to
 restore, and inside the namespace it is not even mapped
-(`lib/inkfish/sandbox/archive.ex:200-211`, used at `:194` and `:209`).
+(`lib/inkfish/sandbox/archive.ex:190-202`, used at `:186` and `:200`).
 
 ## 4. Why a non-zero `tar` exit must be fatal
 
 Extracting past the tmpfs size cap does not fail cleanly: `tar` writes the file
 it can, leaves a **zero-byte** file for the one it could not finish, prints its
-error, and exits **2**. A sanitizer run on that partial tree returns 0, so
-without a guard the truncated tree would be copied out as if it were fine
-(`lib/inkfish/sandbox/archive.ex:105-110`). The guard is `set -euo pipefail` at
-the top of both generated scripts (`lib/inkfish/sandbox/archive.ex:190`,
-`:206`): it makes the non-zero `tar` exit abort the whole script, before the
+error, and exits **2**. Without a guard the truncated tree would be copied out
+to the staging directory as if it were fine
+(`lib/inkfish/sandbox/archive.ex:53-57`). The guard is `set -euo pipefail` at
+the top of both generated scripts (`lib/inkfish/sandbox/archive.ex:183`,
+`:198`): it makes the non-zero `tar` exit abort the whole script, before the
 copy-out.
 
 This only helps if the caller checks the result. `safe_extract/3` returns
 `:ok` or `{:error, reason}` rather than raising
-(`lib/inkfish/sandbox/archive.ex:112-127`). `lib/inkfish/uploads.ex` checks it:
-both `create_upload/1` and `create_fake_upload/1` match on `Upload.unpack/1`
-(`lib/inkfish/uploads/upload.ex:216`) and turn a `{:error, reason}` into an
-`{:error, changeset}` instead of reporting success, so a failed extraction can
-no longer surface as `{:ok, upload}` with an empty `unpacked/` tree — exactly
-the silent-success mode this change exists to remove. The reason itself is
-deliberately carried into that changeset error (`lib/inkfish/uploads.ex:150-157`):
-`unpack_error/2` appends `format_reason/1` (`:184`), which passes a binary
-`reason` through unchanged (server paths and all) and unwraps the tagged
-missing-`elixir` reason to its own sentence. The users are computer science
-students who can often understand and act on a technical error, so the real
-reason is the intended user-facing message — not a leak to be plugged by
-replacing it with a generic one. (Was tracked as work item 6 in
-`notes/no-suid-tmpfs.md`.)
+(`lib/inkfish/sandbox/archive.ex:59-68`, `:152-167`). `lib/inkfish/uploads.ex`
+checks it: both `create_upload/1` and `create_fake_upload/1` match on
+`Upload.unpack/1` (`lib/inkfish/uploads/upload.ex:216`) and turn a
+`{:error, reason}` into an `{:error, changeset}` instead of reporting success,
+so a failed extraction can no longer surface as `{:ok, upload}` with an empty
+`unpacked/` tree — exactly the silent-success mode this change exists to
+remove. The reason itself is deliberately carried into that changeset error
+(`lib/inkfish/uploads.ex:149-157`): `unpack_error/2` appends `format_reason/1`
+(`:162-164`), which passes a binary `reason` through unchanged (server paths and
+all). The users are computer science students who can often understand and act
+on a technical error, so the real reason is the intended user-facing message —
+not a leak to be plugged by replacing it with a generic one. (Was tracked as
+work item 6 in `notes/no-suid-tmpfs.md`.)
 
 ## 5. Requirements on the host
 
@@ -195,7 +202,7 @@ created no user namespace at all, which is why CI passed before the migration.)
 (`lib/inkfish/sandbox/temp_fs.ex:240-254`) resolves `unshare` and then runs
 `unshare -Urm -- true`, bounded by `:userns_probe_timeout_ms` (5 s), and
 `Inkfish.Application` logs one `Logger.error` when it fails
-(`lib/inkfish/application.ex:89-97`), carrying the probe's own output -- stderr
+(`lib/inkfish/application.ex:74-82`), carrying the probe's own output -- stderr
 included -- plus the knobs above by name. It deliberately does not halt the
 application. Resolving the binary alone, which is what the check used to do, was
 too weak: it passed on exactly the hosts (this CI, and any production host with
@@ -252,38 +259,97 @@ unshare -Urm -- true   # must succeed -- this is the probe Inkfish runs at boot
 CI does the same three lines before `mix test`, and fails the build if the probe
 does not pass (see section 5).
 
-## 7. Open risks / to verify
+## 7. Where the sanitizer runs now
 
-**(a) `elixir` must be reachable inside the namespace — UNVERIFIED.** The
-sanitizer is Elixir: the script runs `"$INKFISH_ELIXIR" "$INKFISH_SANITIZE"
-"$TMPFS"` inside the namespace (`lib/inkfish/sandbox/archive.ex:283-285`), where
-`INKFISH_ELIXIR` comes from `elixir_bin/0`, which walks four steps and takes the
-first that resolves (`lib/inkfish/sandbox/archive.ex:92-137`): the `:elixir_bin`
-config, then `INKFISH_ELIXIR_BIN`, then `elixir` on `PATH`, then the mise shim at
-`$HOME/.local/share/mise/shims/elixir`. A `mix release` does **not** put `elixir`
-on `PATH`, so a release deployment needs one of the last two: `scripts/start.sh`
-exports `INKFISH_ELIXIR_BIN` from the shims it just made authoritative, and the
-shim step is the fallback for a process started without that. Either way the
-`elixir` has to be usable *inside the namespace*. This has **not** been verified
-against a real release.
+**The sanitizer runs in the app's own BEAM.** It used to run as a separate
+`elixir` process inside the mount namespace, which meant the extraction had to
+find a general-purpose `elixir` from inside a release. That failed twice in
+production: a mise shim that could not resolve a version
+(`mise ERROR No version is set for shim: elixir`), and
+`System.find_executable("elixir")` finding the release's *own* `bin/elixir`,
+which is a wrapper that boots the release rather than a general-purpose Elixir
+(`Runtime terminating during boot ({'cannot get bootfile', ...})`). Asking the
+host for an Elixir when the app already *is* one is the root cause, and any
+release-native alternative (`bin/inkfish eval`) would make dev and release run
+different code paths. So the symlink pass is an ordinary module function again —
+`Inkfish.Sandbox.SanitizeLinks`, called from
+`Inkfish.Sandbox.Archive.safe_extract/3` — and dev and release run identical
+code by construction. `INKFISH_ELIXIR_BIN`, the four-step `elixir_bin/0`
+resolution chain, the boot check for it, the `priv/sandbox/*.exs` scripts and
+their `INKFISH-SANITIZE` log-forwarding sentinel are all gone.
 
-**(b) `priv/sandbox/*.exs` is format-checked.** `.formatter.exs` `inputs` covers
-`*.{heex,ex,exs}`, `{config,lib,test}/**/*.{heex,ex,exs}`, `priv/*/seeds.exs`
-and `priv/sandbox/*.exs` (`.formatter.exs:5-10`), so both
-`priv/sandbox/sanitize_logic.exs` and `priv/sandbox/sanitize.exs` are covered
-and `mix precommit` will format-check them.
+**The tmpfs and the namespace stay.** The kernel-enforced size cap is why they
+exist. What changed is where the symlink pass runs and where the extraction
+lands. `safe_extract/3` now owns three steps in this order
+(`lib/inkfish/sandbox/archive.ex:59-68`):
 
-**(c) The CI step is only proven by a green GitHub run — UNVERIFIED LOCALLY.**
+1. **Inside the namespace, pure shell** (`:181-202`): mount the size-capped
+   tmpfs, `tar --no-same-owner` into it, and `cp -r "$TMPFS/." "$INKFISH_STAGE"`
+   the tree out to a staging directory. No Elixir runs in there at all.
+2. **In the BEAM**: sanitize the staged tree in process (`:211-229`).
+3. **In the BEAM**: move the sanitized tree into place with `File.rename/2`
+   (`:231-267`).
+
+**The ordering property is the point.** The upload id is handed to the user
+(`/uploads/:id/_meta/unpacked/*path` serves the unpacked tree), so the final
+path must never contain an escaping symlink — not even for the instant between
+the unpack and the sanitize. That is why extraction goes to staging first and
+the move happens afterwards, and why the move is a rename rather than a copy:
+the final path is either absent or fully sanitized, never a half-state. Staging
+is `<upload_base>/staging/<random>` (`:21-31`, `:112-133`) — a fresh random
+directory, so it is not derivable from the upload id, and under the upload base
+rather than under the id's own directory, so no route reaches it.
+
+**Staging has to be on the same filesystem as the final path**, or the rename
+fails with `:exdev`. In production it always is: `Upload.unpacked_path/1` is
+under the upload base too. A caller that puts the target elsewhere gets that
+`:exdev` reported as a failure rather than papered over with a copy. (This is
+not theoretical: on a btrfs host `/tmp` and `$HOME` can be different
+subvolumes, so a `/tmp` target cannot be renamed into. The tests therefore put
+their fixtures under the upload base, which is the layout the real caller
+guarantees.)
+
+**An existing target is removed first** (`:237-242`, `:269-280`). `rename(2)`
+onto an existing *empty* directory succeeds but onto a non-empty one fails with
+`:enotempty`, and the obvious fallback — copying the staged tree in — is the
+merge that can leave a partial result behind. Removing it makes both cases the
+same: the target is the sanitized tree, or it is gone.
+
+**Cleanup is asymmetric on purpose** (`:244-249`). On success the move *is* the
+cleanup: the staging directory is renamed into place, so nothing of ours is left
+behind. On failure the staging directory is left exactly as it is, junk and all:
+a delete path would have to run while we are already reporting a failure, and
+leftover junk in a staging area that no route serves is preferable to delete
+logic that can itself fail or, worse, delete the wrong thing.
+
+**The tests pin the ordering.** `test/inkfish/sandbox/archive_test.exs` watches
+the final path for the whole call and asserts an escaping symlink is never there
+and that the staged copy is gone on success; a second test makes the move fail
+on purpose (the target's parent is a regular file) and asserts the staging
+directory it leaves behind is already sanitized.
+
+## 8. Open risks / to verify
+
+**(a) The CI step is only proven by a green GitHub run — UNVERIFIED LOCALLY.**
 The sysctl step cannot be exercised here: GitHub's runners are not reproducible
 locally, and this host already has `kernel.apparmor_restrict_unprivileged_userns=0`
 and `kernel.unprivileged_userns_clone=1`. What *was* checked is that the YAML
 parses and that the step's shell script both passes and fails the right way
 (see section 5).
 
-**(d) Cost (measured).** About **260 ms per extraction** end to end, of which
-about **150 ms is Erlang VM boot** for the sanitizer process, and about **0.6 ms
-per relative symlink** (each relative link costs one `readlink -f` fork,
-`priv/sandbox/sanitize_logic.exs:65`).
+**(b) Cost (measured before the sanitizer moved in-process).** About **260 ms
+per extraction** end to end, of which about **150 ms was Erlang VM boot** for
+the sanitizer process, and about **0.6 ms per relative symlink** (each relative
+link costs one `readlink -f` fork,
+`lib/inkfish/sandbox/sanitize_links.ex:62`). In-process the VM boot is gone; the
+per-link fork, the `realpath -m` on the staging directory and the rename are
+what is left, and they have not been re-measured here.
+
+**(c) The git-clone path still sanitizes in shell.** `Inkfish.Uploads.Git` and
+`priv/scripts/upload_git_clone.sh` stage and move as well, but they neutralize
+symlinks in shell with their own `neutralized symlink:` logic rather than
+calling `Inkfish.Sandbox.SanitizeLinks`. That divergence predates this change
+and is deliberately out of scope here.
 
 ## References
 
@@ -303,29 +369,38 @@ per relative symlink** (each relative link costs one `readlink -f` fork,
 - `priv/scripts/upload_git_clone.sh` — `:15-16` (mount sanity check; the script
   is otherwise plain, the mounts are made for it), `:60` (`MARGIN_KB`),
   `:65-135` (budget-aware checkout), `:145-165` (tar + copy-out)
-- `lib/inkfish/sandbox/archive.ex` — `:105-110` (non-zero `tar` exit is fatal),
-  `:112-127` (`safe_extract/3`), `:176-192` (`--no-same-owner`, untar script),
-  `:200-211` (`cp -r`, copy script), `:213-215` (sanitizer invocation),
-  `:244-250` (`extraction_error/1`)
+- `lib/inkfish/sandbox/archive.ex` — `:8-19` (why the pipeline is still bounded,
+  and the staging subdirectory), `:21-31` (`staging_root/0`), `:33-68`
+  (`safe_extract/3`: extract → sanitize → move, and the ordering property),
+  `:70-82` (`sanitize_links!/1`, `sanitize_link!/2` delegating to
+  `Inkfish.Sandbox.SanitizeLinks`), `:112-133` (the fresh random staging
+  directory), `:135-150` (`realpath -m` on it), `:152-167` (the one `unshare`
+  invocation), `:169-188` (untar script: `--no-same-owner` at `:185`, copy-out
+  at `:186`), `:190-202` (copy script), `:211-229` (sanitize in process),
+  `:231-267` (`File.rename/2` into place), `:269-280` (removing an existing
+  target), `:282-291` (`extraction_error/1`)
+- `lib/inkfish/sandbox/sanitize_links.ex` — `:32-40` (raw `base` vs expanded
+  walk), `:42-75` (link checks; `readlink -f` at `:62`, base comparison at
+  `:66`)
 - `lib/inkfish/uploads/git.ex` — `start_clone/1` (builds the two-mount argv and
   hands it to `Inkfish.Ittys`)
-- `lib/inkfish/application.ex:89-97` — the boot check: it runs
+- `lib/inkfish/application.ex:74-82` — the boot check: it runs
   `unshare -Urm -- true` (`TempFs.check_userns/1`), it does not just resolve the
-  binary; `:76-87` is the unchanged `elixir`-binary check
+  binary
 - `.github/workflows/elixir.yml` — the `Allow unprivileged user namespaces` step
   (sysctls, then the `unshare -Urm -- true` verification) immediately before
   `Run tests`
 - `test/inkfish/sandbox/temp_fs_test.exs:328-392` — `describe "check_userns/1"`,
   the boot probe's success, failure, missing-binary and timeout directions
-- `priv/sandbox/sanitize_logic.exs` — `:29-43` (raw `base` vs expanded walk),
-  `:45-78` (link checks; `readlink -f` at `:65`, base comparison at `:69`)
-- `priv/sandbox/sanitize.exs` — `:12` (requires the logic), `:14-30` (sentinel
-  logger), `:32-39` (argv dispatch)
-- `lib/inkfish/uploads.ex:150-157`, `:184-188` — `unpack_error/2` and
+- `test/inkfish/sandbox/archive_test.exs` — the extraction and sanitizer tests,
+  plus the two ordering tests: the final path is watched for the whole call, and
+  a deliberately failed move is used to show the staged tree was sanitized
+  before the move
+- `lib/inkfish/uploads.ex:149-157`, `:162-164` — `unpack_error/2` and
   `format_reason/1`
 - `lib/inkfish/uploads/upload.ex:216` — `unpack/1`
 - `config/test.exs:15-23` — `:tempfs_timeout_ms`, `:extract_timeout_ms`
-- `.formatter.exs:5-10` — formatter `inputs`
+- `.formatter.exs:5-9` — formatter `inputs`
 - `test/inkfish/sandbox/temp_fs_test.exs:32-49` — exported-path contract
   (`run_in_one_tempfs/4`)
 - `notes/nest-allow-suid.md` (superseded), `notes/no-suid-tmpfs.md` (work brief)

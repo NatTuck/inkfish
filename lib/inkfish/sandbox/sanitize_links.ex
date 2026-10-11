@@ -1,22 +1,12 @@
-# The single source of truth for archive symlink sanitisation.
-#
-# This file is loaded twice, from two different places:
-#
-#   * `Inkfish.Sandbox.Archive` requires it and delegates to it, so the
-#     in-process unit tests exercise exactly the code that runs in production.
-#   * `priv/sandbox/sanitize.exs` runs it inside the tmpfs namespace, where the
-#     extracted tree actually exists.
-#
-# It must stay a bare module definition: requiring it has to be free of side
-# effects. The argv dispatch lives in `sanitize.exs`, because a dispatch at the
-# bottom of this file would fire when Archive requires it.
-#
-# `Logger.warning/1` (not `IO.puts/1`) is load-bearing: the direct
-# `Archive.sanitize_link!/2` tests assert on `capture_log` output.
-
 defmodule Inkfish.Sandbox.SanitizeLinks do
   @moduledoc """
   Walks an extracted tree and removes symlinks that would escape it.
+
+  This is the production sanitizer. `Inkfish.Sandbox.Archive.safe_extract/3`
+  calls it in-process, on the staging tree, *before* that tree is moved to the
+  path the upload id names. It used to be run as a separate `elixir` process
+  inside the mount namespace; it is a plain module function now, so a dev
+  checkout and a release run the same code by construction.
 
   The rules:
 
@@ -26,8 +16,15 @@ defmodule Inkfish.Sandbox.SanitizeLinks do
       base directory itself or something under it
     * a link whose target cannot be read or resolved is removed
 
-  `base` is passed to the escape check *raw* (not expanded): callers hand in
-  the mount path, which is absolute and has no trailing slash.
+  `base` is passed to the escape check *raw* (not expanded): callers hand in a
+  canonical, absolute, slash-free directory -- `Archive` canonicalises the
+  staging directory it passes -- and `readlink -f` output is compared against
+  it as a string, so a relative or slash-terminated base, or one with an
+  unresolved symlinked component, would make every in-tree relative symlink
+  look like an escape.
+
+  `Logger.warning/1` (not `IO.puts/1`) is load-bearing: the warnings have to
+  reach the caller's log, which is what the tests assert on.
   """
 
   require Logger
@@ -77,8 +74,6 @@ defmodule Inkfish.Sandbox.SanitizeLinks do
     end
   end
 
-  # A bare script cannot load project modules, so the walk lives here rather
-  # than in a separate `Inkfish.Sandbox.Traverse`.
   defp walk(path, op) do
     case File.lstat(path, time: :posix) do
       {:ok, stat} ->
