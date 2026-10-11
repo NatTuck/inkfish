@@ -37,35 +37,105 @@ defmodule Inkfish.Sandbox.Archive do
                             "missing: set `:elixir_bin` to its full path, or " <>
                             "make `elixir` available on `PATH`"
 
-  # The operator-facing explanation, for the log only. It names the resolution
-  # order (`:elixir_bin` first, then `elixir` on `PATH`) and the consequence, so
-  # the log line reads as a deployment misconfiguration rather than routine
-  # noise. What it adds over `@missing_elixir_message` is the deployment-wide
-  # consequence ("every upload and submission will fail until it is fixed"),
-  # which belongs on the log line rather than in a form error.
+  # The operator-facing explanation, for the log only. It names the whole
+  # resolution order -- every step that failed, not just the first -- and the
+  # consequence, so the log line reads as a deployment misconfiguration rather
+  # than routine noise. What it adds over `@missing_elixir_message` is the
+  # deployment-wide consequence ("every upload and submission will fail until it
+  # is fixed"), which belongs on the log line rather than in a form error.
   @missing_elixir_log_message "the `elixir` binary that runs the archive " <>
                                 "symlink sanitizer could not be resolved: the " <>
-                                "`:elixir_bin` config is unset and no `elixir` " <>
-                                "executable was found on `PATH`. This is a " <>
-                                "deployment misconfiguration and every upload " <>
-                                "and submission will fail until it is fixed: set " <>
-                                "`:elixir_bin` to the full path of the `elixir` " <>
-                                "executable, or make `elixir` available on " <>
-                                "`PATH`."
+                                "`:elixir_bin` config is unset, " <>
+                                "`INKFISH_ELIXIR_BIN` is unset, no `elixir` " <>
+                                "executable was found on `PATH`, and no mise " <>
+                                "shim exists at " <>
+                                "`$HOME/.local/share/mise/shims/elixir`. This " <>
+                                "is a deployment misconfiguration and every " <>
+                                "upload and submission will fail until it is " <>
+                                "fixed: set `:elixir_bin` to the full path of " <>
+                                "the `elixir` executable, or make `elixir` " <>
+                                "available on `PATH`."
+
+  # The four steps `elixir_bin/0` walks, in order. Each one is a real
+  # deployment shape: the config is what a release sets, the environment
+  # variable is what `scripts/start.sh` exports, `PATH` is a dev checkout or a
+  # host with elixir installed normally, and the mise shim is what a
+  # mise-managed checkout has when the process was not started from a shell
+  # that had the shims on `PATH` -- which is exactly the case for a release
+  # started by systemd.
+  @elixir_executable "elixir"
+  @mise_shims_subpath ".local/share/mise/shims"
 
   @doc """
   Resolve the `elixir` executable that runs the symlink sanitizer.
 
-  `:elixir_bin` config wins; otherwise `elixir` is looked up on `PATH`.
+  Four steps, and the first one that resolves wins:
+
+    1. the `:elixir_bin` config
+    2. the `INKFISH_ELIXIR_BIN` environment variable
+    3. `elixir` on `PATH`
+    4. the mise shim, `$HOME/.local/share/mise/shims/elixir`
+
+  The first two are paths an operator hands us; the last two are lookups. The
+  last one is there because how this process was launched must not decide which
+  `elixir` runs: a release started by systemd inherits neither a login shell's
+  `PATH` nor `mise activate`'s environment, so a mise-managed deployment would
+  otherwise be unresolvable even though mise can see the pinned toolchain.
+
+  An empty value counts as unset, so `INKFISH_ELIXIR_BIN=""` means "not set"
+  rather than "the empty path".
 
   Returns `{:ok, path}`, or `{:error, {:elixir_bin_missing, message}}` when
-  neither resolves -- see `missing_elixir?/1` and `missing_elixir_message/0`.
+  none of the four resolves -- see `missing_elixir?/1` and
+  `missing_elixir_message/0`.
   """
   def elixir_bin do
-    case Application.get_env(:inkfish, :elixir_bin) ||
-           System.find_executable("elixir") do
+    case resolve_elixir_bin() do
       nil -> {:error, {@missing_elixir, missing_elixir_message()}}
       path -> {:ok, path}
+    end
+  end
+
+  defp resolve_elixir_bin do
+    configured_elixir_bin() ||
+      env_elixir_bin() ||
+      System.find_executable(@elixir_executable) ||
+      mise_shims_elixir()
+  end
+
+  # An empty value is unset: `INKFISH_ELIXIR_BIN=` in an environment file, or a
+  # shell that exported an empty expansion, means "no override" -- not "run the
+  # empty path". `nil` and `""` are the only values treated that way; anything
+  # else is passed through exactly as before, so a config that was already set
+  # to something unusual is still reported rather than silently skipped.
+  defp configured_elixir_bin do
+    case Application.get_env(:inkfish, :elixir_bin) do
+      nil -> nil
+      "" -> nil
+      path -> path
+    end
+  end
+
+  defp env_elixir_bin do
+    case System.get_env("INKFISH_ELIXIR_BIN") do
+      nil -> nil
+      "" -> nil
+      path -> path
+    end
+  end
+
+  # The mise shim, built from `$HOME` rather than read off `PATH` -- this is the
+  # one step that does not depend on how the process was launched. Only a shim
+  # that is really there is returned: a dangling one would fail inside the
+  # namespace with a worse message than the one this module gives.
+  defp mise_shims_elixir do
+    case System.get_env("HOME") do
+      nil ->
+        nil
+
+      home ->
+        path = Path.join([home, @mise_shims_subpath, @elixir_executable])
+        if File.regular?(path), do: path, else: nil
     end
   end
 

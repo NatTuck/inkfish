@@ -51,20 +51,30 @@ sudo useradd -c 'Inkfish App' inkfish
 
 ## Erlang, Elixir
 
-Check https://asdf-vm.com/guide/getting-started.html
+Check <https://mise.jdx.dev/getting-started.html>
+
+The versions are pinned in the repo's `.tool-versions` and mise reads that file
+natively, so nothing here repeats a version number:
+
+```
+nodejs 24   erlang 28   elixir 1.19.5-otp-28   pnpm 11
+```
 
 ```bash
-git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.14.0
-asdf plugin add nodejs https://github.com/asdf-vm/asdf-nodejs.git
-asdf install nodejs 20.11.1
-asdf global nodejs 20.11.1
-asdf plugin add erlang https://github.com/asdf-vm/asdf-erlang.git
-asdf install erlang 26.2.2
-asdf global erlang 26.2.2
-asdf plugin-add elixir https://github.com/asdf-vm/asdf-elixir.git
-asdf install elixir 1.16.1-otp-26
-asdf global elixir 1.16.1-otp-26
+curl https://mise.run | sh
+echo 'eval "$(~/.local/bin/mise activate bash)"' >> ~/.bashrc
+. ~/.bashrc
+
+cd ~/inkfish
+mise install
+mise current
 ```
+
+Keep `~/.local/share/mise/shims` ahead of any
+`~/.local/share/mise/installs/*/bin` entries on `PATH`. The shims are what
+resolve a tool through `.tool-versions`, while `mise activate` puts the install
+directories first -- so with a second toolchain installed beside the pinned one
+the unpinned version wins. The scripts in this repo fix this up for themselves.
 
 
 ## Open the appropriate ports

@@ -30,40 +30,81 @@ defmodule Inkfish.Sandbox.ArchiveTest do
     Path.expand("../../scripts/data/twenty.tar.gz", __DIR__)
   end
 
-  # Run `fun` with no `elixir` resolvable: no `:elixir_bin` config, and a `PATH`
-  # pointing at an existing but empty directory. `PATH` and the application env
-  # are VM-global, so both are restored before `fun` returns -- and again in
+  # Run `fun` with the four steps of `Archive.elixir_bin/0`'s resolution chain
+  # (the `:elixir_bin` config, `INKFISH_ELIXIR_BIN`, `PATH`, and the mise shim
+  # under `$HOME`) all moved, then restore every one of them. All four are
+  # VM-global, so they are restored before `fun` returns -- and again in
   # `on_exit` as a safety net -- to leave the rest of the suite untouched.
-  defp without_elixir(base, fun) do
-    old_path = System.get_env("PATH")
-    old_bin = Application.get_env(:inkfish, :elixir_bin)
+  #
+  # A step is starved by passing `nil`, which means "unset": no config entry, no
+  # environment variable, no shim. `path:` is the whole `PATH`, so a test that
+  # wants `PATH` starved passes a directory with nothing in it.
+  defp with_elixir_env(env, fun) do
+    saved = %{
+      path: System.get_env("PATH"),
+      home: System.get_env("HOME"),
+      env_bin: System.get_env("INKFISH_ELIXIR_BIN"),
+      config: Application.get_env(:inkfish, :elixir_bin)
+    }
 
     restore = fn ->
-      if old_path do
-        System.put_env("PATH", old_path)
-      else
-        System.delete_env("PATH")
-      end
+      put_env_or_delete("PATH", saved.path)
+      put_env_or_delete("HOME", saved.home)
+      put_env_or_delete("INKFISH_ELIXIR_BIN", saved.env_bin)
 
-      if old_bin do
-        Application.put_env(:inkfish, :elixir_bin, old_bin)
-      else
-        Application.delete_env(:inkfish, :elixir_bin)
+      case saved.config do
+        nil -> Application.delete_env(:inkfish, :elixir_bin)
+        value -> Application.put_env(:inkfish, :elixir_bin, value)
       end
     end
 
     on_exit(restore)
 
-    empty_bin = Path.join(base, "empty-bin")
-    File.mkdir_p!(empty_bin)
-    Application.delete_env(:inkfish, :elixir_bin)
-    System.put_env("PATH", empty_bin)
+    put_env_or_delete("PATH", Keyword.get(env, :path))
+    put_env_or_delete("HOME", Keyword.get(env, :home))
+    put_env_or_delete("INKFISH_ELIXIR_BIN", Keyword.get(env, :env_bin))
+
+    case Keyword.get(env, :config) do
+      nil -> Application.delete_env(:inkfish, :elixir_bin)
+      value -> Application.put_env(:inkfish, :elixir_bin, value)
+    end
 
     try do
       fun.()
     after
       restore.()
     end
+  end
+
+  defp put_env_or_delete(name, nil), do: System.delete_env(name)
+  defp put_env_or_delete(name, value), do: System.put_env(name, value)
+
+  # An executable file at `root/rel`, returned as an absolute path.
+  defp touch(root, rel) do
+    path = Path.join(root, rel)
+    File.mkdir_p!(Path.dirname(path))
+    File.write!(path, "#!/bin/sh\nexit 0\n")
+    File.chmod!(path, 0o755)
+    path
+  end
+
+  # Run `fun` with no `elixir` resolvable by any of the four steps: no
+  # `:elixir_bin` config, no `INKFISH_ELIXIR_BIN`, a `PATH` pointing at an
+  # existing but empty directory, and a `HOME` with no mise shims under it.
+  # `HOME` has to be moved as well: this machine really has
+  # `~/.local/share/mise/shims/elixir`, so leaving `HOME` alone would make the
+  # missing-`elixir` tests pass for the wrong reason.
+  defp without_elixir(base, fun) do
+    empty_bin = Path.join(base, "empty-bin")
+    File.mkdir_p!(empty_bin)
+
+    empty_home = Path.join(base, "empty-home")
+    File.mkdir_p!(empty_home)
+
+    with_elixir_env(
+      [path: empty_bin, home: empty_home, env_bin: nil, config: nil],
+      fun
+    )
   end
 
   test "safe_extract does not write through an escaping symlink", %{base: base} do
@@ -239,6 +280,129 @@ defmodule Inkfish.Sandbox.ArchiveTest do
       assert msg =~ "exited 2"
 
       assert File.ls!(target) == []
+    end
+  end
+
+  # `elixir_bin/0` walks four steps, and a suite that only ever exercised one of
+  # them would not notice the others going away. Each test below pins one step
+  # in place and starves the rest, so it fails both when that step stops being
+  # consulted and when a step that should have lost starts winning.
+  describe "the elixir resolution chain" do
+    test "the :elixir_bin config wins over every other step", %{base: base} do
+      config_bin = touch(base, "config/elixir")
+      env_bin = touch(base, "env/elixir")
+      path_bin = touch(base, "path/elixir")
+      home = Path.join(base, "home")
+      touch(home, ".local/share/mise/shims/elixir")
+
+      result =
+        with_elixir_env(
+          [
+            config: config_bin,
+            env_bin: env_bin,
+            path: Path.dirname(path_bin),
+            home: home
+          ],
+          fn -> Archive.elixir_bin() end
+        )
+
+      assert {:ok, ^config_bin} = result
+    end
+
+    test "INKFISH_ELIXIR_BIN wins when the config is unset", %{base: base} do
+      env_bin = touch(base, "env/elixir")
+      path_bin = touch(base, "path/elixir")
+      home = Path.join(base, "home")
+      touch(home, ".local/share/mise/shims/elixir")
+
+      result =
+        with_elixir_env(
+          [
+            config: nil,
+            env_bin: env_bin,
+            path: Path.dirname(path_bin),
+            home: home
+          ],
+          fn -> Archive.elixir_bin() end
+        )
+
+      assert {:ok, ^env_bin} = result
+    end
+
+    test "elixir on PATH wins when the config and the environment are unset", %{
+      base: base
+    } do
+      path_bin = touch(base, "path/elixir")
+      home = Path.join(base, "home")
+      touch(home, ".local/share/mise/shims/elixir")
+
+      result =
+        with_elixir_env(
+          [config: nil, env_bin: nil, path: Path.dirname(path_bin), home: home],
+          fn -> Archive.elixir_bin() end
+        )
+
+      assert {:ok, ^path_bin} = result
+    end
+
+    test "the mise shim is used when nothing else resolves", %{base: base} do
+      # This is the case the step exists for: a release started by systemd has
+      # neither a login shell's PATH nor `mise activate`'s environment, so the
+      # shim has to be found from `$HOME` alone.
+      empty_bin = Path.join(base, "empty-bin")
+      File.mkdir_p!(empty_bin)
+      home = Path.join(base, "home")
+      shim = touch(home, ".local/share/mise/shims/elixir")
+
+      result =
+        with_elixir_env(
+          [config: nil, env_bin: nil, path: empty_bin, home: home],
+          fn -> Archive.elixir_bin() end
+        )
+
+      assert {:ok, ^shim} = result
+    end
+
+    test "an empty config or environment value counts as unset", %{base: base} do
+      # `INKFISH_ELIXIR_BIN=""` in an environment file, or a shell that exported
+      # an empty expansion, must not be read as "run the empty path".
+      path_bin = touch(base, "path/elixir")
+      empty_home = Path.join(base, "empty-home")
+      File.mkdir_p!(empty_home)
+
+      result =
+        with_elixir_env(
+          [
+            config: "",
+            env_bin: "",
+            path: Path.dirname(path_bin),
+            home: empty_home
+          ],
+          fn -> Archive.elixir_bin() end
+        )
+
+      assert {:ok, ^path_bin} = result
+    end
+
+    test "a dangling mise shim is not used", %{base: base} do
+      # `File.regular?/1` follows the link, so a shim pointing at something that
+      # is not there is refused here rather than inside the namespace, where the
+      # failure would surface as a failed unpack instead.
+      empty_bin = Path.join(base, "empty-bin")
+      File.mkdir_p!(empty_bin)
+      home = Path.join(base, "home")
+      shims = Path.join(home, ".local/share/mise/shims")
+      File.mkdir_p!(shims)
+      File.ln_s!(Path.join(base, "no-such-mise"), Path.join(shims, "elixir"))
+
+      result =
+        with_elixir_env(
+          [config: nil, env_bin: nil, path: empty_bin, home: home],
+          fn -> Archive.elixir_bin() end
+        )
+
+      assert {:error, reason} = result
+      assert Archive.missing_elixir?(reason)
     end
   end
 

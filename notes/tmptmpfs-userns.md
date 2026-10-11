@@ -256,12 +256,16 @@ does not pass (see section 5).
 
 **(a) `elixir` must be reachable inside the namespace — UNVERIFIED.** The
 sanitizer is Elixir: the script runs `"$INKFISH_ELIXIR" "$INKFISH_SANITIZE"
-"$TMPFS"` inside the namespace (`lib/inkfish/sandbox/archive.ex:213-215`), where
-`INKFISH_ELIXIR` comes from `elixir_bin/0` — `:elixir_bin` config or
-`System.find_executable("elixir")` (`lib/inkfish/sandbox/archive.ex:64-70`). A
-`mix release` does **not** put `elixir` on `PATH`, so a release deployment must
-set `:elixir_bin` to a usable `elixir` (visible inside the namespace). This has
-**not** been verified against a real release.
+"$TMPFS"` inside the namespace (`lib/inkfish/sandbox/archive.ex:283-285`), where
+`INKFISH_ELIXIR` comes from `elixir_bin/0`, which walks four steps and takes the
+first that resolves (`lib/inkfish/sandbox/archive.ex:92-137`): the `:elixir_bin`
+config, then `INKFISH_ELIXIR_BIN`, then `elixir` on `PATH`, then the mise shim at
+`$HOME/.local/share/mise/shims/elixir`. A `mix release` does **not** put `elixir`
+on `PATH`, so a release deployment needs one of the last two: `scripts/start.sh`
+exports `INKFISH_ELIXIR_BIN` from the shims it just made authoritative, and the
+shim step is the fallback for a process started without that. Either way the
+`elixir` has to be usable *inside the namespace*. This has **not** been verified
+against a real release.
 
 **(b) `priv/sandbox/*.exs` is format-checked.** `.formatter.exs` `inputs` covers
 `*.{heex,ex,exs}`, `{config,lib,test}/**/*.{heex,ex,exs}`, `priv/*/seeds.exs`
