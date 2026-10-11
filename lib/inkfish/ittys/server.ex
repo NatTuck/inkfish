@@ -234,6 +234,10 @@ defmodule Inkfish.Ittys.Server do
   end
 
   def handle_info({:DOWN, _, _, _, status}, state) do
+    # The exit status is the one piece of a failure the itty's output cannot
+    # carry, so keep it on the job. `view/1` then exposes it to callers such as
+    # `Inkfish.Uploads.Git.get_results/1`, which report why a script died.
+    state = %{state | exit_status: status}
     %{uuid: uuid, blocks: blocks, tasks: tasks} = state
 
     IO.puts(" =[Itty]= Child done for UUID #{uuid}")

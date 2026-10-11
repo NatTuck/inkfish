@@ -5,7 +5,11 @@ defmodule Inkfish.Application do
 
   use Application
 
+  require Logger
+
   def start(_type, _args) do
+    check_sandbox_sanitizer()
+
     base_children = [
       # Start the Ecto repository
       Inkfish.Repo,
@@ -46,5 +50,29 @@ defmodule Inkfish.Application do
   def config_change(changed, _new, removed) do
     InkfishWeb.Endpoint.config_change(changed, removed)
     :ok
+  end
+
+  # Uploads and submissions run the symlink sanitizer as a separate OS process
+  # through the `elixir` CLI, so that binary has to exist. It is resolved per
+  # request, which means a missing one would otherwise only show up as a failed
+  # unpack on the first upload; check it once here instead and say plainly what
+  # is wrong and how to fix it.
+  #
+  # Deliberately does not halt the application: grades, attendance and the rest
+  # of the app keep working without the sanitizer, and a loud `:error` in the
+  # log is a better outcome than refusing to boot. Nothing is logged when the
+  # binary resolves. The longer, log-only explanation is used here because this
+  # line is aimed at whoever runs the deployment.
+  defp check_sandbox_sanitizer do
+    case Inkfish.Sandbox.Archive.elixir_bin() do
+      {:ok, _path} ->
+        :ok
+
+      {:error, _reason} ->
+        Logger.error(
+          "inkfish sandbox sanitizer check failed: " <>
+            Inkfish.Sandbox.Archive.missing_elixir_log_message()
+        )
+    end
   end
 end

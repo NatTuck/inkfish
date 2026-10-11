@@ -5,7 +5,11 @@ defmodule Inkfish.Ittys.Job do
             blocks: [],
             ag_job: nil,
             ospid: nil,
-            cookie: nil
+            cookie: nil,
+            # The exit status of the last task to finish. `view/1` exposes it to
+            # callers that need to explain a failure whose output alone is
+            # ambiguous (see `Inkfish.Uploads.Git.get_results/1`).
+            exit_status: nil
 
   alias __MODULE__
 

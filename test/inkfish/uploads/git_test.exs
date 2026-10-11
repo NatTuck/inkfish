@@ -1,7 +1,10 @@
 defmodule Inkfish.Uploads.GitTest do
   use Inkfish.DataCase, async: true
 
+  import Inkfish.Factory
+
   alias Inkfish.Uploads.Git
+  alias Inkfish.Uploads.Upload
 
   describe "parse_results/1" do
     test "parses key: value lines into a map" do
@@ -48,6 +51,44 @@ defmodule Inkfish.Uploads.GitTest do
     test "returns an error when dir/tar are missing" do
       assert :error = Git.create_upload(%{"dir" => "/tmp/nope"}, "sub", 1)
     end
+
+    test "returns an error naming the reason when the upload row is rejected" do
+      base = git_test_dir()
+
+      tar = Path.join(base, "repo.tar.gz")
+      File.write!(tar, "not really a tarball")
+      dir = Path.join(base, "repo")
+      File.mkdir_p!(dir)
+
+      assert {:error, message} =
+               Git.create_upload(%{"dir" => dir, "tar" => tar}, "bogus_kind", 1)
+
+      assert message =~ "could not record upload"
+      assert message =~ "invalid upload kind: bogus_kind"
+    end
+
+    test "returns an error naming the reason when the tarball copy fails" do
+      user = insert(:user)
+      base = git_test_dir()
+
+      # A directory where the tarball should be makes `File.cp/2` fail with
+      # `:eisdir`; the size lookup uses `File.stat!/1`, which still succeeds.
+      tar = Path.join(base, "repo.tar.gz")
+      File.mkdir_p!(tar)
+      dir = Path.join(base, "repo")
+      File.mkdir_p!(dir)
+
+      assert {:error, message} =
+               Git.create_upload(%{"dir" => dir, "tar" => tar}, "sub", user.id)
+
+      assert message =~ "could not copy upload tarball"
+      assert message =~ "eisdir"
+
+      # The insert (and `upload_path/1`, which makes the destination directory)
+      # ran before the copy failed, so reclaim the directory it created.
+      upload = Repo.one(from u in Upload, where: u.user_id == ^user.id)
+      if upload, do: File.rm_rf(Upload.upload_dir(upload))
+    end
   end
 
   describe "repo_info/1" do
@@ -82,6 +123,18 @@ defmodule Inkfish.Uploads.GitTest do
 
       assert Git.repo_info(dir) == nil
     end
+  end
+
+  defp git_test_dir do
+    base =
+      Path.join(
+        System.tmp_dir!(),
+        "git_test_#{System.unique_integer([:positive])}"
+      )
+
+    File.mkdir_p!(base)
+    on_exit(fn -> File.rm_rf!(base) end)
+    base
   end
 
   defp setup_git_checkout(

@@ -13,6 +13,7 @@ if [[ ! -e "$BINSRC" ]]; then
     exit 1
 fi
 
+# Plain install: no setuid bit. The helper gets the privileges it needs from
+# an unprivileged user namespace, so it must never be installed setuid root.
 cp "$BINSRC" "$BINDST"
-chmod 04755 "$BINDST"
-
+chmod 0755 "$BINDST"

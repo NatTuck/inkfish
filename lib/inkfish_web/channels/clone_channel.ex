@@ -59,8 +59,14 @@ defmodule InkfishWeb.CloneChannel do
 
   defp push_error(socket, reason) do
     IO.inspect({:clone_error, reason})
-    push(socket, "done", %{status: "error", error: to_string(reason)})
+    push(socket, "done", %{status: "error", error: error_text(reason)})
   end
+
+  # The reason is a message string from `Git` (a binary). `to_string/1` raised
+  # on any other term, which would turn a failure report into a channel crash,
+  # so anything non-binary is inspected instead of losing the real detail.
+  defp error_text(reason) when is_binary(reason), do: reason
+  defp error_text(reason), do: inspect(reason)
 
   def handle_in("clone", %{"url" => url}, socket) do
     {:ok, uuid} = Git.start_clone(url)

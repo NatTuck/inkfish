@@ -1,4 +1,19 @@
 [[mount]]
-path   = "~/.local/data/inkfish/uploads/test"
+path   = "~/.local/data/inkfish/uploads"
+mode   = "rw"
+create = true
+
+[[mount]]
+path   = "~/.cache/rustler_precompiled"
+mode   = "rw"
+create = true
+
+[[mount]]
+path   = "~/.local/share/pnpm/store"
+mode   = "rw"
+create = true
+
+[[mount]]
+path   = "~/.hex"
 mode   = "rw"
 create = true

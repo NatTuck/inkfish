@@ -140,4 +140,30 @@ defmodule Inkfish.UploadsTest do
       assert unowned_count <= 6
     end
   end
+
+  describe "validate_file_size/1" do
+    alias Inkfish.Uploads.Upload
+
+    test "reports the offending size and the limit" do
+      path =
+        Path.join(
+          System.tmp_dir!(),
+          "big_upload_#{System.unique_integer([:positive])}.bin"
+        )
+
+      File.write!(path, :binary.copy(<<0>>, 12_000_000))
+      on_exit(fn -> File.rm(path) end)
+
+      cset =
+        Upload.changeset(%Upload{}, %{
+          kind: "assignment_starter",
+          user_id: 1,
+          upload: %{path: path, filename: "big.bin"}
+        })
+
+      assert {:upload,
+              {"uploaded file is too big: 11.4 MiB exceeds the 10 MiB limit", _}} =
+               List.keyfind(cset.errors, :upload, 0)
+    end
+  end
 end

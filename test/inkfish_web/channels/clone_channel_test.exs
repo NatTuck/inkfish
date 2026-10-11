@@ -46,6 +46,21 @@ defmodule InkfishWeb.CloneChannelTest do
     assert_push "done", %{status: "normal"}, 30_000
   end
 
+  test "a failed clone reports git's own message, not incomplete_results", %{
+    socket: socket,
+    base: base
+  } do
+    missing = Path.join(base, "does_not_exist.git")
+
+    _ref = push(socket, "clone", %{"url" => "file://#{missing}"})
+
+    assert_push "done", %{status: "error", error: error}, 30_000
+
+    refute error == "incomplete_results"
+    assert error =~ "fatal:"
+    assert error =~ "exit status: 128"
+  end
+
   test "broadcasts are pushed to the client", %{socket: socket} do
     broadcast_from!(socket, "broadcast", %{"some" => "data"})
     assert_push "broadcast", %{"some" => "data"}

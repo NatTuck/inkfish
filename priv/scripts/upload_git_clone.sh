@@ -1,6 +1,28 @@
 #!/bin/bash
 set -e
 
+# Both tmpfs mounts have to be visible to this script, and `tmptmpfs run`
+# mounts them inside a private mount namespace that only the process it execs
+# can see. So re-exec ourselves under a single `tmptmpfs run` that creates
+# both mounts and exports their paths as CLONE_TMP and PERSIST_TMP.
+# TMPTMPFS_ACTIVE marks the inner run so that it does not recurse.
+#
+# The helper is resolved the same way Inkfish.Sandbox.TempFs.bin/0 resolves
+# it -- TMPTMPFS_BIN first -- because the old setuid helper is still installed
+# at /usr/local/bin/tmptmpfs and would otherwise win the PATH lookup.
+if [ -z "${TMPTMPFS_ACTIVE:-}" ]; then
+  export TMPTMPFS_ACTIVE=1
+  exec "${TMPTMPFS_BIN:-tmptmpfs}" run \
+    --tmpfs CLONE_TMP="$CLONE_SIZE" --tmpfs PERSIST_TMP="$SUBMIT_SIZE" \
+    -- "$0" "$@"
+fi
+
+# The mounts are made by the re-exec above. If TMPTMPFS_ACTIVE was already set
+# we skipped it, so CLONE_TMP/PERSIST_TMP may be empty -- fail with a reason
+# here rather than with a confusing EROFS from the first write below.
+: "${CLONE_TMP:?CLONE_TMP is not set (TMPTMPFS_ACTIVE was set without a mount)}"
+: "${PERSIST_TMP:?PERSIST_TMP is not set (TMPTMPFS_ACTIVE was set without a mount)}"
+
 echo "Git clone config"
 echo " - clone size: $CLONE_SIZE"
 echo " - submit size: $SUBMIT_SIZE"
@@ -12,9 +34,7 @@ echo " - repo: $REPO"
 export GIT_ALLOW_PROTOCOL="${GIT_ALLOW_PROTOCOL:-https:http:git}"
 
 echo "Creating temp dirs..."
-CLONE_TMP=$(tmptmpfs start -s $CLONE_SIZE)
 echo "  CLONE_TMP=$CLONE_TMP"
-PERSIST_TMP=$(tmptmpfs start -s $SUBMIT_SIZE)
 echo "  PERSIST_TMP=$PERSIST_TMP"
 
 cd "$CLONE_TMP"
@@ -135,10 +155,28 @@ TARB="$NAME.tar.gz"
 echo "  TARB=$TARB"
 tar -czf "$CLONE_TMP/$TARB" -C "$PERSIST_TMP" "$NAME"
 
+# The tmpfs mounts live only inside the mount namespace this script runs in,
+# so every path under them is gone the moment we exit -- but the caller has to
+# be able to read the checkout and the tarball afterwards. Copy both out to a
+# directory on the real filesystem (which the namespace shares) and report
+# those paths. `cp -r` copies symlinks as symlinks rather than following them,
+# which is what keeps the checkout faithful.
+#
+# The staging directory is owned by the caller: when it passes STAGE_DIR we use
+# that, so it always knows the path and can remove it even if this script dies
+# before reporting anything. Only fall back to making our own `mktemp -d` when
+# no STAGE_DIR was given.
+STAGE="${STAGE_DIR:-$(mktemp -d "${TMPDIR:-/tmp}/inkfish-clone-XXXXXX")}"
+cp -r "$OUT" "$STAGE/$NAME"
+cp "$CLONE_TMP/$TARB" "$STAGE/$TARB"
+OUT="$STAGE/$NAME"
+TARB="$STAGE/$TARB"
+
 echo ""
 echo "Git checkout succeeded."
 
 echo ""
 echo "$COOKIE"
+echo "stage: $STAGE"
 echo "dir: $OUT"
-echo "tar: $CLONE_TMP/$TARB"
+echo "tar: $TARB"
