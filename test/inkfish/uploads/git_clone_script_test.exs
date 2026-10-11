@@ -8,7 +8,7 @@ defmodule Inkfish.Uploads.GitCloneScriptTest do
   setup do
     assert System.find_executable("bash")
     assert System.find_executable("git")
-    assert System.find_executable("tmptmpfs")
+    assert System.find_executable("unshare")
 
     base =
       Path.join(

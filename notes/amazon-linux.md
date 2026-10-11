@@ -83,11 +83,19 @@ sudo firewall-cmd --reload
 sudo firewall-cmd --list-all --zone=public
 ```
 
-# Rust for tmptmpfs
+# tmpfs mounts
 
-First, install https://rustup.rs/
+Inkfish mounts its size-limited tmpfs inside an unprivileged user namespace
+created by util-linux `unshare(1)`, so nothing has to be built or installed.
+Check it is there:
 
-Then install tmptmpfs.
+```bash
+unshare --version
+```
+
+If it is missing, install the `util-linux` package. See
+[`notes/tmptmpfs-userns.md`](tmptmpfs-userns.md) for the version assumed and the
+host settings a user namespace needs.
 
 
 # Setting up user service

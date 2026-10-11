@@ -19,7 +19,7 @@ defmodule Inkfish.Sandbox.Archive do
   # -f` fork per relative symlink, `cp -r` -- runs under one deadline, so the
   # default has to be generous: a legitimate 10 MB tarball with many relative
   # symlinks must not be rejected as a timeout. Test config lowers it so a
-  # broken helper still fails fast.
+  # broken mount still fails fast.
   @default_timeout_ms 30_000
 
   # Tagged so a deployment misconfiguration -- no `elixir` to run the sanitizer
@@ -100,10 +100,10 @@ defmodule Inkfish.Sandbox.Archive do
   Safely extract an archive file.
 
   All of the work -- mount a capped tmpfs, unpack into it, sanitise the tree,
-  copy the tree out -- happens inside a single `tmptmpfs` invocation, because
+  copy the tree out -- happens inside a single `unshare` invocation, because
   the tmpfs only exists inside the namespace that invocation creates.
 
-  Returns `:ok`, or `{:error, reason}` when the helper or the unpacking fails.
+  Returns `:ok`, or `{:error, reason}` when the mount or the unpacking fails.
   A non-zero `tar` exit is fatal: extracting past the size cap leaves a
   silently truncated tree (a short file plus a zero-byte file), so a partial
   extraction must never be reported as a success. A timeout of the whole
@@ -238,9 +238,9 @@ defmodule Inkfish.Sandbox.Archive do
     end)
   end
 
-  # The helper's own diagnostic (a mount error, a `tar` exit code and output)
-  # is passed through as-is; only a timeout of the bounded call is reported
-  # apart, so the two are not confused.
+  # The mount's and `tar`'s own diagnostics (a mount error, a `tar` exit code
+  # and output) are passed through as-is; only a timeout of the bounded call is
+  # reported apart, so the two are not confused.
   defp extraction_error(reason) do
     if is_binary(reason) and String.contains?(reason, "timed out") do
       "timed out unpacking archive"

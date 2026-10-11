@@ -1,5 +1,4 @@
 defmodule Inkfish.Uploads.Git do
-  alias Inkfish.Sandbox.TempFs
   alias Inkfish.Uploads
   alias Inkfish.Uploads.Upload
 
@@ -92,11 +91,6 @@ defmodule Inkfish.Uploads.Git do
       CLONE_SIZE: clone_size(),
       SUBMIT_SIZE: submit_size(),
       GIT_ALLOW_PROTOCOL: allowed_protocols(),
-      # The clone script runs the unprivileged helper itself, and resolves it
-      # through TMPTMPFS_BIN exactly like TempFs.bin/0, so one setting points
-      # both consumers at the same binary (the stale setuid helper at
-      # /usr/local/bin/tmptmpfs does not implement `run`).
-      TMPTMPFS_BIN: TempFs.bin(),
       # We own the staging directory the script copies its results into, so we
       # create it here and hand the path over. That way we know it and can
       # remove it even when the script dies before it reports `dir:`/`tar:`.

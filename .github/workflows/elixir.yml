@@ -83,8 +83,6 @@ jobs:
         MIX_ENV=test mix phx.copy katex
         MIX_ENV=test mix esbuild default
         MIX_ENV=test mix sass default
-    - name: Install tmptmpfs
-      run: (cd support/tmptmpfs && cargo build && sudo ./install.sh)
     - name: Setup
       run: MIX_ENV=test mix ecto.setup
     - name: Run tests

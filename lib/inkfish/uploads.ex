@@ -136,7 +136,7 @@ defmodule Inkfish.Uploads do
   # `Subs.create_sub_with_upload/2` rolls its transaction back on any
   # `{:error, _}` it gets.
   #
-  # `reason` carries the raw helper/tar output, and it goes into the
+  # `reason` carries the raw mount/tar output, and it goes into the
   # user-facing text unchanged on purpose. Inkfish's users are computer science
   # students, so there is a good chance they understand a technical error and
   # can act on it: the specific reason is the only information they could have
@@ -175,7 +175,7 @@ defmodule Inkfish.Uploads do
     end
   end
 
-  # `reason` is usually the helper/tar output as a binary, and that binary is
+  # `reason` is usually the mount/tar output as a binary, and that binary is
   # passed through verbatim -- not trimmed, summarised or replaced. The
   # missing-`elixir` case is tagged as `{:elixir_bin_missing, message}`, so it
   # is unwrapped to the sentence the user should see rather than the tuple it

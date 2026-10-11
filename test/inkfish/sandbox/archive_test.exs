@@ -300,15 +300,16 @@ defmodule Inkfish.Sandbox.ArchiveTest do
 
   describe "the failure path" do
     test "reports a mount failure in bounded time" do
-      # "1X" is not a tmpfs size option, so the helper's mount fails and it
-      # exits 1 with a diagnostic rather than waiting for anything.
+      # "1X" is not a tmpfs size, so the preamble refuses the mount before
+      # `mount(8)` runs and exits 1 with its own diagnostic, which names the
+      # size, rather than waiting for anything.
       {elapsed_us, result} =
         :timer.tc(fn ->
           TempFs.run_in_tempfs("1X", "bash", ["-c", "echo hi"])
         end)
 
       assert {:error, msg} = result
-      assert msg =~ "mount"
+      assert msg =~ "invalid tmpfs size"
       assert elapsed_us < 5_000_000
     end
 
@@ -316,7 +317,7 @@ defmodule Inkfish.Sandbox.ArchiveTest do
       {elapsed_us, result} =
         :timer.tc(fn ->
           TempFs.run_in_tempfs("10M", "bash", ["-c", "echo hi"],
-            bin: "inkfish-no-such-tmptmpfs"
+            bin: "inkfish-no-such-unshare"
           )
         end)
 
@@ -332,8 +333,14 @@ defmodule Inkfish.Sandbox.ArchiveTest do
       target = Path.join(base, "target")
       File.mkdir_p!(target)
 
+      # "1X" is not a tmpfs size, so the preamble refuses the mount before
+      # `mount(8)` runs and says so itself. The kernel's own refusal is not
+      # reachable through a size any more: `mount(8)` reports every EINVAL from
+      # `mount(2)` as one generic sentence that never mentions the size, which
+      # is why the size is checked before it gets there. Either way the failure
+      # has to reach the caller -- an empty tree is not a success.
       assert {:error, msg} = Archive.safe_extract(archive, target, "1X")
-      assert msg =~ "Invalid argument"
+      assert msg =~ "invalid tmpfs size"
 
       assert File.ls!(target) == []
     end

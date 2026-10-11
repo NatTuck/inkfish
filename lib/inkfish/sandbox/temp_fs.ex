@@ -2,37 +2,87 @@ defmodule Inkfish.Sandbox.TempFs do
   @moduledoc """
   Run a command inside a private mount namespace holding a size-limited tmpfs.
 
-  `tmptmpfs` mounts its tmpfs inside a mount namespace that only its own child
-  can see, so a path handed back to us would be worthless: the mount does not
-  exist in *our* namespace. That is why there is no `make_tempfs/1` any more.
-  The command itself has to run inside the namespace, so `run_in_tempfs/4` is
-  the only shape that can work.
+  The namespace is built by util-linux `unshare(1)`, which this module runs
+  directly:
+
+      unshare -Urm --propagation private -- bash -c '<preamble>; exec "$@"' bash CMD ARGS...
+
+  `-U` creates an unprivileged user namespace and `-r` maps the caller onto uid
+  0 inside it, which is what makes mounting possible with no privilege on the
+  host; `-m` creates a private mount namespace, and `--propagation private`
+  keeps everything mounted in it out of the host's mount table. The shell
+  `unshare` starts builds the mount point, mounts the size-capped tmpfs there,
+  exports its path, and `exec`s the caller's command, so the command's own exit
+  status and signals are the ones the port reports. The same shell refuses a
+  size that tmpfs would not accept, before it mounts anything, so a bad size is
+  reported as a bad size rather than as `mount(8)`'s generic "wrong fs type, bad
+  option" sentence.
+
+  The tmpfs is mounted in a mount namespace that only that shell and its
+  children can see, so a path handed back to us would be worthless: the mount
+  does not exist in *our* namespace. That is why there is no `make_tempfs/1`
+  any more. The command itself has to run inside the namespace, so
+  `run_in_tempfs/4` is the only shape that can work.
 
   The mount, and the directory it lives on, exist exactly as long as the
   command does. Nothing is left in the host mount table.
 
-  ## The helper
+  ## The binary
 
-  The binary is resolved by `bin/0`, which prefers `:tmptmpfs_bin` over `PATH`
-  so that a stale helper earlier on `PATH` cannot be picked up by accident.
+  There is no helper program and no setuid bit: `bin/0` is util-linux's
+  `unshare(1)`, resolved through `PATH`. Nothing is compiled or installed for
+  this, so there is no stale copy to prefer over the `PATH` one either.
   """
 
   @default_timeout_ms 5_000
-  @default_bin "tmptmpfs"
-  @env_var "TMPTMPFS_BIN"
+  @default_bin "unshare"
   @mount_name "TMPFS"
+
+  # The mount name becomes an environment variable name and a path component,
+  # and the size becomes part of the tmpfs option string, both inside the shell
+  # script below. Neither is user input today, but both are interpolated, so
+  # neither is allowed to carry anything that could smuggle in extra shell
+  # syntax or extra mount options.
+  @name_format ~r/\A[A-Za-z_][A-Za-z0-9_]*\z/
+  @size_format ~r/\A[^\s,'"`\\$]*\z/
+
+  # The size *grammar* -- a byte count, a byte count with one unit suffix, or a
+  # percentage of physical memory -- as the ERE the shell in `preamble/2`
+  # applies before it mounts anything. It has to be no stricter than tmpfs
+  # itself, so that a size which would have mounted is never turned into a
+  # failure: `10M`, `512k`, `1g`, `100K`, `1T`, `50%` and a bare `1024` all
+  # mount, so all of them pass. (tmpfs's own parser also takes a `0x` hex byte
+  # count; no caller here means one, and saying so is better than mounting a
+  # size nobody asked for.)
+  #
+  # It has to be checked in the shell rather than here. `unshare` runs the
+  # preamble, so the preamble's exit status and diagnostic are the *command's*:
+  # a malformed size then fails the way every other bad mount does, quickly and
+  # with its reason attached. Rejecting in Elixir would return before a port was
+  # ever opened, which is exactly the case `run_bounded/4`'s closed-port
+  # handling exists to get right, and it would report nothing about the mount.
+  #
+  # Our own message is the only precise one available. `mount(8)` maps every
+  # EINVAL from `mount(2)` onto a single generic sentence -- "wrong fs type, bad
+  # option, bad superblock on tmpfs, missing codepage or helper program, or
+  # other error" -- which names everything except the size, so a size the kernel
+  # refuses comes back saying nothing about the size at all.
+  @size_ok ~s{^[0-9]+([kKmMgGtTpPeE]|%)?$}
 
   @doc """
   Run `cmd` with `args` inside a private mount namespace holding one tmpfs
   capped at `max_size`.
 
-  `max_size` is a tmpfs size string (`"10M"`, `"100m"`, ...). The mount's
-  absolute path -- with no trailing slash -- is exported to the command as
-  `$#{@mount_name}`. The path is only meaningful inside the namespace.
+  `max_size` is a tmpfs size string (`"10M"`, `"100m"`, ...). A size tmpfs
+  itself would not accept is refused inside the namespace before the mount is
+  attempted, so the error names the size instead of coming back as `mount(8)`'s
+  generic sentence. The mount's absolute path -- with no trailing slash -- is
+  exported to the command as `$#{@mount_name}`. The path is only meaningful
+  inside the namespace.
 
   Returns `{:ok, output}` when the command exits 0 and `{:error, reason}`
   otherwise. `output` is the command's combined stdout and stderr, because
-  both `tmptmpfs` and the command itself diagnose on stderr; `reason` carries
+  both the mount and the command itself diagnose on stderr; `reason` carries
   it too, so a failure says something useful.
 
   The call is bounded by `:tempfs_timeout_ms` (default `#{@default_timeout_ms}`).
@@ -44,43 +94,120 @@ defmodule Inkfish.Sandbox.TempFs do
     * `:timeout_ms` - override the configured timeout for this call
     * `:mount_name` - the environment variable the mount path is exported as
     * `:env` - extra environment variables, as `{name, value}` pairs
-    * `:bin` - override the `tmptmpfs` binary for this call
+    * `:bin` - override the `unshare` binary for this call
   """
   def run_in_tempfs(max_size, cmd, args, opts \\ []) do
-    helper = Keyword.get(opts, :bin) || bin()
     timeout_ms = Keyword.get(opts, :timeout_ms) || timeout_ms()
     mount_name = Keyword.get(opts, :mount_name) || @mount_name
     env = Keyword.get(opts, :env, [])
 
-    argv = [
-      "run",
-      "--tmpfs",
-      "#{mount_name}=#{max_size}",
-      "--",
-      to_string(cmd)
-      | Enum.map(args, &to_string/1)
-    ]
+    # `:bin` names a specific `unshare` -- the tests use it to exercise the
+    # missing-binary path; otherwise it is util-linux's, resolved through
+    # `PATH`.
+    helper = Keyword.get(opts, :bin) || bin()
 
-    case System.find_executable(helper) do
-      nil -> {:error, "#{helper} not found"}
-      path -> run_bounded(path, argv, env, timeout_ms)
+    with :ok <- check_mount_name(mount_name),
+         :ok <- check_size(max_size) do
+      case System.find_executable(helper) do
+        nil ->
+          {:error, "#{helper} not found"}
+
+        path ->
+          run_bounded(
+            path,
+            argv(max_size, mount_name, cmd, args),
+            env,
+            timeout_ms
+          )
+      end
     end
   end
 
   @doc """
-  The `tmptmpfs` binary to run.
+  The `unshare` binary to run.
 
-  `:tmptmpfs_bin` wins when set, then the `#{@env_var}` environment variable,
-  and finally the bare name `tmptmpfs` resolved through `PATH`.
-
-  Shell callers share the same override: `priv/scripts/upload_git_clone.sh`
-  is expected to invoke `"${#{@env_var}:-tmptmpfs}"` so that one setting points
-  both consumers at the same helper.
+  Always util-linux's `unshare(1)`, resolved through `PATH`: `unshare -Urm`
+  gets the privileges it needs from an unprivileged user namespace, so there is
+  no compiled artifact to point at and nothing to install.
   """
   def bin do
-    Application.get_env(:inkfish, :tmptmpfs_bin) ||
-      System.get_env(@env_var) ||
-      @default_bin
+    @default_bin
+  end
+
+  # The whole argv: `unshare` creates the namespaces, `bash` runs the preamble
+  # that mounts the tmpfs, and the preamble's `exec "$@"` hands the shell over
+  # to the caller's command. Passing the command as `bash`'s positional
+  # parameters (rather than splicing it into the script text) is what keeps it
+  # out of the shell's parsing.
+  defp argv(max_size, mount_name, cmd, args) do
+    [
+      "-Urm",
+      "--propagation",
+      "private",
+      "--",
+      "bash",
+      "-c",
+      preamble(max_size, mount_name) <> ~s(exec "$@"),
+      "bash",
+      to_string(cmd) | Enum.map(args, &to_string/1)
+    ]
+  end
+
+  # The shell `unshare` runs. It refuses a malformed size before it mounts
+  # anything -- with its own message, because `mount(8)` has no way to say which
+  # option the kernel disliked -- then mounts a private anchor tmpfs, creates the
+  # mount point inside it and mounts the size-capped tmpfs there, so the
+  # directory and the mount both vanish with the namespace instead of being left
+  # behind on the host. It then exports the mount path and `exec`s the caller's
+  # command.
+  #
+  # The mount path must be ABSOLUTE with NO TRAILING SLASH. The sanitizer
+  # compares the raw base string against `readlink -f` output, which is always
+  # absolute and resolved, so a relative or slash-terminated base makes every
+  # in-tree relative symlink look like an escape and deletes it. `realpath -m`
+  # is what canonicalises the anchor (including a `TMPDIR` that is relative or
+  # ends in a slash) before the path is built from it.
+  defp preamble(max_size, mount_name) do
+    """
+    set -e
+    size='#{max_size}'
+    if [[ ! "$size" =~ #{@size_ok} ]]; then
+      echo "invalid tmpfs size: \\"$size\\"" >&2
+      exit 1
+    fi
+    anchor="${TMPDIR:-/tmp}"
+    case "$anchor" in
+      /*) ;;
+      *) anchor=/tmp ;;
+    esac
+    anchor="$(realpath -m -- "$anchor")/inkfish-tmpfs"
+    mkdir -p "$anchor"
+    mount -t tmpfs -o mode=0700 tmpfs "$anchor"
+    mount_path="$anchor/#{mount_name}"
+    mkdir "$mount_path"
+    mount -t tmpfs -o "size=#{max_size}" tmpfs "$mount_path"
+    export #{mount_name}="$mount_path"
+    """
+  end
+
+  defp check_mount_name(mount_name) do
+    if String.match?(mount_name, @name_format) do
+      :ok
+    else
+      {:error, "invalid mount name #{inspect(mount_name)}"}
+    end
+  end
+
+  # The smuggling filter for the size. It says nothing about whether the size is
+  # a size at all: `@size_ok` decides that, in the preamble, so that the failure
+  # is the command's. This only keeps a size from carrying shell syntax or a
+  # second mount option into the script.
+  defp check_size(max_size) do
+    if String.match?(max_size, @size_format) do
+      :ok
+    else
+      {:error, "invalid size #{inspect(max_size)}"}
+    end
   end
 
   defp run_bounded(path, argv, env, timeout_ms) do
@@ -102,8 +229,8 @@ defmodule Inkfish.Sandbox.TempFs do
     # failed spawn -- the process ran and finished, and its real
     # `{:exit_status, code}`, along with anything it printed, is already sitting
     # in our mailbox for `collect/5` to read. Reporting `nil` as "could not
-    # start" threw that away and turned a correct failure -- `tmptmpfs` failing
-    # its mount, for instance -- into a bogus spawn error.
+    # start" threw that away and turned a correct failure -- a mount that fails
+    # within microseconds of the exec, for instance -- into a bogus spawn error.
     #
     # The pid is only needed to kill the process group on timeout, and there is
     # nothing left to kill once the process is gone, so `nil` is not a failure
@@ -173,9 +300,10 @@ defmodule Inkfish.Sandbox.TempFs do
 
   # `spawn_executable` puts the port's child in a session of its own (erts calls
   # `setsid` for every spawned program), so its process group is its own pid and
-  # signalling that group reaches the command's own children as well. We only
-  # signal the group when the child really is the group leader, so we can never
-  # signal the BEAM's group by accident.
+  # signalling that group reaches the command's own children as well -- and
+  # `unshare` does not fork, it `exec`s the shell, so the group leader is the
+  # mount and the command both. We only signal the group when the child really
+  # is the group leader, so we can never signal the BEAM's group by accident.
   #
   # Both signals are guarded by a liveness check: reading /proc/<pid>/stat
   # proves the child is still there, so the bare pid cannot have been recycled

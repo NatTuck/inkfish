@@ -1,11 +1,11 @@
 # Entry point for the symlink sanitizer, run *inside* the tmpfs namespace.
 #
-# The extracted tree only exists inside the namespace that `tmptmpfs` created,
-# so the sanitizer has to run there too. Its warnings are written to stdout
-# with a sentinel prefix so the parent process can forward them into its own
-# `Logger` -- `Inkfish.Sandbox.Archive.safe_extract/3` does exactly that, which
-# is what keeps the `capture_log` assertions in `archive_test.exs` meaningful
-# even though the sanitizer is a separate OS process.
+# The extracted tree only exists inside the private mount namespace `unshare`
+# created, so the sanitizer has to run there too. Its warnings are written to
+# stdout with a sentinel prefix so the parent process can forward them into its
+# own `Logger` -- `Inkfish.Sandbox.Archive.safe_extract/3` does exactly that,
+# which is what keeps the `capture_log` assertions in `archive_test.exs`
+# meaningful even though the sanitizer is a separate OS process.
 #
 # Usage: sanitize.exs BASE
 
