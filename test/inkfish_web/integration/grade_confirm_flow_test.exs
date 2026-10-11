@@ -339,6 +339,12 @@ defmodule InkfishWeb.GradeConfirmFlowTest do
           grader: nil
         )
 
+      insert(:active_sub,
+        reg: student_reg_b,
+        assignment: assignment,
+        sub: sub_b
+      )
+
       grade_b =
         insert(:grade,
           grade_column: feedback_gcol,
