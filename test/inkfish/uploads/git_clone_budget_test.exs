@@ -3,6 +3,8 @@ defmodule Inkfish.Uploads.GitCloneBudgetTest do
 
   import Inkfish.GitFixtures
 
+  alias Inkfish.Sandbox.TempFs
+
   @script Path.join(:code.priv_dir(:inkfish), "scripts/upload_git_clone.sh")
 
   # The persistent tmpfs is the budget for what survives the clone, and the
@@ -14,6 +16,7 @@ defmodule Inkfish.Uploads.GitCloneBudgetTest do
   setup do
     assert System.find_executable("bash")
     assert System.find_executable("git")
+    assert System.find_executable("unshare")
 
     base =
       Path.join(
@@ -79,7 +82,20 @@ defmodule Inkfish.Uploads.GitCloneBudgetTest do
   end
 
   defp run_script(repo, submit_size) do
-    System.cmd("bash", [@script],
+    # The persistent tmpfs has to be a real capped mount for the `df` reading to
+    # mean anything, so the script is run the way production runs it: through
+    # `Inkfish.Sandbox.TempFs.unshare_argv/3`, which mounts CLONE_TMP and
+    # PERSIST_TMP (this `submit_size` is what caps the latter) and exports their
+    # paths. Only the runner differs from production -- a test wants the output
+    # and exit status back.
+    {:ok, [unshare | args]} =
+      TempFs.unshare_argv(
+        [{"CLONE_TMP", "100m"}, {"PERSIST_TMP", submit_size}],
+        "bash",
+        [@script]
+      )
+
+    System.cmd(unshare, args,
       env: [
         {"REPO", repo},
         {"CLONE_SIZE", "100m"},

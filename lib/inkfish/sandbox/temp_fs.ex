@@ -1,6 +1,7 @@
 defmodule Inkfish.Sandbox.TempFs do
   @moduledoc """
-  Run a command inside a private mount namespace holding a size-limited tmpfs.
+  Run a command inside a private mount namespace holding named, size-limited
+  tmpfs mounts.
 
   The namespace is built by util-linux `unshare(1)`, which this module runs
   directly:
@@ -11,21 +12,37 @@ defmodule Inkfish.Sandbox.TempFs do
   0 inside it, which is what makes mounting possible with no privilege on the
   host; `-m` creates a private mount namespace, and `--propagation private`
   keeps everything mounted in it out of the host's mount table. The shell
-  `unshare` starts builds the mount point, mounts the size-capped tmpfs there,
-  exports its path, and `exec`s the caller's command, so the command's own exit
-  status and signals are the ones the port reports. The same shell refuses a
-  size that tmpfs would not accept, before it mounts anything, so a bad size is
-  reported as a bad size rather than as `mount(8)`'s generic "wrong fs type, bad
-  option" sentence.
+  `unshare` starts mounts a private anchor tmpfs, mounts one size-capped tmpfs
+  per requested mount inside it, exports each mount's path under its own name,
+  and `exec`s the caller's command, so the command's own exit status and signals
+  are the ones the port reports.
 
-  The tmpfs is mounted in a mount namespace that only that shell and its
-  children can see, so a path handed back to us would be worthless: the mount
-  does not exist in *our* namespace. That is why there is no `make_tempfs/1`
-  any more. The command itself has to run inside the namespace, so
-  `run_in_tempfs/4` is the only shape that can work.
+  This module is the single place that knows that argv, and both callers go
+  through it: `run_in_tempfs/4` (and its single-mount convenience,
+  `run_in_one_tempfs/4`) spawns it through a bounded port, while
+  `Inkfish.Uploads.Git.start_clone/1` hands `unshare_argv/3`'s argv to
+  `Inkfish.Ittys`, which keeps its own supervision and streaming. The clone
+  script is a plain script as a result: it used to re-exec itself under
+  `unshare` and mount its own two tmpfs, with a recursion marker to keep the
+  re-exec from looping, and now it only asserts that its mounts are there.
 
-  The mount, and the directory it lives on, exist exactly as long as the
+  The mounts live in a mount namespace that only that shell and its children
+  can see, so a path handed back to us would be worthless: the mount does not
+  exist in *our* namespace. That is why there is no `make_tempfs/1` any more.
+  The command itself has to run inside the namespace, so `run_in_tempfs/4` is
+  the only shape that can work.
+
+  The mounts, and the directories they live on, exist exactly as long as the
   command does. Nothing is left in the host mount table.
+
+  ## Names and sizes
+
+  A mount is a `{name, size}` pair: `name` is the environment variable the
+  mount's absolute path is exported as, and `size` is a tmpfs size string
+  (`"10M"`, `"100m"`, ...). Both are validated here, in Elixir, before anything
+  is spawned -- see `unshare_argv/3` -- so neither can carry shell syntax or a
+  second mount option into the preamble, and a rejection names the offending
+  value. The preamble therefore has no validation of its own.
 
   ## The binary
 
@@ -36,6 +53,9 @@ defmodule Inkfish.Sandbox.TempFs do
 
   @default_timeout_ms 5_000
   @default_bin "unshare"
+
+  # The mount `run_in_one_tempfs/4` makes, and the name the scripts it runs read
+  # the mount path from.
   @mount_name "TMPFS"
 
   # The mount name becomes an environment variable name and a path component,
@@ -44,46 +64,70 @@ defmodule Inkfish.Sandbox.TempFs do
   # neither is allowed to carry anything that could smuggle in extra shell
   # syntax or extra mount options.
   @name_format ~r/\A[A-Za-z_][A-Za-z0-9_]*\z/
-  @size_format ~r/\A[^\s,'"`\\$]*\z/
 
-  # The size *grammar* -- a byte count, a byte count with one unit suffix, or a
-  # percentage of physical memory -- as the ERE the shell in `preamble/2`
-  # applies before it mounts anything. It has to be no stricter than tmpfs
-  # itself, so that a size which would have mounted is never turned into a
-  # failure: `10M`, `512k`, `1g`, `100K`, `1T`, `50%` and a bare `1024` all
-  # mount, so all of them pass. (tmpfs's own parser also takes a `0x` hex byte
-  # count; no caller here means one, and saying so is better than mounting a
-  # size nobody asked for.)
-  #
-  # It has to be checked in the shell rather than here. `unshare` runs the
-  # preamble, so the preamble's exit status and diagnostic are the *command's*:
-  # a malformed size then fails the way every other bad mount does, quickly and
-  # with its reason attached. Rejecting in Elixir would return before a port was
-  # ever opened, which is exactly the case `run_bounded/4`'s closed-port
-  # handling exists to get right, and it would report nothing about the mount.
+  # The size grammar: a byte count with an optional single unit suffix, or a
+  # percentage of physical memory. It has to be no stricter than tmpfs itself,
+  # so that a size which would have mounted is never turned into a failure:
+  # `10M`, `512k`, `1g`, `100K`, `1T`, `50%` and a bare `1024` all mount, so all
+  # of them pass. (tmpfs's own parser also takes a `0x` hex byte count; no
+  # caller here means one, and saying so is better than mounting a size nobody
+  # asked for.)
   #
   # Our own message is the only precise one available. `mount(8)` maps every
   # EINVAL from `mount(2)` onto a single generic sentence -- "wrong fs type, bad
   # option, bad superblock on tmpfs, missing codepage or helper program, or
   # other error" -- which names everything except the size, so a size the kernel
-  # refuses comes back saying nothing about the size at all.
-  @size_ok ~s{^[0-9]+([kKmMgGtTpPeE]|%)?$}
+  # refuses comes back saying nothing about the size at all. Checking here, with
+  # a message that quotes the offending size, is what keeps that from being the
+  # only thing a bad size can produce.
+  @size_format ~r/\A[0-9]+[kKmMgGtTpPeE%]?\z/
+
+  @missing_unshare_log_message "the `unshare` binary that creates the sandbox " <>
+                                 "mount namespace could not be resolved: no " <>
+                                 "`unshare` executable was found on `PATH`. This " <>
+                                 "is a deployment misconfiguration and every " <>
+                                 "archive upload, submission and git clone will " <>
+                                 "fail until it is fixed: install util-linux " <>
+                                 "(which provides `unshare`), or make `unshare` " <>
+                                 "available on `PATH`."
 
   @doc """
-  Run `cmd` with `args` inside a private mount namespace holding one tmpfs
-  capped at `max_size`.
+  The complete `unshare` argv that runs `cmd` with `args` inside a namespace
+  holding one size-capped tmpfs per entry of `mounts`.
 
-  `max_size` is a tmpfs size string (`"10M"`, `"100m"`, ...). A size tmpfs
-  itself would not accept is refused inside the namespace before the mount is
-  attempted, so the error names the size instead of coming back as `mount(8)`'s
-  generic sentence. The mount's absolute path -- with no trailing slash -- is
-  exported to the command as `$#{@mount_name}`. The path is only meaningful
-  inside the namespace.
+  `mounts` is a list of `{name, size}` pairs, e.g.
+  `[{"CLONE_TMP", "100m"}, {"PERSIST_TMP", "5m"}]`. Each name is exported into
+  the command's environment holding that mount's absolute path (no trailing
+  slash); each size caps the tmpfs mounted there.
+
+  Returns `{:ok, argv}` -- with the resolved absolute path of `unshare` as
+  `argv`'s first element, so the argv can be `exec`ed as-is -- or
+  `{:error, reason}` when a name or a size is invalid, naming the offending
+  value, or when the `unshare` binary cannot be found.
+
+  The first element is resolved here rather than left as the bare name
+  `unshare` because `Inkfish.Ittys` runs the argv with `execve(2)` and no shell,
+  and `execve(2)` does not search `PATH`.
+  """
+  def unshare_argv(mounts, cmd, args, opts \\ []) do
+    with :ok <- check_mounts(mounts),
+         {:ok, exe} <- resolve(Keyword.get(opts, :bin)) do
+      {:ok, [exe | argv_tail(mounts, cmd, args)]}
+    end
+  end
+
+  @doc """
+  Run `cmd` with `args` inside a private mount namespace holding one size-capped
+  tmpfs per entry of `mounts`.
+
+  `mounts` is a list of `{name, size}` pairs; see `unshare_argv/3`. The mounts'
+  absolute paths -- with no trailing slash -- are exported to the command under
+  their own names. The paths are only meaningful inside the namespace.
 
   Returns `{:ok, output}` when the command exits 0 and `{:error, reason}`
-  otherwise. `output` is the command's combined stdout and stderr, because
-  both the mount and the command itself diagnose on stderr; `reason` carries
-  it too, so a failure says something useful.
+  otherwise. `output` is the command's combined stdout and stderr, because both
+  the mount and the command itself diagnose on stderr; `reason` carries it too,
+  so a failure says something useful.
 
   The call is bounded by `:tempfs_timeout_ms` (default `#{@default_timeout_ms}`).
   On timeout the command's whole process group is killed, so nothing is left
@@ -92,35 +136,32 @@ defmodule Inkfish.Sandbox.TempFs do
   ## Options
 
     * `:timeout_ms` - override the configured timeout for this call
-    * `:mount_name` - the environment variable the mount path is exported as
     * `:env` - extra environment variables, as `{name, value}` pairs
     * `:bin` - override the `unshare` binary for this call
   """
-  def run_in_tempfs(max_size, cmd, args, opts \\ []) do
+  def run_in_tempfs(mounts, cmd, args, opts \\ []) do
     timeout_ms = Keyword.get(opts, :timeout_ms) || timeout_ms()
-    mount_name = Keyword.get(opts, :mount_name) || @mount_name
     env = Keyword.get(opts, :env, [])
 
-    # `:bin` names a specific `unshare` -- the tests use it to exercise the
-    # missing-binary path; otherwise it is util-linux's, resolved through
-    # `PATH`.
-    helper = Keyword.get(opts, :bin) || bin()
-
-    with :ok <- check_mount_name(mount_name),
-         :ok <- check_size(max_size) do
-      case System.find_executable(helper) do
-        nil ->
-          {:error, "#{helper} not found"}
-
-        path ->
-          run_bounded(
-            path,
-            argv(max_size, mount_name, cmd, args),
-            env,
-            timeout_ms
-          )
-      end
+    with {:ok, [exe | rest]} <- unshare_argv(mounts, cmd, args, opts) do
+      run_bounded(exe, rest, env, timeout_ms)
     end
+  end
+
+  @doc """
+  Run `cmd` with `args` inside a private mount namespace holding one tmpfs
+  capped at `max_size`.
+
+  The single-mount convenience around `run_in_tempfs/4`: the mount is named
+  `#{@mount_name}`, which is the name the extraction scripts read the mount path
+  from. `max_size` is a tmpfs size string (`"10M"`, `"100m"`, ...); a size tmpfs
+  itself would not accept is rejected here, naming it, before anything is
+  spawned.
+
+  The options are `run_in_tempfs/4`'s.
+  """
+  def run_in_one_tempfs(max_size, cmd, args, opts \\ []) do
+    run_in_tempfs([{@mount_name, max_size}], cmd, args, opts)
   end
 
   @doc """
@@ -134,12 +175,44 @@ defmodule Inkfish.Sandbox.TempFs do
     @default_bin
   end
 
-  # The whole argv: `unshare` creates the namespaces, `bash` runs the preamble
-  # that mounts the tmpfs, and the preamble's `exec "$@"` hands the shell over
-  # to the caller's command. Passing the command as `bash`'s positional
-  # parameters (rather than splicing it into the script text) is what keeps it
-  # out of the shell's parsing.
-  defp argv(max_size, mount_name, cmd, args) do
+  @doc """
+  The `unshare` executable, resolved through `PATH`.
+
+  Returns `{:ok, path}`, or `{:error, reason}` naming the binary that could not
+  be found. The deployment-level explanation is
+  `missing_unshare_log_message/0`.
+  """
+  def unshare_bin do
+    resolve(nil)
+  end
+
+  @doc """
+  The operator-facing explanation of a missing `unshare` binary.
+
+  Log only: it spells out the consequence for the whole deployment, which is
+  what `Inkfish.Application` reports once at boot.
+  """
+  def missing_unshare_log_message do
+    @missing_unshare_log_message
+  end
+
+  # `:bin` names a specific `unshare` -- the tests use it to exercise the
+  # missing-binary path; otherwise it is util-linux's, resolved through `PATH`.
+  defp resolve(helper) do
+    helper = helper || bin()
+
+    case System.find_executable(helper) do
+      nil -> {:error, "#{helper} not found"}
+      path -> {:ok, path}
+    end
+  end
+
+  # The whole argv, less the `unshare` binary itself: `unshare` creates the
+  # namespaces, `bash` runs the preamble that mounts the tmpfs, and the
+  # preamble's `exec "$@"` hands the shell over to the caller's command. Passing
+  # the command as `bash`'s positional parameters (rather than splicing it into
+  # the script text) is what keeps it out of the shell's parsing.
+  defp argv_tail(mounts, cmd, args) do
     [
       "-Urm",
       "--propagation",
@@ -147,34 +220,41 @@ defmodule Inkfish.Sandbox.TempFs do
       "--",
       "bash",
       "-c",
-      preamble(max_size, mount_name) <> ~s(exec "$@"),
+      preamble(mounts),
       "bash",
       to_string(cmd) | Enum.map(args, &to_string/1)
     ]
   end
 
-  # The shell `unshare` runs. It refuses a malformed size before it mounts
-  # anything -- with its own message, because `mount(8)` has no way to say which
-  # option the kernel disliked -- then mounts a private anchor tmpfs, creates the
-  # mount point inside it and mounts the size-capped tmpfs there, so the
-  # directory and the mount both vanish with the namespace instead of being left
-  # behind on the host. It then exports the mount path and `exec`s the caller's
-  # command.
+  # The shell `unshare` runs. It mounts a private anchor tmpfs, then, for each
+  # requested mount, creates a mount point inside that anchor and mounts the
+  # size-capped tmpfs there -- so the directories and the mounts both vanish with
+  # the namespace instead of being left behind on the host. Each mount path is
+  # then exported under the name the caller gave it, and the shell `exec`s the
+  # caller's command.
+  #
+  # The names and sizes are validated in `unshare_argv/3` before this text is
+  # built, so they are interpolated as-is and no metacharacter can reach it.
   #
   # The mount path must be ABSOLUTE with NO TRAILING SLASH. The sanitizer
   # compares the raw base string against `readlink -f` output, which is always
   # absolute and resolved, so a relative or slash-terminated base makes every
   # in-tree relative symlink look like an escape and deletes it. `realpath -m`
   # is what canonicalises the anchor (including a `TMPDIR` that is relative or
-  # ends in a slash) before the path is built from it.
-  defp preamble(max_size, mount_name) do
+  # ends in a slash) before the paths are built from it.
+  defp preamble(mounts) do
+    blocks =
+      Enum.map_join(mounts, "", fn {name, size} ->
+        """
+        mount_path="$anchor/#{name}"
+        mkdir "$mount_path"
+        mount -t tmpfs -o "size=#{size}" tmpfs "$mount_path"
+        export #{name}="$mount_path"
+        """
+      end)
+
     """
     set -e
-    size='#{max_size}'
-    if [[ ! "$size" =~ #{@size_ok} ]]; then
-      echo "invalid tmpfs size: \\"$size\\"" >&2
-      exit 1
-    fi
     anchor="${TMPDIR:-/tmp}"
     case "$anchor" in
       /*) ;;
@@ -183,30 +263,35 @@ defmodule Inkfish.Sandbox.TempFs do
     anchor="$(realpath -m -- "$anchor")/inkfish-tmpfs"
     mkdir -p "$anchor"
     mount -t tmpfs -o mode=0700 tmpfs "$anchor"
-    mount_path="$anchor/#{mount_name}"
-    mkdir "$mount_path"
-    mount -t tmpfs -o "size=#{max_size}" tmpfs "$mount_path"
-    export #{mount_name}="$mount_path"
+    #{blocks}
+    exec "$@"
     """
+  end
+
+  defp check_mounts(mounts) do
+    Enum.reduce_while(mounts, :ok, fn {name, size}, :ok ->
+      with :ok <- check_mount_name(name),
+           :ok <- check_size(size) do
+        {:cont, :ok}
+      else
+        {:error, reason} -> {:halt, {:error, reason}}
+      end
+    end)
   end
 
   defp check_mount_name(mount_name) do
     if String.match?(mount_name, @name_format) do
       :ok
     else
-      {:error, "invalid mount name #{inspect(mount_name)}"}
+      {:error, "invalid mount name: #{inspect(mount_name)}"}
     end
   end
 
-  # The smuggling filter for the size. It says nothing about whether the size is
-  # a size at all: `@size_ok` decides that, in the preamble, so that the failure
-  # is the command's. This only keeps a size from carrying shell syntax or a
-  # second mount option into the script.
   defp check_size(max_size) do
     if String.match?(max_size, @size_format) do
       :ok
     else
-      {:error, "invalid size #{inspect(max_size)}"}
+      {:error, "invalid tmpfs size: #{inspect(max_size)}"}
     end
   end
 

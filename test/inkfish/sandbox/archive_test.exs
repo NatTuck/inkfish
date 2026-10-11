@@ -200,7 +200,7 @@ defmodule Inkfish.Sandbox.ArchiveTest do
     test "is enforced at the requested size" do
       for {size, fits_mb, over_mb} <- [{"10M", 8, 12}, {"3M", 2, 4}] do
         assert {:ok, out} =
-                 TempFs.run_in_tempfs(size, "bash", [
+                 TempFs.run_in_one_tempfs(size, "bash", [
                    "-c",
                    ~s(findmnt -no FSTYPE,SIZE "$TMPFS")
                  ])
@@ -208,13 +208,13 @@ defmodule Inkfish.Sandbox.ArchiveTest do
         assert String.split(out, [" ", "\n"], trim: true) == ["tmpfs", size]
 
         assert {:ok, _out} =
-                 TempFs.run_in_tempfs(size, "bash", [
+                 TempFs.run_in_one_tempfs(size, "bash", [
                    "-c",
                    ~s(dd if=/dev/zero of="$TMPFS/fits" bs=1M count=#{fits_mb})
                  ])
 
         assert {:error, msg} =
-                 TempFs.run_in_tempfs(size, "bash", [
+                 TempFs.run_in_one_tempfs(size, "bash", [
                    "-c",
                    ~s(dd if=/dev/zero of="$TMPFS/over" bs=1M count=#{over_mb})
                  ])
@@ -299,13 +299,16 @@ defmodule Inkfish.Sandbox.ArchiveTest do
   end
 
   describe "the failure path" do
-    test "reports a mount failure in bounded time" do
-      # "1X" is not a tmpfs size, so the preamble refuses the mount before
-      # `mount(8)` runs and exits 1 with its own diagnostic, which names the
-      # size, rather than waiting for anything.
+    test "reports a bad size in bounded time, naming it" do
+      # "1X" is not a tmpfs size, so it is refused in Elixir, before a port is
+      # opened and long before `mount(8)` would run, with a diagnostic that
+      # names the size. (The kernel's own refusal is not reachable through a
+      # size any more: `mount(8)` reports every EINVAL from `mount(2)` as one
+      # generic sentence that never mentions the size, which is why the size is
+      # checked first, where we can still name it.)
       {elapsed_us, result} =
         :timer.tc(fn ->
-          TempFs.run_in_tempfs("1X", "bash", ["-c", "echo hi"])
+          TempFs.run_in_one_tempfs("1X", "bash", ["-c", "echo hi"])
         end)
 
       assert {:error, msg} = result
@@ -316,7 +319,7 @@ defmodule Inkfish.Sandbox.ArchiveTest do
     test "reports a missing helper in bounded time" do
       {elapsed_us, result} =
         :timer.tc(fn ->
-          TempFs.run_in_tempfs("10M", "bash", ["-c", "echo hi"],
+          TempFs.run_in_one_tempfs("10M", "bash", ["-c", "echo hi"],
             bin: "inkfish-no-such-unshare"
           )
         end)
@@ -326,19 +329,16 @@ defmodule Inkfish.Sandbox.ArchiveTest do
       assert elapsed_us < 5_000_000
     end
 
-    test "safe_extract surfaces a mount failure instead of an empty tree", %{
+    test "safe_extract surfaces a bad size instead of an empty tree", %{
       base: base
     } do
       archive = Path.expand("../../scripts/data/helloc.tar.gz", __DIR__)
       target = Path.join(base, "target")
       File.mkdir_p!(target)
 
-      # "1X" is not a tmpfs size, so the preamble refuses the mount before
-      # `mount(8)` runs and says so itself. The kernel's own refusal is not
-      # reachable through a size any more: `mount(8)` reports every EINVAL from
-      # `mount(2)` as one generic sentence that never mentions the size, which
-      # is why the size is checked before it gets there. Either way the failure
-      # has to reach the caller -- an empty tree is not a success.
+      # "1X" is not a tmpfs size, so it is refused in Elixir, naming it, before
+      # anything is spawned. Either way the failure has to reach the caller --
+      # an empty tree is not a success.
       assert {:error, msg} = Archive.safe_extract(archive, target, "1X")
       assert msg =~ "invalid tmpfs size"
 

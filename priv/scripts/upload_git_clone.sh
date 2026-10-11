@@ -1,41 +1,19 @@
 #!/bin/bash
 set -e
 
-# Both tmpfs mounts have to be visible to this script, and a mount namespace is
-# private to the process that created it. So re-exec ourselves under a single
-# `unshare -Urm --propagation private`: `-U` and `-r` give us an unprivileged
-# user namespace mapped onto uid 0 (so mounting needs no privilege on the
-# host), `-m` gives us a private mount namespace, and `--propagation private`
-# keeps everything we mount out of the host's mount table. TMPTMPFS_ACTIVE
-# marks the inner run so that it does not recurse.
-if [ -z "${TMPTMPFS_ACTIVE:-}" ]; then
-  export TMPTMPFS_ACTIVE=1
-  exec unshare -Urm --propagation private -- "$0" "$@"
-fi
-
-# The mounts live only inside the namespace, so they are made here, each one
-# capped at the size the caller asked for. Their mount points are created
-# inside a private anchor tmpfs, so the directories vanish with the namespace
-# instead of being left behind on the host.
-ANCHOR="${TMPDIR:-/tmp}"
-case "$ANCHOR" in
-  /*) ;;
-  *) ANCHOR=/tmp ;;
-esac
-ANCHOR="$(realpath -m -- "$ANCHOR")/inkfish-tmpfs"
-mkdir -p "$ANCHOR"
-mount -t tmpfs -o mode=0700 tmpfs "$ANCHOR"
-export CLONE_TMP="$ANCHOR/CLONE_TMP"
-export PERSIST_TMP="$ANCHOR/PERSIST_TMP"
-mkdir "$CLONE_TMP" "$PERSIST_TMP"
-mount -t tmpfs -o "size=$CLONE_SIZE" tmpfs "$CLONE_TMP"
-mount -t tmpfs -o "size=$SUBMIT_SIZE" tmpfs "$PERSIST_TMP"
-
-# The mounts above are what set CLONE_TMP/PERSIST_TMP. If they are empty, fail
-# with a reason here rather than with a confusing EROFS from the first write
-# below.
-: "${CLONE_TMP:?CLONE_TMP is not set (TMPTMPFS_ACTIVE was set without a mount)}"
-: "${PERSIST_TMP:?PERSIST_TMP is not set (TMPTMPFS_ACTIVE was set without a mount)}"
+# CLONE_TMP and PERSIST_TMP are two size-capped tmpfs mounts, and a mount
+# namespace is private to the process that created it, so the caller has to
+# create them. It does: `Inkfish.Uploads.Git.start_clone/1` runs this script
+# through `Inkfish.Sandbox.TempFs.unshare_argv/3`, whose preamble mounts
+# CLONE_TMP and PERSIST_TMP -- capped at `$CLONE_SIZE` and `$SUBMIT_SIZE` -- and
+# exports their paths. The mounts live only inside that namespace, so they, and
+# the directories holding them, are gone once this script exits.
+#
+# That is what makes the two assertions below real checks: they catch this
+# script being run without that sandbox, and say so, rather than letting it fail
+# with a confusing EROFS from the first write below.
+: "${CLONE_TMP:?CLONE_TMP is not set: this script must run inside the tempfs sandbox that Inkfish.Sandbox.TempFs.unshare_argv/3 creates}"
+: "${PERSIST_TMP:?PERSIST_TMP is not set: this script must run inside the tempfs sandbox that Inkfish.Sandbox.TempFs.unshare_argv/3 creates}"
 
 echo "Git clone config"
 echo " - clone size: $CLONE_SIZE"

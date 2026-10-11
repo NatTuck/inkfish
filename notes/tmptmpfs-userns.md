@@ -15,8 +15,9 @@ All `path:line` references are relative to the inkfish repo root unless noted.
 
 ## 1. What runs now
 
-`Inkfish.Sandbox.TempFs.run_in_tempfs/4` (`lib/inkfish/sandbox/temp_fs.ex:72-97`)
-spawns exactly this argv (`:115-127`):
+`Inkfish.Sandbox.TempFs.unshare_argv/3`
+(`lib/inkfish/sandbox/temp_fs.ex:94-118`) is the **only** place that knows this
+argv (`:211-232`):
 
 ```
 unshare -Urm --propagation private -- bash -c '<preamble>; exec "$@"' bash CMD ARGS...
@@ -28,17 +29,19 @@ unshare -Urm --propagation private -- bash -c '<preamble>; exec "$@"' bash CMD A
   `setgroups=deny`), so there is no `uid_map`/`gid_map` handling in Inkfish.
 - `-m` creates the **mount namespace** and `--propagation private` makes it
   private, so nothing mounted inside can reach the host mount table.
-- `bash` runs the **preamble** (`lib/inkfish/sandbox/temp_fs.ex:141-157`), which:
+- `bash` runs the **preamble** (`lib/inkfish/sandbox/temp_fs.ex:234-269`), which:
 
   1. picks the anchor directory — `$TMPDIR` (falling back to `/tmp` when it is
      not absolute) joined with `inkfish-tmpfs`, canonicalised with
-     `realpath -m` so the path below is absolute and slash-free;
+     `realpath -m` so the paths below are absolute and slash-free;
   2. `mkdir -p`es that anchor and mounts a `mode=0700` tmpfs on it;
-  3. creates the mount point **inside** that anchor tmpfs and mounts the
-     size-capped tmpfs there: `mount -t tmpfs -o "size=$SIZE" tmpfs "$mount_path"`;
-  4. exports the mount path as `$TMPFS`.
+  3. for **each requested mount** — one `{name, size}` pair per entry — creates
+     the mount point **inside** that anchor tmpfs and mounts the size-capped
+     tmpfs there: `mount -t tmpfs -o "size=$SIZE" tmpfs "$mount_path"`;
+  4. exports each mount path under its own name: `$TMPFS` for the archive
+     extraction, `$CLONE_TMP`/`$PERSIST_TMP` for the git clone.
 
-  Because the mount point lives inside the anchor tmpfs, it vanishes with the
+  Because the mount points live inside the anchor tmpfs, they vanish with the
   namespace: the only thing left on the host is the (empty) anchor directory
   itself.
 - `exec "$@"` then replaces the shell with the caller's command, so the
@@ -50,20 +53,37 @@ Properties: no setuid, no root, no helper binary, no background process, no
 polling. The mounts, and the directories holding them, live only as long as the
 command does.
 
-`priv/scripts/upload_git_clone.sh` does the same thing for its two mounts: it
-re-execs itself under one `unshare -Urm --propagation private`
-(`priv/scripts/upload_git_clone.sh:11-14`, marked with `TMPTMPFS_ACTIVE` so the
-inner run does not recurse), then mounts `CLONE_TMP` and `PERSIST_TMP` — capped
-at `$CLONE_SIZE` and `$SUBMIT_SIZE` — inside its own anchor tmpfs
-(`:16-32`). The caller no longer passes mount paths in; the script makes them.
+Both callers go through that one argv. `run_in_tempfs/4` (`:120-150`) spawns it
+through a bounded port; `run_in_one_tempfs/4` (`:152-165`) is the single-mount
+convenience the extraction uses, and it is the one that names the mount
+`TMPFS`. `Inkfish.Uploads.Git.start_clone/1` builds the same argv for its two
+mounts and hands it to `Inkfish.Ittys`, which keeps its own supervision and
+streaming — the argv's first element is the resolved absolute path of
+`unshare`, because Ittys `execve(2)`s the argv with no shell and `execve(2)`
+does not search `PATH` (`:94-118`).
+
+`priv/scripts/upload_git_clone.sh` is a plain script as a result. It used to
+re-exec itself under one `unshare -Urm --propagation private` and mount
+`CLONE_TMP` and `PERSIST_TMP` itself, with a recursion marker to stop the
+re-exec from looping; the mounts are made for it now, so it opens by asserting
+they exist (`priv/scripts/upload_git_clone.sh:15-16`), which is what catches
+the script being run without the sandbox. Everything below that is unchanged.
+
+The mount name and the size are both checked **in Elixir**, before anything is
+spawned (`lib/inkfish/sandbox/temp_fs.ex:271-296`): the name against
+`@name_format` (`:66`) and the size against `@size_format` (`:83`), each
+rejection naming the offending value. Neither can therefore carry shell syntax
+or a second mount option into the preamble, and the preamble does no validation
+of its own.
 
 The Elixir side runs that argv through a bounded port
-(`lib/inkfish/sandbox/temp_fs.ex:175-209`), folding stdout and stderr together.
-A non-zero exit becomes `{:error, reason}` carrying the output (`:220-242`,
-`:256-261`); a timeout kills the whole process group (`:244-254`, `:274-288`).
-`bin/0`
-(`:99-108`) is the bare name `unshare`, resolved through `PATH`; a caller that
-needs a specific binary passes `:bin` to `run_in_tempfs/4`.
+(`lib/inkfish/sandbox/temp_fs.ex:298-332`), folding stdout and stderr together.
+A non-zero exit becomes `{:error, reason}` carrying the output (`:343-364`,
+`:379-384`); a timeout kills the whole process group (`:366-377`, `:397-409`).
+`bin/0` (`:174-176`) is the bare name `unshare`; `unshare_bin/0` (`:185-187`)
+resolves it through `PATH`, which is what `Inkfish.Application` checks once at
+boot (`lib/inkfish/application.ex:81-91`), and a caller that needs a specific
+binary passes `:bin` to `run_in_tempfs/4` (`:199-209`).
 
 ## 2. Why the trailing-slash / absolute-path detail matters
 
@@ -84,10 +104,10 @@ that comparison and **every** in-tree relative symlink is deleted. Measured: **9
 removals instead of 5**.
 
 That is why the preamble canonicalises the anchor with `realpath -m` before
-building the mount path from it (`lib/inkfish/sandbox/temp_fs.ex:133-140`): a
-`TMPDIR` that is relative or ends in a slash still yields an absolute,
-slash-free mount path. The Elixir API documents the same contract (`:52-54`)
-and the test asserts it (`test/inkfish/sandbox/temp_fs_test.exs:16-24`).
+building the mount paths from it (`lib/inkfish/sandbox/temp_fs.ex:236-263`): a
+`TMPDIR` that is relative or ends in a slash still yields absolute, slash-free
+mount paths. The Elixir API documents the same contract (`:120-129`) and the
+test asserts it (`test/inkfish/sandbox/temp_fs_test.exs:8-25`).
 
 ## 3. Why `tar --no-same-owner` is required
 
@@ -106,7 +126,7 @@ passes `tar xvf "$INKFISH_ARCHIVE" --no-same-owner`
 The same hazard applies to anything else that restores metadata. The copy-out
 must be `cp -r`, never `cp -a`/`cp -p`: the archive's ownership is not ours to
 restore, and inside the namespace it is not even mapped
-(`lib/inkfish/sandbox/archive.ex:204-211`, used at `:194` and `:209`).
+(`lib/inkfish/sandbox/archive.ex:200-211`, used at `:194` and `:209`).
 
 ## 4. Why a non-zero `tar` exit must be fatal
 
@@ -114,9 +134,10 @@ Extracting past the tmpfs size cap does not fail cleanly: `tar` writes the file
 it can, leaves a **zero-byte** file for the one it could not finish, prints its
 error, and exits **2**. A sanitizer run on that partial tree returns 0, so
 without a guard the truncated tree would be copied out as if it were fine
-(`lib/inkfish/sandbox/archive.ex:26-28`). The guard is `set -euo pipefail` at the
-top of both generated scripts (`lib/inkfish/sandbox/archive.ex:190`, `:206`):
-it makes the non-zero `tar` exit abort the whole script, before the copy-out.
+(`lib/inkfish/sandbox/archive.ex:105-110`). The guard is `set -euo pipefail` at
+the top of both generated scripts (`lib/inkfish/sandbox/archive.ex:190`,
+`:206`): it makes the non-zero `tar` exit abort the whole script, before the
+copy-out.
 
 This only helps if the caller checks the result. `safe_extract/3` returns
 `:ok` or `{:error, reason}` rather than raising
@@ -127,8 +148,8 @@ both `create_upload/1` and `create_fake_upload/1` match on `Upload.unpack/1`
 no longer surface as `{:ok, upload}` with an empty `unpacked/` tree — exactly
 the silent-success mode this change exists to remove. The reason itself is
 deliberately carried into that changeset error (`lib/inkfish/uploads.ex:150-157`):
-`unpack_error/2` appends `format_reason/1`, which passes a binary `reason`
-through unchanged (server paths and all) and unwraps the tagged
+`unpack_error/2` appends `format_reason/1` (`:184`), which passes a binary
+`reason` through unchanged (server paths and all) and unwraps the tagged
 missing-`elixir` reason to its own sentence. The users are computer science
 students who can often understand and act on a technical error, so the real
 reason is the intended user-facing message — not a leak to be plugged by
@@ -159,19 +180,21 @@ The namespace itself needs the host to allow **unprivileged user namespaces**:
 never a hang: `unshare` prints `unshare: unshare failed: <reason>` on stderr and
 exits non-zero, and a failing `mount` prints its own diagnostic. `TempFs` folds
 stderr into the captured output and `exit_reason/2` returns it
-(`lib/inkfish/sandbox/temp_fs.ex:220-242`, `:256-261`), so the caller sees
+(`lib/inkfish/sandbox/temp_fs.ex:343-364`, `:379-384`), so the caller sees
 something like
 `{:error, "exited 1: unshare: unshare failed: Operation not permitted"}`. The
 call is also bounded by `:tempfs_timeout_ms`, and a timeout kills the process
-group (`lib/inkfish/sandbox/temp_fs.ex:244-254`, `:274-288`).
+group (`lib/inkfish/sandbox/temp_fs.ex:366-377`, `:397-409`).
 
 Note what util-linux does and does not say: for a bad `size=` value the kernel
 rejects the mount with `EINVAL`, and `mount(8)` prints one **generic** sentence
 for that errno — `wrong fs type, bad option, bad superblock on tmpfs, ...` —
 naming the mount point but neither the rejected option nor the errno. The old
 helper named all three (`mount(tmpfs, <path>, size=1X) failed: Invalid
-argument`), so this is a small loss of specificity in the mount-failure
-diagnostic; the exit status and the mount point are still reported.
+argument`), so a kernel refusal still says less than that; a size the kernel
+would refuse is therefore rejected by `TempFs` first, with a message that quotes
+it (`lib/inkfish/sandbox/temp_fs.ex:271-296`). The exit status and the mount
+point are reported either way.
 
 ## 6. Installation
 
@@ -218,19 +241,26 @@ per relative symlink** (each relative link costs one `readlink -f` fork,
 
 ## References
 
-- `lib/inkfish/sandbox/temp_fs.ex` — `:2-32` (moduledoc: the argv and why the
-  mount is private), `:34-36` (defaults), `:38-46` (name/size validation),
-  `:72-97` (`run_in_tempfs/4`), `:99-108` (`bin/0`), `:115-127` (argv),
-  `:141-157` (preamble: anchor tmpfs, mount point, sized mount, export),
-  `:175-209` (`run_bounded`), `:220-242`, `:256-261` (exit reason),
-  `:274-288` (process-group kill)
-- `priv/scripts/upload_git_clone.sh` — `:11-14` (re-exec under `unshare`),
-  `:16-32` (the two sized mounts), `:37-38` (mount sanity check), `:82-155`
-  (budget-aware checkout)
-- `lib/inkfish/sandbox/archive.ex` — `:26-28` (non-zero `tar` exit is fatal),
+- `lib/inkfish/sandbox/temp_fs.ex` — `:2-52` (moduledoc: the argv, one primitive
+  for both callers, why the mount is private), `:54-55` (defaults), `:59`
+  (the `TMPFS` mount name), `:66`/`:83` (name and size formats),
+  `:85-93` (missing-`unshare` log message), `:94-118` (`unshare_argv/3`),
+  `:120-150` (`run_in_tempfs/4`), `:152-165` (`run_in_one_tempfs/4`),
+  `:174-176` (`bin/0`), `:185-187` (`unshare_bin/0`), `:199-209` (binary
+  resolution, `:bin`), `:211-232` (argv), `:234-269` (preamble: anchor tmpfs,
+  one mount point + sized mount + export per mount, `exec "$@"`),
+  `:271-296` (name/size validation), `:298-332` (`run_bounded/4`), `:343-364`
+  and `:379-384` (exit reason), `:366-377` and `:397-409` (process-group kill)
+- `priv/scripts/upload_git_clone.sh` — `:15-16` (mount sanity check; the script
+  is otherwise plain, the mounts are made for it), `:60` (`MARGIN_KB`),
+  `:65-135` (budget-aware checkout), `:145-165` (tar + copy-out)
+- `lib/inkfish/sandbox/archive.ex` — `:105-110` (non-zero `tar` exit is fatal),
   `:112-127` (`safe_extract/3`), `:176-192` (`--no-same-owner`, untar script),
-  `:204-211` (`cp -r`, copy script), `:213-215` (sanitizer invocation),
-  `:244-249` (`extraction_error/1`)
+  `:200-211` (`cp -r`, copy script), `:213-215` (sanitizer invocation),
+  `:244-250` (`extraction_error/1`)
+- `lib/inkfish/uploads/git.ex` — `start_clone/1` (builds the two-mount argv and
+  hands it to `Inkfish.Ittys`)
+- `lib/inkfish/application.ex:81-91` — the boot check that `unshare` resolves
 - `priv/sandbox/sanitize_logic.exs` — `:29-43` (raw `base` vs expanded walk),
   `:45-78` (link checks; `readlink -f` at `:65`, base comparison at `:69`)
 - `priv/sandbox/sanitize.exs` — `:12` (requires the logic), `:14-30` (sentinel
@@ -240,5 +270,5 @@ per relative symlink** (each relative link costs one `readlink -f` fork,
 - `lib/inkfish/uploads/upload.ex:216` — `unpack/1`
 - `config/test.exs:15-23` — `:tempfs_timeout_ms`, `:extract_timeout_ms`
 - `.formatter.exs:5-10` — formatter `inputs`
-- `test/inkfish/sandbox/temp_fs_test.exs:16-24` — exported-path contract
+- `test/inkfish/sandbox/temp_fs_test.exs:8-25` — exported-path contract
 - `notes/nest-allow-suid.md` (superseded), `notes/no-suid-tmpfs.md` (work brief)

@@ -115,7 +115,7 @@ defmodule Inkfish.Sandbox.Archive do
 
     with {:ok, script} <- unpack(archive, target),
          {:ok, elixir} <- elixir_bin() do
-      case TempFs.run_in_tempfs(max_size, "bash", ["-c", script],
+      case TempFs.run_in_one_tempfs(max_size, "bash", ["-c", script],
              env: script_env(archive, target, elixir),
              timeout_ms: timeout_ms()
            ) do

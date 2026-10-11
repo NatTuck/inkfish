@@ -69,8 +69,20 @@ defmodule InkfishWeb.CloneChannel do
   defp error_text(reason), do: inspect(reason)
 
   def handle_in("clone", %{"url" => url}, socket) do
-    {:ok, uuid} = Git.start_clone(url)
+    # `Git.start_clone/1` fails only when the sandbox itself cannot be built --
+    # no `unshare`, or a mount size the sandbox will not accept -- which is a
+    # deployment problem rather than a problem with the URL. Report it instead
+    # of crashing the channel on a bad match.
+    case Git.start_clone(url) do
+      {:ok, uuid} ->
+        open_clone(socket, uuid)
 
+      {:error, reason} ->
+        {:reply, {:error, %{reason: error_text(reason)}}, socket}
+    end
+  end
+
+  defp open_clone(socket, uuid) do
     case Ittys.open(uuid) do
       {:ok, state} ->
         socket =

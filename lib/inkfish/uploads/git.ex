@@ -1,4 +1,5 @@
 defmodule Inkfish.Uploads.Git do
+  alias Inkfish.Sandbox.TempFs
   alias Inkfish.Uploads
   alias Inkfish.Uploads.Upload
 
@@ -97,7 +98,25 @@ defmodule Inkfish.Uploads.Git do
       STAGE_DIR: make_staging_dir()
     ]
 
-    {:ok, _uuid} = Inkfish.Ittys.run(script, env)
+    # The script is plain: it expects its two mounts to exist, and this is what
+    # makes them. `unshare_argv/3` is the same primitive the archive extraction
+    # uses, so the `unshare` invocation and the mount preamble have exactly one
+    # implementation. Ittys runs the argv itself, keeping its own supervision
+    # and streaming; its `execve(2)` is why `unshare_argv/3` resolves the
+    # binary to an absolute path.
+    with {:ok, argv} <- TempFs.unshare_argv(clone_mounts(), "bash", [script]) do
+      Inkfish.Ittys.run(argv, env)
+    end
+  end
+
+  # The two tmpfs mounts the clone script runs inside, and the sizes they are
+  # capped at. `unshare_argv/3` mounts them and exports their paths, which is
+  # what the script's opening `: "${CLONE_TMP:?}"`/`: "${PERSIST_TMP:?}"`
+  # assertions check for. The same sizes are handed to the script as
+  # `CLONE_SIZE`/`SUBMIT_SIZE` for its config echo; the mounts are what enforce
+  # them.
+  defp clone_mounts do
+    [{"CLONE_TMP", clone_size()}, {"PERSIST_TMP", submit_size()}]
   end
 
   # The staging directory the clone script copies its results out to. It keeps
