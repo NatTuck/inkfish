@@ -49,10 +49,20 @@ defmodule Inkfish.Sandbox.TempFs do
   There is no helper program and no setuid bit: `bin/0` is util-linux's
   `unshare(1)`, resolved through `PATH`. Nothing is compiled or installed for
   this, so there is no stale copy to prefer over the `PATH` one either.
+
+  Resolving the binary does not mean the namespace can be created -- a host can
+  have `unshare` installed and still refuse it -- so the boot check is
+  `check_userns/1`, which creates the namespace for real.
   """
 
   @default_timeout_ms 5_000
   @default_bin "unshare"
+
+  # The boot probe's own bound and command. The probe creates the namespaces
+  # and runs nothing, so it finishes in milliseconds; the bound is only there so
+  # a wedged `unshare` cannot hold up boot.
+  @default_probe_timeout_ms 5_000
+  @default_probe_cmd "true"
 
   # The mount `run_in_one_tempfs/4` makes, and the name the scripts it runs read
   # the mount path from.
@@ -194,6 +204,109 @@ defmodule Inkfish.Sandbox.TempFs do
   """
   def missing_unshare_log_message do
     @missing_unshare_log_message
+  end
+
+  @doc """
+  Check that this host can actually create an unprivileged user namespace.
+
+  Resolves `unshare` and runs `unshare -Urm -- true`: the `-U` (user namespace),
+  `-r` (map the caller onto uid 0 inside it) and `-m` (private mount namespace)
+  every real invocation needs, with nothing mounted and nothing run. The binary
+  being present is not enough -- a host can have `unshare` installed and still
+  refuse the namespace, which is exactly what
+  `kernel.apparmor_restrict_unprivileged_userns=1` (the Ubuntu 23.10+/24.04
+  default) and a container's `CLONE_NEWUSER`-blocking seccomp profile do -- so
+  this runs the mechanism instead of trusting `PATH`.
+
+  Returns `:ok`, or `{:error, message}` where `message` is the operator-facing
+  explanation `Inkfish.Application` logs once at boot: the missing-`unshare`
+  text (`missing_unshare_log_message/0`) when the binary cannot be resolved, or
+  `userns_probe_log_message/1` -- which carries the probe's own output, stderr
+  included -- when it resolves but the namespace cannot be created.
+
+  The call is bounded by `:userns_probe_timeout_ms` (default
+  `#{@default_probe_timeout_ms}`), so a probe that hangs cannot hold up boot.
+
+  ## Options
+
+    * `:probe` - the `{cmd, args}` the namespace runs instead of `true`
+    * `:bin` - override the `unshare` binary for this call
+    * `:timeout_ms` - override the configured timeout for this call
+
+  `:probe` and the timeout also come from the `:userns_probe` and
+  `:userns_probe_timeout_ms` config, so a deployment can change what the boot
+  check runs without a code change.
+  """
+  def check_userns(opts \\ []) do
+    case probe_bin(opts) do
+      {:ok, exe} ->
+        {cmd, args} = probe(opts)
+        argv = ["-Urm", "--", to_string(cmd) | Enum.map(args, &to_string/1)]
+
+        case run_bounded(exe, argv, [], probe_timeout_ms(opts)) do
+          {:ok, _output} -> :ok
+          {:error, reason} -> {:error, userns_probe_log_message(reason)}
+        end
+
+      {:error, _reason} ->
+        {:error, @missing_unshare_log_message}
+    end
+  end
+
+  @doc """
+  The operator-facing explanation of a probe that could not create a user
+  namespace, carrying the probe's own output in `reason`.
+
+  Log only: it spells out the consequence for the whole deployment and the host
+  knobs that decide it, which is what `Inkfish.Application` reports once at
+  boot.
+  """
+  def userns_probe_log_message(reason) do
+    "the tmpfs sandbox cannot create a user namespace (`unshare -Urm`), so " <>
+      "every archive upload, submission and git clone will fail. The probe " <>
+      "failed with: #{reason}. Check that this host allows unprivileged user " <>
+      "namespaces: `kernel.apparmor_restrict_unprivileged_userns` is 1 by " <>
+      "default on Ubuntu 23.10+/24.04, and denies the `unshare(2)` call " <>
+      "unless the process has an AppArmor profile that permits it -- set it " <>
+      "to 0, or install such a profile. On kernels that have " <>
+      "`kernel.unprivileged_userns_clone`, it must be 1. In a container, a " <>
+      "seccomp profile that blocks `CLONE_NEWUSER` denies it regardless of " <>
+      "those sysctls."
+  end
+
+  # The probe resolves the binary the way `unshare_bin/0` does -- that is the
+  # resolution the boot check reports on -- and honours `:bin` the way
+  # `unshare_argv/3` does.
+  defp probe_bin(opts) do
+    case Keyword.get(opts, :bin) do
+      nil -> unshare_bin()
+      helper -> resolve(helper)
+    end
+  end
+
+  # What the probe runs inside the namespace: the `:probe` option wins, then the
+  # config, then `true`. A bare command is taken as one with no arguments, so a
+  # config value written as `{"false", []}` and one written as `"false"` both
+  # work.
+  defp probe(opts) do
+    case Keyword.get(opts, :probe) ||
+           Application.get_env(
+             :inkfish,
+             :userns_probe,
+             {@default_probe_cmd, []}
+           ) do
+      {cmd, args} -> {cmd, List.wrap(args)}
+      cmd -> {cmd, []}
+    end
+  end
+
+  defp probe_timeout_ms(opts) do
+    Keyword.get(opts, :timeout_ms) ||
+      Application.get_env(
+        :inkfish,
+        :userns_probe_timeout_ms,
+        @default_probe_timeout_ms
+      )
   end
 
   # `:bin` names a specific `unshare` -- the tests use it to exercise the

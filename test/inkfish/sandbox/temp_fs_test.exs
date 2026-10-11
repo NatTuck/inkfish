@@ -3,6 +3,31 @@ defmodule Inkfish.Sandbox.TempFsTest do
 
   alias Inkfish.Sandbox.TempFs
 
+  # Run `fun` with the probe's command overridden in the application config --
+  # the seam `Inkfish.Application`'s boot check reads it from. The config is
+  # VM-global, so it is restored before `fun` returns and again in `on_exit` as
+  # a safety net.
+  defp with_probe(probe, fun) do
+    old = Application.get_env(:inkfish, :userns_probe)
+    Application.put_env(:inkfish, :userns_probe, probe)
+
+    restore = fn ->
+      if old do
+        Application.put_env(:inkfish, :userns_probe, old)
+      else
+        Application.delete_env(:inkfish, :userns_probe)
+      end
+    end
+
+    on_exit(restore)
+
+    try do
+      fun.()
+    after
+      restore.()
+    end
+  end
+
   describe "run_in_one_tempfs/4" do
     test "runs the command in the namespace with the mount path in the environment" do
       assert {:ok, out} =
@@ -297,6 +322,72 @@ defmodule Inkfish.Sandbox.TempFsTest do
       assert log =~ "unshare"
       assert log =~ "PATH"
       assert log =~ "misconfiguration"
+    end
+  end
+
+  describe "check_userns/1" do
+    # The boot check in `Inkfish.Application`. It has to fail on a host that
+    # cannot create the namespace, not just on one where `unshare` is missing:
+    # a probe that only resolves the binary passes on exactly the hosts where
+    # every upload and submission fails.
+    test "passes on a host that can create an unprivileged user namespace" do
+      assert :ok = TempFs.check_userns()
+    end
+
+    test "reports a failing probe, with the knobs to check and the probe's own output" do
+      assert {:error, msg} =
+               TempFs.check_userns(
+                 probe:
+                   {"bash",
+                    ["-c", "echo inkfish-userns-probe-boom >&2; exit 7"]}
+               )
+
+      # The consequence, for whoever runs the deployment.
+      assert msg =~ "cannot create a user namespace"
+      assert msg =~ "upload"
+      assert msg =~ "submission"
+
+      # The knobs, by name -- the Ubuntu 23.10+/24.04 one first, then the Debian
+      # one, then the container case.
+      assert msg =~ "kernel.apparmor_restrict_unprivileged_userns"
+      assert msg =~ "kernel.unprivileged_userns_clone"
+      assert msg =~ "CLONE_NEWUSER"
+
+      # The probe's own stderr and exit status are in the message: without them
+      # the real reason is lost, and the message is a guess.
+      assert msg =~ "inkfish-userns-probe-boom"
+      assert msg =~ "exited 7"
+    end
+
+    test "the config override drives the probe, so the failure direction is reachable" do
+      msg =
+        with_probe({"false", []}, fn ->
+          assert {:error, msg} = TempFs.check_userns()
+          msg
+        end)
+
+      assert msg =~ "cannot create a user namespace"
+      assert msg =~ "exited 1"
+    end
+
+    test "still explains a missing unshare binary, rather than blaming the namespace" do
+      assert {:error, msg} = TempFs.check_userns(bin: "inkfish-no-such-unshare")
+
+      assert msg =~ "no `unshare` executable was found on `PATH`"
+      assert msg =~ "misconfiguration"
+      refute msg =~ "cannot create a user namespace"
+    end
+
+    test "is bounded, so a probe that hangs cannot hang boot" do
+      {elapsed_us, result} =
+        :timer.tc(fn ->
+          TempFs.check_userns(probe: {"sleep", ["30"]}, timeout_ms: 200)
+        end)
+
+      assert {:error, msg} = result
+      assert msg =~ "timed out after 200ms"
+      assert msg =~ "cannot create a user namespace"
+      assert elapsed_us < 5_000_000
     end
   end
 

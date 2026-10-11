@@ -60,11 +60,19 @@ defmodule Inkfish.Application do
   # as a failed unpack or clone on the first upload; check them once here
   # instead and say plainly what is wrong and how to fix it.
   #
+  # Resolving `unshare` is not enough for the second one: a host can have the
+  # binary and still refuse the user namespace (Ubuntu 23.10+/24.04 restricts it
+  # to processes with an AppArmor profile permitting it, and a container's
+  # seccomp profile can block `CLONE_NEWUSER`), so the check runs
+  # `unshare -Urm -- true` and reports the failure the deployment would actually
+  # hit. A probe that only asked whether the binary exists would give an
+  # all-clear on exactly the hosts where every upload fails.
+  #
   # Deliberately does not halt the application: grades, attendance and the rest
   # of the app keep working without the sandbox, and a loud `:error` in the log
-  # is a better outcome than refusing to boot. Nothing is logged when the binary
-  # resolves. The longer, log-only explanations are used here because these
-  # lines are aimed at whoever runs the deployment.
+  # is a better outcome than refusing to boot. Nothing is logged when the
+  # mechanism works. The longer, log-only explanations are used here because
+  # these lines are aimed at whoever runs the deployment.
   defp check_sandbox_sanitizer do
     case Inkfish.Sandbox.Archive.elixir_bin() do
       {:ok, _path} ->
@@ -79,15 +87,12 @@ defmodule Inkfish.Application do
   end
 
   defp check_sandbox_unshare do
-    case Inkfish.Sandbox.TempFs.unshare_bin() do
-      {:ok, _path} ->
+    case Inkfish.Sandbox.TempFs.check_userns() do
+      :ok ->
         :ok
 
-      {:error, _reason} ->
-        Logger.error(
-          "inkfish sandbox unshare check failed: " <>
-            Inkfish.Sandbox.TempFs.missing_unshare_log_message()
-        )
+      {:error, message} ->
+        Logger.error("inkfish sandbox unshare check failed: " <> message)
     end
   end
 end
