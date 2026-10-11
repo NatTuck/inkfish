@@ -142,6 +142,13 @@ defmodule Inkfish.GradesTest do
   end
 
   describe "next_grade_for_review/2" do
+    # Mark a sub as the current active submission by giving it an
+    # `active_sub` record, matching how the app tracks active subs.
+    defp activate(sub) do
+      insert(:active_sub, reg: sub.reg, assignment: sub.assignment, sub: sub)
+      sub
+    end
+
     test "returns nil when the grade is alone" do
       stock = stock_course()
 
@@ -151,7 +158,8 @@ defmodule Inkfish.GradesTest do
     test "returns the other unconfirmed grade in the same column when its sub is unassigned" do
       stock = stock_course()
 
-      sub2 = insert(:sub, assignment: stock.assignment, grader: nil)
+      sub2 =
+        insert(:sub, assignment: stock.assignment, grader: nil) |> activate()
 
       grade2 =
         insert(:grade,
@@ -169,6 +177,7 @@ defmodule Inkfish.GradesTest do
 
       sub2 =
         insert(:sub, assignment: stock.assignment, grader: stock.staff_reg)
+        |> activate()
 
       grade2 =
         insert(:grade,
@@ -185,7 +194,9 @@ defmodule Inkfish.GradesTest do
       stock = stock_course()
       other_reg = insert(:reg, is_grader: true)
 
-      sub2 = insert(:sub, assignment: stock.assignment, grader: other_reg)
+      sub2 =
+        insert(:sub, assignment: stock.assignment, grader: other_reg)
+        |> activate()
 
       _grade2 =
         insert(:grade,
@@ -200,7 +211,8 @@ defmodule Inkfish.GradesTest do
     test "ignores a confirmed grade in the same column" do
       stock = stock_course()
 
-      sub2 = insert(:sub, assignment: stock.assignment, grader: nil)
+      sub2 =
+        insert(:sub, assignment: stock.assignment, grader: nil) |> activate()
 
       _grade2 =
         insert(:grade,
@@ -219,7 +231,8 @@ defmodule Inkfish.GradesTest do
       other_gcol =
         insert(:grade_column, kind: "feedback", assignment: stock.assignment)
 
-      sub2 = insert(:sub, assignment: stock.assignment, grader: nil)
+      sub2 =
+        insert(:sub, assignment: stock.assignment, grader: nil) |> activate()
 
       _grade2 =
         insert(:grade, grade_column: other_gcol, sub: sub2, confirmed: false)
@@ -230,7 +243,7 @@ defmodule Inkfish.GradesTest do
       other_gcol2 =
         insert(:grade_column, kind: "feedback", assignment: other_asgn)
 
-      sub3 = insert(:sub, assignment: other_asgn, grader: nil)
+      sub3 = insert(:sub, assignment: other_asgn, grader: nil) |> activate()
 
       _grade3 =
         insert(:grade, grade_column: other_gcol2, sub: sub3, confirmed: false)
@@ -248,6 +261,7 @@ defmodule Inkfish.GradesTest do
 
       sub2 =
         insert(:sub, assignment: stock.assignment, grader: stock.staff_reg)
+        |> activate()
 
       grade2 =
         insert(:grade,
@@ -267,7 +281,9 @@ defmodule Inkfish.GradesTest do
       non_grader = insert(:reg, is_grader: false)
       other_reg = insert(:reg, is_grader: true)
 
-      sub2 = insert(:sub, assignment: stock.assignment, grader: other_reg)
+      sub2 =
+        insert(:sub, assignment: stock.assignment, grader: other_reg)
+        |> activate()
 
       grade2 =
         insert(:grade,
@@ -284,7 +300,9 @@ defmodule Inkfish.GradesTest do
       stock = stock_course()
       other_reg = insert(:reg, is_grader: true)
 
-      sub2 = insert(:sub, assignment: stock.assignment, grader: other_reg)
+      sub2 =
+        insert(:sub, assignment: stock.assignment, grader: other_reg)
+        |> activate()
 
       grade2 =
         insert(:grade,
@@ -294,6 +312,50 @@ defmodule Inkfish.GradesTest do
         )
 
       assert Grades.next_grade_for_review(stock.grade, nil).id == grade2.id
+    end
+
+    test "ignores an unconfirmed grade whose sub is inactive" do
+      stock = stock_course()
+
+      # No `active_sub` record: this sub has been superseded.
+      sub2 = insert(:sub, assignment: stock.assignment, grader: nil)
+
+      _grade2 =
+        insert(:grade,
+          grade_column: stock.grade_column,
+          sub: sub2,
+          confirmed: false
+        )
+
+      assert Grades.next_grade_for_review(stock.grade, stock.staff_reg) == nil
+    end
+
+    test "skips an inactive candidate and returns the next active one" do
+      stock = stock_course()
+
+      # Lower grade id than the active candidate, so without the active
+      # filter this inactive sub's grade would be returned.
+      inactive_sub = insert(:sub, assignment: stock.assignment, grader: nil)
+
+      _inactive_grade =
+        insert(:grade,
+          grade_column: stock.grade_column,
+          sub: inactive_sub,
+          confirmed: false
+        )
+
+      active_sub =
+        insert(:sub, assignment: stock.assignment, grader: nil) |> activate()
+
+      active_grade =
+        insert(:grade,
+          grade_column: stock.grade_column,
+          sub: active_sub,
+          confirmed: false
+        )
+
+      assert Grades.next_grade_for_review(stock.grade, stock.staff_reg).id ==
+               active_grade.id
     end
   end
 
