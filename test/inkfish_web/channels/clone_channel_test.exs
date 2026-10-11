@@ -5,7 +5,7 @@ defmodule InkfishWeb.CloneChannelTest do
 
   setup do
     assert System.find_executable("git")
-    assert System.find_executable("tmptmpfs")
+    assert System.find_executable("unshare")
 
     base =
       Path.join(
@@ -44,6 +44,21 @@ defmodule InkfishWeb.CloneChannelTest do
 
     _ref = push(socket, "clone", %{"url" => "file://#{bare}"})
     assert_push "done", %{status: "normal"}, 30_000
+  end
+
+  test "a failed clone reports git's own message, not incomplete_results", %{
+    socket: socket,
+    base: base
+  } do
+    missing = Path.join(base, "does_not_exist.git")
+
+    _ref = push(socket, "clone", %{"url" => "file://#{missing}"})
+
+    assert_push "done", %{status: "error", error: error}, 30_000
+
+    refute error == "incomplete_results"
+    assert error =~ "fatal:"
+    assert error =~ "exit status: 128"
   end
 
   test "broadcasts are pushed to the client", %{socket: socket} do

@@ -3,8 +3,11 @@ defmodule Inkfish.Uploads do
   The Uploads context.
   """
 
+  require Logger
+
   import Ecto.Query, warn: false
   alias Inkfish.Repo
+  alias Inkfish.Sandbox.Archive
 
   alias Inkfish.Uploads.Upload
   alias Inkfish.Uploads.Cleanup
@@ -62,9 +65,24 @@ defmodule Inkfish.Uploads do
     case Repo.insert(cset) do
       {:ok, upload} ->
         Upload.save_upload_file!(cset, upload)
-        Upload.unpack(upload)
-        clean_uploads()
-        {:ok, Upload.fetch_size(upload)}
+
+        # The unpack must not be discarded: extracting past the tmpfs size cap
+        # leaves a silently truncated tree behind, so a failure here has to
+        # reach the caller instead of being reported as a success. The reason
+        # rides on the changeset so callers keep the `{:error, changeset}`
+        # shape they already handle for validation failures.
+        #
+        # NOTE: the row is already inserted at this point, so a failed unpack
+        # leaves an orphaned upload row behind. That is pre-existing structure
+        # on this path and is deliberately left alone.
+        case Upload.unpack(upload) do
+          :ok ->
+            clean_uploads()
+            {:ok, Upload.fetch_size(upload)}
+
+          {:error, reason} ->
+            {:error, unpack_error(cset, reason)}
+        end
 
       error ->
         error
@@ -97,11 +115,79 @@ defmodule Inkfish.Uploads do
     case Repo.insert(cset) do
       {:ok, upload} ->
         Upload.save_upload_file!(cset, upload, :fake)
-        Upload.unpack(upload)
-        {:ok, upload}
+
+        case Upload.unpack(upload) do
+          :ok ->
+            {:ok, upload}
+
+          {:error, reason} ->
+            {:error, unpack_error(cset, reason)}
+        end
 
       error ->
         error
+    end
+  end
+
+  # A failed unpack is not a field-validation error produced by
+  # `Upload.changeset/2`, but the changeset is what every caller of
+  # `create_upload/1` already knows how to carry, and `:upload` is the virtual
+  # field the changeset already reports upload errors against.
+  # `Subs.create_sub_with_upload/2` rolls its transaction back on any
+  # `{:error, _}` it gets.
+  #
+  # `reason` carries the raw mount/tar output, and it goes into the
+  # user-facing text unchanged on purpose. Inkfish's users are computer science
+  # students, so there is a good chance they understand a technical error and
+  # can act on it: the specific reason is the only information they could have
+  # used, and "could not unpack archive" on its own removes it. That is the
+  # whole point of an error message, so this is a design choice, not a
+  # concession.
+  #
+  # The output can therefore contain server paths. That is an accepted
+  # consequence of showing the real error, not a defect -- do not "fix" it by
+  # replacing the reason with something generic.
+  defp unpack_error(cset, reason) do
+    log_unpack_error(reason)
+
+    Ecto.Changeset.add_error(
+      cset,
+      :upload,
+      "could not unpack archive: " <> format_reason(reason)
+    )
+  end
+
+  # A missing `elixir` binary is a deployment misconfiguration, not a bad
+  # upload, so it is logged at `:error` with the operator-facing explanation
+  # instead of being buried in the routine unpack-failure warning.
+  #
+  # The user does not get a generic failure here either: they get the tagged
+  # reason's own sentence -- which names `elixir`, `:elixir_bin` and `PATH` --
+  # unwrapped by `format_reason/1`. Only the log line adds the deployment-wide
+  # consequence, because that is aimed at whoever runs the deployment.
+  defp log_unpack_error(reason) do
+    if Archive.missing_elixir?(reason) do
+      Logger.error(
+        "upload unpack failed: " <> Archive.missing_elixir_log_message()
+      )
+    else
+      Logger.warning("upload unpack failed: #{format_reason(reason)}")
+    end
+  end
+
+  # `reason` is usually the mount/tar output as a binary, and that binary is
+  # passed through verbatim -- not trimmed, summarised or replaced. The
+  # missing-`elixir` case is tagged as `{:elixir_bin_missing, message}`, so it
+  # is unwrapped to the sentence the user should see rather than the tuple it
+  # travels in. Any other term is `inspect`ed, so nothing is hidden there
+  # either.
+  defp format_reason(reason) when is_binary(reason), do: reason
+
+  defp format_reason(reason) do
+    if Archive.missing_elixir?(reason) do
+      Archive.missing_elixir_message()
+    else
+      inspect(reason)
     end
   end
 

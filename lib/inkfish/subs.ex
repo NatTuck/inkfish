@@ -257,7 +257,10 @@ defmodule Inkfish.Subs do
     upload_attrs = Map.put(upload_attrs, "kind", "sub")
 
     Repo.transact(fn ->
-      with {:ok, upload} = Uploads.create_upload(upload_attrs) do
+      # `<-` rather than `=`: a failed unpack (or any other upload failure)
+      # must reach the transaction as `{:error, changeset}` so it is rolled
+      # back and reported, instead of blowing up as a MatchError.
+      with {:ok, upload} <- Uploads.create_upload(upload_attrs) do
         sub_attrs
         |> Map.put("upload_id", upload.id)
         |> create_sub()

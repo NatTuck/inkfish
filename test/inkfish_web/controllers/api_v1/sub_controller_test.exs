@@ -274,6 +274,47 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
       assert json_response(conn, 422)["errors"] != %{}
     end
 
+    test "rejects an upload whose archive does not fit the extraction cap", %{
+      conn: conn,
+      assignment: assignment
+    } do
+      # `test/scripts/data/twenty.tar.gz` unpacks to a single 20,971,520 byte
+      # file, twice the 10M cap that `Upload.unpack/1` extracts under. tar
+      # stops with ENOSPC part way through and leaves a truncated tree inside
+      # the tmpfs, so the submission has to be refused rather than recorded as
+      # a success.
+      archive = Path.expand("../../../scripts/data/twenty.tar.gz", __DIR__)
+      assert File.exists?(archive)
+
+      upload = %Plug.Upload{
+        path: archive,
+        filename: "twenty.tar.gz",
+        content_type: "application/gzip"
+      }
+
+      create_params =
+        Map.merge(@create_attrs, %{
+          "assignment_id" => Integer.to_string(assignment.id),
+          "upload" => upload
+        })
+
+      conn = post(conn, ~p"/api/v1/subs", %{sub: create_params})
+
+      assert [message] = json_response(conn, 422)["errors"]["upload"]
+      assert message =~ "could not unpack archive"
+
+      # The prefix alone would also be produced by a generic message, so pin
+      # down the real cause as well: the user has to be told that `tar` died
+      # with a short write on the oversized member, not just that the unpack
+      # failed. "exited 2" is `tar`'s own exit status, "twenty/megs.dat" is the
+      # member it could not finish writing and "Wrote only" is its short-write
+      # diagnostic -- none of them can appear unless the failing output is
+      # actually carried through to the response.
+      assert message =~ "exited 2"
+      assert message =~ "twenty/megs.dat"
+      assert message =~ "Wrote only"
+    end
+
     @tag :tmp_dir
     test "renders 400 if assignment_id is not found", %{
       conn: conn,

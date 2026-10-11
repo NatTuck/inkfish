@@ -1,0 +1,32 @@
+<h1>New Upload</h1>
+
+<%!-- Rendered when a browser-format POST to /uploads fails validation (or
+      fails to unpack). The error text is shown in full, including the reason a
+      git clone or archive unpack failed, because that is the only information
+      the user could act on. --%>
+<.form :let={f} for={@changeset} action={~p"/uploads"} multipart>
+  <%= if @changeset.action do %>
+    <div class="alert alert-danger">
+      <p>Oops, something went wrong! Please check the errors below.</p>
+    </div>
+  <% end %>
+
+  <%!-- The kind normally rides in the signed upload token; carry the value the
+        failed request resolved so a resubmit from this page keeps it. --%>
+  <.hidden_input field={f[:kind]} />
+
+  <div class="mb-3">
+    <.label for={f[:upload].id} class="form-label">File</.label>
+    <input
+      type="file"
+      name={f[:upload].name}
+      id={f[:upload].id}
+      class="form-control"
+    />
+    <.error_tag form={f} field={:upload} />
+  </div>
+
+  <div class="mb-3">
+    <.button kind={:primary}>Upload</.button>
+  </div>
+</.form>

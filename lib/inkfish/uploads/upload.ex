@@ -106,20 +106,48 @@ defmodule Inkfish.Uploads.Upload do
     end
   end
 
+  # 10 MiB. Reported to the user in the error below rather than hidden, so an
+  # upload that is rejected says both the limit and the size that broke it.
+  @max_upload_bytes 10_485_760
+
   def validate_file_size(%Ecto.Changeset{} = cset) do
     upload = get_field(cset, :upload)
 
     if upload do
       size = file_size(upload.path)
 
-      if size > 10_485_760 do
-        add_error(cset, :upload, "uploaded file is too big")
+      if size > @max_upload_bytes do
+        add_error(
+          cset,
+          :upload,
+          "uploaded file is too big: #{format_mib(size)} exceeds the " <>
+            "#{format_mib(@max_upload_bytes)} limit"
+        )
       else
         put_change(cset, :size, size)
       end
     else
       cset
     end
+  end
+
+  # One decimal place, with a trailing `.0` dropped so the 10 MiB limit reads
+  # as "10 MiB" rather than "10.0 MiB".
+  defp format_mib(bytes) do
+    text =
+      bytes
+      |> Kernel./(1_048_576)
+      |> Float.round(1)
+      |> to_string()
+
+    text =
+      if String.ends_with?(text, ".0") do
+        String.trim_trailing(text, ".0")
+      else
+        text
+      end
+
+    text <> " MiB"
   end
 
   def save_upload_file!(cset, %{kind: "user_photo"} = upload) do

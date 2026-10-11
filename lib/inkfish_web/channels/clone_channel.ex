@@ -59,12 +59,30 @@ defmodule InkfishWeb.CloneChannel do
 
   defp push_error(socket, reason) do
     IO.inspect({:clone_error, reason})
-    push(socket, "done", %{status: "error", error: to_string(reason)})
+    push(socket, "done", %{status: "error", error: error_text(reason)})
   end
 
-  def handle_in("clone", %{"url" => url}, socket) do
-    {:ok, uuid} = Git.start_clone(url)
+  # The reason is a message string from `Git` (a binary). `to_string/1` raised
+  # on any other term, which would turn a failure report into a channel crash,
+  # so anything non-binary is inspected instead of losing the real detail.
+  defp error_text(reason) when is_binary(reason), do: reason
+  defp error_text(reason), do: inspect(reason)
 
+  def handle_in("clone", %{"url" => url}, socket) do
+    # `Git.start_clone/1` fails only when the sandbox itself cannot be built --
+    # no `unshare`, or a mount size the sandbox will not accept -- which is a
+    # deployment problem rather than a problem with the URL. Report it instead
+    # of crashing the channel on a bad match.
+    case Git.start_clone(url) do
+      {:ok, uuid} ->
+        open_clone(socket, uuid)
+
+      {:error, reason} ->
+        {:reply, {:error, %{reason: error_text(reason)}}, socket}
+    end
+  end
+
+  defp open_clone(socket, uuid) do
     case Ittys.open(uuid) do
       {:ok, state} ->
         socket =

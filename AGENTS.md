@@ -12,6 +12,10 @@ Don't create a ./package.json or a ./node_modules directory, and if either (or
 some similar JS stuff) is there for some reason stop and let the user know so
 can fix it. All JS / Browser stuff should be under the ./assets directory.
 - We don't want easily fixable warnings. If you see them, fix them.
+- We don't hide error messages or potentially useful technical details from
+users unless there's some clear reason to hide them. And especially for logged-in
+users a generic "security" thought is never sufficient, we need a concrete and
+applicable security reason to hide anything.
 
 ## Project guidelines
 

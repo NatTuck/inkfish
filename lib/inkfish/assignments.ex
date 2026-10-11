@@ -289,7 +289,17 @@ defmodule Inkfish.Assignments do
   containing a single text file for grading.
   """
   def create_fake_subs!(as, owner) do
-    {:ok, upload} = Inkfish.Uploads.create_fake_upload(owner)
+    upload =
+      case Inkfish.Uploads.create_fake_upload(owner) do
+        {:ok, upload} ->
+          upload
+
+        {:error, reason} ->
+          # `create_fake_upload/1` can now fail (a failed unpack), so do not
+          # match blindly on `{:ok, _}`: that would raise an opaque MatchError.
+          raise "could not create fake upload: #{inspect(reason)}"
+      end
+
     teams = Inkfish.Teams.list_teams(as.teamset_id)
 
     Enum.each(teams, fn team ->

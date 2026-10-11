@@ -83,9 +83,34 @@ jobs:
         MIX_ENV=test mix phx.copy katex
         MIX_ENV=test mix esbuild default
         MIX_ENV=test mix sass default
-    - name: Install tmptmpfs
-      run: (cd support/tmptmpfs && cargo build && sudo ./install.sh)
     - name: Setup
       run: MIX_ENV=test mix ecto.setup
+    - name: Allow unprivileged user namespaces
+      run: |
+        # The tmpfs sandbox creates an unprivileged user namespace with
+        # `unshare -Urm`. ubuntu-latest is 24.04, where
+        # kernel.apparmor_restrict_unprivileged_userns=1 restricts that to
+        # processes with an AppArmor profile that permits it: `unshare -U` gets
+        # EPERM and every tmpfs-dependent test fails. This is a VM, so the
+        # fix is the sysctl, not a container seccomp profile.
+        echo "before: apparmor_restrict_unprivileged_userns=$(sysctl -n kernel.apparmor_restrict_unprivileged_userns 2>/dev/null || echo absent)"
+
+        sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+
+        # Older kernels have this knob instead of the AppArmor one. It is absent
+        # on 24.04, so its absence is not a failure -- but the check below is.
+        sudo sysctl -w kernel.unprivileged_userns_clone=1 || true
+
+        echo "after:  apparmor_restrict_unprivileged_userns=$(sysctl -n kernel.apparmor_restrict_unprivileged_userns 2>/dev/null || echo absent)"
+
+        # Verify the mechanism actually works instead of trusting the sysctls: a
+        # step that passes while leaving the sandbox broken is worse than a red
+        # build. No `|| true`, and no falling back to skipping tests.
+        if ! unshare -Urm -- true; then
+          echo "::error::unprivileged user namespaces are still unavailable: 'unshare -Urm -- true' failed on this runner. Every tmpfs-dependent test (archive extraction, git clone) will fail."
+          exit 1
+        fi
+
+        echo "unshare -Urm -- true: ok"
     - name: Run tests
       run: mix test

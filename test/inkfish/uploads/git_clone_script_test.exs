@@ -3,12 +3,14 @@ defmodule Inkfish.Uploads.GitCloneScriptTest do
 
   import Inkfish.GitFixtures
 
+  alias Inkfish.Sandbox.TempFs
+
   @script Path.join(:code.priv_dir(:inkfish), "scripts/upload_git_clone.sh")
 
   setup do
     assert System.find_executable("bash")
     assert System.find_executable("git")
-    assert System.find_executable("tmptmpfs")
+    assert System.find_executable("unshare")
 
     base =
       Path.join(
@@ -64,8 +66,44 @@ defmodule Inkfish.Uploads.GitCloneScriptTest do
     assert out =~ "transport 'file' not allowed"
   end
 
+  test "refuses to run outside the sandbox, and says so" do
+    # Production always runs this script through `Inkfish.Sandbox.TempFs`, whose
+    # preamble is what creates CLONE_TMP/PERSIST_TMP. Run bare -- as this test
+    # does, with no mounts -- the two assertions at the top of the script fire,
+    # so the script says it was run without the sandbox rather than failing
+    # later with a confusing EROFS. (`REPO` is a path that does not exist, so a
+    # version of the script that got past the assertions still could not clone
+    # anything.)
+    {out, code} =
+      System.cmd("bash", [@script],
+        env: [
+          {"REPO", "file:///inkfish-no-such-repo.git"},
+          {"CLONE_SIZE", "100m"},
+          {"SUBMIT_SIZE", "5m"},
+          {"GIT_ALLOW_PROTOCOL", "https:http:git:file"},
+          {"COOKIE", "testcookie"}
+        ],
+        stderr_to_stdout: true
+      )
+
+    refute code == 0
+    assert out =~ "CLONE_TMP is not set"
+    assert out =~ "must run inside the tempfs sandbox"
+  end
+
   defp run_script(repo, protocols) do
-    System.cmd("bash", [@script],
+    # Run the script exactly the way production does: `Git.start_clone/1` builds
+    # this same argv -- the same two mounts at the same sizes, through the same
+    # `Inkfish.Sandbox.TempFs` primitive -- and hands it to Ittys. Only the
+    # runner differs here, because a test wants the output and exit status back.
+    {:ok, [unshare | args]} =
+      TempFs.unshare_argv(
+        [{"CLONE_TMP", "100m"}, {"PERSIST_TMP", "5m"}],
+        "bash",
+        [@script]
+      )
+
+    System.cmd(unshare, args,
       env: [
         {"REPO", repo},
         {"CLONE_SIZE", "100m"},
