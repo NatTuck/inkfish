@@ -495,8 +495,8 @@ defmodule Inkfish.Grades do
   @doc """
   The next grade in the same review queue as `grade` that still needs review:
   same grade column, not yet confirmed, excluding `grade` itself, and limited
-  to subs that are unassigned or assigned to `reg`. Returns `nil` when there
-  is none.
+  to *active* subs (those with an `active_sub` record) that are unassigned or
+  assigned to `reg`. Returns `nil` when there is none.
 
   A reg whose `is_grader` flag is false intentionally sees *all* unconfirmed
   grades in the column, regardless of `sub.grader_id`, so non-graders
@@ -514,6 +514,9 @@ defmodule Inkfish.Grades do
 
     from(g in Grade,
       join: sub in assoc(g, :sub),
+      # Only current/active submissions are in the review queue; superseded
+      # submissions are skipped.
+      join: active_sub in assoc(sub, :active_sub),
       where: g.grade_column_id == ^grade.grade_column_id,
       where: g.confirmed == false,
       where: g.id != ^grade.id,

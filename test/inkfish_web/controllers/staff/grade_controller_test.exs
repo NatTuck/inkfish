@@ -335,12 +335,19 @@ defmodule InkfishWeb.Staff.GradeControllerTest do
   end
 
   describe "confirm and show next" do
+    # Mark a sub as the current active submission by giving it an
+    # `active_sub` record, matching how the app tracks active subs.
+    defp activate(sub) do
+      insert(:active_sub, reg: sub.reg, assignment: sub.assignment, sub: sub)
+      sub
+    end
+
     test "shows the next button when another unconfirmed grade is ready", %{
       conn: conn,
       grade: grade
     } do
       asgn = grade.grade_column.assignment
-      sub2 = insert(:sub, assignment: asgn, grader: nil)
+      sub2 = insert(:sub, assignment: asgn, grader: nil) |> activate()
 
       _grade2 =
         insert(:grade,
@@ -372,7 +379,7 @@ defmodule InkfishWeb.Staff.GradeControllerTest do
       grade: grade
     } do
       asgn = grade.grade_column.assignment
-      sub2 = insert(:sub, assignment: asgn, grader: nil)
+      sub2 = insert(:sub, assignment: asgn, grader: nil) |> activate()
 
       _grade2 =
         insert(:grade,
@@ -394,7 +401,7 @@ defmodule InkfishWeb.Staff.GradeControllerTest do
          %{conn: conn, grade: grade} do
       asgn = grade.grade_column.assignment
       other_reg = insert(:reg, is_grader: true)
-      sub2 = insert(:sub, assignment: asgn, grader: other_reg)
+      sub2 = insert(:sub, assignment: asgn, grader: other_reg) |> activate()
 
       _grade2 =
         insert(:grade,
@@ -415,7 +422,7 @@ defmodule InkfishWeb.Staff.GradeControllerTest do
       grade: grade
     } do
       asgn = grade.grade_column.assignment
-      sub2 = insert(:sub, assignment: asgn, grader: nil)
+      sub2 = insert(:sub, assignment: asgn, grader: nil) |> activate()
 
       grade2 =
         insert(:grade,
@@ -445,6 +452,7 @@ defmodule InkfishWeb.Staff.GradeControllerTest do
          %{conn: conn, grade: grade} do
       sub2 =
         insert(:sub, assignment: grade.grade_column.assignment, grader: nil)
+        |> activate()
 
       _grade2 =
         insert(:grade,
