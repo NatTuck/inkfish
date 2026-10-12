@@ -5,11 +5,17 @@ defmodule Inkfish.Sandbox.ArchiveTest do
 
   alias Inkfish.Sandbox.Archive
   alias Inkfish.Sandbox.TempFs
+  alias Inkfish.Uploads.Upload
 
   setup do
+    # Under the upload base, not the temp dir. `safe_extract/3` extracts into a
+    # staging directory under the upload base and then *renames* it into place,
+    # so the target has to be on the same filesystem -- which is what the real
+    # caller guarantees, since `Upload.unpacked_path/1` is under the upload base
+    # too. A target anywhere else is not a configuration this code supports.
     base =
       Path.join(
-        System.tmp_dir!(),
+        Upload.upload_base(),
         "archive_test_#{System.unique_integer([:positive])}"
       )
 
@@ -30,81 +36,34 @@ defmodule Inkfish.Sandbox.ArchiveTest do
     Path.expand("../../scripts/data/twenty.tar.gz", __DIR__)
   end
 
-  # Run `fun` with the four steps of `Archive.elixir_bin/0`'s resolution chain
-  # (the `:elixir_bin` config, `INKFISH_ELIXIR_BIN`, `PATH`, and the mise shim
-  # under `$HOME`) all moved, then restore every one of them. All four are
-  # VM-global, so they are restored before `fun` returns -- and again in
-  # `on_exit` as a safety net -- to leave the rest of the suite untouched.
-  #
-  # A step is starved by passing `nil`, which means "unset": no config entry, no
-  # environment variable, no shim. `path:` is the whole `PATH`, so a test that
-  # wants `PATH` starved passes a directory with nothing in it.
-  defp with_elixir_env(env, fun) do
-    saved = %{
-      path: System.get_env("PATH"),
-      home: System.get_env("HOME"),
-      env_bin: System.get_env("INKFISH_ELIXIR_BIN"),
-      config: Application.get_env(:inkfish, :elixir_bin)
-    }
+  # Every staged copy of `marker` still under the staging root. A success moves
+  # the staged tree into place, so the marker must not be under it any more;
+  # only a tree that never made it to its target is still there.
+  defp staged_markers(marker) do
+    Path.wildcard(Path.join(Archive.staging_root(), "*/#{marker}"))
+  end
 
-    restore = fn ->
-      put_env_or_delete("PATH", saved.path)
-      put_env_or_delete("HOME", saved.home)
-      put_env_or_delete("INKFISH_ELIXIR_BIN", saved.env_bin)
-
-      case saved.config do
-        nil -> Application.delete_env(:inkfish, :elixir_bin)
-        value -> Application.put_env(:inkfish, :elixir_bin, value)
-      end
+  # A failure leaves the staging directory behind on purpose (see
+  # `move_into_place/2`), so a test that provokes one has to remove it itself --
+  # on exit, so a failed assertion does not leave the tree there either.
+  defp cleanup_staged(marker) do
+    for staged_marker <- staged_markers(marker) do
+      File.rm_rf!(Path.dirname(staged_marker))
     end
+  end
 
-    on_exit(restore)
+  # Poll `paths` as fast as the scheduler allows until told to stop, then answer
+  # whether any of them was ever there. `File.lstat/1`, not `File.exists?/1`:
+  # these are symlinks that point outside the tree, so a dangling one is
+  # exactly the thing that must never appear at the final path.
+  defp watch(paths, seen?) do
+    seen? = seen? or Enum.any?(paths, &match?({:ok, _}, File.lstat(&1)))
 
-    put_env_or_delete("PATH", Keyword.get(env, :path))
-    put_env_or_delete("HOME", Keyword.get(env, :home))
-    put_env_or_delete("INKFISH_ELIXIR_BIN", Keyword.get(env, :env_bin))
-
-    case Keyword.get(env, :config) do
-      nil -> Application.delete_env(:inkfish, :elixir_bin)
-      value -> Application.put_env(:inkfish, :elixir_bin, value)
-    end
-
-    try do
-      fun.()
+    receive do
+      {:stop, from} -> send(from, {:seen, seen?})
     after
-      restore.()
+      0 -> watch(paths, seen?)
     end
-  end
-
-  defp put_env_or_delete(name, nil), do: System.delete_env(name)
-  defp put_env_or_delete(name, value), do: System.put_env(name, value)
-
-  # An executable file at `root/rel`, returned as an absolute path.
-  defp touch(root, rel) do
-    path = Path.join(root, rel)
-    File.mkdir_p!(Path.dirname(path))
-    File.write!(path, "#!/bin/sh\nexit 0\n")
-    File.chmod!(path, 0o755)
-    path
-  end
-
-  # Run `fun` with no `elixir` resolvable by any of the four steps: no
-  # `:elixir_bin` config, no `INKFISH_ELIXIR_BIN`, a `PATH` pointing at an
-  # existing but empty directory, and a `HOME` with no mise shims under it.
-  # `HOME` has to be moved as well: this machine really has
-  # `~/.local/share/mise/shims/elixir`, so leaving `HOME` alone would make the
-  # missing-`elixir` tests pass for the wrong reason.
-  defp without_elixir(base, fun) do
-    empty_bin = Path.join(base, "empty-bin")
-    File.mkdir_p!(empty_bin)
-
-    empty_home = Path.join(base, "empty-home")
-    File.mkdir_p!(empty_home)
-
-    with_elixir_env(
-      [path: empty_bin, home: empty_home, env_bin: nil, config: nil],
-      fun
-    )
   end
 
   test "safe_extract does not write through an escaping symlink", %{base: base} do
@@ -190,6 +149,87 @@ defmodule Inkfish.Sandbox.ArchiveTest do
 
     refute log =~ "removing"
     assert File.read!(Path.join(target, ".gitignore")) == "*.beam\n"
+  end
+
+  # The upload id is handed to the user, so the final path must never hold an
+  # escaping symlink -- not even for the instant between the unpack and the
+  # sanitize. That is why the tree is extracted to a staging directory and the
+  # sanitized staging tree is then *renamed* into place. This watches the final
+  # path for the whole call, and asserts that the link is never there and that
+  # the staged copy is gone once the call returns.
+  test "the final path never holds an escaping symlink", %{base: base} do
+    stage = Path.join(base, "stage")
+    target = Path.join(base, "target")
+    marker = "ordering-#{System.unique_integer([:positive])}"
+    File.mkdir_p!(stage)
+    File.mkdir_p!(target)
+
+    File.write!(Path.join(stage, marker), "hi")
+    File.ln_s!("/etc/passwd", Path.join(stage, "leak"))
+    File.ln_s!("../outside/secret", Path.join(stage, "escape"))
+
+    archive =
+      tar!(Path.join(base, "ordering.tar.gz"), stage, [
+        "escape",
+        "leak",
+        marker
+      ])
+
+    watched = [Path.join(target, "leak"), Path.join(target, "escape")]
+    watcher = spawn_link(fn -> watch(watched, false) end)
+
+    assert :ok = Archive.safe_extract(archive, target, "10M")
+
+    send(watcher, {:stop, self()})
+    assert_receive {:seen, seen?}, 5_000
+
+    refute seen?,
+           "an escaping symlink was at the final path before it was sanitized"
+
+    # The final path is the sanitized tree ...
+    assert {:error, :enoent} = File.lstat(Path.join(target, "leak"))
+    assert {:error, :enoent} = File.lstat(Path.join(target, "escape"))
+    assert File.read!(Path.join(target, marker)) == "hi"
+
+    # ... and the staged copy it came from is gone, not left beside it.
+    assert staged_markers(marker) == []
+  end
+
+  # The ordering is not an accident of timing: the staged tree is sanitized
+  # *before* anything is moved. This makes the move fail on purpose -- the
+  # target's parent is a regular file, so it cannot be created -- and then
+  # inspects what the failure left behind: the staged tree, already sanitized.
+  # That staging directory is also exactly what a failure is supposed to leave
+  # behind; nothing deletes it.
+  test "the staged tree is sanitized before the move", %{base: base} do
+    stage = Path.join(base, "stage")
+    marker = "staged-#{System.unique_integer([:positive])}"
+    File.mkdir_p!(stage)
+
+    File.write!(Path.join(stage, marker), "hi")
+    File.ln_s!("/etc/passwd", Path.join(stage, "leak"))
+    archive = tar!(Path.join(base, "staged.tar.gz"), stage, ["leak", marker])
+
+    File.write!(Path.join(base, "not-a-dir"), "")
+    target = Path.join(base, "not-a-dir/target")
+
+    log =
+      capture_log(fn ->
+        assert {:error, message} = Archive.safe_extract(archive, target, "10M")
+        assert message =~ "could not prepare"
+      end)
+
+    # The escaping symlink was removed before the move was attempted ...
+    assert log =~ "removing absolute link"
+    refute File.exists?(target)
+
+    # ... and the staged tree is still there, with the symlink gone from it.
+    assert [staged_marker] = staged_markers(marker)
+    staged = Path.dirname(staged_marker)
+    on_exit(fn -> File.rm_rf!(staged) end)
+
+    assert File.read!(staged_marker) == "hi"
+    assert {:error, :enoent} = File.lstat(Path.join(staged, "leak"))
   end
 
   describe "sanitize_link!/2" do
@@ -283,185 +323,6 @@ defmodule Inkfish.Sandbox.ArchiveTest do
     end
   end
 
-  # `elixir_bin/0` walks four steps, and a suite that only ever exercised one of
-  # them would not notice the others going away. Each test below pins one step
-  # in place and starves the rest, so it fails both when that step stops being
-  # consulted and when a step that should have lost starts winning.
-  describe "the elixir resolution chain" do
-    test "the :elixir_bin config wins over every other step", %{base: base} do
-      config_bin = touch(base, "config/elixir")
-      env_bin = touch(base, "env/elixir")
-      path_bin = touch(base, "path/elixir")
-      home = Path.join(base, "home")
-      touch(home, ".local/share/mise/shims/elixir")
-
-      result =
-        with_elixir_env(
-          [
-            config: config_bin,
-            env_bin: env_bin,
-            path: Path.dirname(path_bin),
-            home: home
-          ],
-          fn -> Archive.elixir_bin() end
-        )
-
-      assert {:ok, ^config_bin} = result
-    end
-
-    test "INKFISH_ELIXIR_BIN wins when the config is unset", %{base: base} do
-      env_bin = touch(base, "env/elixir")
-      path_bin = touch(base, "path/elixir")
-      home = Path.join(base, "home")
-      touch(home, ".local/share/mise/shims/elixir")
-
-      result =
-        with_elixir_env(
-          [
-            config: nil,
-            env_bin: env_bin,
-            path: Path.dirname(path_bin),
-            home: home
-          ],
-          fn -> Archive.elixir_bin() end
-        )
-
-      assert {:ok, ^env_bin} = result
-    end
-
-    test "elixir on PATH wins when the config and the environment are unset", %{
-      base: base
-    } do
-      path_bin = touch(base, "path/elixir")
-      home = Path.join(base, "home")
-      touch(home, ".local/share/mise/shims/elixir")
-
-      result =
-        with_elixir_env(
-          [config: nil, env_bin: nil, path: Path.dirname(path_bin), home: home],
-          fn -> Archive.elixir_bin() end
-        )
-
-      assert {:ok, ^path_bin} = result
-    end
-
-    test "the mise shim is used when nothing else resolves", %{base: base} do
-      # This is the case the step exists for: a release started by systemd has
-      # neither a login shell's PATH nor `mise activate`'s environment, so the
-      # shim has to be found from `$HOME` alone.
-      empty_bin = Path.join(base, "empty-bin")
-      File.mkdir_p!(empty_bin)
-      home = Path.join(base, "home")
-      shim = touch(home, ".local/share/mise/shims/elixir")
-
-      result =
-        with_elixir_env(
-          [config: nil, env_bin: nil, path: empty_bin, home: home],
-          fn -> Archive.elixir_bin() end
-        )
-
-      assert {:ok, ^shim} = result
-    end
-
-    test "an empty config or environment value counts as unset", %{base: base} do
-      # `INKFISH_ELIXIR_BIN=""` in an environment file, or a shell that exported
-      # an empty expansion, must not be read as "run the empty path".
-      path_bin = touch(base, "path/elixir")
-      empty_home = Path.join(base, "empty-home")
-      File.mkdir_p!(empty_home)
-
-      result =
-        with_elixir_env(
-          [
-            config: "",
-            env_bin: "",
-            path: Path.dirname(path_bin),
-            home: empty_home
-          ],
-          fn -> Archive.elixir_bin() end
-        )
-
-      assert {:ok, ^path_bin} = result
-    end
-
-    test "a dangling mise shim is not used", %{base: base} do
-      # `File.regular?/1` follows the link, so a shim pointing at something that
-      # is not there is refused here rather than inside the namespace, where the
-      # failure would surface as a failed unpack instead.
-      empty_bin = Path.join(base, "empty-bin")
-      File.mkdir_p!(empty_bin)
-      home = Path.join(base, "home")
-      shims = Path.join(home, ".local/share/mise/shims")
-      File.mkdir_p!(shims)
-      File.ln_s!(Path.join(base, "no-such-mise"), Path.join(shims, "elixir"))
-
-      result =
-        with_elixir_env(
-          [config: nil, env_bin: nil, path: empty_bin, home: home],
-          fn -> Archive.elixir_bin() end
-        )
-
-      assert {:error, reason} = result
-      assert Archive.missing_elixir?(reason)
-    end
-  end
-
-  # A missing `elixir` binary is a deployment misconfiguration, not a bad
-  # archive: it has to be detectable, and it has to say which binary is missing
-  # rather than looking like an ordinary unpack failure.
-  describe "a missing elixir binary" do
-    test "is reported by elixir_bin/0", %{base: base} do
-      result = without_elixir(base, fn -> Archive.elixir_bin() end)
-
-      assert {:error, reason} = result
-      assert Archive.missing_elixir?(reason)
-
-      assert {:elixir_bin_missing, message} = reason
-      assert message =~ "elixir"
-      assert message =~ ":elixir_bin"
-      assert message =~ "PATH"
-    end
-
-    test "carries a single-sentence reason, not a paragraph", %{base: base} do
-      # This reason is appended to the error a user sees, so it has to stay one
-      # sentence: the paragraph-length deployment guidance is log only. Keep it
-      # specific while it is short -- it still has to name the missing binary
-      # and both ways to resolve it.
-      assert {:error, {:elixir_bin_missing, message}} =
-               without_elixir(base, fn -> Archive.elixir_bin() end)
-
-      refute String.contains?(message, "\n")
-      assert String.length(message) < 200
-
-      assert message =~ "elixir"
-      assert message =~ ":elixir_bin"
-      assert message =~ "PATH"
-
-      assert String.length(Archive.missing_elixir_log_message()) >
-               String.length(message)
-    end
-
-    test "is surfaced by safe_extract/3 instead of a generic failure", %{
-      base: base
-    } do
-      stage = Path.join(base, "stage")
-      target = Path.join(base, "target")
-      File.mkdir_p!(stage)
-      File.mkdir_p!(target)
-      File.write!(Path.join(stage, "hello.txt"), "hi")
-      archive = tar!(Path.join(base, "plain.tar.gz"), stage, ["hello.txt"])
-
-      result =
-        without_elixir(base, fn ->
-          Archive.safe_extract(archive, target, "10M")
-        end)
-
-      assert {:error, reason} = result
-      assert Archive.missing_elixir?(reason)
-      assert File.ls!(target) == []
-    end
-  end
-
   describe "the failure path" do
     test "reports a bad size in bounded time, naming it" do
       # "1X" is not a tmpfs size, so it is refused in Elixir, before a port is
@@ -507,6 +368,289 @@ defmodule Inkfish.Sandbox.ArchiveTest do
       assert msg =~ "invalid tmpfs size"
 
       assert File.ls!(target) == []
+    end
+  end
+
+  describe "the target" do
+    # The counterexample is `safe_extract(archive, Upload.upload_base(), ...)`:
+    # the upload base contains the staging root, so the move would land the tree
+    # on the staging area it came from -- and a target of the base itself would
+    # put the extracted tree where every upload's own directory lives. Refused
+    # before anything is created.
+    test "refuses one that is, or contains, the staging root", %{base: base} do
+      marker = "target-refused-#{System.unique_integer([:positive])}"
+      stage = Path.join(base, "stage")
+      File.mkdir_p!(stage)
+      File.write!(Path.join(stage, marker), "hi")
+      archive = tar!(Path.join(base, "refused.tar.gz"), stage, [marker])
+
+      before = File.ls!(Upload.upload_base())
+
+      for target <- [Upload.upload_base(), Archive.staging_root()] do
+        assert {:error, msg} = Archive.safe_extract(archive, target, "10M")
+        assert msg =~ "refusing to extract into #{target}"
+        assert msg =~ "staging root"
+      end
+
+      # Nothing was created, moved or removed: the upload base is exactly as it
+      # was, and the marker never landed in it.
+      assert File.ls!(Upload.upload_base()) == before
+      assert staged_markers(marker) == []
+
+      assert {:error, :enoent} =
+               File.lstat(Path.join(Upload.upload_base(), marker))
+    end
+
+    # The whole design rests on this: the staging directory is a fresh random
+    # name under a directory no upload id can name, so the id the user is handed
+    # never names a path that holds an unsanitized tree. Nothing else about the
+    # ordering survives a staging path derived from the target.
+    test "the staging path is not derived from the target or the upload id", %{
+      base: base
+    } do
+      id = "01234567-89ab-cdef-0123-456789abcdef"
+      target = Path.join([base, id, "unpacked"])
+      marker = "staging-name-#{System.unique_integer([:positive])}"
+
+      stage = Path.join(base, "stage")
+      File.mkdir_p!(stage)
+      File.write!(Path.join(stage, marker), "hi")
+      archive = tar!(Path.join(base, "staging-name.tar.gz"), stage, [marker])
+
+      # The move cannot happen -- the upload id's own directory is a regular
+      # file -- so the staging directory is left behind for inspection, which is
+      # exactly what a failure is supposed to leave.
+      File.write!(Path.join(base, id), "")
+
+      assert {:error, msg} = Archive.safe_extract(archive, target, "10M")
+      assert msg =~ "could not prepare"
+
+      assert [staged_marker] = staged_markers(marker)
+      staged = Path.dirname(staged_marker)
+      on_exit(fn -> File.rm_rf!(staged) end)
+
+      # It is a random name directly under the staging root, it does not contain
+      # the upload id, and it is not built from the target's own name.
+      assert Path.dirname(staged) == Archive.staging_root()
+      assert Path.basename(staged) =~ ~r/\A[0-9a-f]{16}\z/
+      refute String.contains?(staged, id)
+      refute String.contains?(staged, Path.basename(target))
+    end
+
+    # A populated target is the one case that ever justified deleting anything
+    # here, and it is a caller we do not have: `Upload.unpacked_path/1` `mkdir_p`s
+    # the target before `safe_extract/3` is called, so it is always an empty
+    # directory, and `rename(2)` onto an empty directory succeeds by itself. So
+    # it is refused rather than emptied -- saving junk is less dangerous than
+    # deleting things.
+    test "a populated target is refused, not wiped", %{base: base} do
+      marker = "populated-#{System.unique_integer([:positive])}"
+      stage = Path.join(base, "stage")
+      target = Path.join(base, "target")
+      File.mkdir_p!(stage)
+      File.mkdir_p!(target)
+      File.write!(Path.join(stage, marker), "new")
+      File.write!(Path.join(target, "keep.txt"), "keep")
+      archive = tar!(Path.join(base, "populated.tar.gz"), stage, [marker])
+      on_exit(fn -> cleanup_staged(marker) end)
+
+      assert {:error, msg} = Archive.safe_extract(archive, target, "10M")
+      assert msg =~ "could not prepare"
+      assert msg =~ "eexist"
+      assert msg =~ target
+
+      # Nothing was deleted from the target, and nothing was moved into it.
+      assert File.ls!(target) == ["keep.txt"]
+      assert File.read!(Path.join(target, "keep.txt")) == "keep"
+    end
+  end
+
+  describe "the move" do
+    # The rename branch is only reachable when `rename(2)` itself fails: by then
+    # `remove_existing/1` has refused everything else a rename can fail on (a
+    # file, a link, a populated directory), so what a test can build is a
+    # cross-device target (`:exdev` -- the failure that is the whole reason
+    # staging lives under the upload base) or a target whose parent cannot be
+    # written (`:eacces`). The first needs the candidate directory on another
+    # filesystem (`/tmp` and `$HOME` are separate btrfs subvolumes here, one
+    # ext4 elsewhere), the second needs a process that is not root, so this
+    # builds the first one it can. The branch is the same either way.
+    test "a rename that cannot happen is a failure, not a merge", %{base: base} do
+      marker = "rename-fail-#{System.unique_integer([:positive])}"
+      stage = Path.join(base, "stage")
+      File.mkdir_p!(stage)
+      File.write!(Path.join(stage, marker), "hi")
+      archive = tar!(Path.join(base, "rename.tar.gz"), stage, [marker])
+      on_exit(fn -> cleanup_staged(marker) end)
+
+      cross_device =
+        File.stat!(base).major_device !=
+          File.stat!(System.tmp_dir!()).major_device
+
+      target =
+        if cross_device do
+          parent = Path.join(System.tmp_dir!(), "inkfish-rename-#{marker}")
+          on_exit(fn -> File.rm_rf!(parent) end)
+          Path.join(parent, "target")
+        else
+          parent = Path.join(base, "unwritable")
+          File.mkdir_p!(parent)
+          File.chmod!(parent, 0o500)
+          on_exit(fn -> File.chmod(parent, 0o700) end)
+          Path.join(parent, "target")
+        end
+
+      result = Archive.safe_extract(archive, target, "10M")
+
+      assert match?({:error, _}, result),
+             "expected the rename to fail: this test needs the temp dir on " <>
+               "another filesystem, or a process that is not root"
+
+      assert {:error, msg} = result
+      assert msg =~ "could not move the sanitized tree to #{target}"
+
+      if cross_device do
+        assert msg =~ ":exdev"
+        assert msg =~ "one filesystem"
+        assert msg =~ Archive.staging_root()
+      else
+        assert msg =~ ":eacces"
+      end
+
+      # A failed move leaves the target absent, not half-filled.
+      refute File.exists?(target)
+    end
+
+    # `make_stage_dir/0`'s own error branch: a staging root that is not a
+    # directory is the cheapest way to reach it, and it is the case an operator
+    # hits when something else has taken the path.
+    test "reports a staging root it cannot create", %{base: base} do
+      root = Archive.staging_root()
+      File.rm_rf!(root)
+      File.write!(root, "")
+
+      on_exit(fn ->
+        File.rm_rf!(root)
+        File.mkdir_p!(root)
+      end)
+
+      stage = Path.join(base, "stage")
+      File.mkdir_p!(stage)
+      File.write!(Path.join(stage, "f"), "x")
+      archive = tar!(Path.join(base, "stage-root.tar.gz"), stage, ["f"])
+
+      assert {:error, msg} =
+               Archive.safe_extract(archive, Path.join(base, "target"), "10M")
+
+      assert msg =~ "could not create the staging directory"
+      assert msg =~ root
+      assert File.regular?(root)
+    end
+  end
+
+  describe "the canonical fallback" do
+    # `System.cmd/3` *raises* `ErlangError` when the binary it is handed is
+    # missing, so a `case` on `realpath`'s exit status never sees a missing
+    # `realpath` at all: with the executable not resolved first, a `PATH` without
+    # `realpath` raised straight out of `safe_extract/3`, which promises
+    # `{:ok, _} | {:error, _}`. `canonical/1` now uses the path as it is, and the
+    # call fails later, on its own terms.
+    test "a missing realpath is reported, not raised", %{base: base} do
+      stage = Path.join(base, "stage")
+      File.mkdir_p!(stage)
+      File.write!(Path.join(stage, "f"), "x")
+      archive = tar!(Path.join(base, "no-realpath.tar.gz"), stage, ["f"])
+
+      before = Path.wildcard(Path.join(Archive.staging_root(), "*"))
+
+      path = System.get_env("PATH")
+      on_exit(fn -> System.put_env("PATH", path) end)
+      System.put_env("PATH", "/nonexistent")
+
+      # The failure is the *next* step's: with no `unshare` on that `PATH` the
+      # pipeline cannot even be spawned. Reaching it is the proof that the
+      # staging directory was made with the fallback path instead of the call
+      # blowing up first.
+      assert {:error, msg} =
+               Archive.safe_extract(archive, Path.join(base, "target"), "10M")
+
+      assert msg =~ "not found"
+      refute msg =~ "could not create the staging directory"
+
+      new = Path.wildcard(Path.join(Archive.staging_root(), "*")) -- before
+      on_exit(fn -> Enum.each(new, &File.rm_rf!/1) end)
+      assert length(new) == 1
+    end
+  end
+
+  describe "the readlink fallback" do
+    # The same shape as `canonical/1` and the same trap: `System.cmd/3` raises
+    # when the binary is missing. A relative link whose target cannot be resolved
+    # is removed either way -- that is the rule -- but the log has to say which
+    # case it was, rather than the caller of `safe_extract/3` seeing
+    # "Erlang error: :enoent".
+    test "a missing readlink removes the link and names the reason", %{
+      base: base
+    } do
+      dir = Path.join(base, "links")
+      File.mkdir_p!(dir)
+      File.write!(Path.join(dir, "target.txt"), "x")
+      link = Path.join(dir, "link")
+      File.ln_s!("target.txt", link)
+
+      path = System.get_env("PATH")
+      on_exit(fn -> System.put_env("PATH", path) end)
+      System.put_env("PATH", "/nonexistent")
+
+      log = capture_log(fn -> Archive.sanitize_links!(dir) end)
+
+      assert log =~ "removing invalid link"
+      assert log =~ "readlink was not found on PATH"
+      assert {:error, :enoent} = File.lstat(link)
+    end
+  end
+
+  describe "the sanitize deadline" do
+    # The sanitize is one `readlink -f` fork per relative symlink (~0.6 ms
+    # measured here), while extracting the same tree is `tar` plus `cp -r`
+    # (~0.05 ms per entry): this tree's sanitize costs about ten times
+    # everything before it, so a deadline the extraction fits inside is one the
+    # sanitize cannot -- and the deadline has to cover it, or the bound the
+    # module documents covers less than it says.
+    test "a pathological tree of relative symlinks is bounded", %{base: base} do
+      links = 8_000
+      marker = "deadline-#{System.unique_integer([:positive])}"
+      stage = Path.join(base, "many")
+      File.mkdir_p!(stage)
+      File.write!(Path.join(stage, marker), "hi")
+
+      for i <- 1..links do
+        File.ln_s!(marker, Path.join(stage, "link-#{i}"))
+      end
+
+      archive = tar!(Path.join(base, "many.tar.gz"), stage, ["."])
+      on_exit(fn -> cleanup_staged(marker) end)
+
+      original = Application.get_env(:inkfish, :extract_timeout_ms)
+
+      on_exit(fn ->
+        Application.put_env(:inkfish, :extract_timeout_ms, original)
+      end)
+
+      Application.put_env(:inkfish, :extract_timeout_ms, 1_500)
+
+      target = Path.join(base, "target")
+
+      {elapsed_us, result} =
+        :timer.tc(fn -> Archive.safe_extract(archive, target, "10M") end)
+
+      assert {:error, msg} = result
+      assert msg =~ "timed out sanitizing the staged tree"
+
+      # Bounded: the call returns at its deadline rather than after the whole
+      # walk, and a tree that could not be finished is never moved into place.
+      assert elapsed_us < 5_000_000
+      refute File.exists?(target)
     end
   end
 end

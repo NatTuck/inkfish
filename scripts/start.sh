@@ -34,14 +34,6 @@ export DATABASE_URL=$(cat ~/.config/inkfish/db_url)
 export SECRET_KEY_BASE=$(cat ~/.config/inkfish/key_base)
 export MAILJET_KEY=$(cat ~/.config/inkfish/mailjet_key)
 
-# The archive sanitizer runs as its own OS process inside the mount namespace,
-# which inherits neither this shell's PATH nor `mise activate`'s environment, so
-# hand it the absolute path of the `elixir` the shims just resolved rather than
-# leaving it to re-resolve. `command -v` reports nothing and fails when the
-# lookup finds nothing, so an unresolved `elixir` leaves this empty and
-# `Inkfish.Sandbox.Archive.elixir_bin/0` falls through to its own lookup.
-export INKFISH_ELIXIR_BIN="$(command -v elixir || true)"
-
 #echo "Stopping old copy of app, if any..."
 
 #_build/prod/rel/inkfish/bin/inkfish stop || true

@@ -7,7 +7,6 @@ defmodule Inkfish.Uploads do
 
   import Ecto.Query, warn: false
   alias Inkfish.Repo
-  alias Inkfish.Sandbox.Archive
 
   alias Inkfish.Uploads.Upload
   alias Inkfish.Uploads.Cleanup
@@ -148,7 +147,7 @@ defmodule Inkfish.Uploads do
   # consequence of showing the real error, not a defect -- do not "fix" it by
   # replacing the reason with something generic.
   defp unpack_error(cset, reason) do
-    log_unpack_error(reason)
+    Logger.warning("upload unpack failed: #{format_reason(reason)}")
 
     Ecto.Changeset.add_error(
       cset,
@@ -157,39 +156,12 @@ defmodule Inkfish.Uploads do
     )
   end
 
-  # A missing `elixir` binary is a deployment misconfiguration, not a bad
-  # upload, so it is logged at `:error` with the operator-facing explanation
-  # instead of being buried in the routine unpack-failure warning.
-  #
-  # The user does not get a generic failure here either: they get the tagged
-  # reason's own sentence -- which names `elixir`, `:elixir_bin` and `PATH` --
-  # unwrapped by `format_reason/1`. Only the log line adds the deployment-wide
-  # consequence, because that is aimed at whoever runs the deployment.
-  defp log_unpack_error(reason) do
-    if Archive.missing_elixir?(reason) do
-      Logger.error(
-        "upload unpack failed: " <> Archive.missing_elixir_log_message()
-      )
-    else
-      Logger.warning("upload unpack failed: #{format_reason(reason)}")
-    end
-  end
-
   # `reason` is usually the mount/tar output as a binary, and that binary is
-  # passed through verbatim -- not trimmed, summarised or replaced. The
-  # missing-`elixir` case is tagged as `{:elixir_bin_missing, message}`, so it
-  # is unwrapped to the sentence the user should see rather than the tuple it
-  # travels in. Any other term is `inspect`ed, so nothing is hidden there
-  # either.
+  # passed through verbatim -- not trimmed, summarised or replaced. Any other
+  # term is `inspect`ed, so nothing is hidden there either.
   defp format_reason(reason) when is_binary(reason), do: reason
 
-  defp format_reason(reason) do
-    if Archive.missing_elixir?(reason) do
-      Archive.missing_elixir_message()
-    else
-      inspect(reason)
-    end
-  end
+  defp format_reason(reason), do: inspect(reason)
 
   @doc """
   Updates a upload.

@@ -2,200 +2,96 @@ defmodule Inkfish.Sandbox.Archive do
   require Logger
 
   alias Inkfish.Sandbox
+  alias Inkfish.Sandbox.SanitizeLinks
+  alias Inkfish.Uploads.Upload
   alias Sandbox.TempFs
   alias Sandbox.Shell
 
-  # `Inkfish.Sandbox.SanitizeLinks` is defined at runtime by
-  # `priv/sandbox/sanitize_logic.exs` -- the single source of truth, shared with
-  # the script that runs inside the namespace -- so the compiler cannot see it.
-  @compile {:no_warn_undefined, Inkfish.Sandbox.SanitizeLinks}
-
-  # Prefix the sanitizer puts on its own output inside the namespace. It is
-  # re-logged here so that a warning produced inside the namespace still reaches
-  # the caller's log -- and `capture_log` in the tests.
-  @warning_prefix "INKFISH-SANITIZE "
-
-  # The whole extraction pipeline -- mount, tar, Erlang VM boot, one `readlink
-  # -f` fork per relative symlink, `cp -r` -- runs under one deadline, so the
-  # default has to be generous: a legitimate 10 MB tarball with many relative
-  # symlinks must not be rejected as a timeout. Test config lowers it so a
-  # broken mount still fails fast.
+  # The extraction pipeline -- mount the capped tmpfs, `tar --no-same-owner`
+  # into it, copy the tree out to the staging directory -- runs inside one
+  # `unshare` invocation, and so under one deadline. All of it is shell: no
+  # Elixir runs inside the namespace any more, so the bound no longer has to
+  # cover an Erlang VM boot. The sanitize that follows runs in this process,
+  # under the same bound (`sanitize_stage/1`); only the move into place is
+  # outside it, and that is one rename. Test config lowers the bound so a broken
+  # mount still fails fast.
   @default_timeout_ms 30_000
 
-  # Tagged so a deployment misconfiguration -- no `elixir` to run the sanitizer
-  # in -- can be told apart from a genuine unpack failure wherever the reason is
-  # reported. `Inkfish.Uploads` logs the tagged case at `:error` with
-  # `missing_elixir_log_message/0` and reports `missing_elixir_message/0` to the
-  # user, and `Inkfish.Application` checks for it once at boot.
-  @missing_elixir :elixir_bin_missing
-
-  # The user-facing reason. `Inkfish.Uploads` appends it to the changeset error
-  # a student sees, so it is one clear sentence that names what is missing
-  # (`elixir`) and what to do about it (`:elixir_bin`, `PATH`) -- a paragraph of
-  # deployment guidance does not belong in a form error.
-  @missing_elixir_message "the `elixir` binary needed to unpack archives is " <>
-                            "missing: set `:elixir_bin` to its full path, or " <>
-                            "make `elixir` available on `PATH`"
-
-  # The operator-facing explanation, for the log only. It names the whole
-  # resolution order -- every step that failed, not just the first -- and the
-  # consequence, so the log line reads as a deployment misconfiguration rather
-  # than routine noise. What it adds over `@missing_elixir_message` is the
-  # deployment-wide consequence ("every upload and submission will fail until it
-  # is fixed"), which belongs on the log line rather than in a form error.
-  @missing_elixir_log_message "the `elixir` binary that runs the archive " <>
-                                "symlink sanitizer could not be resolved: the " <>
-                                "`:elixir_bin` config is unset, " <>
-                                "`INKFISH_ELIXIR_BIN` is unset, no `elixir` " <>
-                                "executable was found on `PATH`, and no mise " <>
-                                "shim exists at " <>
-                                "`$HOME/.local/share/mise/shims/elixir`. This " <>
-                                "is a deployment misconfiguration and every " <>
-                                "upload and submission will fail until it is " <>
-                                "fixed: set `:elixir_bin` to the full path of " <>
-                                "the `elixir` executable, or make `elixir` " <>
-                                "available on `PATH`."
-
-  # The four steps `elixir_bin/0` walks, in order. Each one is a real
-  # deployment shape: the config is what a release sets, the environment
-  # variable is what `scripts/start.sh` exports, `PATH` is a dev checkout or a
-  # host with elixir installed normally, and the mise shim is what a
-  # mise-managed checkout has when the process was not started from a shell
-  # that had the shims on `PATH` -- which is exactly the case for a release
-  # started by systemd.
-  @elixir_executable "elixir"
-  @mise_shims_subpath ".local/share/mise/shims"
+  # Staging trees live under this directory inside the upload base; see
+  # `staging_root/0`.
+  @staging_subdir "staging"
 
   @doc """
-  Resolve the `elixir` executable that runs the symlink sanitizer.
+  The directory staged trees are extracted into.
 
-  Four steps, and the first one that resolves wins:
-
-    1. the `:elixir_bin` config
-    2. the `INKFISH_ELIXIR_BIN` environment variable
-    3. `elixir` on `PATH`
-    4. the mise shim, `$HOME/.local/share/mise/shims/elixir`
-
-  The first two are paths an operator hands us; the last two are lookups. The
-  last one is there because how this process was launched must not decide which
-  `elixir` runs: a release started by systemd inherits neither a login shell's
-  `PATH` nor `mise activate`'s environment, so a mise-managed deployment would
-  otherwise be unresolvable even though mise can see the pinned toolchain.
-
-  An empty value counts as unset, so `INKFISH_ELIXIR_BIN=""` means "not set"
-  rather than "the empty path".
-
-  Returns `{:ok, path}`, or `{:error, {:elixir_bin_missing, message}}` when
-  none of the four resolves -- see `missing_elixir?/1` and
-  `missing_elixir_message/0`.
+  It is under the upload base -- the same filesystem as every upload's final
+  path, so the move out of it is a rename rather than a copy -- and it is not
+  reachable from an upload id: `/uploads/:id/_meta/unpacked/*path` serves an
+  upload's own unpacked tree, and nothing serves this.
   """
-  def elixir_bin do
-    case resolve_elixir_bin() do
-      nil -> {:error, {@missing_elixir, missing_elixir_message()}}
-      path -> {:ok, path}
-    end
-  end
-
-  defp resolve_elixir_bin do
-    configured_elixir_bin() ||
-      env_elixir_bin() ||
-      System.find_executable(@elixir_executable) ||
-      mise_shims_elixir()
-  end
-
-  # An empty value is unset: `INKFISH_ELIXIR_BIN=` in an environment file, or a
-  # shell that exported an empty expansion, means "no override" -- not "run the
-  # empty path". `nil` and `""` are the only values treated that way; anything
-  # else is passed through exactly as before, so a config that was already set
-  # to something unusual is still reported rather than silently skipped.
-  defp configured_elixir_bin do
-    case Application.get_env(:inkfish, :elixir_bin) do
-      nil -> nil
-      "" -> nil
-      path -> path
-    end
-  end
-
-  defp env_elixir_bin do
-    case System.get_env("INKFISH_ELIXIR_BIN") do
-      nil -> nil
-      "" -> nil
-      path -> path
-    end
-  end
-
-  # The mise shim, built from `$HOME` rather than read off `PATH` -- this is the
-  # one step that does not depend on how the process was launched. Only a shim
-  # that is really there is returned: a dangling one would fail inside the
-  # namespace with a worse message than the one this module gives.
-  defp mise_shims_elixir do
-    case System.get_env("HOME") do
-      nil ->
-        nil
-
-      home ->
-        path = Path.join([home, @mise_shims_subpath, @elixir_executable])
-        if File.regular?(path), do: path, else: nil
-    end
-  end
-
-  @doc """
-  Whether `reason` is the missing-`elixir` misconfiguration.
-  """
-  def missing_elixir?({@missing_elixir, _message}), do: true
-  def missing_elixir?(_reason), do: false
-
-  @doc """
-  The user-facing reason for a missing sanitizer binary.
-
-  One sentence: it names what is missing (`elixir`) and how to fix it
-  (`:elixir_bin`, `PATH`), because it is appended to the error a user sees. The
-  longer operator-facing version is `missing_elixir_log_message/0`.
-  """
-  def missing_elixir_message do
-    @missing_elixir_message
-  end
-
-  @doc """
-  The operator-facing explanation of a missing sanitizer binary.
-
-  Log only: it spells out the consequence for the whole deployment, while the
-  user gets the actionable fix from `missing_elixir_message/0`.
-  """
-  def missing_elixir_log_message do
-    @missing_elixir_log_message
+  def staging_root do
+    Path.join(Upload.upload_base(), @staging_subdir)
   end
 
   @doc """
   Safely extract an archive file.
 
-  All of the work -- mount a capped tmpfs, unpack into it, sanitise the tree,
-  copy the tree out -- happens inside a single `unshare` invocation, because
-  the tmpfs only exists inside the namespace that invocation creates.
+  Three steps, in this order, and this function owns all of them so no caller
+  can leave one out:
 
-  Returns `:ok`, or `{:error, reason}` when the mount or the unpacking fails.
-  A non-zero `tar` exit is fatal: extracting past the size cap leaves a
-  silently truncated tree (a short file plus a zero-byte file), so a partial
-  extraction must never be reported as a success. A timeout of the whole
-  pipeline is reported distinctly from an unpack failure.
+    1. inside one `unshare` invocation: mount the size-capped tmpfs,
+       `tar --no-same-owner` the archive into it, and `cp -r` the tree out to a
+       fresh staging directory (see `staging_root/0`);
+    2. sanitize the staged tree in this process, removing every symlink that
+       escapes it;
+    3. move the sanitized tree into `target` with a same-filesystem rename.
+
+  The order is the point. The upload id is handed to the user, so the final
+  path must never contain an escaping symlink -- not even for the instant
+  between the unpack and the sanitize. That is why the tree is extracted to a
+  staging directory no upload id can name, and why the move is a rename rather
+  than a copy: the final path is either absent or fully sanitized.
+
+  Returns `:ok`, or `{:error, reason}` when the mount, the unpacking, the
+  sanitize or the move fails. A non-zero `tar` exit is fatal: extracting past
+  the size cap leaves a silently truncated tree (a short file plus a zero-byte
+  file), so a partial extraction must never be reported as a success. A timeout
+  of the bounded pipeline is reported distinctly from an unpack failure, and the
+  same deadline covers the sanitize.
+
+  A `target` that is `staging_root/0` or an ancestor of it is refused, before
+  anything is created: the move would land on the staging area the tree came
+  from.
   """
   def safe_extract(archive, target, max_size) do
     archive = Path.expand(archive)
     target = Path.expand(target)
 
-    with {:ok, script} <- unpack(archive, target),
-         {:ok, elixir} <- elixir_bin() do
-      case TempFs.run_in_one_tempfs(max_size, "bash", ["-c", script],
-             env: script_env(archive, target, elixir),
-             timeout_ms: timeout_ms()
-           ) do
-        {:ok, output} ->
-          forward_warnings(output)
-          :ok
+    with :ok <- check_target(target),
+         {:ok, script} <- unpack(archive),
+         {:ok, stage} <- make_stage_dir(),
+         :ok <- unpack_into(stage, script, archive, max_size) do
+      sanitize_and_move(stage, target)
+    end
+  end
 
-        {:error, reason} ->
-          {:error, extraction_error(reason)}
-      end
+  # The counterexample is `safe_extract(archive, Upload.upload_base(), ...)`: the
+  # upload base *contains* the staging root, so the move would land the tree on
+  # the staging area it came from, and a target of the base itself would put the
+  # extracted tree where every upload's directory lives. Refused before anything
+  # is created, so a caller cannot make the staging directory through us either.
+  # `remove_existing/1` refusing a populated directory is the second line of
+  # defence; this is the one that says why.
+  defp check_target(target) do
+    root = staging_root()
+    prefix = if String.ends_with?(target, "/"), do: target, else: target <> "/"
+
+    if root == target or String.starts_with?(root, prefix) do
+      {:error,
+       "refusing to extract into #{target}: it is, or contains, the staging " <>
+         "root #{root}, where the tree is extracted to"}
+    else
+      :ok
     end
   end
 
@@ -203,16 +99,14 @@ defmodule Inkfish.Sandbox.Archive do
   Remove every symlink under `base` that escapes it.
   """
   def sanitize_links!(base) do
-    load_sanitize_logic()
-    Inkfish.Sandbox.SanitizeLinks.sanitize_links!(base)
+    SanitizeLinks.sanitize_links!(base)
   end
 
   @doc """
   Remove `path` when it is a symlink that escapes `base`.
   """
   def sanitize_link!(path, base) do
-    load_sanitize_logic()
-    Inkfish.Sandbox.SanitizeLinks.sanitize_link!(path, base)
+    SanitizeLinks.sanitize_link!(path, base)
   end
 
   @doc """
@@ -221,7 +115,7 @@ defmodule Inkfish.Sandbox.Archive do
   Returns `{:ok, script}`, a shell script to run inside the tmpfs, or
   `{:error, reason}` when the archive kind is not supported.
   """
-  def unpack(archive, _target) do
+  def unpack(archive) do
     cond do
       Regex.match?(~r/\.tar\.(gz|xz|bz2)$/, archive) ->
         {:ok, untar_script()}
@@ -243,6 +137,69 @@ defmodule Inkfish.Sandbox.Archive do
     """)
   end
 
+  # A fresh random directory under the staging root. It must not be derivable
+  # from the upload id: the id is handed to the user (and
+  # `/uploads/:id/_meta/unpacked/*path` serves the unpacked tree), so a staging
+  # path built from it would be a path the user could name. This one cannot be
+  # guessed and no route serves it.
+  defp make_stage_dir do
+    root = staging_root()
+
+    with :ok <- File.mkdir_p(root),
+         stage = Path.join(root, random_name()),
+         :ok <- File.mkdir_p(stage) do
+      {:ok, canonical(stage)}
+    else
+      {:error, reason} ->
+        {:error,
+         "could not create the staging directory under #{root}: #{reason}"}
+    end
+  end
+
+  defp random_name do
+    Base.encode16(:crypto.strong_rand_bytes(8), case: :lower)
+  end
+
+  # The sanitizer compares `readlink -f` output -- always canonical -- against
+  # its base as a *string*, so the base has to be canonical too, or every
+  # in-tree relative symlink looks like an escape and is removed. `Path.expand/1`
+  # is lexical and would not resolve a symlinked component (a symlinked `$HOME`,
+  # say); `realpath -m` does, and `realpath(1)` is already required by the mount
+  # preamble in `Inkfish.Sandbox.TempFs`.
+  #
+  # If `realpath` cannot be run the path is used as it is: that is the
+  # conservative direction (some in-tree relative links may be removed), and it
+  # is not worth failing an extraction over. The executable is resolved first
+  # because `System.cmd/3` *raises* `ErlangError` (`:enoent`) when the binary is
+  # missing -- a `case` on its exit status never sees that at all -- so with
+  # `realpath` absent from `PATH` the raise would leave `safe_extract/3` instead
+  # of the `{:error, _}` its `@doc` promises.
+  defp canonical(path) do
+    with exe when is_binary(exe) <- System.find_executable("realpath"),
+         {resolved, 0} <- System.cmd(exe, ["-m", "--", path]) do
+      String.trim(resolved)
+    else
+      _ -> path
+    end
+  end
+
+  # The one `unshare` invocation: it mounts the capped tmpfs, unpacks into it,
+  # and copies the tree out to the staging directory. `$TMPFS` exists only
+  # inside the namespace that invocation creates, which is why the copy-out has
+  # to happen there too.
+  defp unpack_into(stage, script, archive, max_size) do
+    case TempFs.run_in_one_tempfs(max_size, "bash", ["-c", script],
+           env: script_env(archive, stage),
+           timeout_ms: timeout_ms()
+         ) do
+      {:ok, _output} ->
+        :ok
+
+      {:error, reason} ->
+        {:error, extraction_error(reason)}
+    end
+  end
+
   # `--no-same-owner` is required, not cosmetic: inside the namespace only uid 0
   # is mapped, so tar sees euid 0, decides it should restore the archive's
   # ownership, and fails with "Cannot change ownership to uid 1000: Invalid
@@ -260,8 +217,7 @@ defmodule Inkfish.Sandbox.Archive do
     set -euo pipefail
     cd "$TMPFS"
     tar xvf "$INKFISH_ARCHIVE" --no-same-owner >/dev/null
-    #{sanitize_command()}
-    cp -r "$TMPFS/." "$INKFISH_TARGET"
+    cp -r "$TMPFS/." "$INKFISH_STAGE"
     """
   end
 
@@ -275,37 +231,134 @@ defmodule Inkfish.Sandbox.Archive do
     """
     set -euo pipefail
     cp "$INKFISH_ARCHIVE" "$TMPFS/$(basename "$INKFISH_ARCHIVE")"
-    #{sanitize_command()}
-    cp -r "$TMPFS/." "$INKFISH_TARGET"
+    cp -r "$TMPFS/." "$INKFISH_STAGE"
     """
   end
 
-  defp sanitize_command do
-    ~s("$INKFISH_ELIXIR" "$INKFISH_SANITIZE" "$TMPFS")
-  end
-
-  defp script_env(archive, target, elixir) do
+  defp script_env(archive, stage) do
     [
       {"INKFISH_ARCHIVE", archive},
-      {"INKFISH_TARGET", target},
-      {"INKFISH_ELIXIR", elixir},
-      {"INKFISH_SANITIZE", priv("sanitize.exs")}
+      {"INKFISH_STAGE", stage}
     ]
   end
 
-  # The sanitizer runs in its own OS process (it has to: the tree only exists
-  # inside the namespace), so its `Logger.warning/1` calls land on that
-  # process's stdout. Re-logging them here keeps the warnings in the caller's
-  # log, which is what the `capture_log` assertions in the tests rely on.
-  defp forward_warnings(output) do
-    output
-    |> String.split("\n")
-    |> Enum.each(fn line ->
-      case String.split(line, @warning_prefix, parts: 2) do
-        [_, message] -> Logger.warning(String.trim_trailing(message))
-        [_] -> :ok
+  # Sanitize first, move second: the sanitized staging tree is what lands at the
+  # final path, and it lands there in one step.
+  defp sanitize_and_move(stage, target) do
+    with :ok <- sanitize_stage(stage) do
+      move_into_place(stage, target)
+    end
+  end
+
+  # The sanitize is a plain in-process call, and a raise out of it must not
+  # escape `safe_extract/3`'s `{:ok, _} | {:error, _}` contract. It used to run
+  # as its own OS process inside the namespace, where a raise became an exit
+  # status and reached the caller as `{:error, reason}`; this keeps that shape,
+  # with the raise's own message kept verbatim.
+  #
+  # It runs in a task so that it is *bounded*, by the same deadline as the rest
+  # of the pipeline: it is one `readlink -f` fork per relative symlink, so a
+  # 10 MB tar of ~20k symlink entries is 10-20 s of serial forks, and until now
+  # it ran with no bound at all -- which is not the deadline this module
+  # documents. The task rescues inside itself rather than this process rescuing
+  # around `Task.await/1` because `Task.async/1` links the task to this process:
+  # a raise that got out of the task would take this process down with it, which
+  # is the failure this function exists to prevent.
+  defp sanitize_stage(stage) do
+    task =
+      Task.async(fn ->
+        try do
+          sanitize_links!(stage)
+          :ok
+        rescue
+          error ->
+            Logger.error(Exception.format(:error, error, __STACKTRACE__))
+            {:error, Exception.message(error)}
+        end
+      end)
+
+    case Task.yield(task, timeout_ms()) || Task.shutdown(task, :brutal_kill) do
+      {:ok, result} ->
+        result
+
+      nil ->
+        {:error, "timed out sanitizing the staged tree"}
+
+      {:exit, reason} ->
+        # The link normally turns an abnormal task exit into this process's own
+        # death rather than a `{:exit, _}` here; this keeps the
+        # `{:ok, _} | {:error, _}` contract if it ever does not.
+        {:error, "the sanitize failed: #{inspect(reason)}"}
+    end
+  end
+
+  # A same-filesystem `File.rename/2`, so the final path is either absent or the
+  # whole sanitized tree -- never a half-copied one. Staging is under the upload
+  # base (see `staging_root/0`) for exactly this reason; a caller whose target
+  # is on another filesystem gets `:exdev` here, reported as a failure rather
+  # than papered over with a copy.
+  #
+  # An existing target is removed first. `Upload.unpacked_path/1` `mkdir_p`s it
+  # before we are called, and `rename(2)` onto an existing *empty* directory
+  # succeeds while onto a non-empty one it fails with `:eexist` (Erlang's name
+  # for `ENOTEMPTY`) -- and the obvious fallback, copying the staged tree in, is
+  # the merge that can leave a partial result behind. Removing it makes both
+  # cases the same: the target is the sanitized tree, or it is gone.
+  #
+  # Cleanup is asymmetric on purpose. On success the move *is* the cleanup: the
+  # staging directory is renamed into place, so nothing of ours is left behind.
+  # On failure the staging directory is left exactly as it is, junk and all --
+  # a delete path would have to run while we are already reporting a failure,
+  # and leftover junk in a staging area that no route serves is preferable to
+  # delete logic that can itself fail or, worse, delete the wrong thing.
+  defp move_into_place(stage, target) do
+    parent = Path.dirname(target)
+
+    with :ok <- File.mkdir_p(parent),
+         :ok <- remove_existing(target) do
+      case File.rename(stage, target) do
+        :ok ->
+          :ok
+
+        {:error, reason} ->
+          {:error, rename_error(reason, target)}
       end
-    end)
+    else
+      {:error, reason} ->
+        {:error,
+         "could not prepare #{parent} for the sanitized tree: #{reason}"}
+    end
+  end
+
+  # `File.rmdir/1`, not the `File.rm_rf/1` this used to be: the delete is not
+  # load-bearing. The target is a freshly `mkdir_p`ed *empty* directory in every
+  # call there is -- `Upload.unpacked_path/1` creates it, from an upload id that
+  # is autogenerated and never cast -- and `rename(2)` onto an empty directory
+  # succeeds on its own. So the only cases this has to handle are an absent
+  # target and an empty one; a *populated* target is a caller we do not have,
+  # and it is refused rather than emptied. Saving junk is less dangerous than
+  # deleting things.
+  defp remove_existing(target) do
+    case File.rmdir(target) do
+      :ok -> :ok
+      {:error, :enoent} -> :ok
+      {:error, reason} -> {:error, "#{reason} (#{target})"}
+    end
+  end
+
+  # `:exdev` is the one rename failure a caller can act on, and the bare atom
+  # says nothing about the remedy: staging and the target have to be on one
+  # filesystem, because the move is a rename rather than a copy. Every other
+  # reason is reported with `inspect/1`, so it reads as the atom it is rather
+  # than as a bare word.
+  defp rename_error(:exdev, target) do
+    "could not move the sanitized tree to #{target}: :exdev (cross-device " <>
+      "link); the staging root #{staging_root()} and the target must be on one " <>
+      "filesystem, because the move is a rename rather than a copy"
+  end
+
+  defp rename_error(reason, target) do
+    "could not move the sanitized tree to #{target}: #{inspect(reason)}"
   end
 
   # The mount's and `tar`'s own diagnostics (a mount error, a `tar` exit code
@@ -321,17 +374,5 @@ defmodule Inkfish.Sandbox.Archive do
 
   defp timeout_ms do
     Application.get_env(:inkfish, :extract_timeout_ms, @default_timeout_ms)
-  end
-
-  # A bare script cannot load project modules, so the logic lives in its own
-  # file that both this module and the script require. `Code.require_file/1` is
-  # a no-op once the file has been required, so this is cheap after the first
-  # call; going through `Application.app_dir/2` keeps it working from a release.
-  defp load_sanitize_logic do
-    Code.require_file(priv("sanitize_logic.exs"))
-  end
-
-  defp priv(name) do
-    Application.app_dir(:inkfish, "priv/sandbox/#{name}")
   end
 end
