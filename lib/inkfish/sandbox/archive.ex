@@ -1,4 +1,6 @@
 defmodule Inkfish.Sandbox.Archive do
+  require Logger
+
   alias Inkfish.Sandbox
   alias Inkfish.Sandbox.SanitizeLinks
   alias Inkfish.Uploads.Upload
@@ -9,9 +11,10 @@ defmodule Inkfish.Sandbox.Archive do
   # into it, copy the tree out to the staging directory -- runs inside one
   # `unshare` invocation, and so under one deadline. All of it is shell: no
   # Elixir runs inside the namespace any more, so the bound no longer has to
-  # cover an Erlang VM boot. The in-process sanitize and the move into place
-  # happen after it, outside this bound, as local filesystem work. Test config
-  # lowers it so a broken mount still fails fast.
+  # cover an Erlang VM boot. The sanitize that follows runs in this process,
+  # under the same bound (`sanitize_stage/1`); only the move into place is
+  # outside it, and that is one rename. Test config lowers the bound so a broken
+  # mount still fails fast.
   @default_timeout_ms 30_000
 
   # Staging trees live under this directory inside the upload base; see
@@ -52,18 +55,43 @@ defmodule Inkfish.Sandbox.Archive do
   Returns `:ok`, or `{:error, reason}` when the mount, the unpacking, the
   sanitize or the move fails. A non-zero `tar` exit is fatal: extracting past
   the size cap leaves a silently truncated tree (a short file plus a zero-byte
-  file), so a partial extraction must never be reported as a success. A
-  timeout of the bounded pipeline is reported distinctly from an unpack
-  failure.
+  file), so a partial extraction must never be reported as a success. A timeout
+  of the bounded pipeline is reported distinctly from an unpack failure, and the
+  same deadline covers the sanitize.
+
+  A `target` that is `staging_root/0` or an ancestor of it is refused, before
+  anything is created: the move would land on the staging area the tree came
+  from.
   """
   def safe_extract(archive, target, max_size) do
     archive = Path.expand(archive)
     target = Path.expand(target)
 
-    with {:ok, script} <- unpack(archive),
+    with :ok <- check_target(target),
+         {:ok, script} <- unpack(archive),
          {:ok, stage} <- make_stage_dir(),
          :ok <- unpack_into(stage, script, archive, max_size) do
       sanitize_and_move(stage, target)
+    end
+  end
+
+  # The counterexample is `safe_extract(archive, Upload.upload_base(), ...)`: the
+  # upload base *contains* the staging root, so the move would land the tree on
+  # the staging area it came from, and a target of the base itself would put the
+  # extracted tree where every upload's directory lives. Refused before anything
+  # is created, so a caller cannot make the staging directory through us either.
+  # `remove_existing/1` refusing a populated directory is the second line of
+  # defence; this is the one that says why.
+  defp check_target(target) do
+    root = staging_root()
+    prefix = if String.ends_with?(target, "/"), do: target, else: target <> "/"
+
+    if root == target or String.starts_with?(root, prefix) do
+      {:error,
+       "refusing to extract into #{target}: it is, or contains, the staging " <>
+         "root #{root}, where the tree is extracted to"}
+    else
+      :ok
     end
   end
 
@@ -141,11 +169,17 @@ defmodule Inkfish.Sandbox.Archive do
   #
   # If `realpath` cannot be run the path is used as it is: that is the
   # conservative direction (some in-tree relative links may be removed), and it
-  # is not worth failing an extraction over.
+  # is not worth failing an extraction over. The executable is resolved first
+  # because `System.cmd/3` *raises* `ErlangError` (`:enoent`) when the binary is
+  # missing -- a `case` on its exit status never sees that at all -- so with
+  # `realpath` absent from `PATH` the raise would leave `safe_extract/3` instead
+  # of the `{:error, _}` its `@doc` promises.
   defp canonical(path) do
-    case System.cmd("realpath", ["-m", "--", path]) do
-      {resolved, 0} -> String.trim(resolved)
-      {_output, _status} -> path
+    with exe when is_binary(exe) <- System.find_executable("realpath"),
+         {resolved, 0} <- System.cmd(exe, ["-m", "--", path]) do
+      String.trim(resolved)
+    else
+      _ -> path
     end
   end
 
@@ -216,16 +250,46 @@ defmodule Inkfish.Sandbox.Archive do
     end
   end
 
-  # The sanitize is a plain in-process call now, and a raise out of it must not
+  # The sanitize is a plain in-process call, and a raise out of it must not
   # escape `safe_extract/3`'s `{:ok, _} | {:error, _}` contract. It used to run
   # as its own OS process inside the namespace, where a raise became an exit
   # status and reached the caller as `{:error, reason}`; this keeps that shape,
   # with the raise's own message kept verbatim.
+  #
+  # It runs in a task so that it is *bounded*, by the same deadline as the rest
+  # of the pipeline: it is one `readlink -f` fork per relative symlink, so a
+  # 10 MB tar of ~20k symlink entries is 10-20 s of serial forks, and until now
+  # it ran with no bound at all -- which is not the deadline this module
+  # documents. The task rescues inside itself rather than this process rescuing
+  # around `Task.await/1` because `Task.async/1` links the task to this process:
+  # a raise that got out of the task would take this process down with it, which
+  # is the failure this function exists to prevent.
   defp sanitize_stage(stage) do
-    sanitize_links!(stage)
-    :ok
-  rescue
-    error -> {:error, Exception.message(error)}
+    task =
+      Task.async(fn ->
+        try do
+          sanitize_links!(stage)
+          :ok
+        rescue
+          error ->
+            Logger.error(Exception.format(:error, error, __STACKTRACE__))
+            {:error, Exception.message(error)}
+        end
+      end)
+
+    case Task.yield(task, timeout_ms()) || Task.shutdown(task, :brutal_kill) do
+      {:ok, result} ->
+        result
+
+      nil ->
+        {:error, "timed out sanitizing the staged tree"}
+
+      {:exit, reason} ->
+        # The link normally turns an abnormal task exit into this process's own
+        # death rather than a `{:exit, _}` here; this keeps the
+        # `{:ok, _} | {:error, _}` contract if it ever does not.
+        {:error, "the sanitize failed: #{inspect(reason)}"}
+    end
   end
 
   # A same-filesystem `File.rename/2`, so the final path is either absent or the
@@ -236,10 +300,10 @@ defmodule Inkfish.Sandbox.Archive do
   #
   # An existing target is removed first. `Upload.unpacked_path/1` `mkdir_p`s it
   # before we are called, and `rename(2)` onto an existing *empty* directory
-  # succeeds while onto a non-empty one it fails with `:enotempty` -- and the
-  # obvious fallback, copying the staged tree in, is the merge that can leave a
-  # partial result behind. Removing it makes both cases the same: the target is
-  # the sanitized tree, or it is gone.
+  # succeeds while onto a non-empty one it fails with `:eexist` (Erlang's name
+  # for `ENOTEMPTY`) -- and the obvious fallback, copying the staged tree in, is
+  # the merge that can leave a partial result behind. Removing it makes both
+  # cases the same: the target is the sanitized tree, or it is gone.
   #
   # Cleanup is asymmetric on purpose. On success the move *is* the cleanup: the
   # staging directory is renamed into place, so nothing of ours is left behind.
@@ -257,7 +321,7 @@ defmodule Inkfish.Sandbox.Archive do
           :ok
 
         {:error, reason} ->
-          {:error, "could not move the sanitized tree to #{target}: #{reason}"}
+          {:error, rename_error(reason, target)}
       end
     else
       {:error, reason} ->
@@ -266,17 +330,35 @@ defmodule Inkfish.Sandbox.Archive do
     end
   end
 
+  # `File.rmdir/1`, not the `File.rm_rf/1` this used to be: the delete is not
+  # load-bearing. The target is a freshly `mkdir_p`ed *empty* directory in every
+  # call there is -- `Upload.unpacked_path/1` creates it, from an upload id that
+  # is autogenerated and never cast -- and `rename(2)` onto an empty directory
+  # succeeds on its own. So the only cases this has to handle are an absent
+  # target and an empty one; a *populated* target is a caller we do not have,
+  # and it is refused rather than emptied. Saving junk is less dangerous than
+  # deleting things.
   defp remove_existing(target) do
-    case File.lstat(target) do
-      {:ok, _stat} ->
-        case File.rm_rf(target) do
-          {:ok, _removed} -> :ok
-          {:error, reason, file} -> {:error, "#{reason} (#{file})"}
-        end
-
-      {:error, _reason} ->
-        :ok
+    case File.rmdir(target) do
+      :ok -> :ok
+      {:error, :enoent} -> :ok
+      {:error, reason} -> {:error, "#{reason} (#{target})"}
     end
+  end
+
+  # `:exdev` is the one rename failure a caller can act on, and the bare atom
+  # says nothing about the remedy: staging and the target have to be on one
+  # filesystem, because the move is a rename rather than a copy. Every other
+  # reason is reported with `inspect/1`, so it reads as the atom it is rather
+  # than as a bare word.
+  defp rename_error(:exdev, target) do
+    "could not move the sanitized tree to #{target}: :exdev (cross-device " <>
+      "link); the staging root #{staging_root()} and the target must be on one " <>
+      "filesystem, because the move is a rename rather than a copy"
+  end
+
+  defp rename_error(reason, target) do
+    "could not move the sanitized tree to #{target}: #{inspect(reason)}"
   end
 
   # The mount's and `tar`'s own diagnostics (a mount error, a `tar` exit code

@@ -16,6 +16,14 @@ defmodule Inkfish.Sandbox.SanitizeLinks do
       base directory itself or something under it
     * a link whose target cannot be read or resolved is removed
 
+  `readlink(1)` is resolved through `PATH` before it is run, for the same reason
+  `Archive.canonical/1` resolves `realpath(1)`: `System.cmd/3` *raises* when the
+  binary is missing, and a raise out of the walk would reach the caller of
+  `Archive.safe_extract/3` as `"Erlang error: :enoent"` rather than as the
+  `{:error, _}` that function promises. A missing `readlink` is treated like any
+  other target that cannot be resolved -- the link is removed -- and the log
+  says which of the two it was.
+
   `base` is passed to the escape check *raw* (not expanded): callers hand in a
   canonical, absolute, slash-free directory -- `Archive` canonicalises the
   staging directory it passes -- and `readlink -f` output is compared against
@@ -59,18 +67,34 @@ defmodule Inkfish.Sandbox.SanitizeLinks do
   end
 
   defp sanitize_relative_link!(path, base) do
-    case System.cmd("readlink", ["-f", path]) do
-      {targ, 0} ->
-        targ = String.trim(targ)
-
+    case readlink(path) do
+      {:ok, targ} ->
         if targ != base and not String.starts_with?(targ, base <> "/") do
           Logger.warning("removing unsafe link: '#{path}' => '#{targ}'")
           File.rm!(path)
         end
 
-      _readlink_failed ->
-        Logger.warning("removing invalid link: '#{path}'")
+      {:error, reason} ->
+        Logger.warning("removing invalid link: '#{path}' (#{reason})")
         File.rm!(path)
+    end
+  end
+
+  # `readlink -f` on one link, with the executable resolved first: `System.cmd/3`
+  # *raises* `ErlangError` (`:enoent`) when the binary is missing, so a `case` on
+  # its exit status never sees that at all -- and a raise out of the walk reaches
+  # the caller of `Archive.safe_extract/3` as `"Erlang error: :enoent"` instead
+  # of the `{:error, _}` it promises. A missing `readlink` is not worth failing
+  # the extraction over: every relative link is then removed, which is the
+  # conservative direction, and the reason is carried so the log says which of
+  # the two it was.
+  defp readlink(path) do
+    with exe when is_binary(exe) <- System.find_executable("readlink"),
+         {targ, 0} <- System.cmd(exe, ["-f", path]) do
+      {:ok, String.trim(targ)}
+    else
+      nil -> {:error, "readlink was not found on PATH"}
+      {_output, status} -> {:error, "readlink exited #{status}"}
     end
   end
 

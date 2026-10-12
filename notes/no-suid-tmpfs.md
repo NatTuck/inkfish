@@ -98,7 +98,7 @@ A tmpfs mounted inside a namespace the helper creates is **invisible to the call
 
 `tmptmpfs run -s 10M -- <command>…` → create userns → map caller→root inside → create mountns → mount capped tmpfs → exec. Mount dies with the namespace.
 
-Corollary: every call site's work must move inside the wrapper. Don't try to make the BEAM enter the namespace — `setns` only affects the calling thread and BEAM is heavily threaded.
+Corollary: every call site's *tmpfs* work must move inside the wrapper — the mount, the `tar` into it, and the copy-out to a host-visible directory. Work that does not need the mount does not move: the symlink sanitize and the move into place run in the app's own BEAM, on a staged copy of the tree, after the wrapper has exited. (That is what shipped; see [`notes/tmptmpfs-userns.md`](tmptmpfs-userns.md) §7.) Don't try to make the BEAM enter the namespace — `setns` only affects the calling thread and BEAM is heavily threaded.
 
 ## 2. Verified reference shape
 
@@ -149,6 +149,17 @@ Because inside the namespace only uid 0 is mapped (to the caller), `tar` sees eu
 - **(iii) Keep the extraction in Elixir and have the BEAM run inside the namespace** — not viable (`setns` is per-thread).
 
 **Recommendation: (ii).** Bring back the measured cost of the extra VM start.
+
+**Corrected after the fact — (ii) is not what shipped.** The sanitizer does stay
+in Elixir, but it does not run inside the wrapper: the tree is copied out to a
+staging directory and the sanitize runs in the app's own BEAM, after the
+namespace has exited. Invoking a separate `elixir` from inside the wrapper is
+what failed in production — a `mise` shim with no version set, and
+`System.find_executable("elixir")` resolving to a release's own `bin/elixir`
+wrapper rather than a general-purpose Elixir. That is a fourth option, not one
+of (i)–(iii). See [`notes/tmptmpfs-userns.md`](tmptmpfs-userns.md) §7 for what
+shipped, including the ordering property it has to preserve (extract to staging,
+sanitize there, then rename into place).
 
 ## 5. Invariants that must not break
 

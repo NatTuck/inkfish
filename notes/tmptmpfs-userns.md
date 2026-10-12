@@ -286,7 +286,10 @@ lands. `safe_extract/3` now owns three steps in this order
 1. **Inside the namespace, pure shell** (`:181-202`): mount the size-capped
    tmpfs, `tar --no-same-owner` into it, and `cp -r "$TMPFS/." "$INKFISH_STAGE"`
    the tree out to a staging directory. No Elixir runs in there at all.
-2. **In the BEAM**: sanitize the staged tree in process (`:211-229`).
+2. **In the BEAM**: sanitize the staged tree in process (`:211-229`), under the
+   same `:extract_timeout_ms` deadline as step 1 — a tree of many relative
+   symlinks costs one `readlink -f` fork each, so it is bounded rather than
+   unbounded.
 3. **In the BEAM**: move the sanitized tree into place with `File.rename/2`
    (`:231-267`).
 
@@ -309,11 +312,17 @@ subvolumes, so a `/tmp` target cannot be renamed into. The tests therefore put
 their fixtures under the upload base, which is the layout the real caller
 guarantees.)
 
-**An existing target is removed first** (`:237-242`, `:269-280`). `rename(2)`
-onto an existing *empty* directory succeeds but onto a non-empty one fails with
-`:enotempty`, and the obvious fallback — copying the staged tree in — is the
-merge that can leave a partial result behind. Removing it makes both cases the
-same: the target is the sanitized tree, or it is gone.
+**An existing target is removed first, and only when it is empty**
+(`:237-242`, `:269-280`). `rename(2)` onto an existing *empty* directory
+succeeds but onto a non-empty one fails with `:eexist` (Erlang's name for
+`ENOTEMPTY`), and the obvious fallback — copying the staged tree in — is the
+merge that can leave a partial result behind. So the removal is a
+`File.rmdir/1`, not a recursive delete: an absent target and an empty one are
+the two cases this has to handle, and a *populated* target is refused rather
+than emptied — saving junk is less dangerous than deleting things. A target
+that is, or contains, the staging root is refused before anything is created at
+all: `safe_extract(archive, Upload.upload_base(), ...)` would otherwise have the
+move land on the staging area the tree came from.
 
 **Cleanup is asymmetric on purpose** (`:244-249`). On success the move *is* the
 cleanup: the staging directory is renamed into place, so nothing of ours is left
