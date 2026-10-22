@@ -35,9 +35,14 @@
           turned off this is the only error the student could see. --%>
     <.error_tag form={f} field={:upload_id} />
 
+    <%= if not (@assignment.allow_upload or @assignment.allow_git or
+                @assignment.allow_markdown) do %>
+      <p class="text-muted">This assignment is not accepting submissions.</p>
+    <% end %>
+
     <div
       class="tabbed-uploader"
-      data-upload-field="sub_upload_id"
+      data-upload-field={f[:upload_id].id}
       data-markdown-field="sub_markdown"
       data-nonce={@nonce}
       data-token={@token}

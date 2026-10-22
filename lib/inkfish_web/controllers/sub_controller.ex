@@ -38,6 +38,11 @@ defmodule InkfishWeb.SubController do
   alias Inkfish.Grades.Grade
   alias Inkfish.GradingTasks
 
+  # A written answer is text; past this it is not a submission. Without a
+  # limit, the only bound is the request parser's 8 MB body cap, which
+  # surfaces as a bare 413 instead of an error on the page.
+  @max_markdown_bytes 1_048_576
+
   def new(conn, _params) do
     asg = conn.assigns[:assignment]
     reg = conn.assigns[:current_reg]
@@ -79,10 +84,15 @@ defmodule InkfishWeb.SubController do
       |> Map.put("team_id", team.id)
 
     result =
-      if String.trim(markdown) == "" do
-        Subs.create_sub(sub_params)
-      else
-        Subs.create_sub_with_text(sub_params, markdown, user.id)
+      cond do
+        byte_size(markdown) > @max_markdown_bytes ->
+          {:error, too_long_changeset(sub_params, markdown)}
+
+        String.trim(markdown) == "" ->
+          Subs.create_sub(sub_params)
+
+        true ->
+          Subs.create_sub_with_text(sub_params, markdown, user.id)
       end
 
     case result do
@@ -127,29 +137,38 @@ defmodule InkfishWeb.SubController do
 
   # `create_sub_with_text/3` can fail on the upload rather than on the sub.
   # The form takes its field names from the changeset's data, so rendering an
-  # `%Upload{}` changeset would make the next attempt post `upload[...]` and
-  # silently drop the sub's own fields -- including hours_spent, which would
-  # then fall back to the schema default. Re-anchor the errors on a sub
-  # changeset, keeping the params the student sent.
+  # `%Upload{}` changeset would make the next attempt post `upload[...]`, which
+  # `create/2` does not match at all -- a 500 instead of an error the student
+  # can fix. Re-anchor the errors on a sub changeset, keeping the params.
   defp sub_changeset(%Ecto.Changeset{data: %Sub{}} = changeset, _sub_params) do
     changeset
   end
 
-  defp sub_changeset(
-         %Ecto.Changeset{errors: errors, action: action},
-         sub_params
-       ) do
-    # `Phoenix.HTML.Form` drops a changeset's errors unless it has an action,
-    # so set one: this is the create form.
-    base = %{Sub.changeset(%Sub{}, sub_params) | action: action || :insert}
-
-    # The upload is built from the text on the server, so a missing upload_id
-    # is not something the student can fix.
-    base = %{base | errors: Keyword.delete(base.errors, :upload_id)}
-
-    Enum.reduce(errors, base, fn {field, {message, opts}}, acc ->
-      Ecto.Changeset.add_error(acc, field, message, opts)
+  defp sub_changeset(%Ecto.Changeset{errors: errors}, sub_params) do
+    Enum.reduce(errors, text_sub_changeset(sub_params), fn {_field,
+                                                            {message, opts}},
+                                                           acc ->
+      # The template shows upload errors under the upload field. Fold any other
+      # key there rather than rendering an "Oops" with nothing under it.
+      Ecto.Changeset.add_error(acc, :upload, message, opts)
     end)
+  end
+
+  # A sub changeset for the direct-markdown path: the upload is built from the
+  # text on the server, so a missing upload_id is not something the student can
+  # fix, and the form needs an action or `Phoenix.HTML.Form` drops the errors.
+  defp text_sub_changeset(sub_params) do
+    base = %{Sub.changeset(%Sub{}, sub_params) | action: :insert}
+    %{base | errors: Keyword.delete(base.errors, :upload_id)}
+  end
+
+  defp too_long_changeset(sub_params, markdown) do
+    Ecto.Changeset.add_error(
+      text_sub_changeset(sub_params),
+      :markdown,
+      "Your submission is too long: #{byte_size(markdown)} bytes, the limit " <>
+        "is #{@max_markdown_bytes} bytes."
+    )
   end
 
   # A markdown-only page does not render the `upload_id` field, so

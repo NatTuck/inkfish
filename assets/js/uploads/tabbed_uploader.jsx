@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Tab, Tabs, Card, Form } from 'react-bootstrap';
 
 import FileUploader from './file_uploader';
@@ -66,7 +66,7 @@ export default function TabbedUploader({allowGit, allowFile, allowMarkdown, mark
       // Both are ready and a file tab is showing. Submit means the file here,
       // but dropping a typed answer without asking would be silent.
       if (hasText && hasUpload && tab !== "markdown") {
-        if (!window.confirm("Submit the attached file and discard your typed answer?")) {
+        if (!window.confirm("Discard your typed answer and submit the attachment instead?")) {
           ev.preventDefault();
           setTab("markdown");
           return;

@@ -66,6 +66,10 @@ defmodule Inkfish.SubsTest do
     end
 
     test "create_sub_with_text/3 deletes the upload when the sub is rejected" do
+      import Mimic
+
+      Mimic.copy(Inkfish.Uploads)
+
       user = insert(:user)
       asg = insert(:assignment)
       reg = insert(:reg)
@@ -79,12 +83,22 @@ defmodule Inkfish.SubsTest do
         "hours_spent" => nil
       }
 
+      expect(Inkfish.Uploads, :delete_upload, fn upload ->
+        send(self(), {:delete_upload, upload})
+        {:ok, upload}
+      end)
+
       assert {:error, %Ecto.Changeset{}} =
                Subs.create_sub_with_text(attrs, "# Lost\n", user.id)
 
-      # The upload row is gone, so the 2-day sweep can never find its files:
-      # the directory has to go with it.
-      assert Inkfish.Uploads.list_uploads() == []
+      # A rolled-back row would leave the upload's files unreachable (the
+      # cleanup sweep only queries rows), so the rejected path has to delete
+      # the upload -- a row-count assertion cannot tell the two apart.
+      assert_received {:delete_upload, %Inkfish.Uploads.Upload{} = upload}
+      assert upload.name == "submission.md"
+      assert upload.kind == "sub"
+
+      verify!()
     end
 
     test "create_sub/1 with invalid data returns error changeset" do

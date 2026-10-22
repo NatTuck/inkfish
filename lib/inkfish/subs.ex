@@ -278,7 +278,9 @@ defmodule Inkfish.Subs do
         {:error, _changeset} = error ->
           # Nothing points at this upload, and the cleanup sweep works off
           # upload rows -- a rolled-back row would leave the files unreachable
-          # forever. Delete it here instead.
+          # forever. Delete it here instead. (A raise out of `create_sub/1`
+          # after its insert is a different case: the sub then references the
+          # upload, so it must be left alone.)
           Uploads.delete_upload(upload)
           error
       end

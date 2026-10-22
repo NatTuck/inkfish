@@ -112,7 +112,8 @@ defmodule Inkfish.Uploads do
   # stray `\r` on every line would show up in the viewer and would not match
   # what the student typed.
   def create_text_upload(name, text, kind, user_id) do
-    text = String.replace(text, "\r\n", "\n")
+    text = String.replace(text, ~r/\r\n?/, "\n")
+    name = Path.basename(name)
 
     # A private directory with an unguessable name, rather than a bare file in
     # the shared temp dir: the file holds the student's answer, and a
@@ -125,16 +126,18 @@ defmodule Inkfish.Uploads do
           Base.encode16(:crypto.strong_rand_bytes(16), case: :lower)
       )
 
-    File.mkdir_p!(dir)
-    File.chmod!(dir, 0o700)
-
     try do
+      File.mkdir_p!(dir)
+      File.chmod!(dir, 0o700)
+
       path = Path.join(dir, name)
       File.write!(path, text)
 
       # Atom keys on purpose: `create_upload/1` reads `attrs[:user_id]` and
-      # `attrs[:kind]` to prune that user's unclaimed uploads, and string keys
-      # silently skip it.
+      # `attrs[:kind]` to prune that user's older unclaimed uploads. The prune
+      # runs before this upload is inserted, so it cannot delete it, and it
+      # keeps the five newest, so an upload another tab is still working on
+      # survives unless the user has abandoned five more since.
       create_upload(%{
         upload: %Plug.Upload{
           path: path,

@@ -199,6 +199,31 @@ defmodule InkfishWeb.SubControllerTest do
       assert html =~ ~s(data-markdown="# Keep me")
     end
 
+    test "rejects an oversized markdown submission with a readable error", %{
+      conn: conn,
+      assignment: asg
+    } do
+      asg =
+        Inkfish.Repo.update!(
+          Ecto.Changeset.change(asg,
+            allow_markdown: true,
+            allow_upload: false,
+            allow_git: false
+          )
+        )
+
+      params = %{
+        "hours_spent" => "1.0",
+        "markdown" => String.duplicate("a", 1_048_577)
+      }
+
+      conn = post(conn, ~p"/assignments/#{asg}/subs", sub: params)
+
+      html = html_response(conn, 200)
+      assert html =~ "Your submission is too long"
+      assert html =~ "the limit is 1048576 bytes"
+    end
+
     test "renders errors when data is invalid", %{conn: conn, assignment: asg} do
       params = %{}
 
