@@ -72,9 +72,11 @@
   </li>
 </ul>
 
-<p><strong>Note:</strong></p>
+<%= if @sub.note not in [nil, ""] do %>
+  <p><strong>Note:</strong></p>
 
-<p>{sanitize_markdown(@sub.note)}</p>
+  <p>{sanitize_markdown(@sub.note)}</p>
+<% end %>
 
 <h2>Grades</h2>
 

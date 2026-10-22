@@ -86,6 +86,28 @@ defmodule Inkfish.UploadsTest do
       assert "zip archives are not supported" in errors_on(changeset).upload
     end
 
+    test "create_text_upload/4 stores the text as one markdown file" do
+      user = insert(:user)
+
+      assert {:ok, %Upload{} = upload} =
+               Uploads.create_text_upload(
+                 "submission.md",
+                 "# Hi\r\n\r\nBody\r\n",
+                 "sub",
+                 user.id
+               )
+
+      assert upload.name == "submission.md"
+      assert upload.kind == "sub"
+
+      path = Path.join(Upload.unpacked_path(upload), "submission.md")
+      assert File.exists?(path)
+
+      # CRLF is normalized so the grader's line numbers match what the
+      # student saw in the editor.
+      assert File.read!(path) == "# Hi\n\nBody\n"
+    end
+
     test "delete_upload/1 deletes the upload" do
       upload = upload_fixture()
       assert {:ok, %Upload{}} = Uploads.delete_upload(upload)

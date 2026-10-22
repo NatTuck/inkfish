@@ -268,6 +268,17 @@ defmodule Inkfish.Subs do
     end)
   end
 
+  def create_sub_with_text(sub_attrs, text, user_id) do
+    Repo.transact(fn ->
+      with {:ok, upload} <-
+             Uploads.create_text_upload("submission.md", text, "sub", user_id) do
+        sub_attrs
+        |> Map.put("upload_id", upload.id)
+        |> create_sub()
+      end
+    end)
+  end
+
   def has_autograders?(sub) do
     asg = Inkfish.Assignments.get_assignment!(sub.assignment_id)
 

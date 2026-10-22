@@ -4,7 +4,12 @@
 <p>Assignment: {@assignment.name}</p>
 <p>Submitting for: {show_team(@team)}</p>
 
-<.form :let={f} for={@changeset} action={~p"/assignments/#{@assignment}/subs"}>
+<.form
+  :let={f}
+  for={@changeset}
+  action={~p"/assignments/#{@assignment}/subs"}
+  id="new-sub-form"
+>
   <%= if @changeset.action do %>
     <div class="alert alert-danger">
       <p>Oops, something went wrong! Please check the errors below.</p>
@@ -17,17 +22,17 @@
     <.error_tag form={f} field={:hours_spent} />
   </div>
 
-  <div class="mb-3">
-    <.label for={f[:note].id} class="form-label">Note</.label>
-    <.textarea field={f[:note]} class="form-control" />
-    <.error_tag form={f} field={:note} />
-  </div>
-
   <div class="mb-3 sub-upload-group">
-    <.label for={f[:upload_id].id} class="form-label">Upload id</.label>
-    <.text_input field={f[:upload_id]} class="form-control" readonly="readonly" />
-    <.error_tag form={f} field={:upload_id} />
-    <p>Max upload size is 5MB, larger uploads will fail.</p>
+    <%= if @assignment.allow_upload or @assignment.allow_git do %>
+      <.label for={f[:upload_id].id} class="form-label">Upload id</.label>
+      <.text_input
+        field={f[:upload_id]}
+        class="form-control"
+        readonly="readonly"
+      />
+      <.error_tag form={f} field={:upload_id} />
+      <p>Max upload size is 10MB, larger uploads will fail.</p>
+    <% end %>
 
     <div
       class="tabbed-uploader"
@@ -36,9 +41,15 @@
       data-token={@token}
       data-allow-git={@assignment.allow_git}
       data-allow-file={@assignment.allow_upload}
+      data-allow-markdown={@assignment.allow_markdown}
+      data-markdown={@markdown}
     >
       React component loading...
     </div>
+    <%!-- Direct-markdown submissions are built server-side, so their failures
+          (an unpack failure, say) have no AJAX response to land in. --%>
+    <.error_tag form={f} field={:upload} />
+    <.error_tag form={f} field={:markdown} />
   </div>
 
   <div class="mb-3">

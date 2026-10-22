@@ -3,15 +3,47 @@ defmodule InkfishWeb.SubControllerTest do
   import Inkfish.Factory
 
   setup %{conn: conn} do
-    %{student: student, assignment: assignment, grade: grade} = stock_course()
+    %{student: student, assignment: assignment, grade: grade, sub: sub} =
+      stock_course()
+
     conn = login(conn, student)
-    {:ok, conn: conn, grade: grade, assignment: assignment}
+    {:ok, conn: conn, grade: grade, assignment: assignment, sub: sub}
   end
 
   describe "new sub" do
     test "renders form", %{conn: conn, assignment: asg} do
       conn = get(conn, ~p"/assignments/#{asg}/subs/new")
       assert html_response(conn, 200) =~ "New Sub"
+    end
+
+    test "no longer asks for a note", %{conn: conn, assignment: asg} do
+      conn = get(conn, ~p"/assignments/#{asg}/subs/new")
+      html = html_response(conn, 200)
+
+      refute html =~ ~s(name="sub[note]")
+    end
+
+    test "offers direct markdown when the assignment allows it", %{
+      conn: conn,
+      assignment: asg
+    } do
+      asg =
+        Inkfish.Repo.update!(Ecto.Changeset.change(asg, allow_markdown: true))
+
+      conn = get(conn, ~p"/assignments/#{asg}/subs/new")
+      html = html_response(conn, 200)
+
+      assert html =~ "data-allow-markdown"
+    end
+
+    test "does not offer direct markdown by default", %{
+      conn: conn,
+      assignment: asg
+    } do
+      conn = get(conn, ~p"/assignments/#{asg}/subs/new")
+      html = html_response(conn, 200)
+
+      refute html =~ "data-allow-markdown"
     end
   end
 
@@ -29,6 +61,91 @@ defmodule InkfishWeb.SubControllerTest do
       assert html_response(conn, 200) =~ "Show Sub"
     end
 
+    test "creates a sub from direct markdown", %{
+      conn: conn,
+      assignment: asg
+    } do
+      asg =
+        Inkfish.Repo.update!(Ecto.Changeset.change(asg, allow_markdown: true))
+
+      params = %{
+        "hours_spent" => "1.5",
+        "markdown" => "# My answer\r\n\r\n- one\r\n"
+      }
+
+      conn = post(conn, ~p"/assignments/#{asg}/subs", sub: params)
+
+      assert %{id: id} = redirected_params(conn)
+      assert redirected_to(conn) == ~p"/subs/#{id}"
+
+      sub = Inkfish.Subs.get_sub!(String.to_integer(id))
+      assert sub.upload.name == "submission.md"
+
+      path =
+        Path.join(
+          Inkfish.Uploads.Upload.unpacked_path(sub.upload),
+          "submission.md"
+        )
+
+      # Line endings are normalized: the grader's line numbers have to match
+      # the file the student typed.
+      assert File.read!(path) == "# My answer\n\n- one\n"
+
+      conn = get(conn, ~p"/subs/#{sub}/files")
+      assert html_response(conn, 200) =~ "submission.md"
+    end
+
+    test "ignores direct markdown the assignment does not allow", %{
+      conn: conn,
+      assignment: asg
+    } do
+      params = %{"hours_spent" => "1.5", "markdown" => "# Sneaky"}
+
+      conn = post(conn, ~p"/assignments/#{asg}/subs", sub: params)
+
+      # No upload id either, so the sub is rejected rather than stored.
+      assert html_response(conn, 200) =~ "New Submission"
+    end
+
+    test "says why a blank markdown submission was rejected", %{
+      conn: conn,
+      assignment: asg
+    } do
+      asg =
+        Inkfish.Repo.update!(
+          Ecto.Changeset.change(asg,
+            allow_markdown: true,
+            allow_upload: false,
+            allow_git: false
+          )
+        )
+
+      params = %{"hours_spent" => "1.0", "markdown" => "   \n  "}
+
+      conn = post(conn, ~p"/assignments/#{asg}/subs", sub: params)
+
+      html = html_response(conn, 200)
+      assert html =~ "New Submission"
+      assert html =~ "Type your submission before submitting it."
+    end
+
+    test "keeps the typed markdown when the sub is rejected", %{
+      conn: conn,
+      assignment: asg
+    } do
+      asg =
+        Inkfish.Repo.update!(Ecto.Changeset.change(asg, allow_markdown: true))
+
+      # hours_spent is required, so this round-trips through the error path.
+      params = %{"hours_spent" => nil, "markdown" => "# Keep me"}
+
+      conn = post(conn, ~p"/assignments/#{asg}/subs", sub: params)
+
+      html = html_response(conn, 200)
+      assert html =~ "New Submission"
+      assert html =~ ~s(data-markdown="# Keep me")
+    end
+
     test "renders errors when data is invalid", %{conn: conn, assignment: asg} do
       params = %{}
 
@@ -36,6 +153,29 @@ defmodule InkfishWeb.SubControllerTest do
         post(conn, ~p"/assignments/#{asg}/subs", sub: params)
 
       assert html_response(conn, 200) =~ "New Sub"
+    end
+  end
+
+  describe "sub note" do
+    test "is hidden when the sub has no note", %{conn: conn, sub: sub} do
+      {:ok, sub} = Inkfish.Repo.update(Ecto.Changeset.change(sub, note: nil))
+
+      conn = get(conn, ~p"/subs/#{sub}")
+
+      refute html_response(conn, 200) =~ "Student Note"
+    end
+
+    test "is shown when the sub has a note", %{conn: conn, sub: sub} do
+      {:ok, sub} =
+        Inkfish.Repo.update(
+          Ecto.Changeset.change(sub, note: "Look at section 2")
+        )
+
+      conn = get(conn, ~p"/subs/#{sub}")
+
+      html = html_response(conn, 200)
+      assert html =~ "Student Note"
+      assert html =~ "Look at section 2"
     end
   end
 

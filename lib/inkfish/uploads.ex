@@ -102,6 +102,41 @@ defmodule Inkfish.Uploads do
     end
   end
 
+  # A direct-markdown submission is stored as an ordinary one-file upload, so
+  # everything downstream -- the download link, the file viewer, line comments,
+  # autograders and the cleanup sweep -- works on it with no special cases.
+  #
+  # Line endings are normalized to `\n` before the file is written. The text
+  # comes from a browser textarea, where a form-encoded value would arrive with
+  # `\r\n`, and the grader's line comments are numbered against the file: a
+  # stray `\r` on every line would show up in the viewer and would not match
+  # what the student typed.
+  def create_text_upload(name, text, kind, user_id) do
+    text = String.replace(text, "\r\n", "\n")
+
+    path =
+      Path.join(
+        System.tmp_dir!(),
+        "inkfish-text-upload-#{System.unique_integer([:positive])}.md"
+      )
+
+    File.write!(path, text)
+
+    try do
+      create_upload(%{
+        "upload" => %Plug.Upload{
+          path: path,
+          filename: name,
+          content_type: "text/markdown"
+        },
+        "kind" => kind,
+        "user_id" => user_id
+      })
+    after
+      File.rm(path)
+    end
+  end
+
   def create_fake_upload(owner) do
     attrs = %{
       "user_id" => owner.id,

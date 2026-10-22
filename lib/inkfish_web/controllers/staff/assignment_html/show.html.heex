@@ -104,6 +104,9 @@
     <%= if @assignment.allow_upload do %>
       upload
     <% end %>
+    <%= if @assignment.allow_markdown do %>
+      markdown
+    <% end %>
   </li>
 </ul>
 
@@ -157,7 +160,8 @@
 
 <h2>Submissions</h2>
 
-<%= unless @assignment.allow_git || @assignment.allow_upload do %>
+<%= unless @assignment.allow_git || @assignment.allow_upload ||
+            @assignment.allow_markdown do %>
   <div>
     <.link
       href={~p"/staff/assignments/#{@assignment}/create_fake_subs"}

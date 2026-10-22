@@ -51,7 +51,8 @@ defmodule InkfishWeb.SubController do
         changeset: changeset,
         team: team,
         nonce: nonce,
-        token: token
+        token: token,
+        markdown: nil
       )
     else
       _ ->
@@ -64,8 +65,12 @@ defmodule InkfishWeb.SubController do
   def create(conn, %{"sub" => sub_params}) do
     asg = conn.assigns[:assignment]
     reg = conn.assigns[:current_reg]
+    user = conn.assigns[:current_user]
 
     {:ok, team} = Teams.get_active_team(asg, reg)
+
+    {markdown, sub_params} = Map.pop(sub_params, "markdown")
+    markdown = markdown_text(asg, markdown)
 
     sub_params =
       sub_params
@@ -73,7 +78,14 @@ defmodule InkfishWeb.SubController do
       |> Map.put("reg_id", reg.id)
       |> Map.put("team_id", team.id)
 
-    case Subs.create_sub(sub_params) do
+    result =
+      if String.trim(markdown) == "" do
+        Subs.create_sub(sub_params)
+      else
+        Subs.create_sub_with_text(sub_params, markdown, user.id)
+      end
+
+    case result do
       {:ok, sub} ->
         try do
           GradingTasks.assign_grading_tasks(sub.assignment_id)
@@ -86,16 +98,47 @@ defmodule InkfishWeb.SubController do
         |> redirect(to: ~p"/subs/#{sub}")
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        # IO.inspect({:error, changeset})
-        nonce = Base.encode16(:crypto.strong_rand_bytes(32))
-        token = Phoenix.Token.sign(conn, "upload", %{kind: "sub", nonce: nonce})
+        changeset =
+          add_blank_markdown_error(changeset, asg, markdown, sub_params)
+
+        %{nonce: nonce, token: token} = upload_token(conn, "sub")
 
         render(conn, "new.html",
           changeset: changeset,
           team: team,
           nonce: nonce,
-          token: token
+          token: token,
+          markdown: markdown
         )
+    end
+  end
+
+  # Direct markdown is a per-assignment option: if the assignment does not
+  # offer it, a `sub[markdown]` a client sends is ignored rather than used.
+  defp markdown_text(asg, markdown) do
+    if asg.allow_markdown and is_binary(markdown) do
+      markdown
+    else
+      ""
+    end
+  end
+
+  # A blank markdown submission with nothing uploaded fails `create_sub/1` on
+  # `upload_id`, which the markdown-only page does not render -- so the student
+  # would get the generic "something went wrong" with no visible reason. Say
+  # what is actually wrong, next to the editor.
+  defp add_blank_markdown_error(changeset, asg, markdown, sub_params) do
+    upload_id = sub_params["upload_id"]
+    no_upload = is_nil(upload_id) or upload_id == ""
+
+    if asg.allow_markdown and String.trim(markdown) == "" and no_upload do
+      Ecto.Changeset.add_error(
+        changeset,
+        :markdown,
+        "Type your submission before submitting it."
+      )
+    else
+      changeset
     end
   end
 

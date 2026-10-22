@@ -26,6 +26,7 @@ defmodule InkfishWeb.Staff.AssignmentControllerTest do
         |> get(~p"/staff/buckets/#{bucket}/assignments/new")
 
       assert html_response(conn, 200) =~ "New Assignment"
+      assert html_response(conn, 200) =~ "Direct Markdown"
     end
   end
 
@@ -86,6 +87,27 @@ defmodule InkfishWeb.Staff.AssignmentControllerTest do
         |> get(~p"/staff/assignments/#{assignment}/edit")
 
       assert html_response(conn, 200) =~ "Edit Assignment"
+      assert html_response(conn, 200) =~ "Direct Markdown"
+    end
+  end
+
+  describe "show assignment" do
+    setup [:create_assignment]
+
+    test "lists markdown in the sub options when allowed", %{
+      conn: conn,
+      assignment: assignment
+    } do
+      Inkfish.Repo.update!(
+        Ecto.Changeset.change(assignment, allow_markdown: true)
+      )
+
+      conn =
+        conn
+        |> login("alice@example.com")
+        |> get(~p"/staff/assignments/#{assignment}")
+
+      assert html_response(conn, 200) =~ "markdown"
     end
   end
 
