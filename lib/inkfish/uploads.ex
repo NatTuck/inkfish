@@ -102,6 +102,56 @@ defmodule Inkfish.Uploads do
     end
   end
 
+  # A direct-markdown submission is stored as an ordinary one-file upload, so
+  # everything downstream -- the download link, the file viewer, line comments,
+  # autograders and the cleanup sweep -- works on it with no special cases.
+  #
+  # Line endings are normalized to `\n` before the file is written. The text
+  # comes from a browser textarea, where a form-encoded value would arrive with
+  # `\r\n`, and the grader's line comments are numbered against the file: a
+  # stray `\r` on every line would show up in the viewer and would not match
+  # what the student typed.
+  def create_text_upload(name, text, kind, user_id) do
+    text = String.replace(text, ~r/\r\n?/, "\n")
+    name = Path.basename(name)
+
+    # A private directory with an unguessable name, rather than a bare file in
+    # the shared temp dir: the file holds the student's answer, and a
+    # predictable path would let another local user read it, or plant a symlink
+    # where it is about to be written.
+    dir =
+      Path.join(
+        System.tmp_dir!(),
+        "inkfish-text-upload-" <>
+          Base.encode16(:crypto.strong_rand_bytes(16), case: :lower)
+      )
+
+    try do
+      File.mkdir_p!(dir)
+      File.chmod!(dir, 0o700)
+
+      path = Path.join(dir, name)
+      File.write!(path, text)
+
+      # Atom keys on purpose: `create_upload/1` reads `attrs[:user_id]` and
+      # `attrs[:kind]` to prune that user's older unclaimed uploads. The prune
+      # runs before this upload is inserted, so it cannot delete it, and it
+      # keeps the five newest, so an upload another tab is still working on
+      # survives unless the user has abandoned five more since.
+      create_upload(%{
+        upload: %Plug.Upload{
+          path: path,
+          filename: name,
+          content_type: "text/markdown"
+        },
+        kind: kind,
+        user_id: user_id
+      })
+    after
+      File.rm_rf(dir)
+    end
+  end
+
   def create_fake_upload(owner) do
     attrs = %{
       "user_id" => owner.id,

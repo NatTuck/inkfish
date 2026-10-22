@@ -4,6 +4,10 @@
 <p>Assignment: {@assignment.name}</p>
 <p>Submitting for: {show_team(@team)}</p>
 
+<%!-- No `id` on this form: `<.form id={...}>` also becomes the prefix for every
+      field id, which would rename `sub_upload_id` and break the uploaders'
+      `data-upload-field` lookup. The React component finds the form through
+      its own fields instead. --%>
 <.form :let={f} for={@changeset} action={~p"/assignments/#{@assignment}/subs"}>
   <%= if @changeset.action do %>
     <div class="alert alert-danger">
@@ -17,28 +21,42 @@
     <.error_tag form={f} field={:hours_spent} />
   </div>
 
-  <div class="mb-3">
-    <.label for={f[:note].id} class="form-label">Note</.label>
-    <.textarea field={f[:note]} class="form-control" />
-    <.error_tag form={f} field={:note} />
-  </div>
-
   <div class="mb-3 sub-upload-group">
-    <.label for={f[:upload_id].id} class="form-label">Upload id</.label>
-    <.text_input field={f[:upload_id]} class="form-control" readonly="readonly" />
+    <%= if @assignment.allow_upload or @assignment.allow_git do %>
+      <.label for={f[:upload_id].id} class="form-label">Upload id</.label>
+      <.text_input
+        field={f[:upload_id]}
+        class="form-control"
+        readonly="readonly"
+      />
+      <p>Max upload size is 10 MiB, larger uploads will fail.</p>
+    <% end %>
+    <%!-- Rendered even when the field is not: with every submission method
+          turned off this is the only error the student could see. --%>
     <.error_tag form={f} field={:upload_id} />
-    <p>Max upload size is 5MB, larger uploads will fail.</p>
+
+    <%= if not (@assignment.allow_upload or @assignment.allow_git or
+                @assignment.allow_markdown) do %>
+      <p class="text-muted">This assignment is not accepting submissions.</p>
+    <% end %>
 
     <div
       class="tabbed-uploader"
-      data-upload-field="sub_upload_id"
+      data-upload-field={f[:upload_id].id}
+      data-markdown-field="sub_markdown"
       data-nonce={@nonce}
       data-token={@token}
       data-allow-git={@assignment.allow_git}
       data-allow-file={@assignment.allow_upload}
+      data-allow-markdown={@assignment.allow_markdown}
+      data-markdown={@markdown}
     >
       React component loading...
     </div>
+    <%!-- Direct-markdown submissions are built server-side, so their failures
+          (an unpack failure, say) have no AJAX response to land in. --%>
+    <.error_tag form={f} field={:upload} />
+    <.error_tag form={f} field={:markdown} />
   </div>
 
   <div class="mb-3">

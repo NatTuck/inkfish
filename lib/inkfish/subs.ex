@@ -268,6 +268,25 @@ defmodule Inkfish.Subs do
     end)
   end
 
+  def create_sub_with_text(sub_attrs, text, user_id) do
+    with {:ok, upload} <-
+           Uploads.create_text_upload("submission.md", text, "sub", user_id) do
+      case create_sub(Map.put(sub_attrs, "upload_id", upload.id)) do
+        {:ok, sub} ->
+          {:ok, sub}
+
+        {:error, _changeset} = error ->
+          # Nothing points at this upload, and the cleanup sweep works off
+          # upload rows -- a rolled-back row would leave the files unreachable
+          # forever. Delete it here instead. (A raise out of `create_sub/1`
+          # after its insert is a different case: the sub then references the
+          # upload, so it must be left alone.)
+          Uploads.delete_upload(upload)
+          error
+      end
+    end
+  end
+
   def has_autograders?(sub) do
     asg = Inkfish.Assignments.get_assignment!(sub.assignment_id)
 

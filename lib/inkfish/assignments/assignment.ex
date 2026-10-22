@@ -17,6 +17,7 @@ defmodule Inkfish.Assignments.Assignment do
     field :hide, :boolean, default: false
     field :allow_git, :boolean, default: true
     field :allow_upload, :boolean, default: true
+    field :allow_markdown, :boolean, default: false
     field :hard_deadline, :boolean, default: false
     field :force_show_grades, :boolean, default: false
 
@@ -48,6 +49,7 @@ defmodule Inkfish.Assignments.Assignment do
       :solution_upload_id,
       :allow_git,
       :allow_upload,
+      :allow_markdown,
       :hard_deadline,
       :force_show_grades,
       :hide

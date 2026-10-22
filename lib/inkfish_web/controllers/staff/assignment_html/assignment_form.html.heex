@@ -74,6 +74,11 @@
         <.checkbox field={f[:allow_git]} class="form-check-input" />
         <.error_tag form={f} field={:allow_git} />
       </div>
+      <div class="form-check form-switch">
+        <.label for="allow_markdown">Direct Markdown</.label>
+        <.checkbox field={f[:allow_markdown]} class="form-check-input" />
+        <.error_tag form={f} field={:allow_markdown} />
+      </div>
     </div>
   </div>
 

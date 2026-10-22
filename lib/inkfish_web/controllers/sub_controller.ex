@@ -38,6 +38,11 @@ defmodule InkfishWeb.SubController do
   alias Inkfish.Grades.Grade
   alias Inkfish.GradingTasks
 
+  # A written answer is text; past this it is not a submission. Without a
+  # limit, the only bound is the request parser's 8 MB body cap, which
+  # surfaces as a bare 413 instead of an error on the page.
+  @max_markdown_bytes 1_048_576
+
   def new(conn, _params) do
     asg = conn.assigns[:assignment]
     reg = conn.assigns[:current_reg]
@@ -51,7 +56,8 @@ defmodule InkfishWeb.SubController do
         changeset: changeset,
         team: team,
         nonce: nonce,
-        token: token
+        token: token,
+        markdown: nil
       )
     else
       _ ->
@@ -64,8 +70,12 @@ defmodule InkfishWeb.SubController do
   def create(conn, %{"sub" => sub_params}) do
     asg = conn.assigns[:assignment]
     reg = conn.assigns[:current_reg]
+    user = conn.assigns[:current_user]
 
     {:ok, team} = Teams.get_active_team(asg, reg)
+
+    {markdown, sub_params} = Map.pop(sub_params, "markdown")
+    markdown = markdown_text(asg, markdown)
 
     sub_params =
       sub_params
@@ -73,7 +83,19 @@ defmodule InkfishWeb.SubController do
       |> Map.put("reg_id", reg.id)
       |> Map.put("team_id", team.id)
 
-    case Subs.create_sub(sub_params) do
+    result =
+      cond do
+        byte_size(markdown) > @max_markdown_bytes ->
+          {:error, too_long_changeset(sub_params, markdown)}
+
+        String.trim(markdown) == "" ->
+          Subs.create_sub(sub_params)
+
+        true ->
+          Subs.create_sub_with_text(sub_params, markdown, user.id)
+      end
+
+    case result do
       {:ok, sub} ->
         try do
           GradingTasks.assign_grading_tasks(sub.assignment_id)
@@ -86,16 +108,90 @@ defmodule InkfishWeb.SubController do
         |> redirect(to: ~p"/subs/#{sub}")
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        # IO.inspect({:error, changeset})
-        nonce = Base.encode16(:crypto.strong_rand_bytes(32))
-        token = Phoenix.Token.sign(conn, "upload", %{kind: "sub", nonce: nonce})
+        changeset =
+          changeset
+          |> sub_changeset(sub_params)
+          |> add_blank_markdown_error(asg, markdown, sub_params)
+
+        %{nonce: nonce, token: token} = upload_token(conn, "sub")
 
         render(conn, "new.html",
           changeset: changeset,
           team: team,
           nonce: nonce,
-          token: token
+          token: token,
+          markdown: markdown
         )
+    end
+  end
+
+  # Direct markdown is a per-assignment option: if the assignment does not
+  # offer it, a `sub[markdown]` a client sends is ignored rather than used.
+  defp markdown_text(asg, markdown) do
+    if asg.allow_markdown and is_binary(markdown) do
+      markdown
+    else
+      ""
+    end
+  end
+
+  # `create_sub_with_text/3` can fail on the upload rather than on the sub.
+  # The form takes its field names from the changeset's data, so rendering an
+  # `%Upload{}` changeset would make the next attempt post `upload[...]`, which
+  # `create/2` does not match at all -- a 500 instead of an error the student
+  # can fix. Re-anchor the errors on a sub changeset, keeping the params.
+  defp sub_changeset(%Ecto.Changeset{data: %Sub{}} = changeset, _sub_params) do
+    changeset
+  end
+
+  defp sub_changeset(%Ecto.Changeset{errors: errors}, sub_params) do
+    Enum.reduce(errors, text_sub_changeset(sub_params), fn {_field,
+                                                            {message, opts}},
+                                                           acc ->
+      # The template shows upload errors under the upload field. Fold any other
+      # key there rather than rendering an "Oops" with nothing under it.
+      Ecto.Changeset.add_error(acc, :upload, message, opts)
+    end)
+  end
+
+  # A sub changeset for the direct-markdown path: the upload is built from the
+  # text on the server, so a missing upload_id is not something the student can
+  # fix, and the form needs an action or `Phoenix.HTML.Form` drops the errors.
+  defp text_sub_changeset(sub_params) do
+    base = %{Sub.changeset(%Sub{}, sub_params) | action: :insert}
+    %{base | errors: Keyword.delete(base.errors, :upload_id)}
+  end
+
+  defp too_long_changeset(sub_params, markdown) do
+    Ecto.Changeset.add_error(
+      text_sub_changeset(sub_params),
+      :markdown,
+      "Your submission is too long: #{byte_size(markdown)} bytes, the limit " <>
+        "is #{@max_markdown_bytes} bytes."
+    )
+  end
+
+  # A markdown-only page does not render the `upload_id` field, so
+  # "upload_id can't be blank" would be invisible and unactionable there. Say
+  # what is actually wrong, next to the editor. When a file or git mode is also
+  # offered, the upload_id error is the right one: it points at a field the
+  # student can see.
+  defp add_blank_markdown_error(changeset, asg, markdown, sub_params) do
+    only_markdown =
+      asg.allow_markdown and not (asg.allow_upload or asg.allow_git)
+
+    upload_id = sub_params["upload_id"]
+    no_upload = is_nil(upload_id) or upload_id == ""
+
+    if only_markdown and String.trim(markdown) == "" and no_upload do
+      changeset
+      |> Map.update!(:errors, &Keyword.delete(&1, :upload_id))
+      |> Ecto.Changeset.add_error(
+        :markdown,
+        "Type your submission before submitting it."
+      )
+    else
+      changeset
     end
   end
 
