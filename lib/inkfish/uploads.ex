@@ -114,26 +114,38 @@ defmodule Inkfish.Uploads do
   def create_text_upload(name, text, kind, user_id) do
     text = String.replace(text, "\r\n", "\n")
 
-    path =
+    # A private directory with an unguessable name, rather than a bare file in
+    # the shared temp dir: the file holds the student's answer, and a
+    # predictable path would let another local user read it, or plant a symlink
+    # where it is about to be written.
+    dir =
       Path.join(
         System.tmp_dir!(),
-        "inkfish-text-upload-#{System.unique_integer([:positive])}.md"
+        "inkfish-text-upload-" <>
+          Base.encode16(:crypto.strong_rand_bytes(16), case: :lower)
       )
 
-    File.write!(path, text)
+    File.mkdir_p!(dir)
+    File.chmod!(dir, 0o700)
 
     try do
+      path = Path.join(dir, name)
+      File.write!(path, text)
+
+      # Atom keys on purpose: `create_upload/1` reads `attrs[:user_id]` and
+      # `attrs[:kind]` to prune that user's unclaimed uploads, and string keys
+      # silently skip it.
       create_upload(%{
-        "upload" => %Plug.Upload{
+        upload: %Plug.Upload{
           path: path,
           filename: name,
           content_type: "text/markdown"
         },
-        "kind" => kind,
-        "user_id" => user_id
+        kind: kind,
+        user_id: user_id
       })
     after
-      File.rm(path)
+      File.rm_rf(dir)
     end
   end
 

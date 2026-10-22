@@ -99,6 +99,7 @@ defmodule Inkfish.UploadsTest do
 
       assert upload.name == "submission.md"
       assert upload.kind == "sub"
+      assert upload.size == byte_size("# Hi\n\nBody\n")
 
       path = Path.join(Upload.unpacked_path(upload), "submission.md")
       assert File.exists?(path)
@@ -108,9 +109,13 @@ defmodule Inkfish.UploadsTest do
       assert File.read!(path) == "# Hi\n\nBody\n"
     end
 
-    test "delete_upload/1 deletes the upload" do
+    test "delete_upload/1 deletes the upload and its files" do
       upload = upload_fixture()
+      dir = Upload.upload_dir(upload)
+      assert File.exists?(dir)
+
       assert {:ok, %Upload{}} = Uploads.delete_upload(upload)
+      refute File.exists?(dir)
       assert_raise Ecto.NoResultsError, fn -> Uploads.get_upload!(upload.id) end
     end
 

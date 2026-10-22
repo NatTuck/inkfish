@@ -13,7 +13,16 @@ defmodule InkfishWeb.SubControllerTest do
   describe "new sub" do
     test "renders form", %{conn: conn, assignment: asg} do
       conn = get(conn, ~p"/assignments/#{asg}/subs/new")
-      assert html_response(conn, 200) =~ "New Sub"
+      html = html_response(conn, 200)
+
+      assert html =~ "New Sub"
+
+      # The uploaders write into this field by id, and `data-upload-field`
+      # points at it. Adding an `id` to `<.form>` would rename it (Phoenix
+      # prefixes field ids with the form id) and break every file and git
+      # submission, so pin the rendered id.
+      assert html =~ ~s(id="sub_upload_id")
+      assert html =~ ~s(data-upload-field="sub_upload_id")
     end
 
     test "no longer asks for a note", %{conn: conn, assignment: asg} do
@@ -99,12 +108,56 @@ defmodule InkfishWeb.SubControllerTest do
       conn: conn,
       assignment: asg
     } do
+      count_before = Inkfish.Repo.aggregate(Inkfish.Subs.Sub, :count)
+
       params = %{"hours_spent" => "1.5", "markdown" => "# Sneaky"}
 
       conn = post(conn, ~p"/assignments/#{asg}/subs", sub: params)
 
-      # No upload id either, so the sub is rejected rather than stored.
-      assert html_response(conn, 200) =~ "New Submission"
+      html = html_response(conn, 200)
+
+      # No upload id either, so the sub is rejected rather than stored, and
+      # the disallowed text is not echoed back into the form.
+      assert html =~ "New Submission"
+      refute html =~ "Sneaky"
+      assert Inkfish.Repo.aggregate(Inkfish.Subs.Sub, :count) == count_before
+    end
+
+    test "renders a failed text upload as a sub form, not an upload form", %{
+      conn: conn,
+      assignment: asg
+    } do
+      import Mimic
+
+      Mimic.copy(Inkfish.Subs)
+
+      asg =
+        Inkfish.Repo.update!(Ecto.Changeset.change(asg, allow_markdown: true))
+
+      upload_changeset =
+        %Inkfish.Uploads.Upload{}
+        |> Ecto.Changeset.change()
+        |> Ecto.Changeset.add_error(:upload, "could not unpack archive: boom")
+
+      expect(Inkfish.Subs, :create_sub_with_text, fn _attrs, _text, _user_id ->
+        {:error, upload_changeset}
+      end)
+
+      params = %{"hours_spent" => "2.0", "markdown" => "# Hi"}
+
+      conn = post(conn, ~p"/assignments/#{asg}/subs", sub: params)
+
+      html = html_response(conn, 200)
+
+      # Rendering the upload changeset as-is would post `upload[...]` on the
+      # next attempt, dropping hours_spent and the rest of the sub's fields.
+      assert html =~ ~s(name="sub[hours_spent]")
+      refute html =~ ~s(name="upload[hours_spent]")
+      assert html =~ "could not unpack archive: boom"
+      # The typed answer is still on the page.
+      assert html =~ ~s(data-markdown="# Hi")
+
+      verify!()
     end
 
     test "says why a blank markdown submission was rejected", %{

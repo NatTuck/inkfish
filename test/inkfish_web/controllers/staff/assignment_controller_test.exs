@@ -109,6 +109,18 @@ defmodule InkfishWeb.Staff.AssignmentControllerTest do
 
       assert html_response(conn, 200) =~ "markdown"
     end
+
+    test "does not list markdown in the sub options by default", %{
+      conn: conn,
+      assignment: assignment
+    } do
+      conn =
+        conn
+        |> login("alice@example.com")
+        |> get(~p"/staff/assignments/#{assignment}")
+
+      refute html_response(conn, 200) =~ "markdown"
+    end
   end
 
   describe "update assignment" do

@@ -37,6 +37,56 @@ defmodule Inkfish.SubsTest do
       assert active_sub != nil
     end
 
+    test "create_sub_with_text/3 creates a sub whose upload is submission.md" do
+      user = insert(:user)
+      asg = insert(:assignment)
+      reg = insert(:reg)
+      team = insert(:team, teamset: asg.teamset)
+      insert(:team_member, team: team, reg: reg)
+
+      attrs = %{
+        "assignment_id" => asg.id,
+        "reg_id" => reg.id,
+        "team_id" => team.id,
+        "hours_spent" => "2.0"
+      }
+
+      assert {:ok, %Sub{} = sub} =
+               Subs.create_sub_with_text(attrs, "# Hello\r\n", user.id)
+
+      assert sub.upload.name == "submission.md"
+
+      path =
+        Path.join(
+          Inkfish.Uploads.Upload.unpacked_path(sub.upload),
+          "submission.md"
+        )
+
+      assert File.read!(path) == "# Hello\n"
+    end
+
+    test "create_sub_with_text/3 deletes the upload when the sub is rejected" do
+      user = insert(:user)
+      asg = insert(:assignment)
+      reg = insert(:reg)
+      team = insert(:team, teamset: asg.teamset)
+      insert(:team_member, team: team, reg: reg)
+
+      attrs = %{
+        "assignment_id" => asg.id,
+        "reg_id" => reg.id,
+        "team_id" => team.id,
+        "hours_spent" => nil
+      }
+
+      assert {:error, %Ecto.Changeset{}} =
+               Subs.create_sub_with_text(attrs, "# Lost\n", user.id)
+
+      # The upload row is gone, so the 2-day sweep can never find its files:
+      # the directory has to go with it.
+      assert Inkfish.Uploads.list_uploads() == []
+    end
+
     test "create_sub/1 with invalid data returns error changeset" do
       attrs = Map.put(params_for(:sub), :hours_spent, nil)
       assert {:error, %Ecto.Changeset{}} = Subs.create_sub(attrs)

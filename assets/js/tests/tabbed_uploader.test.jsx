@@ -1,5 +1,4 @@
 import '@testing-library/jest-dom';
-import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 
 import TabbedUploader from '../uploads/tabbed_uploader';
@@ -13,12 +12,11 @@ jest.mock('../uploads/git_uploader', () => {
   };
 });
 
-function make_form() {
+function make_form(upload_field = 'sub_upload_id') {
   const form = document.createElement('form');
-  form.id = 'new-sub-form';
 
   const upload_id = document.createElement('input');
-  upload_id.id = 'sub_upload_id';
+  upload_id.id = upload_field;
   upload_id.name = 'sub[upload_id]';
   form.appendChild(upload_id);
 
@@ -26,17 +24,18 @@ function make_form() {
   return form;
 }
 
-function editor() {
-  return document.getElementById('sub_markdown');
-}
-
 function upload_id_input() {
   return document.getElementById('sub_upload_id');
+}
+
+function editor() {
+  return document.getElementById('sub_markdown');
 }
 
 describe('TabbedUploader', () => {
   afterEach(() => {
     document.body.innerHTML = '';
+    jest.restoreAllMocks();
   });
 
   test('renders the markdown editor when it is the only mode', () => {
@@ -101,6 +100,24 @@ describe('TabbedUploader', () => {
     expect(upload_id_input().disabled).toBe(true);
   });
 
+  test('uses the field ids the template supplied', () => {
+    make_form('custom_upload_id');
+
+    render(
+      <TabbedUploader
+        allowMarkdown=""
+        allowFile=""
+        uploadField="custom_upload_id"
+        markdownField="custom_markdown"
+        setUploadId={() => {}}
+        token="tok"
+      />
+    );
+
+    expect(document.getElementById('custom_markdown')).not.toBeNull();
+    expect(document.getElementById('custom_upload_id')).not.toBeNull();
+  });
+
   test('typing updates the textarea that gets submitted', () => {
     render(
       <TabbedUploader allowMarkdown="" setUploadId={() => {}} token="tok" />
@@ -139,7 +156,7 @@ describe('TabbedUploader', () => {
     expect(upload_id_input().disabled).toBe(false);
   });
 
-  test('submits only the upload when the file tab is active', () => {
+  test('submits the typed answer when the file tab shows but no file is attached', () => {
     const form = make_form();
 
     render(
@@ -154,8 +171,56 @@ describe('TabbedUploader', () => {
     fireEvent.change(editor(), { target: { value: 'typed but not attached' } });
     fireEvent.submit(form);
 
+    expect(editor().disabled).toBe(false);
+    expect(upload_id_input().disabled).toBe(true);
+  });
+
+  test('submits the file when the student agrees to discard the typed answer', () => {
+    const form = make_form();
+    upload_id_input().value = 'uuid-1';
+
+    const confirm = jest.spyOn(window, 'confirm').mockReturnValue(true);
+
+    render(
+      <TabbedUploader
+        allowMarkdown=""
+        allowFile=""
+        setUploadId={() => {}}
+        token="tok"
+      />
+    );
+
+    fireEvent.change(editor(), { target: { value: 'typed' } });
+    fireEvent.submit(form);
+
+    expect(confirm).toHaveBeenCalled();
     expect(editor().disabled).toBe(true);
     expect(upload_id_input().disabled).toBe(false);
+  });
+
+  test('cancelling the discard prompt keeps the typed answer', () => {
+    const form = make_form();
+    upload_id_input().value = 'uuid-1';
+
+    jest.spyOn(window, 'confirm').mockReturnValue(false);
+
+    render(
+      <TabbedUploader
+        allowMarkdown=""
+        allowFile=""
+        setUploadId={() => {}}
+        token="tok"
+      />
+    );
+
+    fireEvent.change(editor(), { target: { value: 'typed' } });
+
+    // The submit event is cancelable, so `fireEvent` reports false when the
+    // handler called preventDefault.
+    const dispatched = fireEvent.submit(form);
+
+    expect(dispatched).toBe(false);
+    expect(editor().disabled).toBe(false);
   });
 
   test('switching to the markdown tab submits the text', () => {

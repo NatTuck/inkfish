@@ -12,8 +12,14 @@ function render_uploader(Uploader, item) {
   let field = data.uploadField;
 
   function gotUUID(uuid) {
-    console.log("set ", field, " to " + uuid);
     let input = document.getElementById(field);
+    if (!input) {
+      // A missing field used to throw inside the upload promise, which left
+      // the upload looking finished while the id was never set. Say what is
+      // wrong instead.
+      console.error("upload field is missing from the page:", field);
+      return;
+    }
     input.value = uuid;
   }
 

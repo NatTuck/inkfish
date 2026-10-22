@@ -99,7 +99,9 @@ defmodule InkfishWeb.SubController do
 
       {:error, %Ecto.Changeset{} = changeset} ->
         changeset =
-          add_blank_markdown_error(changeset, asg, markdown, sub_params)
+          changeset
+          |> sub_changeset(sub_params)
+          |> add_blank_markdown_error(asg, markdown, sub_params)
 
         %{nonce: nonce, token: token} = upload_token(conn, "sub")
 
@@ -123,17 +125,49 @@ defmodule InkfishWeb.SubController do
     end
   end
 
-  # A blank markdown submission with nothing uploaded fails `create_sub/1` on
-  # `upload_id`, which the markdown-only page does not render -- so the student
-  # would get the generic "something went wrong" with no visible reason. Say
-  # what is actually wrong, next to the editor.
+  # `create_sub_with_text/3` can fail on the upload rather than on the sub.
+  # The form takes its field names from the changeset's data, so rendering an
+  # `%Upload{}` changeset would make the next attempt post `upload[...]` and
+  # silently drop the sub's own fields -- including hours_spent, which would
+  # then fall back to the schema default. Re-anchor the errors on a sub
+  # changeset, keeping the params the student sent.
+  defp sub_changeset(%Ecto.Changeset{data: %Sub{}} = changeset, _sub_params) do
+    changeset
+  end
+
+  defp sub_changeset(
+         %Ecto.Changeset{errors: errors, action: action},
+         sub_params
+       ) do
+    # `Phoenix.HTML.Form` drops a changeset's errors unless it has an action,
+    # so set one: this is the create form.
+    base = %{Sub.changeset(%Sub{}, sub_params) | action: action || :insert}
+
+    # The upload is built from the text on the server, so a missing upload_id
+    # is not something the student can fix.
+    base = %{base | errors: Keyword.delete(base.errors, :upload_id)}
+
+    Enum.reduce(errors, base, fn {field, {message, opts}}, acc ->
+      Ecto.Changeset.add_error(acc, field, message, opts)
+    end)
+  end
+
+  # A markdown-only page does not render the `upload_id` field, so
+  # "upload_id can't be blank" would be invisible and unactionable there. Say
+  # what is actually wrong, next to the editor. When a file or git mode is also
+  # offered, the upload_id error is the right one: it points at a field the
+  # student can see.
   defp add_blank_markdown_error(changeset, asg, markdown, sub_params) do
+    only_markdown =
+      asg.allow_markdown and not (asg.allow_upload or asg.allow_git)
+
     upload_id = sub_params["upload_id"]
     no_upload = is_nil(upload_id) or upload_id == ""
 
-    if asg.allow_markdown and String.trim(markdown) == "" and no_upload do
-      Ecto.Changeset.add_error(
-        changeset,
+    if only_markdown and String.trim(markdown) == "" and no_upload do
+      changeset
+      |> Map.update!(:errors, &Keyword.delete(&1, :upload_id))
+      |> Ecto.Changeset.add_error(
         :markdown,
         "Type your submission before submitting it."
       )
