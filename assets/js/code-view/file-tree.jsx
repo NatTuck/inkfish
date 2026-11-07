@@ -1,8 +1,6 @@
-import React, { useState } from 'react';
-import ReactDOM from 'react-dom';
-import TreeMenu, { defaultChildren } from 'react-simple-tree-menu';
+import { useState } from 'react';
+import TreeMenu from 'react-simple-tree-menu';
 import { Form, ListGroup, ListGroupItem } from 'react-bootstrap';
-import { freeze } from 'icepick';
 import _ from 'lodash';
 
 export default function FileTree({data, grade, activePath, pickFile}) {
@@ -44,8 +42,12 @@ export default function FileTree({data, grade, activePath, pickFile}) {
         initialOpenNodes={dirs}>
         {({_search, items}) => (
           <ListGroup>
-            {items.map((props) => (
-              <ListItem {...props}
+            {items.map(({key, ...props}) => (
+              // react-simple-tree-menu puts `key` in the props it hands over;
+              // React 19 warns when a key arrives through a spread, so it is
+              // pulled out and passed as the real `key` prop.
+              <ListItem key={key}
+                        {...props}
                         comment_counts={comment_counts}
                         active={props.path == activePath}
                         onClickLabel={(ev) => pickFile(ev, props)}/>

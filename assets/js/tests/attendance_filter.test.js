@@ -1,5 +1,4 @@
-import { filterStudentsByAttendance, suggest_pairs } from '../teams/team-suggestions';
-import { Set, Map } from 'immutable';
+import { filterStudentsByAttendance } from '../teams/team-suggestions';
 
 jest.mock('lodash', () => ({
   shuffle: (arr) => arr,

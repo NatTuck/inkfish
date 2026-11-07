@@ -1,4 +1,4 @@
-import { add_new_students_to_suggestions, suggest_pairs } from '../teams/team-suggestions';
+import { add_new_students_to_suggestions } from '../teams/team-suggestions';
 import { Set, Map } from 'immutable';
 
 jest.mock('lodash', () => ({

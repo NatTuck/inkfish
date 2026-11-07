@@ -47,6 +47,7 @@ jobs:
     - uses: actions-rust-lang/setup-rust-toolchain@v1
     - uses: pnpm/action-setup@v4
       with:
+        version: '12.15.0'
         package_json_file: assets/package.json
     - uses: actions/setup-node@v4
       with:
@@ -55,7 +56,7 @@ jobs:
       uses: erlef/setup-beam@v1
       with:
         elixir-version: '1.19.5' # [Required] Define the Elixir version
-        otp-version: '28.0'      # [Required] Define the Erlang/OTP version
+        otp-version: '28.1'      # [Required] Define the Erlang/OTP version
     - name: Restore dependencies cache
       uses: actions/cache@v3
       with:
@@ -64,6 +65,8 @@ jobs:
         restore-keys: ${{ runner.os }}-mix-
     - name: Install dependencies
       run: mix deps.get
+    - name: Check the Elixir dependencies for advisories
+      run: mix hex.audit
     - name: Cache npm dependencies
       uses: actions/cache@v3
       with:
@@ -71,6 +74,13 @@ jobs:
         key: ${{ runner.os }}-npm-${{ hashFiles('assets/pnpm-lock.yaml') }}
     - name: Install npm dependencies
       run: pnpm install --dir assets
+    - name: Check the JavaScript dependencies for advisories
+      # `deepmerge` (low, via jest-config) has no patched release anywhere, so
+      # the gate is "nothing above low"; `pnpm audit --prod` is clean on its
+      # own. The two overrides in assets/pnpm-workspace.yaml clear the rest.
+      run: pnpm --dir assets audit --audit-level=moderate
+    - name: Lint JavaScript
+      run: pnpm --dir assets lint
     - name: Run JS tests
       run: pnpm --dir assets test
     - name: Install Playwright browsers

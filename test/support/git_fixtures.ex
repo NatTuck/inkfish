@@ -12,7 +12,11 @@ defmodule Inkfish.GitFixtures do
   def make_repo(base, name, setup \\ fn _ -> :ok end) do
     src = Path.join(base, name)
     File.mkdir_p!(src)
-    git!(["init", "-q"], cd: src)
+    # Pin the branch: the fixture's default branch is what `ls-remote --symref`
+    # reports, and a machine whose `init.defaultBranch` is `master` (GitHub's
+    # runners, for one) would otherwise make every "the default branch" test
+    # machine-dependent.
+    git!(["-c", "init.defaultBranch=main", "init", "-q"], cd: src)
     git!(["config", "user.email", "test@example.com"], cd: src)
     git!(["config", "user.name", "Test"], cd: src)
     setup.(src)

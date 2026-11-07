@@ -43,6 +43,28 @@ defmodule Inkfish.LatePolicyTest do
     %{sub | grades: [grade]}
   end
 
+  # `Subs.hours_late/1` rounds a partial hour *up*, so a due time of "four hours
+  # ago" is only four hours late if the submission lands in the same second the
+  # assignment was created. That is a race against the test's own setup time,
+  # and it lost on CI, where setup takes over a second: five hours late, a 2.5
+  # penalty instead of 2.0. Pin the submission to exactly N hours after the due
+  # instant so the test asserts the policy and not the clock.
+  defp pin_hours_late(sub, hours) do
+    due = Inkfish.LocalTime.from_naive!(sub.assignment.due)
+
+    inserted_at =
+      due
+      |> DateTime.add(hours * 3600, :second)
+      |> DateTime.shift_zone!("Etc/UTC")
+
+    {:ok, sub} =
+      sub
+      |> Ecto.Changeset.change(inserted_at: inserted_at)
+      |> Repo.update()
+
+    sub
+  end
+
   describe "late penalties" do
     setup do
       base = Upload.upload_base()
@@ -74,7 +96,7 @@ defmodule Inkfish.LatePolicyTest do
 
     test "penalty if late, standard" do
       asgn = create_assignment(-4, false)
-      sub = create_sub_and_grade(asgn)
+      sub = create_sub_and_grade(asgn) |> pin_hours_late(4)
 
       {sc, lp} = Subs.calc_score_and_late_penalty(sub)
       assert Decimal.equal?(sc, Decimal.new("23.0"))

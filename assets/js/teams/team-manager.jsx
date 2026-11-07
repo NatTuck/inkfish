@@ -1,5 +1,4 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import ReactDOM from 'react-dom';
 import { createRoot } from 'react-dom/client';
 import { freeze } from 'icepick';
 import _ from 'lodash';

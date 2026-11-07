@@ -41,6 +41,9 @@ export default [
         Headers: 'readonly',
         XMLHttpRequest: 'readonly',
         require: 'readonly',
+        crypto: 'readonly',
+        // Rendered into the page by staff/assignment_html/show.html.heex.
+        save_grade_path: 'readonly',
       },
     },
     settings: {
@@ -61,7 +64,7 @@ export default [
     },
   },
   {
-    files: ['js/tests/**/*.js', 'js/tests/**/*.jsx'],
+    files: ['js/tests/**/*.js', 'js/tests/**/*.jsx', 'js/__mocks__/**/*.js'],
     languageOptions: {
       globals: {
         describe: 'readonly',
@@ -71,6 +74,9 @@ export default [
         beforeEach: 'readonly',
         afterEach: 'readonly',
         jest: 'readonly',
+        global: 'readonly',
+        // Defined by js/tests/setup.js for every suite.
+        expectConsole: 'readonly',
       },
     },
   },

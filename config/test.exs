@@ -50,9 +50,6 @@ config :inkfish, Inkfish.Repo,
   hostname: "localhost",
   pool: Ecto.Adapters.SQL.Sandbox
 
-config :phoenix_integration,
-  endpoint: InkfishWeb.Endpoint
-
 config :phoenix_test,
   endpoint: InkfishWeb.Endpoint,
   otp_app: :inkfish,

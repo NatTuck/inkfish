@@ -38,6 +38,11 @@ npm-debug.log
 # The directory NPM downloads your dependencies sources to.
 /assets/node_modules/
 
+# pnpm's own store, when it cannot hard link from the global one (a
+# bind-mounted or cross-filesystem store), and jest's coverage output.
+.pnpm-store/
+/assets/coverage/
+
 # Since we are building assets from assets/,
 # we ignore priv/static. You may want to comment
 # this depending on your deployment strategy.

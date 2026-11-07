@@ -7,14 +7,15 @@ function reducer(state = { blocks: [], done: false }, action) {
   switch (action.type) {
   case 'blocks/set':
     return Object.assign({}, state, { blocks: action.data });
-  case 'blocks/add':
+  case 'blocks/add': {
     let bs = sortedUniqBy(
       sortBy(state.blocks.concat(action.data), ['seq']),
       (bb) => bb.seq
     );
 
     return Object.assign({}, state, { blocks: bs });
-  case 'set':
+  }
+  case 'set': {
     let { blocks, done } = action.data;
     if (blocks && done) {
       return Object.assign({}, state, { blocks, done });
@@ -22,6 +23,7 @@ function reducer(state = { blocks: [], done: false }, action) {
     else {
       return state;
     }
+  }
   case 'done/set':
     return Object.assign({}, state, { done: action.data });
   default:

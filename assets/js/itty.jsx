@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import { AnsiUp } from 'ansi_up';
@@ -58,12 +58,6 @@ export function Itty({chan, uuid, token}) {
       <pre id="itty-console" className="console autograde-console">{ lines }</pre>
       {done ? "done" : "running"}
     </>
-  );
-}
-
-function Icon({name}) {
-  return (
-    <img src={"/images/icons/" + name + ".svg"} />
   );
 }
 

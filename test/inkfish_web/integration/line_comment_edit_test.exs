@@ -191,7 +191,7 @@ defmodule InkfishWeb.LineCommentEditTest do
             step(conn, "Click file hello.c in file tree", fn conn ->
               conn
               |> assert_has(".list-group-item", text: "hello.c")
-              |> click(".list-group-item", "hello.c")
+              |> click(".list-group-item a", "hello.c")
               |> assert_has(".cm-editor")
             end)
 

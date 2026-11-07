@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Tab, Tabs, Card, Form } from 'react-bootstrap';
 
 import FileUploader from './file_uploader';

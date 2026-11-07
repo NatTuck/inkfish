@@ -9,7 +9,8 @@ defmodule InkfishWeb.Layouts do
   `use InkfishWeb, :live_view`.
   """
   use InkfishWeb, :html
-  use Phoenix.HTML
+  import Phoenix.HTML
+  use PhoenixHTMLHelpers
 
   alias InkfishWeb.Router.Helpers, as: Routes
 

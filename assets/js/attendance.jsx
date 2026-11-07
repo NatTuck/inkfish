@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import { Button, Form, InputGroup } from 'react-bootstrap';
 import $ from 'cash-dom';
@@ -46,7 +46,7 @@ function AttBox({course_id, children}) {
   );
 }
 
-function AttForm({state, setState}) {
+function AttForm({setState}) {
   const [code, setCode] = useState("");
   const [disabled, setDisabled] = useState(false);
   const [msg, setMsg] = useState(null);

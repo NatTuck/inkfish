@@ -1,7 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import ReactDOM from 'react-dom';
-import { createRoot } from 'react-dom/client';
-import { Button, Form } from 'react-bootstrap';
+import { useState, useEffect } from 'react';
+import { Button } from 'react-bootstrap';
 import { Map, Set } from 'immutable';
 import _ from 'lodash';
 
@@ -46,7 +44,7 @@ function SectionSuggestions({data, active, section}) {
     }
   }
 
-  let presentRegs = [];
+  let presentRegs;
   if (data.meeting && data.meeting.students) {
     presentRegs = filterStudentsByAttendance(data.course.regs, data.meeting.students);
   } else {

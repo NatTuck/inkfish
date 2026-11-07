@@ -32,7 +32,7 @@ function setup_fields() {
       });
     };
 
-    let update_suggestions = (ev) => {
+    let update_suggestions = () => {
       channel.push("q", field.val())
              .receive("ok", ({matches}) => got_matches(matches));
     };

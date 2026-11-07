@@ -5,7 +5,6 @@ import { java } from '@codemirror/lang-java';
 import { python } from '@codemirror/lang-python';
 import { javascript } from '@codemirror/lang-javascript';
 import { html } from '@codemirror/lang-html';
-import { css } from '@codemirror/lang-css';
 import { xml } from '@codemirror/lang-xml';
 
 import { StreamLanguage } from '@codemirror/language';
@@ -19,7 +18,7 @@ function hasExt(path, exts) {
   return exts.some((ext) => path.endsWith('.' + ext));
 }
 
-export function detectLangModes(path, code) {
+export function detectLangModes(path) {
   if (hasExt(path, ['ex', 'exs'])) {
     return [elixir()];
   }
