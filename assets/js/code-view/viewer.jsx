@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import ReactDOM from 'react-dom';
+import { useState } from 'react';
 import { Row, Col, ListGroup } from 'react-bootstrap';
 import TreeMenu, { defaultChildren } from 'react-simple-tree-menu';
 

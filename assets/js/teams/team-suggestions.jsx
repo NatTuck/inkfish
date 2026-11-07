@@ -1,6 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import ReactDOM from 'react-dom';
-import { createRoot } from 'react-dom/client';
+import { useState, useEffect } from 'react';
 import { Button, Form } from 'react-bootstrap';
 import { Map, Set } from 'immutable';
 import _ from 'lodash';

@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import ReactDOM from 'react-dom';
+import { useState } from 'react';
 import { Card, Button, Alert, Row, Col, Form } from 'react-bootstrap';
 import { Provider } from 'react-redux';
 import classnames from 'classnames';

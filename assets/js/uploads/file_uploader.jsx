@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import ReactDOM from 'react-dom';
+import { useState } from 'react';
 import { Card, Button } from 'react-bootstrap';
 import { useDropzone } from 'react-dropzone';
 import { filesize } from 'filesize';

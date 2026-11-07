@@ -54,7 +54,12 @@ config :inkfish, :docker, version: "v1.44"
 config :esbuild,
   version: "0.28.2",
   default: [
-    args: ~w(js/app.js --bundle --target=es2018 --outdir=../priv/static/assets),
+    # `--jsx=automatic` matches what Babel (jest) and eslint already assume:
+    # JSX compiles to `react/jsx-runtime`, so a module does not need a `React`
+    # binding. Without it esbuild emits `React.createElement` and a missing
+    # import fails in the browser only -- every gate stays green.
+    args:
+      ~w(js/app.js --bundle --target=es2018 --jsx=automatic --outdir=../priv/static/assets),
     cd: Path.expand("../assets", __DIR__),
     env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
   ]
