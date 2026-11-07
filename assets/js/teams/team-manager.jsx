@@ -18,7 +18,6 @@ export default function init() {
     let meeting = window.meeting;
     if (meeting) {
       meeting.students = window.attendances;
-      console.log("meeting", meeting);
     }
     data.new_team_regs = [];
     data.past = past;
@@ -87,7 +86,6 @@ function TeamManager({data: initialData}) {
   
   // Convert class methods to functions
   const remove_member = useCallback((reg) => {
-    console.log("remove", reg);
     setState(prev => {
       let regs = _.filter(
         prev.new_team_regs,
@@ -101,7 +99,6 @@ function TeamManager({data: initialData}) {
   }, []);
   
   const add_member = useCallback((reg) => {
-    console.log("add", reg);
     setState(prev => {
       let regs = _.concat(prev.new_team_regs, reg);
       return freeze({
@@ -130,7 +127,6 @@ function TeamManager({data: initialData}) {
 
     ajax.create_team(state.id, state.new_team_regs)
       .then((data) => {
-        console.log("created", data);
         reset_data(data.data.teamset);
 
         // Notify the channel; the server reloads the teamset and re-broadcasts
@@ -144,7 +140,6 @@ function TeamManager({data: initialData}) {
   const toggleActive = useCallback((team, active) => {
     ajax.set_active_team(team, active)
       .then((data) => {
-        console.log("set_active", data);
         reset_data(data.data.teamset);
 
         // After successful update, push to channel
@@ -157,7 +152,6 @@ function TeamManager({data: initialData}) {
   const destroyTeam = useCallback((team) => {
     ajax.delete_team(team)
       .then((data) => {
-        console.log("deleted", data);
         reset_data(data.data.teamset);
 
         // After successful deletion, push to channel
@@ -252,7 +246,6 @@ function TeamManager({data: initialData}) {
 }
 
 export function WhosHere({meeting}) {
-  console.log("whoshere", meeting);
   if (!meeting) {
     return (<p>No active meeting.</p>);
   }

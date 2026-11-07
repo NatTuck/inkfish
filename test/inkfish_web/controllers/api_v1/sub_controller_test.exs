@@ -1,6 +1,7 @@
 defmodule InkfishWeb.ApiV1.SubControllerTest do
   use InkfishWeb.ConnCase
 
+  import ExUnit.CaptureLog
   import Inkfish.Factory
 
   @create_attrs %{
@@ -298,7 +299,11 @@ defmodule InkfishWeb.ApiV1.SubControllerTest do
           "upload" => upload
         })
 
-      conn = post(conn, ~p"/api/v1/subs", %{sub: create_params})
+      {conn, log} =
+        with_log(fn -> post(conn, ~p"/api/v1/subs", %{sub: create_params}) end)
+
+      assert log =~ "upload unpack failed"
+      assert log =~ "Wrote only"
 
       assert [message] = json_response(conn, 422)["errors"]["upload"]
       assert message =~ "could not unpack archive"

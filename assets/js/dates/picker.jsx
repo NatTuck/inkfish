@@ -50,9 +50,7 @@ export function DatePicker(props) {
 }
 
 export function replace_date_time_picker(input) {
-  console.log("picker.jsx", input.value);
   let date0 = parse(input.value, "yyyy-MM-dd'T'kk:mm:ss", new Date());
-  console.log("picker.jsx", date0);
   let name = input.getAttribute("name");
 
   let elem = (

@@ -1,6 +1,8 @@
 defmodule InkfishWeb.IttyChannel do
   use InkfishWeb, :channel
 
+  require Logger
+
   alias Inkfish.Ittys
 
   @impl true
@@ -18,11 +20,11 @@ defmodule InkfishWeb.IttyChannel do
           {:ok, state, socket}
 
         _else ->
-          IO.puts("bad itty: #{uuid}")
+          Logger.warning("bad itty: #{uuid}")
           {:error, %{reason: "bad itty"}}
       end
     else
-      IO.puts("itty auth fail: #{uuid}")
+      Logger.warning("itty auth fail: #{uuid}")
       {:error, %{reason: "unauthorized"}}
     end
   end
@@ -40,7 +42,6 @@ defmodule InkfishWeb.IttyChannel do
   end
 
   def handle_info({:done, uuid}, socket) do
-    IO.inspect({:done, uuid})
     push(socket, "done", %{uuid: uuid})
     {:noreply, socket}
   end

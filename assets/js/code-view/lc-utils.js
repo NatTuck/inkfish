@@ -4,7 +4,6 @@ export function same_lc(aa, bb) {
 }
 
 export function make_lc(line, path, grade, user) {
-  console.log(user);
   return {line, path, grade, user,
           points: 0, text: "", uuid: crypto.randomUUID()};
 }

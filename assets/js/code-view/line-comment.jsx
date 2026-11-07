@@ -37,7 +37,7 @@ export default function LineComment({data, edit, actions, gradeConfirmed}) {
           }
         })
         .catch((resp) => {
-          console.log("autosave error", resp);
+          console.error("autosave error", resp);
           if (resp.error === "grade_already_confirmed") {
             setStatus("error: grade confirmed");
           } else {
@@ -56,7 +56,7 @@ export default function LineComment({data, edit, actions, gradeConfirmed}) {
           window.setTimeout(() => setStatus(null), 2000);
         })
         .catch((resp) => {
-          console.log("create error", resp);
+          console.error("create error", resp);
           setStatus("error");
         });
     }
@@ -83,14 +83,12 @@ export default function LineComment({data, edit, actions, gradeConfirmed}) {
 
   function delete_comment(ev) {
     ev.preventDefault();
-    console.log("delete", data);
 
     debouncedSaveRef.current.cancel();
 
     if (id) {
       delete_line_comment(id)
         .then((resp) => {
-          console.log("delete resp", resp);
           actions.removeThisComment();
           actions.setGrade(resp.data.grade);
         });

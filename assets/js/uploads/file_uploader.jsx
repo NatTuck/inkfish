@@ -34,7 +34,6 @@ export default function FileUploader({token, setUploadId}) {
       set_ctok(cancel_tok);
       req
         .then((info) => {
-          console.log("upload complete", info);
           set_resp(info.data);
           setUploadId(info.data.id);
         })

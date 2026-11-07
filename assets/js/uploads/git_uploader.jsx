@@ -18,7 +18,6 @@ export default function GitUploader({setUploadId, token, nonce}) {
       channel.push("clone", {url});
 
       channel.on("done", (msg) => {
-	console.log("upload_ready", msg);
 	if (msg.upload) {
 	  setUpload(msg.upload);
 	  setUploadId(msg.upload.id);

@@ -22,6 +22,13 @@ applicable security reason to hide anything.
 - Use `mix precommit` alias when you are done with all changes and fix any pending issues
 - Use the already included and available `:req` (`Req`) library for HTTP requests, **avoid** `:httpoison`, `:tesla`, and `:httpc`. Req is included by default and is the preferred HTTP client for Phoenix apps
 
+**Tests**
+
+- The tests, both `mix test` and `pnpm --dir assets test` should run quickly and
+should show no log / print outputs. In Elixir code, all log messages that we
+keep must be captured and asserted. Logs must *never* be hidden by capturing
+an assertion.
+
 ### Phoenix v1.8 guidelines
 
 - **Always** begin your LiveView templates with `<Layouts.app flash={@flash} ...>` which wraps all inner content

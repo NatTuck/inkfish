@@ -178,7 +178,12 @@ defmodule Inkfish.Sandbox.ArchiveTest do
     watched = [Path.join(target, "leak"), Path.join(target, "escape")]
     watcher = spawn_link(fn -> watch(watched, false) end)
 
-    assert :ok = Archive.safe_extract(archive, target, "10M")
+    {result, log} =
+      with_log(fn -> Archive.safe_extract(archive, target, "10M") end)
+
+    assert :ok = result
+    assert log =~ "removing absolute link"
+    assert log =~ "removing invalid link"
 
     send(watcher, {:stop, self()})
     assert_receive {:seen, seen?}, 5_000

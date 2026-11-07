@@ -20,8 +20,6 @@ defmodule Inkfish.Uploads.Photo do
   end
 
   def resize_photo!(from_path, to_path, width, height) do
-    IO.inspect({:resize, from_path, to_path})
-
     {:ok, _} =
       from_path
       |> Gmex.open()

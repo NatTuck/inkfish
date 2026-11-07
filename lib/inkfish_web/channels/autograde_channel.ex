@@ -15,8 +15,7 @@ defmodule InkfishWeb.AutogradeChannel do
 
         {:ok, %{blocks: []}, socket}
 
-      failure ->
-        IO.inspect(failure)
+      _failure ->
         {:error, %{reason: "unauthorized"}}
     end
   end
@@ -52,11 +51,7 @@ defmodule InkfishWeb.AutogradeChannel do
     end
   end
 
-  def handle_info({:block, uuid, item}, socket) do
-    if uuid != socket.assigns[:uuid] do
-      IO.inspect({:uuid_mismatch, uuid, socket.assigns[:uuid]})
-    end
-
+  def handle_info({:block, _uuid, item}, socket) do
     push(socket, "block", item)
     {:noreply, socket}
   end

@@ -7,8 +7,7 @@ import socket from "./socket";
 function join_channel(topic) {
   let channel = socket.channel("search:" + topic, {});
   channel.join()
-         .receive("ok", resp => { console.log("Joined successfully", resp); })
-         .receive("error", resp => { console.log("Unable to join", resp); });
+         .receive("error", resp => { console.error("Unable to join", resp); });
 
   return channel;
 }

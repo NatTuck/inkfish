@@ -86,8 +86,7 @@ class NumberInput extends React.Component {
 
   save_error(resp) {
     let msg = `${resp.status} ${resp.statusText}`;
-    console.log("Error saving grade: ", msg);
-    console.log(resp);
+    console.error("Error saving grade: ", msg, resp);
     this.setState({ saving: false, error: msg });
   }
 

@@ -1,6 +1,8 @@
 defmodule InkfishWeb.SubController do
   use InkfishWeb, :controller
 
+  require Logger
+
   alias InkfishWeb.Plugs
 
   plug(
@@ -100,7 +102,7 @@ defmodule InkfishWeb.SubController do
         try do
           GradingTasks.assign_grading_tasks(sub.assignment_id)
         rescue
-          ee -> IO.inspect({:assign_grading, ee})
+          ee -> Logger.error("assign_grading failed: #{inspect(ee)}")
         end
 
         conn

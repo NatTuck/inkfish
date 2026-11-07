@@ -1,4 +1,6 @@
 defmodule Inkfish.Sandbox.Containers do
+  require Logger
+
   alias Inkfish.Docker
 
   def list_sandboxes() do
@@ -49,7 +51,7 @@ defmodule Inkfish.Sandbox.Containers do
 
   defp just_id(resp) do
     if length(resp["Warnings"]) > 0 do
-      IO.inspect({:docker_warnings, resp})
+      Logger.warning("docker build warnings: " <> inspect(resp["Warnings"]))
     end
 
     resp["Id"]

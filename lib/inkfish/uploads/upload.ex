@@ -162,7 +162,6 @@ defmodule Inkfish.Uploads.Upload do
     _bs = File.copy!(up.path, dst)
     # IO.puts "Upload created copied #{bs} bytes to path '#{dst}'"
     if !File.exists?(dst) do
-      IO.puts("Upload is missing.")
       raise "New upload missing"
     end
   end

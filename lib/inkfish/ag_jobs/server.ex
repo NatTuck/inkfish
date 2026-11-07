@@ -1,6 +1,8 @@
 defmodule Inkfish.AgJobs.Server do
   use GenServer
 
+  require Logger
+
   alias Inkfish.AgJobs
   alias Inkfish.AgJobs.AgJob
   alias Inkfish.AgJobs.Autograde
@@ -80,7 +82,7 @@ defmodule Inkfish.AgJobs.Server do
   def reap(running) do
     Enum.filter(running, fn job ->
       if time_left(job) < 0 do
-        IO.puts("Warning: timed out task didn't exit.")
+        Logger.warning("timed out task did not exit: #{job.uuid}")
         Ittys.stop(job.uuid)
       end
 

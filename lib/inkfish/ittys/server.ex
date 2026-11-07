@@ -1,6 +1,8 @@
 defmodule Inkfish.Ittys.Server do
   use GenServer
 
+  require Logger
+
   alias Inkfish.Ittys.Task
   alias Inkfish.Ittys.Job
   alias Inkfish.Sandbox.AgImage
@@ -16,7 +18,6 @@ defmodule Inkfish.Ittys.Server do
   @max_output_size 1_000_000
 
   def start_link(%Job{} = job) do
-    IO.puts(" =[Itty]= Start server with UUID #{job.uuid}")
     GenServer.start_link(__MODULE__, job, name: reg(job.uuid))
   end
 
@@ -61,7 +62,6 @@ defmodule Inkfish.Ittys.Server do
 
   @impl true
   def init(%Job{} = job) do
-    IO.puts("Itty: UUID #{job.uuid}")
     Process.send_after(self(), :start_next, 1)
     {:ok, job}
   end
@@ -150,8 +150,6 @@ defmodule Inkfish.Ittys.Server do
       |> Map.put("COOKIE", state.cookie)
       |> Enum.into([])
 
-    IO.puts(" =[Itty]= Run cmd [#{cmd}] for UUID #{state.uuid}")
-
     opts = [
       {:stdout, self()},
       {:stderr, self()},
@@ -172,8 +170,7 @@ defmodule Inkfish.Ittys.Server do
     conf = Map.put(conf, "COOKIE", state.cookie)
 
     case AgImage.prepare(conf) do
-      {:ok, %AgImage{tag: tag, cmd: cmd}} ->
-        IO.inspect({:created_ag_image, tag})
+      {:ok, %AgImage{cmd: cmd}} ->
         start_cmd(task, cmd, state)
 
       error ->
@@ -213,7 +210,7 @@ defmodule Inkfish.Ittys.Server do
         start_run_container(task, job, state)
 
       _else ->
-        IO.puts("Itty: unknown action #{inspect(task.action)}")
+        Logger.warning("Itty: unknown action #{inspect(task.action)}")
         {:noreply, state}
     end
   end
@@ -240,10 +237,8 @@ defmodule Inkfish.Ittys.Server do
     state = %{state | exit_status: status}
     %{uuid: uuid, blocks: blocks, tasks: tasks} = state
 
-    IO.puts(" =[Itty]= Child done for UUID #{uuid}")
-
     if length(tasks) == 0 do
-      IO.puts("Itty: Unexpected empty task list.")
+      Logger.warning("Itty: unexpected empty task list for #{uuid}")
     else
       task = hd(tasks)
 
@@ -258,11 +253,9 @@ defmodule Inkfish.Ittys.Server do
 
         case task.on_exit.(rv) do
           {:send, text} ->
-            IO.inspect({:send, text})
             Process.send_after(self(), {:send, text}, 1)
 
           _else ->
-            IO.inspect({:on_exit, :empty})
             :pass
         end
       end
@@ -294,8 +287,7 @@ defmodule Inkfish.Ittys.Server do
     {:stop, :normal, state0}
   end
 
-  def handle_info(foo, state0) do
-    IO.inspect({:info, foo})
+  def handle_info(_message, state0) do
     {:noreply, state0}
   end
 

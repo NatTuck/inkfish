@@ -89,8 +89,6 @@ defmodule Inkfish.Assignments.GradingTasks do
     grades_each = ceil(length(grades) / (1 + length(graders)))
     count = grades_each - Map.get(counts, grader.id, 0)
 
-    IO.inspect({:tasks_for, grader.login, count})
-
     Enum.each(Enum.take(grades, count), fn grade ->
       {:ok, _} = Grades.update_grade(grade, %{grader_id: grader.id})
     end)

@@ -2,7 +2,6 @@
 import _ from 'lodash';
 
 export async function create_team(ts_id, regs) {
-  console.log("create", ts_id, regs);
   let body = {
     team: {
       active: true,
@@ -25,7 +24,6 @@ export async function create_team(ts_id, regs) {
 }
 
 export async function set_active_team(team, active) {
-  console.log("set active", team, active);
   let body = { team: { active: active } };
   let path = window.team_path_template.replace("ID", team.id);
   let resp = await fetch(path, {
@@ -43,7 +41,6 @@ export async function set_active_team(team, active) {
 }
 
 export async function delete_team(team) {
-  console.log("delete", team);
 
   let path = window.team_path_template.replace("ID", team.id);
   let resp = await fetch(path, {

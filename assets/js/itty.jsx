@@ -21,25 +21,21 @@ export function Itty({chan, uuid, token}) {
   const dispatch = useDispatch();
   const blocks = useSelector((state) => state.blocks);
   const done = useSelector((state) => state.done);
-  console.log("blocks,done", blocks, done);
 
   useEffect(() => {
     channel = socket.channel(chan + ":" + uuid, {token});
     channel.join()
       .receive("ok", (msg) => {
-        console.log("Joined", uuid, msg);
   	    dispatch({type: 'set', data: msg});
       })
       .receive("error", (msg) => {
-        console.log("Unable to join", msg);
+        console.error("Unable to join", msg);
   	    channel.leave();
       });
     channel.on("block", (msg) => {
-      console.log("Block", uuid, msg);
       dispatch({type: 'blocks/add', data: msg});
     });
-    channel.on("done", (msg) => {
-      console.log("done", msg);
+    channel.on("done", () => {
       dispatch({type: 'done/set', data: true});
     });
   }, []);
@@ -47,11 +43,9 @@ export function Itty({chan, uuid, token}) {
   useEffect(() => {
     let elem = document.getElementById('itty-console');
     if (elem.scrollHeight - elem.clientHeight < elem.scrollTop - 5) {
-      console.log("no scroll");
       return;
     }
     elem.scrollTop = elem.scrollHeight - elem.clientHeight;
-    console.log("scrolled");
   });
 
   let ansi_up = new AnsiUp();

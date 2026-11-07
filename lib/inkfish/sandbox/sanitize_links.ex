@@ -90,7 +90,7 @@ defmodule Inkfish.Sandbox.SanitizeLinks do
   # the two it was.
   defp readlink(path) do
     with exe when is_binary(exe) <- System.find_executable("readlink"),
-         {targ, 0} <- System.cmd(exe, ["-f", path]) do
+         {targ, 0} <- System.cmd(exe, ["-f", path], stderr_to_stdout: true) do
       {:ok, String.trim(targ)}
     else
       nil -> {:error, "readlink was not found on PATH"}

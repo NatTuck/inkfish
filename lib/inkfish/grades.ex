@@ -3,6 +3,8 @@ defmodule Inkfish.Grades do
   The Grades context.
   """
 
+  require Logger
+
   import Ecto.Query, warn: false
   alias Inkfish.Repo
 
@@ -647,9 +649,10 @@ defmodule Inkfish.Grades do
         File.write!(path, data)
 
       other ->
-        IO.puts("Jason.encode failed")
-        IO.inspect(other)
-        IO.inspect(log)
+        Logger.error(
+          "Jason.encode failed: #{inspect(other)}; log: #{inspect(log)}"
+        )
+
         :ok
     end
   end

@@ -16,8 +16,7 @@ function setup() {
 function join_channel(topic) {
   let channel = socket.channel("clone:" + topic, {});
   channel.join()
-         .receive("ok", resp => { console.log("Joined successfully", resp); })
-         .receive("error", resp => { console.log("Unable to join", resp); });
+         .receive("error", resp => { console.error("Unable to join", resp); });
   return channel;
 }
 
@@ -31,7 +30,6 @@ function scroll_down(elem) {
 function setup_cloner() {
   let ch_id = crypto.randomUUID();
   let channel = join_channel(ch_id);
-  console.log("joined channel: clone:" + ch_id);
 
   channel.on("print", ({text}) => {
     let msg = text;
@@ -49,7 +47,6 @@ function setup_cloner() {
 
   channel.on("done", ({upload_id}) => {
     let id_field = $('#git-output-log').data('id-field');
-    console.log("done", upload_id);
     $("#" + id_field).val(upload_id);
   });
 
@@ -59,7 +56,6 @@ function setup_cloner() {
     channel.push("clone", {url: url});
   });
 
-  console.log("cloner setup done");
 }
 
 function setup_uploader() {
@@ -78,7 +74,6 @@ function setup_uploader() {
     };
 
     var set_message = (text) => {
-      console.log("set message: " + text);
       let msg = $(ee).find('.message');
       msg.text(text);
     }
@@ -86,7 +81,6 @@ function setup_uploader() {
     var clear_upload = (ev) => {
       ev.preventDefault();
       $("#" + ee.data('id-field')).val("");
-      console.log("clear upload");
     };
 
     ee.find('.upload-clear-button').click(clear_upload);
@@ -116,7 +110,6 @@ function setup_uploader() {
         set_progress(100);
         ee.find('.progress').hide();
         set_message(`✓ Upload done: ${file.name}`);
-        console.log(data);
 
         $("#" + ee.data('id-field')).val(data.id);
 
@@ -134,7 +127,6 @@ function setup_uploader() {
           text = data.responseJSON.error;
         }
         set_message(`✗ Upload failed: ${file.name}, ${text}`);
-        console.log(data);
       },
       onFileExtError: (file) => {
         set_message(`✗ Bad file extension, must be: ${exts}`);
@@ -144,7 +136,6 @@ function setup_uploader() {
       },
     });
 
-    console.log("uploader ready");
   });
 }
 

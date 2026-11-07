@@ -5,6 +5,11 @@ config :argon2_elixir, t_cost: 1, m_cost: 8
 
 config :inkfish, :env, :test
 
+# The memsup/cpu_sup port programs print "Erlang has closed" to stderr when the
+# VM shuts down, which is noise in the test output. Nothing in the suite uses
+# them; dev and prod keep both.
+config :os_mon, start_memsup: false, start_cpu_sup: false
+
 config :inkfish, :time_zone, "Africa/Nairobi"
 config :local_time, :time_zone, "Africa/Nairobi"
 

@@ -20,13 +20,12 @@ export function join(topic, token, on_join) {
   let chan = socket.channel(topic, {token});
   chan.join()
       .receive("ok", (msg) => {
-        console.log("Joined", topic, msg);
         if (on_join) {
           on_join(msg);
         }
       })
       .receive("error", (msg) => {
-        console.log("Unable to join", msg);
+        console.error("Unable to join", msg);
       });
   chan.on("output", (msg) => on_output(topic, msg));
   chan.on("done", (msg) => on_done(topic, msg));
@@ -65,7 +64,6 @@ function on_output(topic, msg) {
 }
 
 function on_done(topic, msg) {
-  console.log("on done called");
   let hook = done_hooks.get(topic);
   if (hook) {
     hook(msg);

@@ -8,11 +8,10 @@ export function set_grader(sub_id, grader_id, set_asg) {
   };
   mutate('PATCH', path, body)
     .then((info) => {
-      console.log("set_grader ok:", info);
       set_asg(info.assignment);
     })
     .catch((err) => {
-      console.log("set_grader err:", err);
+      console.error("set_grader err:", err);
     });
 }
 

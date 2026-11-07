@@ -18,6 +18,6 @@ defmodule Inkfish.Sandbox do
   Trigger cleanups for all sandboxed resources.
   """
   def start_cleanups() do
-    IO.puts("FIXME: Start sandbox cleanups")
+    :ok
   end
 end

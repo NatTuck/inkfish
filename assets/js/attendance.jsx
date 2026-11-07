@@ -13,7 +13,7 @@ function connect(course_id, setState) {
   channel.join()
     .receive("ok", setState)
     .receive("error", (msg) => {
-      console.log("error joining attendence", msg);
+      console.error("error joining attendence", msg);
     });
   // Broadcasts carry only the shared meeting roster; they must not clobber
   // this student's own attendance (which arrives via the join/own-code reply).
@@ -65,13 +65,11 @@ function AttForm({state, setState}) {
     ev.preventDefault();
 
     if (disabled) {
-      console.log("Already sending...");
       return;
     }
     
     setDisabled(true);
 
-    console.log(code);
     channel
       .push("code", {code: code})
       .receive("ok", setState)
