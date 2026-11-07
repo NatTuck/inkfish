@@ -189,6 +189,102 @@ defmodule Inkfish.Uploads.GitCloneScriptTest do
     assert out =~ "has no commits"
   end
 
+  test "removes a symlink that only escapes once the tree is complete", %{
+    base: base
+  } do
+    # `m/x` passes the per-entry check because `m/z/b` does not exist yet when it
+    # is written, so `realpath -m` pops the `..`s lexically and reports a path
+    # inside the checkout. `m/z/b -> .` is created afterwards, and every `b` is
+    # then a real directory for those `..`s to climb: the link resolves to an
+    # arbitrary ancestor of the checkout. Only a check on the finished tree can
+    # see that, which is what the sanitize walk does.
+    bare = make_bare_repo(base, "ordering")
+    climb = write_blob(bare, "z/b/b/b/../../../../..")
+    dot = write_blob(bare, ".")
+    z = mktree(bare, ["120000 blob #{dot}\tb"])
+    m = mktree(bare, ["120000 blob #{climb}\tx", "040000 tree #{z}\tz"])
+    root = mktree(bare, ["040000 tree #{m}\tm"])
+    point_head_at(bare, commit_tree(bare, root))
+
+    {out, code} = run_clone_script("file://#{bare}")
+    assert code == 0, "script failed:\n#{out}"
+
+    dir = result_path(out, "dir")
+
+    assert {:error, :enoent} = File.lstat(Path.join(dir, "m/x"))
+    assert out =~ "removed unsafe symlink: m/x"
+  end
+
+  test "does not write git metadata through a tree symlink named .git", %{
+    base: base
+  } do
+    # A crafted tree can contain an entry named `.git`. If it is a link that
+    # resolves outside the checkout, `mkdir -p "$OUT/.git"` follows it and the
+    # metadata below is written wherever it points.
+    bare = make_bare_repo(base, "gitlink")
+    climb = write_blob(bare, "z/b/b/b/../../../../..")
+    dot = write_blob(bare, ".")
+    git_entry = write_blob(bare, "m/x")
+    z = mktree(bare, ["120000 blob #{dot}\tb"])
+    m = mktree(bare, ["120000 blob #{climb}\tx", "040000 tree #{z}\tz"])
+
+    root =
+      mktree(bare, ["120000 blob #{git_entry}\t.git", "040000 tree #{m}\tm"])
+
+    point_head_at(bare, commit_tree(bare, root))
+
+    {out, code} = run_clone_script("file://#{bare}")
+    assert code == 0, "script failed:\n#{out}"
+
+    dir = result_path(out, "dir")
+    git_dir = Path.join(dir, ".git")
+
+    assert File.lstat!(git_dir).type == :directory
+    assert File.read!(Path.join(git_dir, "config")) =~ ~r/^\[core\]/
+    assert File.read!(Path.join(git_dir, "HEAD")) =~ ~r/^[0-9a-f]{40}\n$/
+  end
+
+  test "refuses a tree entry inside a symlink", %{base: base} do
+    # A git tree can hold a symlink `a` and a tree `a` at the same time (a
+    # normal commit cannot). Writing `a/f` after `ln -s a` writes *through* the
+    # link, so this is refused rather than followed.
+    bare = make_bare_repo(base, "inside")
+    payload = write_blob(bare, "payload")
+    outside = write_blob(bare, "/tmp")
+    subtree = mktree(bare, ["100644 blob #{payload}\tf"])
+    root = raw_tree(bare, [{"120000", "a", outside}, {"40000", "a", subtree}])
+    point_head_at(bare, commit_tree(bare, root))
+
+    {out, code} = run_clone_script("file://#{bare}")
+
+    assert code != 0
+    assert out =~ "refusing to check out 'a/f'"
+    assert out =~ "inside the symlink 'a'"
+  end
+
+  test "charges a symlink's target to the saved budget", %{base: base} do
+    # A link's saved bytes are its target's bytes. Counting only file content
+    # would let a tree of links with megabyte targets through for free, and the
+    # kernel's tmpfs cap would then be the thing that fails.
+    bare =
+      make_repo(base, "linkbudget", fn src ->
+        File.ln_s!(String.duplicate("a", 3000), Path.join(src, "big-link"))
+        File.write!(Path.join(src, "small.txt"), "fits\n")
+      end)
+
+    {out, code} =
+      run_clone_script("file://#{bare}", submit_size: "2k", blob_limit: "100m")
+
+    assert code == 0, "script failed:\n#{out}"
+
+    dir = result_path(out, "dir")
+
+    assert File.read!(Path.join(dir, "big-link.csum")) =~
+             ~r/^[0-9a-f]{40}  big-link$/
+
+    assert File.read!(Path.join(dir, "small.txt")) == "fits\n"
+  end
+
   test "rejects a repository with a path-traversal tree entry", %{base: base} do
     bare = make_evil_repo(base)
 

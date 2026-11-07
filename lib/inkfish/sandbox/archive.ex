@@ -174,7 +174,13 @@ defmodule Inkfish.Sandbox.Archive do
   # missing -- a `case` on its exit status never sees that at all -- so with
   # `realpath` absent from `PATH` the raise would leave `safe_extract/3` instead
   # of the `{:error, _}` its `@doc` promises.
-  defp canonical(path) do
+  #
+  # Public (`@doc false`) because the git clone path needs the same
+  # canonicalisation for the same reason: it hands the base of a staged tree to
+  # `sanitize_links!/1` too, and a base that is only lexically absolute makes
+  # every in-tree relative link look like an escape.
+  @doc false
+  def canonical(path) do
     with exe when is_binary(exe) <- System.find_executable("realpath"),
          {resolved, 0} <- System.cmd(exe, ["-m", "--", path]) do
       String.trim(resolved)

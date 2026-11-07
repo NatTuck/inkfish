@@ -16,16 +16,25 @@ defmodule InkfishWeb.CloneChannel do
 
         {:ok, socket}
 
-      failure ->
-        IO.inspect(failure)
+      _failure ->
         {:error, %{reason: "unauthorized"}}
     end
   end
 
+  # Both `handle_info({:done, ...})` and `open_clone/2` can reach this for the
+  # same clone: the itty can already be finished by the time it is opened, and
+  # the `:done` broadcast lands in the same mailbox. The staged results are
+  # *moved* into place by the first pass (not copied), so a second pass would
+  # find the tarball gone. The upload id is the record that this clone has been
+  # answered.
   def got_exit(socket) do
-    case Git.get_results(socket.assigns[:uuid]) do
-      {:ok, results} -> push_done(socket, results)
-      {:error, reason} -> push_error(socket, reason)
+    if socket.assigns[:upload_id] do
+      socket
+    else
+      case Git.get_results(socket.assigns[:uuid]) do
+        {:ok, results} -> push_done(socket, results)
+        {:error, reason} -> push_error(socket, reason)
+      end
     end
   end
 
@@ -42,7 +51,10 @@ defmodule InkfishWeb.CloneChannel do
           "size" => upload.size
         }
 
-        socket = assign(socket, :upload, upinfo)
+        socket =
+          socket
+          |> assign(:upload, upinfo)
+          |> assign(:upload_id, upload.id)
 
         data = %{
           status: "normal",
@@ -51,6 +63,7 @@ defmodule InkfishWeb.CloneChannel do
         }
 
         push(socket, "done", data)
+        socket
 
       {:error, reason} ->
         push_error(socket, reason)
@@ -58,8 +71,8 @@ defmodule InkfishWeb.CloneChannel do
   end
 
   defp push_error(socket, reason) do
-    IO.inspect({:clone_error, reason})
     push(socket, "done", %{status: "error", error: error_text(reason)})
+    socket
   end
 
   # The reason is a message string from `Git` (a binary). `to_string/1` raised
@@ -114,7 +127,6 @@ defmodule InkfishWeb.CloneChannel do
   end
 
   def handle_info({:done, uuid}, socket) do
-    IO.inspect({:clone_channel, :done, uuid})
     push(socket, "done", %{uuid: uuid})
     got_exit(socket)
     {:noreply, socket}

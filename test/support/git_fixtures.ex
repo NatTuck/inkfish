@@ -98,4 +98,90 @@ defmodule Inkfish.GitFixtures do
     {out, 0} = System.cmd("git", args, opts)
     String.trim(out)
   end
+
+  # --- building trees by hand -------------------------------------------------
+  #
+  # A normal `make_repo` cannot express the trees that matter for containment:
+  # duplicate entries, a symlink with an entry under it, a `.git` entry. These
+  # build them object by object.
+
+  def make_bare_repo(base, name) do
+    bare = Path.join(base, "#{name}.git")
+    File.mkdir_p!(bare)
+    git!(["init", "-q", "--bare"], cd: bare)
+    bare
+  end
+
+  def write_blob(bare, content) do
+    path =
+      Path.join(
+        System.tmp_dir!(),
+        "git_fixture_blob_#{System.unique_integer([:positive])}"
+      )
+
+    File.write!(path, content)
+    sha = git!(["hash-object", "-w", path], cd: bare)
+    File.rm!(path)
+    sha
+  end
+
+  # `git mktree` from `<mode> <type> <sha><TAB><name>` lines.
+  def mktree(bare, lines) do
+    path =
+      Path.join(
+        System.tmp_dir!(),
+        "git_fixture_tree_#{System.unique_integer([:positive])}"
+      )
+
+    File.write!(path, Enum.map_join(lines, "", &(&1 <> "\n")))
+    {out, 0} = System.cmd("bash", ["-c", "git mktree < '#{path}'"], cd: bare)
+    File.rm!(path)
+    String.trim(out)
+  end
+
+  # A tree object from raw binary entries, for trees `git mktree` refuses --
+  # two entries with the same name, one of them a tree. `entries` is a list of
+  # `{mode, name, sha}`; the caller is responsible for git's ordering.
+  def raw_tree(bare, entries) do
+    raw =
+      Enum.map(entries, fn {mode, name, sha} ->
+        "#{mode} #{name}\0" <> Base.decode16!(sha, case: :lower)
+      end)
+
+    path =
+      Path.join(
+        System.tmp_dir!(),
+        "git_fixture_rawtree_#{System.unique_integer([:positive])}"
+      )
+
+    File.write!(path, IO.iodata_to_binary(raw))
+
+    {out, 0} =
+      System.cmd(
+        "git",
+        ["hash-object", "-t", "tree", "-w", "--literally", path],
+        cd: bare
+      )
+
+    File.rm!(path)
+    String.trim(out)
+  end
+
+  def commit_tree(bare, tree, message \\ "fixture") do
+    git!(["commit-tree", tree, "-m", message],
+      cd: bare,
+      env: [
+        {"GIT_AUTHOR_NAME", "Test"},
+        {"GIT_AUTHOR_EMAIL", "test@example.com"},
+        {"GIT_COMMITTER_NAME", "Test"},
+        {"GIT_COMMITTER_EMAIL", "test@example.com"}
+      ]
+    )
+  end
+
+  def point_head_at(bare, commit, branch \\ "main") do
+    git!(["update-ref", "refs/heads/#{branch}", commit], cd: bare)
+    git!(["symbolic-ref", "HEAD", "refs/heads/#{branch}"], cd: bare)
+    bare
+  end
 end

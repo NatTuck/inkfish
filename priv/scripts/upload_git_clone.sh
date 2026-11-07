@@ -1,6 +1,11 @@
 #!/bin/bash
 set -e
 
+# Byte semantics everywhere: the saved budget is counted in bytes, and both
+# `${#var}` and `tr` count characters rather than bytes under a UTF-8 locale.
+# Nothing here should depend on the locale of whoever deployed this.
+export LC_ALL=C
+
 # CLONE_TMP and PERSIST_TMP are two size-capped tmpfs mounts, and a mount
 # namespace is private to the process that created it, so the caller has to
 # create them. It does: `Inkfish.Uploads.Git.start_clone/1` runs this script
@@ -46,7 +51,9 @@ export GIT_ALLOW_PROTOCOL="${GIT_ALLOW_PROTOCOL:-https:http:git}"
 # `:git_ignore`; the fallback is the same list the default config carries.
 # Entries are plain names (no globs, no slashes).
 GIT_IGNORE="${GIT_IGNORE:-node_modules .pnpm bower_components .venv venv __pycache__ .tox .eggs .pytest_cache .mypy_cache .cache target dist build .gradle .next .nuxt coverage}"
-read -ra IGNORE_PARTS <<< "$GIT_IGNORE"
+# `read -a` reads one line, so a value with a newline in it would silently lose
+# everything after the first line; flatten it first.
+read -ra IGNORE_PARTS <<< "${GIT_IGNORE//$'\n'/ }"
 
 MAX_FILES="${MAX_FILES:-2000}"
 case "$MAX_FILES" in
@@ -106,7 +113,7 @@ echo "Resolving the default branch..."
 # A failure here is git's to report -- "does not appear to be a git repository"
 # names the URL -- so the script lets it through with git's own exit status
 # rather than replacing the message.
-REMOTE_HEAD=$(git ls-remote --symref "$REPO" HEAD)
+REMOTE_HEAD=$(git ls-remote --symref -- "$REPO" HEAD)
 
 # `ref: refs/heads/main<TAB>HEAD` is the symref line; `<sha><TAB>HEAD` is the
 # commit it points at. A remote whose HEAD is detached has no symref line, and
@@ -124,9 +131,12 @@ fi
 if [ -n "$BRANCH" ]; then
   # The branch name becomes a refspec argument and a shell word. It cannot
   # contain a space or start with `-` if it is a real ref, so refusing those
-  # costs nothing and keeps the name from being read as an option.
+  # costs nothing and keeps the name from being read as an option. The
+  # whitelist also keeps out `*`: a refspec is a *pattern*, so a remote that
+  # advertised `ref: refs/heads/*` would otherwise re-fetch the tip of every
+  # branch -- exactly the fetch this script exists to avoid.
   case "$BRANCH" in
-    -*|*' '*)
+    -*|*[!A-Za-z0-9._/+@-]*)
       echo "error: refusing to fetch a branch named '$BRANCH'." >&2
       exit 1
       ;;
@@ -145,7 +155,7 @@ cd "$NAME"
 
 echo "Cloning git repo..."
 git init -q
-git remote add origin "$REPO"
+git remote add -- origin "$REPO"
 
 # Never download a blob larger than the entire saved budget: it cannot be
 # saved, so downloading it only spends the checkout budget and the student's
@@ -165,7 +175,7 @@ case "${BLOB_LIMIT:-}" in
     ;;
 esac
 
-if git fetch --depth 1 --no-tags -q $FETCH_FILTER origin "$REFSPEC"; then
+if git fetch --depth 1 --no-tags -q $FETCH_FILTER origin -- "$REFSPEC"; then
   :
 else
   # Git has already said what went wrong; this adds the one thing it cannot
@@ -233,9 +243,33 @@ check_path() {
 echo "Listing $BRANCH..."
 git ls-tree -r -l -z "$SHA" > "$CLONE_TMP/tree.lst"
 
+# Is some directory component of `path` a symlink this tree already created?
+# Pure parameter expansion: no forks, no globbing, no word splitting. Prints the
+# offending component, which is what the error names.
+under_symlink() {
+  local rest=$1 acc="" part
+  while [ "${rest#*/}" != "$rest" ]; do
+    part=${rest%%/*}
+    rest=${rest#*/}
+    if [ -z "$acc" ]; then acc=$part; else acc="$acc/$part"; fi
+    if [ -n "${SYMLINK[$acc]:-}" ]; then
+      echo "$acc"
+      return 0
+    fi
+  done
+  return 1
+}
+
 # First pass: what would we write? Nothing is written yet, so a repository that
 # cannot fit is refused with the numbers, instead of dying half way through with
 # whatever `write` happened to fail on.
+#
+# The symlinks seen so far are remembered because a git tree can contain both a
+# symlink `a` and an entry under it (`a/f`): a normal commit cannot, but a
+# crafted tree can, and writing `a/f` after `ln -s a` writes *through* the link,
+# outside the checkout. Git's order is depth-first, so the link always comes
+# first and one pass sees it.
+declare -A SYMLINK
 entries=0
 excluded=0
 excluded_bytes=0
@@ -251,6 +285,17 @@ while IFS= read -r -d '' line; do
     continue
   fi
   check_path "$path"
+
+  if bad=$(under_symlink "$path"); then
+    echo "error: refusing to check out '$path': it is inside the symlink '$bad'." >&2
+    echo "Git does not produce trees like that; writing the entry would write through" >&2
+    echo "the link and out of the checkout." >&2
+    exit 1
+  fi
+
+  if [ "$mode" = "120000" ]; then
+    SYMLINK[$path]=1
+  fi
 
   case "$size" in
     ''|*[!0-9]*) size=0 ;;
@@ -291,14 +336,26 @@ echo "Checking out files (saved budget-aware)..."
 total=0
 written=0
 replaced=0
+neutralized=0
+notices=0
 
-# Only the first few replacements are listed one by one: a repository where
-# most of the tree does not fit would otherwise print a line per file, and the
-# itty view has an output limit.
+# Only the first few per-file notices are printed: a repository where most of
+# the tree does not fit, or which is made of symlinks with kilobyte targets,
+# would otherwise print a line per file and trip the itty view's output limit
+# before the clone could report anything at all.
 REPORT_MAX=50
 
+notice() {
+  notices=$((notices + 1))
+  if [ "$notices" -le "$REPORT_MAX" ]; then
+    echo "  $1"
+  elif [ "$notices" -eq $((REPORT_MAX + 1)) ]; then
+    echo "  ... only the first $REPORT_MAX per-file notices are listed"
+  fi
+}
+
 write_csum() {
-  mkdir -p "$OUT/$(dirname "$1")"
+  mkdir -p -- "$OUT/$(dirname -- "$1")"
   if ! printf '%s  %s\n' "$2" "$1" > "$OUT/$1.csum"; then
     echo "error: the saved budget ($SUBMIT_SIZE) could not hold the checkout: writing" >&2
     echo "$1.csum ran out of space. Raise :git_submit_size to allow a larger checkout." >&2
@@ -308,11 +365,7 @@ write_csum() {
 
 report_replaced() {
   replaced=$((replaced + 1))
-  if [ "$replaced" -le "$REPORT_MAX" ]; then
-    echo "  replaced: $1 -> $1.csum"
-  elif [ "$replaced" -eq $((REPORT_MAX + 1)) ]; then
-    echo "  ... only the first $REPORT_MAX replaced files are listed"
-  fi
+  notice "replaced: $1 -> $1.csum"
 }
 
 while IFS= read -r -d '' line; do
@@ -343,17 +396,27 @@ while IFS= read -r -d '' line; do
       ;;
   esac
 
-  mkdir -p "$OUT/$(dirname "$path")"
+  mkdir -p -- "$OUT/$(dirname -- "$path")"
 
   # Symlink entries (mode 120000) are stored as blobs whose content is the
   # link target. Preserve safe in-tree relative links; neutralize anything
   # absolute or escaping by writing the target string as a regular file.
   if [ "$mode" = "120000" ]; then
     target=$(git cat-file blob "$object")
-    linkdir=$(dirname "$OUT/$path")
+
+    # A link's saved bytes are its target's bytes: they are part of the budget
+    # like any file's content, or a tree of links with megabyte targets would
+    # be saved for free.
+    if [ $((total + ${#target})) -gt "$SAVE_BYTES" ]; then
+      write_csum "$path" "$object"
+      report_replaced "$path"
+      continue
+    fi
+
+    linkdir=$(dirname -- "$OUT/$path")
     safe=0
-    if [ "${target#/}" = "$target" ]; then
-      rel=$(realpath -m --relative-to="$OUT" "$linkdir/$target" 2>/dev/null || echo "")
+    if [ -n "$target" ] && [ "${target#/}" = "$target" ]; then
+      rel=$(realpath -m --relative-to="$OUT" -- "$linkdir/$target" 2>/dev/null || echo "")
       case "$rel" in
         ''|..|../*|/*) safe=0 ;;
         *) safe=1 ;;
@@ -361,11 +424,14 @@ while IFS= read -r -d '' line; do
     fi
 
     if [ "$safe" = "1" ]; then
-      ln -s "$target" "$OUT/$path"
+      ln -s -- "$target" "$OUT/$path"
     else
       printf '%s' "$target" > "$OUT/$path"
-      echo "  neutralized symlink: $path -> $target"
+      neutralized=$((neutralized + 1))
+      notice "neutralized symlink: $path -> ${target:0:60}"
     fi
+
+    total=$((total + ${#target}))
     written=$((written + 1))
     continue
   fi
@@ -378,7 +444,7 @@ while IFS= read -r -d '' line; do
     # `git cat-file blob` writes bytes, not modes: the executable bit has to be
     # restored by hand or every script in the checkout comes back non-executable.
     if [ "$mode" = "100755" ]; then
-      chmod +x "$OUT/$path"
+      chmod +x -- "$OUT/$path"
     fi
     total=$((total + size))
     written=$((written + 1))
@@ -389,17 +455,67 @@ while IFS= read -r -d '' line; do
 done < "$CLONE_TMP/tree.lst"
 
 echo "  replaced files: $replaced"
+echo "  neutralized symlinks: $neutralized"
+
+# Symlink containment has to be decided on the *finished* tree. `realpath -m`
+# treats a component that does not exist yet as a plain directory, so a link
+# written early can be made to resolve outside $OUT by a link written after it:
+#
+#     m/x    -> z/b/b/b/../../../..    (looks inside: m/z/b does not exist yet)
+#     m/z/b  -> .                      (now every `b` is a directory to climb)
+#
+# This walk applies the same rule `Inkfish.Sandbox.SanitizeLinks` applies to
+# archives -- an absolute target goes, anything that resolves outside $OUT goes,
+# anything that cannot be resolved goes -- and it is the authority the per-entry
+# check above cannot be. `create_upload/3` runs the Elixir sanitizer over the
+# staged tree as well, for the same reason the archive path does.
+sanitize_links() {
+  local link raw resolved removed=0
+  while IFS= read -r -d '' link; do
+    raw=$(readlink -- "$link" 2>/dev/null || echo "")
+    case "$raw" in
+      /*|'')
+        rm -f -- "$link"
+        removed=$((removed + 1))
+        notice "removed unsafe symlink: ${link#"$OUT"/} -> $raw"
+        continue
+        ;;
+    esac
+
+    resolved=$(readlink -f -- "$link" 2>/dev/null || echo "")
+    case "$resolved" in
+      "$OUT"|"$OUT"/*) ;;
+      *)
+        rm -f -- "$link"
+        removed=$((removed + 1))
+        notice "removed unsafe symlink: ${link#"$OUT"/} -> $raw"
+        ;;
+    esac
+  done < <(find "$OUT" -type l -print0)
+
+  echo "  removed unsafe symlinks: $removed"
+}
+
+sanitize_links
 
 echo "Preserving git metadata (trimmed) for the persistent tree..."
-mkdir -p "$OUT/.git"
+# `.git` has to be a real directory of ours. A crafted tree can contain an entry
+# named `.git` (a normal commit cannot), and the writes below must not follow it
+# anywhere -- the sanitizer above has already removed it if it escaped, but a
+# link to a directory *inside* the checkout would still send the metadata to the
+# wrong place.
+if [ -e "$OUT/.git" ] || [ -L "$OUT/.git" ]; then
+  rm -rf -- "$OUT/.git"
+fi
+mkdir -p -- "$OUT/.git"
 # The saved config keeps the origin URL (`repo_info/1` reads it) but not the
-# partial-clone keys, so nothing later tries to fetch a blob this clone left
-# out on purpose.
-grep -v -E '^[[:space:]]*(promisor|partialclonefilter)[[:space:]]*=' \
+# keys that would let anything in the unpacked tree go back to the network: the
+# partial-clone ones (`--filter` writes them) and the fetch refspec.
+grep -v -E '^[[:space:]]*(promisor|partialclonefilter|fetch)[[:space:]]*=' \
   "$CLONE_TMP/config.keep" > "$OUT/.git/config" || true
 for f in HEAD shallow FETCH_HEAD; do
   if [ -f ".git/$f" ]; then
-    cp ".git/$f" "$OUT/.git/$f"
+    cp -- ".git/$f" "$OUT/.git/$f"
   fi
 done
 # The fetched commit, not the unborn local branch `git init` left behind.
@@ -433,6 +549,7 @@ echo "  branch: $BRANCH"
 echo "  commit: $SHA"
 echo "  saved: $written files, $((total / 1024)) KiB of $SUBMIT_SIZE"
 echo "  excluded by the ignore list: $excluded files, $((excluded_bytes / 1024)) KiB"
+echo "  neutralized symlinks: $neutralized"
 
 echo ""
 echo "$COOKIE"

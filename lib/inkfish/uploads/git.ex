@@ -1,4 +1,5 @@
 defmodule Inkfish.Uploads.Git do
+  alias Inkfish.Sandbox.Archive
   alias Inkfish.Sandbox.TempFs
   alias Inkfish.Uploads
   alias Inkfish.Uploads.Upload
@@ -15,8 +16,24 @@ defmodule Inkfish.Uploads.Git do
   def repo_info(unpacked_path) do
     with {:ok, url} <- repo_url(unpacked_path),
          {:ok, commit} <- repo_commit(unpacked_path) do
-      %{url: url, commit: commit}
+      %{url: url, host: repo_host(url), commit: commit}
     else
+      _ -> nil
+    end
+  end
+
+  @doc """
+  The host a cloned URL actually points at.
+
+  The URL is what git recorded and it is shown as-is, but
+  `https://github.com@evil.example/x` is a truthful URL that reads as github.com
+  at a glance -- and the URL is what a grader looks at to decide whether the
+  starter repository was cloned. Showing the parsed host beside it makes the two
+  impossible to confuse.
+  """
+  def repo_host(url) do
+    case URI.parse(url) do
+      %URI{host: host} when is_binary(host) and host != "" -> host
       _ -> nil
     end
   end
@@ -83,32 +100,50 @@ defmodule Inkfish.Uploads.Git do
   end
 
   def start_clone(url) do
+    with {:ok, settings} <- settings(),
+         {:ok, argv} <- clone_argv(settings.max_files) do
+      Inkfish.Ittys.run(argv, clone_env(url, settings))
+    end
+  end
+
+  # The script is plain: it expects its two mounts to exist, and this is what
+  # makes them. `unshare_argv/3` is the same primitive the archive extraction
+  # uses, so the `unshare` invocation and the mount preamble have exactly one
+  # implementation. Ittys runs the argv itself, keeping its own supervision and
+  # streaming; its `execve(2)` is why `unshare_argv/3` resolves the binary to an
+  # absolute path.
+  defp clone_argv(max_files) do
     script =
       :code.priv_dir(:inkfish)
       |> Path.join("scripts/upload_git_clone.sh")
 
-    env = [
+    TempFs.unshare_argv(clone_mounts(submit_size(), max_files), "bash", [script])
+  end
+
+  defp clone_env(url, settings) do
+    [
       REPO: url,
       CLONE_SIZE: clone_size(),
       SUBMIT_SIZE: submit_size(),
-      MAX_FILES: to_string(max_files()),
-      BLOB_LIMIT: blob_limit(),
-      GIT_IGNORE: Enum.join(ignore_list(), " "),
+      MAX_FILES: to_string(settings.max_files),
+      BLOB_LIMIT: settings.blob_limit,
+      GIT_IGNORE: settings.ignore,
       GIT_ALLOW_PROTOCOL: allowed_protocols(),
       # We own the staging directory the script copies its results into, so we
       # create it here and hand the path over. That way we know it and can
       # remove it even when the script dies before it reports `dir:`/`tar:`.
       STAGE_DIR: make_staging_dir()
     ]
+  end
 
-    # The script is plain: it expects its two mounts to exist, and this is what
-    # makes them. `unshare_argv/3` is the same primitive the archive extraction
-    # uses, so the `unshare` invocation and the mount preamble have exactly one
-    # implementation. Ittys runs the argv itself, keeping its own supervision
-    # and streaming; its `execve(2)` is why `unshare_argv/3` resolves the
-    # binary to an absolute path.
-    with {:ok, argv} <- TempFs.unshare_argv(clone_mounts(), "bash", [script]) do
-      Inkfish.Ittys.run(argv, env)
+  # The configured knobs, validated once, so a typo in `config/*.exs` comes back
+  # as a message the channel can report instead of an arithmetic error out of
+  # the middle of `start_clone/1` (which is a channel crash, not an answer).
+  defp settings do
+    with {:ok, max_files} <- max_files(),
+         {:ok, ignore} <- ignore_list(),
+         {:ok, blob_limit} <- blob_limit() do
+      {:ok, %{max_files: max_files, ignore: ignore, blob_limit: blob_limit}}
     end
   end
 
@@ -134,12 +169,7 @@ defmodule Inkfish.Uploads.Git do
   #     plus a page per allowed file (`:git_max_files`), plus a MiB for the
   #     trimmed `.git` metadata, and the kernel cap stays as the backstop
   #     behind the script's own accounting.
-  @doc false
-  def clone_mounts do
-    clone_mounts(submit_size(), max_files())
-  end
-
-  # The same mounts for an explicit saved budget and file limit, which is what
+  # The two mounts for an explicit saved budget and file limit, which is what
   # the tests use: they exercise the production mount arithmetic instead of
   # hand-rolling an approximation of it.
   @doc false
@@ -192,7 +222,14 @@ defmodule Inkfish.Uploads.Git do
   # the persistent tmpfs no matter how small it is, so this is the number that
   # decides whether a repository can be saved at all.
   defp max_files do
-    Application.get_env(:inkfish, :git_max_files, 2000)
+    case Application.get_env(:inkfish, :git_max_files, 2000) do
+      n when is_integer(n) and n > 0 ->
+        {:ok, n}
+
+      other ->
+        {:error,
+         ":git_max_files must be a positive integer, got: #{inspect(other)}"}
+    end
   end
 
   # The directories that are never the student's own work: installed
@@ -202,7 +239,18 @@ defmodule Inkfish.Uploads.Git do
                      build .gradle .next .nuxt coverage)
 
   defp ignore_list do
-    Application.get_env(:inkfish, :git_ignore, @default_ignore)
+    case Application.get_env(:inkfish, :git_ignore, @default_ignore) do
+      names when is_list(names) ->
+        if Enum.all?(names, &is_binary/1) do
+          {:ok, Enum.join(names, " ")}
+        else
+          {:error, ":git_ignore must be a list of directory names"}
+        end
+
+      other ->
+        {:error,
+         ":git_ignore must be a list of directory names, got: #{inspect(other)}"}
+    end
   end
 
   # The largest blob worth downloading: a blob bigger than the entire saved
@@ -214,15 +262,26 @@ defmodule Inkfish.Uploads.Git do
     case Application.get_env(:inkfish, :git_blob_limit, :submit_size) do
       :submit_size ->
         case size_kb(submit_size()) do
-          {:ok, _} -> submit_size()
-          :error -> ""
+          {:ok, _} -> {:ok, submit_size()}
+          :error -> {:ok, ""}
         end
 
-      value when is_binary(value) ->
-        value
+      "" ->
+        {:ok, ""}
 
-      _other ->
-        ""
+      value when is_binary(value) ->
+        # The script validates this too (it ends up in a git argument); this is
+        # the operator-facing message, and it has to be a shape git accepts.
+        if String.match?(value, ~r/\A[0-9]+[kKmMgG]?\z/) do
+          {:ok, value}
+        else
+          {:error,
+           ":git_blob_limit must be a git size (100k, 5m, ...) or \"\", got: #{inspect(value)}"}
+        end
+
+      other ->
+        {:error,
+         ":git_blob_limit must be a git size (100k, 5m, ...) or \"\", got: #{inspect(other)}"}
     end
   end
 
@@ -351,28 +410,59 @@ defmodule Inkfish.Uploads.Git do
       stage = staging_dir(data, dir, tar)
 
       try do
-        do_create_upload(dir, tar, kind, user_id)
+        with :ok <- sanitize_checkout(dir) do
+          do_create_upload(dir, tar, stage, kind, user_id)
+        end
       after
         remove_staging(stage)
       end
     end
   end
 
-  defp do_create_upload(dir, tar, kind, user_id) do
-    file_name = Path.basename(tar)
-    size = Upload.file_size(tar)
+  # The clone script neutralizes the symlinks it can tell are unsafe, but it
+  # decides that per entry while it writes the tree -- and `realpath -m` treats a
+  # component that does not exist yet as a plain directory, so a link written
+  # early can be made to resolve outside the checkout by a link written after
+  # it (`m/x -> z/b/b/b/../../..` is "inside" until `m/z/b -> .` exists).
+  # Containment has to be decided on the *finished* tree, which is exactly what
+  # `SanitizeLinks` does and why the archive path runs it on its staging tree
+  # before moving it. The unpacked tree is served by
+  # `/uploads/:id/_meta/unpacked/*path`, which follows symlinks, so this is the
+  # boundary that matters. It is bounded by `:git_max_files` (one `readlink -f`
+  # per symlink, at most a few thousand).
+  defp sanitize_checkout(dir) do
+    Archive.sanitize_links!(Archive.canonical(dir))
+    :ok
+  rescue
+    error ->
+      {:error,
+       "could not check the checkout's symlinks: #{Exception.message(error)}"}
+  end
 
-    params = %{
-      "kind" => kind,
-      "user_id" => user_id,
-      "name" => file_name,
-      "size" => size
-    }
-
-    with {:ok, upload} <- create_upload_row(params),
-         :ok <- copy_tarball(tar, upload),
-         :ok <- copy_checkout(dir, upload) do
+  defp do_create_upload(dir, tar, stage, kind, user_id) do
+    with {:ok, size} <- tarball_size(tar),
+         {:ok, upload} <-
+           create_upload_row(%{
+             "kind" => kind,
+             "user_id" => user_id,
+             "name" => Path.basename(tar),
+             "size" => size
+           }),
+         :ok <- copy_tarball(tar, upload, stage),
+         :ok <- copy_checkout(dir, upload, stage) do
       {:ok, Upload.fetch_size(upload)}
+    end
+  end
+
+  # A missing tarball used to raise `File.Error` out of `File.stat!/1`, which
+  # took the channel process down instead of answering it.
+  defp tarball_size(tar) do
+    case File.stat(tar) do
+      {:ok, %File.Stat{size: size}} ->
+        {:ok, size}
+
+      {:error, reason} ->
+        {:error, "could not read the cloned tarball #{tar}: #{reason}"}
     end
   end
 
@@ -401,10 +491,15 @@ defmodule Inkfish.Uploads.Git do
   # and a non-directory checkout keep going straight to the copy, which is what
   # reports the reason (`:eisdir`, `:enoent`, ...) when they are the wrong kind
   # of thing.
-  defp copy_tarball(tar, upload) do
+  #
+  # A move is destructive -- it deletes the source name -- and `dir`/`tar` are
+  # read back out of the itty's output, so only a path *inside the staging
+  # directory we handed the script* may be moved. Anything else is copied, which
+  # is the non-destructive thing to do with a path we do not recognise.
+  defp copy_tarball(tar, upload, stage) do
     dest = Upload.upload_path(upload)
 
-    if File.regular?(tar) do
+    if File.regular?(tar) and inside?(tar, stage) do
       move(tar, dest, fn -> copy_tarball_file(tar, dest) end)
     else
       copy_tarball_file(tar, dest)
@@ -421,10 +516,10 @@ defmodule Inkfish.Uploads.Git do
     end
   end
 
-  defp copy_checkout(dir, upload) do
+  defp copy_checkout(dir, upload, stage) do
     dest = Upload.unpacked_path(upload)
 
-    if File.dir?(dir) do
+    if File.dir?(dir) and inside?(dir, stage) do
       move(dir, dest, fn -> copy_checkout_dir(dir, dest) end)
     else
       copy_checkout_dir(dir, dest)
@@ -447,6 +542,15 @@ defmodule Inkfish.Uploads.Git do
       :ok -> :ok
       {:error, _reason} -> fallback.()
     end
+  end
+
+  # Is `path` inside the staging directory we handed the script? `nil` means
+  # `staging_dir/3` did not recognise one, which is the "not ours" answer, so
+  # the caller copies instead of moving.
+  defp inside?(_path, nil), do: false
+
+  defp inside?(path, stage) do
+    String.starts_with?(Path.expand(path), Path.expand(stage) <> "/")
   end
 
   # `Ecto.Changeset.traverse_errors/2` keeps `%{...}` placeholders in the
@@ -480,24 +584,25 @@ defmodule Inkfish.Uploads.Git do
   # tarball. A caller-supplied path we were handed some other way must never be
   # deleted.
   defp staging_dir(data, dir, tar) do
-    stage = data["stage"] || Path.dirname(dir)
+    stage = Path.expand(data["stage"] || Path.dirname(dir))
 
-    if Path.dirname(tar) == stage and staging_parent?(stage) do
+    if Path.dirname(Path.expand(tar)) == stage and staging_parent?(stage) do
       stage
     else
       nil
     end
   end
 
+  # `stage` is already expanded, and so is what `remove_staging/1` deletes: the
+  # guard decides on the lexical path while `File.rm_rf/1` lets the kernel
+  # resolve symlinks, so the two have to be looking at the same string or a
+  # `..` behind a symlink could pass the guard and delete somewhere else.
   defp staging_parent?(stage) do
-    expanded = Path.expand(stage)
-    parent = Path.dirname(expanded)
-
-    parent in [
+    Path.dirname(stage) in [
       Path.expand(Upload.upload_base()),
       Path.expand(System.tmp_dir!())
     ] and
-      String.starts_with?(Path.basename(expanded), @staging_prefix)
+      String.starts_with?(Path.basename(stage), @staging_prefix)
   end
 
   defp remove_staging(nil), do: :ok

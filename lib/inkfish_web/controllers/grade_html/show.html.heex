@@ -25,7 +25,8 @@
       <a href={@git.url} target="_blank" rel="noopener noreferrer">
         {@git.url}
       </a>
-      at commit <code><%= String.slice(@git.commit, 0, 8) %></code>.
+      at commit <code>{String.slice(@git.commit, 0, 8)}</code>
+      on host <code><%= @git.host || "unknown" %></code>.
     </span>
   </div>
 <% end %>

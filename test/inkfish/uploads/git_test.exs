@@ -1,6 +1,7 @@
 defmodule Inkfish.Uploads.GitTest do
   use Inkfish.DataCase, async: true
 
+  import ExUnit.CaptureLog
   import Inkfish.Factory
 
   alias Inkfish.Uploads.Git
@@ -91,6 +92,112 @@ defmodule Inkfish.Uploads.GitTest do
       refute File.exists?(stage)
     end
 
+    test "removes a symlink that escapes the staged checkout, and says so" do
+      # The clone script decides containment per entry while it writes the tree,
+      # which a link written later can defeat. The unpacked tree is served by
+      # `/uploads/:id/_meta/unpacked/*path`, which follows symlinks, so the
+      # finished tree is checked again here -- the same `SanitizeLinks` pass the
+      # archive path runs.
+      user = insert(:user)
+
+      stage =
+        Path.join(
+          Upload.upload_base(),
+          "inkfish-clone-#{Base.encode16(:crypto.strong_rand_bytes(6))}"
+        )
+
+      dir = Path.join(stage, "repo")
+      File.mkdir_p!(dir)
+      File.write!(Path.join(dir, "hello.txt"), "hi\n")
+      File.ln_s!("../../../../etc", Path.join(dir, "escape"))
+      tar = Path.join(stage, "repo.tar.gz")
+      File.write!(tar, "tarball")
+
+      on_exit(fn -> File.rm_rf!(stage) end)
+
+      log =
+        capture_log(fn ->
+          assert {:ok, upload} =
+                   Git.create_upload(
+                     %{"dir" => dir, "tar" => tar, "stage" => stage},
+                     "sub",
+                     user.id
+                   )
+
+          on_exit(fn -> File.rm_rf!(Upload.upload_dir(upload)) end)
+
+          unpacked = Upload.unpacked_path(upload)
+          assert File.read!(Path.join(unpacked, "hello.txt")) == "hi\n"
+          assert {:error, :enoent} = File.lstat(Path.join(unpacked, "escape"))
+        end)
+
+      assert log =~ "removing unsafe link"
+      assert log =~ "escape"
+    end
+
+    test "copies rather than moves a checkout from outside the staging directory" do
+      # A move is destructive, so a `dir` the script did not report inside the
+      # staging directory it was given is copied instead. The tests hand in
+      # their own directories, which is exactly that case.
+      user = insert(:user)
+
+      stage =
+        Path.join(
+          Upload.upload_base(),
+          "inkfish-clone-#{Base.encode16(:crypto.strong_rand_bytes(6))}"
+        )
+
+      File.mkdir_p!(stage)
+      tar = Path.join(stage, "repo.tar.gz")
+      File.write!(tar, "tarball")
+
+      elsewhere =
+        Path.join(
+          System.tmp_dir!(),
+          "git_test_outside_#{System.unique_integer([:positive])}"
+        )
+
+      File.mkdir_p!(elsewhere)
+      File.write!(Path.join(elsewhere, "hello.txt"), "hi\n")
+
+      on_exit(fn ->
+        File.rm_rf!(stage)
+        File.rm_rf!(elsewhere)
+      end)
+
+      assert {:ok, upload} =
+               Git.create_upload(
+                 %{"dir" => elsewhere, "tar" => tar, "stage" => stage},
+                 "sub",
+                 user.id
+               )
+
+      on_exit(fn -> File.rm_rf!(Upload.upload_dir(upload)) end)
+
+      assert File.read!(Path.join(Upload.unpacked_path(upload), "hello.txt")) ==
+               "hi\n"
+
+      # The source is still where it was: it was copied, not moved.
+      assert File.exists?(Path.join(elsewhere, "hello.txt"))
+    end
+
+    test "returns an error when the cloned tarball has gone" do
+      user = insert(:user)
+      base = git_test_dir()
+      dir = Path.join(base, "repo")
+      File.mkdir_p!(dir)
+
+      assert {:error, message} =
+               Git.create_upload(
+                 %{"dir" => dir, "tar" => Path.join(base, "gone.tar.gz")},
+                 "sub",
+                 user.id
+               )
+
+      assert message =~ "could not read the cloned tarball"
+      assert message =~ "enoent"
+    end
+
     test "returns an error naming the reason when the upload row is rejected" do
       base = git_test_dir()
 
@@ -161,6 +268,20 @@ defmodule Inkfish.Uploads.GitTest do
       dir = setup_git_checkout(nil)
 
       assert Git.repo_info(dir) == nil
+    end
+
+    test "reports the host the URL actually points at" do
+      # `https://github.com@evil.example/x` is a truthful URL that reads as
+      # github.com at a glance, and the URL is what a grader uses to decide
+      # whether the starter repository was cloned.
+      dir =
+        setup_git_checkout(
+          "https://github.com@evil.example/x",
+          "5bea7bb1a138168b0c50829852cd1b6252627abb"
+        )
+
+      assert %{url: "https://github.com@evil.example/x", host: "evil.example"} =
+               Git.repo_info(dir)
     end
   end
 
