@@ -46,7 +46,7 @@ function AttBox({course_id, children}) {
   );
 }
 
-function AttForm({state, setState}) {
+function AttForm({setState}) {
   const [code, setCode] = useState("");
   const [disabled, setDisabled] = useState(false);
   const [msg, setMsg] = useState(null);

@@ -1,6 +1,5 @@
 // Global Deps
 import "phoenix_html";
-import { Alert } from "bootstrap";
 
 // App parts
 import "./socket";

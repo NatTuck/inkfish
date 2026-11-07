@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { Card, Button, Alert, Row, Col, Form } from 'react-bootstrap';
+import { Card, Button, Row, Col, Form } from 'react-bootstrap';
 import { Provider } from 'react-redux';
-import classnames from 'classnames';
 
 import { Itty, withChannel } from '../itty';
 import store from '../itty/store';

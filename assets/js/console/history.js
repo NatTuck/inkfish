@@ -57,7 +57,7 @@ function on_output(topic, msg) {
   let prev = hist.get(topic) || [];
   hist.set(topic, prev.concat([msg]));
 
-  for (const [_key, sub] of get_subs(topic)) {
+  for (const [, sub] of get_subs(topic)) {
     sub.posn = msg.serial;
     sub.func(msg);
   }

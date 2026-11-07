@@ -1,61 +1,10 @@
 
 import $ from 'cash-dom';
 
-import socket from './socket';
-
 function setup() {
-  if (window.current_page == 'sub/new') {
-    //setup_cloner();
-  }
-
   if ($('.upload-drop-area')) {
     setup_uploader();
   }
-}
-
-function join_channel(topic) {
-  let channel = socket.channel("clone:" + topic, {});
-  channel.join()
-         .receive("error", resp => { console.error("Unable to join", resp); });
-  return channel;
-}
-
-function scroll_down(elem) {
-  if (elem.scrollHeight - elem.clientHeight < elem.scrollTop - 5) {
-    return;
-  }
-  elem.scrollTop = elem.scrollHeight - elem.clientHeight;
-}
-
-function setup_cloner() {
-  let ch_id = crypto.randomUUID();
-  let channel = join_channel(ch_id);
-
-  channel.on("print", ({text}) => {
-    let msg = text;
-    msg = msg.replace(/\r$/, "\n");
-    $('#git-output-log').append(msg);
-    let scroll_fn = () => {
-      scroll_down($('#git-output-log')[0]);
-    };
-    _.debounce(scroll_fn, 50)();
-  });
-
-  channel.on("fail", ({msg}) => {
-    $('#git-output-log').append("\nFAIL:\n" + msg);
-  });
-
-  channel.on("done", ({upload_id}) => {
-    let id_field = $('#git-output-log').data('id-field');
-    $("#" + id_field).val(upload_id);
-  });
-
-  $('#git-clone-btn').click((ev) => {
-    ev.preventDefault();
-    let url = $('#git-clone-input').val();
-    channel.push("clone", {url: url});
-  });
-
 }
 
 function setup_uploader() {
@@ -128,10 +77,10 @@ function setup_uploader() {
         }
         set_message(`✗ Upload failed: ${file.name}, ${text}`);
       },
-      onFileExtError: (file) => {
+      onFileExtError: (_file) => {
         set_message(`✗ Bad file extension, must be: ${exts}`);
       },
-      onFileSizeError: (file) => {
+      onFileSizeError: (_file) => {
         set_message("✗ File too big");
       },
     });

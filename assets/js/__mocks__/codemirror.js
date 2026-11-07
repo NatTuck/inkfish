@@ -1,5 +1,5 @@
 
-export default function CodeMirror({ value, extensions }) {
+export default function CodeMirror({ value }) {
   return (
     <div className="codemirror-mock" data-testid="codemirror">
       <pre>{value}</pre>

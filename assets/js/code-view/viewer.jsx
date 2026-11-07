@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { Row, Col, ListGroup } from 'react-bootstrap';
-import TreeMenu, { defaultChildren } from 'react-simple-tree-menu';
+import { Row, Col } from 'react-bootstrap';
 
 import FileTree from './file-tree';
 import FileViewer from './file-viewer';

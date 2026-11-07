@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, Form, Row, Col } from 'react-bootstrap';
+import { Button, Form } from 'react-bootstrap';
 import _ from 'lodash';
 
 import { set_grader } from './ajax';
@@ -77,7 +77,7 @@ export default function TaskEditor({graders, assignment}) {
   );
 }
 
-function GraderSelect({sub, graders, onChange}) {
+function GraderSelect({graders, onChange}) {
   let opts = _.map(graders, (gdr) => (
     <option key={gdr.id} value={gdr.id}>
       {gdr.user.name}

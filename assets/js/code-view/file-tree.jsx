@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import TreeMenu, { defaultChildren } from 'react-simple-tree-menu';
+import TreeMenu from 'react-simple-tree-menu';
 import { Form, ListGroup, ListGroupItem } from 'react-bootstrap';
-import { freeze } from 'icepick';
 import _ from 'lodash';
 
 export default function FileTree({data, grade, activePath, pickFile}) {

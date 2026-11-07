@@ -61,12 +61,6 @@ export function Itty({chan, uuid, token}) {
   );
 }
 
-function Icon({name}) {
-  return (
-    <img src={"/images/icons/" + name + ".svg"} />
-  );
-}
-
 function init() {
   let root_div = document.getElementById('itty-root');
   if (!root_div) {

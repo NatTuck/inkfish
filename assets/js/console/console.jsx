@@ -14,8 +14,8 @@ function scroll_down(elem) {
 
 export default function Console({topic, className}) {
   // Normalize data to remove stray carriage returns.
-  const [posn, setPosn] = useState(0);
-  const [elem_id, _] = useState("console-" + (console_count++));
+  const [, setPosn] = useState(0);
+  const [elem_id] = useState("console-" + (console_count++));
 
   useEffect(() => {
     return history.subscribe(topic, (item) => {

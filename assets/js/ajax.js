@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { readAsArrayBuffer } from 'promise-file-reader';
 
 export async function get(path) {
   let resp = await fetch('/ajax' + path, {
