@@ -96,7 +96,7 @@ defmodule Inkfish.MixProject do
     [
       deps: [
         "deps.get",
-        "cmd npm install --prefix assets",
+        "cmd pnpm install --dir assets",
         "esbuild.install",
         "sass.install"
       ],
