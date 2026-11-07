@@ -52,18 +52,24 @@ config :local_time, :time_zone, "America/New_York"
 config :inkfish, :docker, version: "v1.44"
 
 config :esbuild,
-  version: "0.17.11",
+  version: "0.28.2",
   default: [
     args: ~w(js/app.js --bundle --target=es2018 --outdir=../priv/static/assets),
     cd: Path.expand("../assets", __DIR__),
     env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
   ]
 
+# Bootstrap 5 and Bootswatch are `@import`-based, so `css/app.scss` cannot move
+# to `@use` yet -- `--quiet-deps` drops the deprecation warnings that come from
+# those files, and `--silence-deprecation=import` drops the four that point at
+# our own `@import` lines. Both are the same warning we cannot act on until
+# Bootstrap 6, and everything else stays visible.
 config :dart_sass,
-  version: "1.61.0",
+  version: "1.108.1",
   default: [
-    args: ~w(--load-path=./node_modules css/app.scss
-             ../priv/static/assets/app.css),
+    args: ~w(--load-path=./node_modules --quiet-deps
+             --silence-deprecation=import
+             css/app.scss ../priv/static/assets/app.css),
     cd: Path.expand("../assets", __DIR__)
   ]
 

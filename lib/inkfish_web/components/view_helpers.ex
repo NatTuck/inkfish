@@ -1,7 +1,8 @@
 defmodule InkfishWeb.ViewHelpers do
   # Helper functions available in all templates.
 
-  use Phoenix.HTML
+  import Phoenix.HTML
+  use PhoenixHTMLHelpers
 
   alias Inkfish.Users.User
   alias Inkfish.Users.Reg
