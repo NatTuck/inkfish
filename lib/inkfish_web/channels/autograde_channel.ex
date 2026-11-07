@@ -1,6 +1,8 @@
 defmodule InkfishWeb.AutogradeChannel do
   use InkfishWeb, :channel
 
+  require Logger
+
   def join("autograde:" <> uuid, %{"token" => token}, socket) do
     case Phoenix.Token.verify(InkfishWeb.Endpoint, "autograde", token,
            max_age: 8640
@@ -51,7 +53,16 @@ defmodule InkfishWeb.AutogradeChannel do
     end
   end
 
-  def handle_info({:block, _uuid, item}, socket) do
+  # A block for another itty's uuid cannot be pushed to this socket: the topic
+  # is the uuid, so a mismatch means something upstream is wrong. It used to be
+  # inspected onto stdout; the check stays, the print becomes a log.
+  def handle_info({:block, uuid, item}, socket) do
+    if uuid != socket.assigns[:uuid] do
+      Logger.warning(
+        "autograde: block for #{uuid} arrived on the socket for #{socket.assigns[:uuid]}"
+      )
+    end
+
     push(socket, "block", item)
     {:noreply, socket}
   end

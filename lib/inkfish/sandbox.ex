@@ -3,6 +3,8 @@ defmodule Inkfish.Sandbox do
   Documentation for Sandbox.
   """
 
+  require Logger
+
   alias Inkfish.Sandbox
 
   @doc """
@@ -16,8 +18,14 @@ defmodule Inkfish.Sandbox do
 
   @doc """
   Trigger cleanups for all sandboxed resources.
+
+  FIXME: nothing is reaped here yet. `AgJobs.Server` calls this at boot, and it
+  used to say so on stdout -- which the test suite's no-output rule does not
+  allow. `:debug` keeps the fact discoverable without printing in any
+  environment that does not ask for it.
   """
   def start_cleanups() do
+    Logger.debug("sandbox cleanups are not implemented yet")
     :ok
   end
 end

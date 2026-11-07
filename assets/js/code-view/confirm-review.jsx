@@ -9,12 +9,12 @@ function initConfirmReview() {
   const gradeConfirmed = window.confirm_review_grade_confirmed;
 
   const actions = {
-    setGrade: () => {
-    },
-    updateThisComment: () => {
-    },
-    removeThisComment: () => {
-    }
+    // Confirm-review mode shows the comments but does not edit them; these are
+    // the callbacks `LineComment` expects to be able to call, and the grade it
+    // reports is already confirmed.
+    setGrade: () => {},
+    updateThisComment: () => {},
+    removeThisComment: () => {}
   };
 
   comments.forEach((commentData, index) => {

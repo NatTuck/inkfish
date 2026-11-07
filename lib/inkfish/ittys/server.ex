@@ -287,7 +287,11 @@ defmodule Inkfish.Ittys.Server do
     {:stop, :normal, state0}
   end
 
-  def handle_info(_message, state0) do
+  def handle_info(message, state0) do
+    # Nothing in the itty protocol expects an unhandled message, so this is a
+    # diagnostic rather than a warning -- but it is worth keeping: it used to be
+    # inspected onto stdout, which is the one place nobody looks in production.
+    Logger.debug("Itty: unexpected message #{inspect(message)}")
     {:noreply, state0}
   end
 
