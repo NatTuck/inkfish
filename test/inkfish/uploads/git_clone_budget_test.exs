@@ -3,14 +3,10 @@ defmodule Inkfish.Uploads.GitCloneBudgetTest do
 
   import Inkfish.GitFixtures
 
-  alias Inkfish.Sandbox.TempFs
-
-  @script Path.join(:code.priv_dir(:inkfish), "scripts/upload_git_clone.sh")
-
-  # The persistent tmpfs is the budget for what survives the clone, and the
-  # script keeps 512 KB of it back for directory entries and the trimmed git
-  # metadata. Nothing else exercises that branch: without a capped mount the
-  # `df` reading is always huge and every blob is written verbatim.
+  # The saved budget is the budget for what survives the clone, and the script
+  # spends it as a count of saved bytes -- not as free space on the mount, which
+  # also has to cover a 4 KiB page per file. Nothing else exercises that branch:
+  # without it every blob is written verbatim.
   @blob_bytes 6 * 1024 * 1024
 
   setup do
@@ -33,9 +29,12 @@ defmodule Inkfish.Uploads.GitCloneBudgetTest do
   test "replaces a blob larger than the budget with a checksum", %{base: base} do
     bare = make_repo(base, "big", &write_blob/1)
 
-    # 5m of persistent tmpfs is 5120 KB, so the budget is 4608 KB: the 6 MB
-    # blob cannot fit and must come back as a `.csum` file naming its hash.
-    {out, code} = run_script("file://#{bare}", "5m")
+    # 5m of saved budget: the 6 MB blob cannot fit and must come back as a
+    # `.csum` file naming its object id. The blob limit is raised so the fetch
+    # downloads it -- this test is about the saved budget, not the filter.
+    {out, code} =
+      run_clone_script("file://#{bare}", submit_size: "5m", blob_limit: "100m")
+
     cleanup_stage(out)
     assert code == 0, "script failed:\n#{out}"
 
@@ -49,7 +48,9 @@ defmodule Inkfish.Uploads.GitCloneBudgetTest do
   test "keeps a blob that fits the budget", %{base: base} do
     bare = make_repo(base, "fits", &write_blob/1)
 
-    {out, code} = run_script("file://#{bare}", "20m")
+    {out, code} =
+      run_clone_script("file://#{bare}", submit_size: "20m", blob_limit: "100m")
+
     cleanup_stage(out)
     assert code == 0, "script failed:\n#{out}"
 
@@ -79,31 +80,5 @@ defmodule Inkfish.Uploads.GitCloneBudgetTest do
     )
 
     File.write!(Path.join(src, "small.txt"), "fits\n")
-  end
-
-  defp run_script(repo, submit_size) do
-    # The persistent tmpfs has to be a real capped mount for the `df` reading to
-    # mean anything, so the script is run the way production runs it: through
-    # `Inkfish.Sandbox.TempFs.unshare_argv/3`, which mounts CLONE_TMP and
-    # PERSIST_TMP (this `submit_size` is what caps the latter) and exports their
-    # paths. Only the runner differs from production -- a test wants the output
-    # and exit status back.
-    {:ok, [unshare | args]} =
-      TempFs.unshare_argv(
-        [{"CLONE_TMP", "100m"}, {"PERSIST_TMP", submit_size}],
-        "bash",
-        [@script]
-      )
-
-    System.cmd(unshare, args,
-      env: [
-        {"REPO", repo},
-        {"CLONE_SIZE", "100m"},
-        {"SUBMIT_SIZE", submit_size},
-        {"GIT_ALLOW_PROTOCOL", "https:http:git:file"},
-        {"COOKIE", "testcookie"}
-      ],
-      stderr_to_stdout: true
-    )
   end
 end

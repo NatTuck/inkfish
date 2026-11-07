@@ -20,8 +20,19 @@ config :inkfish, Inkfish.Users.User,
 config :inkfish, download_host: "https://inkfish.homework.quest"
 config :inkfish, :env, :prod
 
+# Two budgets: `:git_clone_size` is the temporary checkout (thrown away),
+# `:git_submit_size` is what persists for the submission. See `config/dev.exs`
+# for the full explanation, including `:git_max_files` and `:git_ignore`.
 config :inkfish, :git_clone_size, "100m"
 config :inkfish, :git_submit_size, "5m"
+config :inkfish, :git_max_files, 2000
+
+config :inkfish,
+       :git_ignore,
+       ~w(node_modules .pnpm bower_components .venv venv __pycache__ .tox .eggs
+          .pytest_cache .mypy_cache .cache target dist build .gradle .next .nuxt
+          coverage)
+
 config :inkfish, :git_allowed_protocols, "https:http:git"
 
 # Do not print debug messages in production

@@ -10,6 +10,15 @@ config :local_time, :time_zone, "Africa/Nairobi"
 
 config :inkfish, :git_clone_size, "100m"
 config :inkfish, :git_submit_size, "5m"
+
+config :inkfish, :git_max_files, 2000
+
+config :inkfish,
+       :git_ignore,
+       ~w(node_modules .pnpm bower_components .venv venv __pycache__ .tox .eggs
+          .pytest_cache .mypy_cache .cache target dist build .gradle .next .nuxt
+          coverage)
+
 config :inkfish, :git_allowed_protocols, "https:http:git:file"
 
 # A real tmpfs mount takes milliseconds; keep the bound short so a broken

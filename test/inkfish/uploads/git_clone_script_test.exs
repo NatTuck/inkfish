@@ -1,11 +1,8 @@
 defmodule Inkfish.Uploads.GitCloneScriptTest do
   use ExUnit.Case, async: false
 
+  import Bitwise
   import Inkfish.GitFixtures
-
-  alias Inkfish.Sandbox.TempFs
-
-  @script Path.join(:code.priv_dir(:inkfish), "scripts/upload_git_clone.sh")
 
   setup do
     assert System.find_executable("bash")
@@ -34,7 +31,7 @@ defmodule Inkfish.Uploads.GitCloneScriptTest do
         File.write!(Path.join(src, ".gitignore"), "*.beam\n")
       end)
 
-    {out, code} = run_script("file://#{bare}", "https:http:git:file")
+    {out, code} = run_clone_script("file://#{bare}")
     assert code == 0, "script failed:\n#{out}"
 
     dir = result_path(out, "dir")
@@ -45,10 +42,157 @@ defmodule Inkfish.Uploads.GitCloneScriptTest do
     assert File.read!(Path.join(dir, ".gitignore")) == "*.beam\n"
   end
 
+  test "keeps the executable bit git recorded", %{base: base} do
+    # `git cat-file blob` writes bytes, not modes, so a checkout that just
+    # copies blob content silently turns every script into a plain file.
+    bare =
+      make_repo(base, "execbit", fn src ->
+        script = Path.join(src, "run.sh")
+        File.write!(script, "#!/bin/sh\necho hi\n")
+        File.chmod!(script, 0o755)
+        File.write!(Path.join(src, "notes.txt"), "plain\n")
+      end)
+
+    {out, code} = run_clone_script("file://#{bare}")
+    assert code == 0, "script failed:\n#{out}"
+
+    dir = result_path(out, "dir")
+
+    assert (File.stat!(Path.join(dir, "run.sh")).mode &&& 0o111) != 0
+    assert (File.stat!(Path.join(dir, "notes.txt")).mode &&& 0o111) == 0
+  end
+
+  test "checks out the remote's default branch, not another branch", %{
+    base: base
+  } do
+    # `git remote add` installs `+refs/heads/*`, so a bare `git fetch --depth 1
+    # origin` brings down the tip of every branch, and `FETCH_HEAD`'s first line
+    # is whichever ref sorts first -- not the default branch. This branch is
+    # named to sort before `main` and is deliberately much bigger, which is the
+    # shape of the repository that ran production out of space.
+    bare =
+      make_repo_with_branch(
+        base,
+        "branchy",
+        "aaa-side-branch",
+        fn src ->
+          File.write!(Path.join(src, "README.md"), "main branch\n")
+        end,
+        fn src ->
+          for i <- 1..20 do
+            File.write!(
+              Path.join(src, "side-#{i}.bin"),
+              :crypto.strong_rand_bytes(8192)
+            )
+          end
+        end
+      )
+
+    {out, code} = run_clone_script("file://#{bare}")
+    assert code == 0, "script failed:\n#{out}"
+
+    dir = result_path(out, "dir")
+
+    assert out =~ "branch: main"
+    assert File.read!(Path.join(dir, "README.md")) == "main branch\n"
+    refute File.exists?(Path.join(dir, "side-1.bin"))
+  end
+
+  test "excludes installed dependencies and build output", %{base: base} do
+    bare =
+      make_repo(base, "deps", fn src ->
+        File.mkdir_p!(Path.join(src, "node_modules/dep"))
+
+        File.write!(
+          Path.join(src, "node_modules/dep/index.js"),
+          "module.exports = 1\n"
+        )
+
+        File.mkdir_p!(Path.join(src, "src"))
+        File.write!(Path.join(src, "src/app.js"), "console.log(1)\n")
+      end)
+
+    {out, code} = run_clone_script("file://#{bare}")
+    assert code == 0, "script failed:\n#{out}"
+
+    dir = result_path(out, "dir")
+
+    refute File.exists?(Path.join(dir, "node_modules"))
+    assert File.read!(Path.join(dir, "src/app.js")) == "console.log(1)\n"
+    assert out =~ "excluded by the ignore list: 1"
+  end
+
+  test "a blob the fetch filter left out becomes a .csum naming its object id",
+       %{base: base} do
+    # A partial clone leaves blobs out of the packfile, and the size `git
+    # ls-tree -l` reports for one is not a number. The placeholder has to name
+    # the object id, which is the only thing known about a blob that was never
+    # fetched -- and asking git for its content would trigger a lazy fetch and
+    # download exactly what the filter was told to skip.
+    bare =
+      make_repo(base, "partial", fn src ->
+        File.write!(
+          Path.join(src, "big.bin"),
+          :crypto.strong_rand_bytes(200_000)
+        )
+
+        File.write!(Path.join(src, "small.txt"), "here\n")
+      end)
+
+    blob = git!(["rev-parse", "HEAD:big.bin"], cd: bare)
+
+    {out, code} =
+      run_clone_script("file://#{bare}", blob_limit: "1k", submit_size: "5m")
+
+    assert code == 0, "script failed:\n#{out}"
+
+    dir = result_path(out, "dir")
+
+    refute File.exists?(Path.join(dir, "big.bin"))
+    assert File.read!(Path.join(dir, "big.bin.csum")) == "#{blob}  big.bin\n"
+
+    # The blob that *is* there is still written verbatim.
+    assert File.read!(Path.join(dir, "small.txt")) == "here\n"
+    assert out =~ "replaced: big.bin -> big.bin.csum"
+    assert out =~ "replaced files: 1"
+  end
+
+  test "refuses a repository with more files than the saved budget allows", %{
+    base: base
+  } do
+    # Each entry costs a 4 KiB page of the persistent tmpfs whatever its size,
+    # so the entry count -- not just the byte count -- decides whether a
+    # checkout can be saved. Running out of space half way through, with
+    # whatever `write` failed on, is what this replaces.
+    bare =
+      make_repo(base, "many", fn src ->
+        for i <- 1..5 do
+          File.write!(Path.join(src, "file-#{i}.txt"), "x\n")
+        end
+      end)
+
+    {out, code} = run_clone_script("file://#{bare}", max_files: 2)
+    assert code != 0
+
+    assert out =~ "has 5 files after the"
+    assert out =~ "the limit is 2"
+    assert out =~ "Raise :git_max_files"
+    refute out =~ "No space left on device"
+  end
+
+  test "reports a repository with no commits", %{base: base} do
+    bare = Path.join(base, "empty.git")
+    git!(["init", "-q", "--bare", bare])
+
+    {out, code} = run_clone_script("file://#{bare}")
+    assert code != 0
+    assert out =~ "has no commits"
+  end
+
   test "rejects a repository with a path-traversal tree entry", %{base: base} do
     bare = make_evil_repo(base)
 
-    {out, code} = run_script("file://#{bare}", "https:http:git:file")
+    {out, code} = run_clone_script("file://#{bare}")
 
     assert code != 0
     assert out =~ "Invalid path in repo"
@@ -60,7 +204,8 @@ defmodule Inkfish.Uploads.GitCloneScriptTest do
         File.write!(Path.join(src, "hello.txt"), "hi")
       end)
 
-    {out, code} = run_script("file://#{bare}", "https:http:git")
+    {out, code} =
+      run_clone_script("file://#{bare}", protocols: "https:http:git")
 
     assert code != 0
     assert out =~ "transport 'file' not allowed"
@@ -75,7 +220,7 @@ defmodule Inkfish.Uploads.GitCloneScriptTest do
     # version of the script that got past the assertions still could not clone
     # anything.)
     {out, code} =
-      System.cmd("bash", [@script],
+      System.cmd("bash", [clone_script()],
         env: [
           {"REPO", "file:///inkfish-no-such-repo.git"},
           {"CLONE_SIZE", "100m"},
@@ -89,30 +234,6 @@ defmodule Inkfish.Uploads.GitCloneScriptTest do
     refute code == 0
     assert out =~ "CLONE_TMP is not set"
     assert out =~ "must run inside the tempfs sandbox"
-  end
-
-  defp run_script(repo, protocols) do
-    # Run the script exactly the way production does: `Git.start_clone/1` builds
-    # this same argv -- the same two mounts at the same sizes, through the same
-    # `Inkfish.Sandbox.TempFs` primitive -- and hands it to Ittys. Only the
-    # runner differs here, because a test wants the output and exit status back.
-    {:ok, [unshare | args]} =
-      TempFs.unshare_argv(
-        [{"CLONE_TMP", "100m"}, {"PERSIST_TMP", "5m"}],
-        "bash",
-        [@script]
-      )
-
-    System.cmd(unshare, args,
-      env: [
-        {"REPO", repo},
-        {"CLONE_SIZE", "100m"},
-        {"SUBMIT_SIZE", "5m"},
-        {"GIT_ALLOW_PROTOCOL", protocols},
-        {"COOKIE", "testcookie"}
-      ],
-      stderr_to_stdout: true
-    )
   end
 
   defp result_path(out, key) do

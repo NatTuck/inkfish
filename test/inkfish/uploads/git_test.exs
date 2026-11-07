@@ -52,6 +52,45 @@ defmodule Inkfish.Uploads.GitTest do
       assert :error = Git.create_upload(%{"dir" => "/tmp/nope"}, "sub", 1)
     end
 
+    test "moves a staged checkout into place instead of copying it" do
+      # The staging directory is created on the uploads filesystem so the
+      # results can be renamed into their final home: the checkout the script
+      # staged is already the tree we want, and copying it again doubles both
+      # the time and the disk the upload takes.
+      user = insert(:user)
+
+      stage =
+        Path.join(
+          Upload.upload_base(),
+          "inkfish-clone-#{Base.encode16(:crypto.strong_rand_bytes(6))}"
+        )
+
+      dir = Path.join(stage, "repo")
+      File.mkdir_p!(dir)
+      File.write!(Path.join(dir, "hello.txt"), "hi\n")
+      tar = Path.join(stage, "repo.tar.gz")
+      File.write!(tar, "tarball")
+
+      on_exit(fn -> File.rm_rf!(stage) end)
+
+      assert {:ok, upload} =
+               Git.create_upload(
+                 %{"dir" => dir, "tar" => tar, "stage" => stage},
+                 "sub",
+                 user.id
+               )
+
+      on_exit(fn -> File.rm_rf!(Upload.upload_dir(upload)) end)
+
+      assert File.read!(Path.join(Upload.unpacked_path(upload), "hello.txt")) ==
+               "hi\n"
+
+      assert File.read!(Upload.upload_path(upload)) == "tarball"
+
+      # The whole staging directory is reclaimed, not just left behind.
+      refute File.exists?(stage)
+    end
+
     test "returns an error naming the reason when the upload row is rejected" do
       base = git_test_dir()
 

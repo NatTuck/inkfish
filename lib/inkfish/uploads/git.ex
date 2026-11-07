@@ -91,6 +91,9 @@ defmodule Inkfish.Uploads.Git do
       REPO: url,
       CLONE_SIZE: clone_size(),
       SUBMIT_SIZE: submit_size(),
+      MAX_FILES: to_string(max_files()),
+      BLOB_LIMIT: blob_limit(),
+      GIT_IGNORE: Enum.join(ignore_list(), " "),
       GIT_ALLOW_PROTOCOL: allowed_protocols(),
       # We own the staging directory the script copies its results into, so we
       # create it here and hand the path over. That way we know it and can
@@ -115,17 +118,47 @@ defmodule Inkfish.Uploads.Git do
   # assertions check for. The same sizes are handed to the script as
   # `CLONE_SIZE`/`SUBMIT_SIZE` for its config echo; the mounts are what enforce
   # them.
-  defp clone_mounts do
-    [{"CLONE_TMP", clone_size()}, {"PERSIST_TMP", submit_size()}]
+  #
+  # The two budgets mean different things, which is why they are sized
+  # differently:
+  #
+  #   * `CLONE_TMP` is the *checkout* budget (`:git_clone_size`). It holds the
+  #     fetch's packfile and nothing else -- no working tree is materialized --
+  #     and it is thrown away when the clone finishes. Spending 100 MiB here to
+  #     find the 5 MiB worth keeping is exactly what it is for.
+  #   * `PERSIST_TMP` is the *saved* budget (`:git_submit_size`): what the
+  #     upload actually keeps. The script spends it as a count of saved *bytes*,
+  #     but a tmpfs charges a full 4 KiB page per file, so the mount has to be
+  #     larger than the byte budget or a many-file repository would run out of
+  #     space on page granularity alone. It is sized here as the saved budget
+  #     plus a page per allowed file (`:git_max_files`), plus a MiB for the
+  #     trimmed `.git` metadata, and the kernel cap stays as the backstop
+  #     behind the script's own accounting.
+  @doc false
+  def clone_mounts do
+    clone_mounts(submit_size(), max_files())
   end
 
-  # The staging directory the clone script copies its results out to. It keeps
-  # the same prefix and location the script's own `mktemp -d` would use, so
-  # `staging_dir/3` can recognise it (see the guard there).
+  # The same mounts for an explicit saved budget and file limit, which is what
+  # the tests use: they exercise the production mount arithmetic instead of
+  # hand-rolling an approximation of it.
+  @doc false
+  def clone_mounts(submit_size, max_files) do
+    [
+      {"CLONE_TMP", clone_size()},
+      {"PERSIST_TMP", persist_mount_size(submit_size, max_files)}
+    ]
+  end
+
+  # The staging directory the clone script copies its results out to. It is
+  # created on the uploads filesystem -- not in the system temp dir -- so that
+  # `create_upload/3` can move the checkout into place instead of copying it a
+  # second time; see `copy_checkout/2`. It keeps the same prefix and name
+  # shape a `mktemp -d` would produce, so `staging_dir/3` can recognise it.
   defp make_staging_dir do
     dir =
       Path.join(
-        System.tmp_dir!(),
+        Upload.upload_base(),
         "#{@staging_prefix}#{Base.encode16(:crypto.strong_rand_bytes(6))}"
       )
 
@@ -139,6 +172,80 @@ defmodule Inkfish.Uploads.Git do
 
   defp submit_size do
     Application.get_env(:inkfish, :git_submit_size, "5m")
+  end
+
+  # The persistent mount's size: the saved budget, a 4 KiB page per file the
+  # budget allows, and a MiB of slack for the trimmed `.git` metadata. A budget
+  # this cannot read (a percentage of RAM, say) is passed through untouched --
+  # tmpfs may well understand it even though the arithmetic here does not, and
+  # silently replacing the operator's value with a guessed one would be worse
+  # than not adding the overhead.
+  @doc false
+  def persist_mount_size(submit_size, max_files) do
+    case size_kb(submit_size) do
+      {:ok, kb} -> "#{kb + 4 * max_files + 1024}k"
+      :error -> submit_size
+    end
+  end
+
+  # How many files the saved checkout may hold. Each one costs a 4 KiB page of
+  # the persistent tmpfs no matter how small it is, so this is the number that
+  # decides whether a repository can be saved at all.
+  defp max_files do
+    Application.get_env(:inkfish, :git_max_files, 2000)
+  end
+
+  # The directories that are never the student's own work: installed
+  # dependencies and build output. Matched against every path component.
+  @default_ignore ~w(node_modules .pnpm bower_components .venv venv __pycache__
+                     .tox .eggs .pytest_cache .mypy_cache .cache target dist
+                     build .gradle .next .nuxt coverage)
+
+  defp ignore_list do
+    Application.get_env(:inkfish, :git_ignore, @default_ignore)
+  end
+
+  # The largest blob worth downloading: a blob bigger than the entire saved
+  # budget can never be saved, so the fetch is told to leave it out
+  # (`--filter=blob:limit=`). It defaults to the saved budget itself, because
+  # nothing above that can ever fit. A server that does not support partial
+  # clone only warns, and the fetch falls back to a plain depth-1 fetch.
+  defp blob_limit do
+    case Application.get_env(:inkfish, :git_blob_limit, :submit_size) do
+      :submit_size ->
+        case size_kb(submit_size()) do
+          {:ok, _} -> submit_size()
+          :error -> ""
+        end
+
+      value when is_binary(value) ->
+        value
+
+      _other ->
+        ""
+    end
+  end
+
+  # A tmpfs size string (`5m`, `512k`, `1048576`) as a number of KiB. Only used
+  # for arithmetic on this side; the string itself is still what gets mounted.
+  defp size_kb(size) do
+    case Regex.run(~r/\A([0-9]+)([kKmMgG]?)\z/, size) do
+      [_, digits, unit] ->
+        n = String.to_integer(digits)
+
+        kb =
+          case String.downcase(unit) do
+            "k" -> n
+            "m" -> n * 1024
+            "g" -> n * 1024 * 1024
+            "" -> div(n, 1024)
+          end
+
+        {:ok, kb}
+
+      _ ->
+        :error
+    end
   end
 
   defp allowed_protocols do
@@ -285,9 +392,26 @@ defmodule Inkfish.Uploads.Git do
     end
   end
 
+  # The staging directory is created on the uploads filesystem precisely so
+  # these are moves: the checkout the script staged is already the tree we want,
+  # and copying it again would double both the time and the disk the upload
+  # takes. `File.rename/2` fails with `:exdev` when the staging directory is on
+  # another filesystem (a `dir`/`tar` handed to us from somewhere else, as the
+  # tests do), so the copy is still there as the fallback. A non-regular tarball
+  # and a non-directory checkout keep going straight to the copy, which is what
+  # reports the reason (`:eisdir`, `:enoent`, ...) when they are the wrong kind
+  # of thing.
   defp copy_tarball(tar, upload) do
     dest = Upload.upload_path(upload)
 
+    if File.regular?(tar) do
+      move(tar, dest, fn -> copy_tarball_file(tar, dest) end)
+    else
+      copy_tarball_file(tar, dest)
+    end
+  end
+
+  defp copy_tarball_file(tar, dest) do
     case File.cp(tar, dest) do
       :ok ->
         :ok
@@ -300,6 +424,14 @@ defmodule Inkfish.Uploads.Git do
   defp copy_checkout(dir, upload) do
     dest = Upload.unpacked_path(upload)
 
+    if File.dir?(dir) do
+      move(dir, dest, fn -> copy_checkout_dir(dir, dest) end)
+    else
+      copy_checkout_dir(dir, dest)
+    end
+  end
+
+  defp copy_checkout_dir(dir, dest) do
     case File.cp_r(dir, dest) do
       {:ok, _files} ->
         :ok
@@ -307,6 +439,13 @@ defmodule Inkfish.Uploads.Git do
       {:error, reason, file} ->
         {:error,
          "could not copy checkout #{dir} to #{dest}: #{reason} (#{file})"}
+    end
+  end
+
+  defp move(src, dest, fallback) do
+    case File.rename(src, dest) do
+      :ok -> :ok
+      {:error, _reason} -> fallback.()
     end
   end
 
@@ -334,20 +473,31 @@ defmodule Inkfish.Uploads.Git do
   # the caller did not provide one (a script run that made its own `mktemp
   # -d`). Both reported paths live in that one directory, so removing it
   # reclaims the whole staging area. Only remove it when it really is ours: a
-  # directory named `inkfish-clone-*` directly under the temp dir that also
-  # holds the reported checkout and tarball. A caller-supplied path we were
-  # handed some other way must never be deleted.
+  # directory named `inkfish-clone-*` directly under one of the two places this
+  # module has ever made one -- the upload base (where `make_staging_dir/0`
+  # puts it now, so the results can be moved into place) and the system temp
+  # dir (where older runs put it) -- that also holds the reported checkout and
+  # tarball. A caller-supplied path we were handed some other way must never be
+  # deleted.
   defp staging_dir(data, dir, tar) do
     stage = data["stage"] || Path.dirname(dir)
-    tmp_dir = Path.expand(System.tmp_dir!())
 
-    if Path.dirname(tar) == stage and
-         Path.dirname(Path.expand(stage)) == tmp_dir and
-         String.starts_with?(Path.basename(stage), @staging_prefix) do
+    if Path.dirname(tar) == stage and staging_parent?(stage) do
       stage
     else
       nil
     end
+  end
+
+  defp staging_parent?(stage) do
+    expanded = Path.expand(stage)
+    parent = Path.dirname(expanded)
+
+    parent in [
+      Path.expand(Upload.upload_base()),
+      Path.expand(System.tmp_dir!())
+    ] and
+      String.starts_with?(Path.basename(expanded), @staging_prefix)
   end
 
   defp remove_staging(nil), do: :ok
