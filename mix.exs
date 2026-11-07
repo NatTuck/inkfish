@@ -79,7 +79,6 @@ defmodule Inkfish.MixProject do
       {:esbuild, "~> 0.8", runtime: Mix.env() == :dev},
       {:dart_sass, "~> 0.6", runtime: Mix.env() == :dev},
       {:ex_machina, "~> 2.7", only: :test},
-      {:phoenix_integration, "~> 0.9", only: :test},
       {:phoenix_test_playwright, "~> 0.1", only: :test},
       {:floki, ">= 0.30.0", only: :test},
       {:mimic, "~> 1.12", only: :test}
