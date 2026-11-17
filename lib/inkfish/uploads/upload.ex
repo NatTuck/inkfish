@@ -3,6 +3,7 @@ defmodule Inkfish.Uploads.Upload do
   import Ecto.Changeset
 
   alias Inkfish.Sandbox
+  alias Inkfish.Uploads.Data
   alias Inkfish.Uploads.Photo
 
   alias __MODULE__
@@ -213,7 +214,13 @@ defmodule Inkfish.Uploads.Upload do
   end
 
   def unpack(upload) do
-    Sandbox.extract_archive(upload_path(upload), unpacked_path(upload))
+    with :ok <-
+           Sandbox.extract_archive(upload_path(upload), unpacked_path(upload)) do
+      # The tree the cached file index described is gone; drop the cache so
+      # the next read rebuilds it against the fresh tree.
+      Data.invalidate_index(upload)
+      :ok
+    end
   end
 
   def upload_url(nil), do: nil

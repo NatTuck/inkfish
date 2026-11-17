@@ -14,6 +14,15 @@ defmodule InkfishWeb.ApiV1.Staff.GradeControllerTest do
       grade = stock.grade
       staff = stock.staff
 
+      insert(:line_comment,
+        grade: grade,
+        user: staff,
+        path: "Ω_grading_extra.txt",
+        line: 1,
+        points: -5,
+        text: "index note"
+      )
+
       api_key = insert(:api_key, user: staff)
       conn = put_req_header(conn, "x-auth", api_key.key)
 
@@ -30,6 +39,16 @@ defmodule InkfishWeb.ApiV1.Staff.GradeControllerTest do
       assert feedback_grade["id"] == grade.id
       assert feedback_grade["confirmed"] == false
       assert feedback_grade["score"] == nil
+
+      # The index renders each grade's comments, matching the detail
+      # endpoint; it used to emit an empty list here because the
+      # preloader left line_comments unloaded (#154).
+      assert [%{"path" => "Ω_grading_extra.txt", "text" => "index note"}] =
+               feedback_grade["line_comments"]
+
+      # With comments loaded the index also computes preview_score for
+      # unconfirmed grades, same as the detail endpoint.
+      assert feedback_grade["preview_score"] != nil
 
       # Find the confirmed number grade
       number_grade =

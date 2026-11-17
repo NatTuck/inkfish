@@ -205,8 +205,14 @@ defmodule Inkfish.Subs do
         left_join: agcols in assoc(as, :grade_columns),
         left_join: grades in assoc(sub, :grades),
         left_join: gc in assoc(grades, :grade_column),
+        # The API index renders each grade's line comments; without this
+        # preload the JSON layer silently emitted `line_comments: []` for
+        # grades that had comments (#154).
+        left_join: lcs in assoc(grades, :line_comments),
+        left_join: lc_user in assoc(lcs, :user),
         preload: [
-          grades: {grades, grade_column: gc},
+          grades:
+            {grades, grade_column: gc, line_comments: {lcs, user: lc_user}},
           assignment: {as, grade_columns: agcols}
         ]
       )

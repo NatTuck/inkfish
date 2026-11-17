@@ -82,9 +82,16 @@ defmodule InkfishWeb.Staff.GradeController do
     rubric = Inkfish.Uploads.get_upload(grade.grade_column.upload_id)
     changeset = Grades.change_grade(grade)
 
+    sub = Inkfish.Subs.get_sub!(grade.sub_id)
     sub_data = Inkfish.Subs.read_sub_data(grade.sub_id)
-    valid_paths = extract_path_keys(sub_data.files)
-    valid_line_counts = extract_line_counts(sub_data.files)
+
+    # The comment anchoring scopes come from the upload's cached file
+    # index; the tree read is only the viewer payload. Deriving both from
+    # the tree meant a `file` fork per file on every page load, and the
+    # walk did not terminate on a symlink cycle (#154).
+    index = Inkfish.Uploads.Data.file_index(sub.upload)
+    valid_paths = index.paths
+    valid_line_counts = index.line_counts
 
     grade_json =
       InkfishWeb.Staff.GradeJSON.data(grade, valid_paths, valid_line_counts)
@@ -98,8 +105,6 @@ defmodule InkfishWeb.Staff.GradeController do
       |> Map.put(:grade_id, id)
       |> Map.put(:grade, grade_json)
       |> Map.put(:grader, grader_json)
-
-    sub = Inkfish.Subs.get_sub!(grade.sub_id)
 
     git =
       Inkfish.Uploads.Git.repo_info(
@@ -115,47 +120,6 @@ defmodule InkfishWeb.Staff.GradeController do
       rubric: rubric,
       git: git
     )
-  end
-
-  defp extract_path_keys(%{nodes: nodes}) do
-    extract_path_keys(nodes, [])
-  end
-
-  defp extract_path_keys(files) when is_list(files) do
-    extract_path_keys(files, [])
-  end
-
-  defp extract_path_keys([], acc), do: acc
-
-  defp extract_path_keys([%{key: key, nodes: nodes} | rest], acc) do
-    acc = [key | acc]
-    acc = extract_path_keys(nodes ++ rest, acc)
-    extract_path_keys(rest, acc)
-  end
-
-  defp extract_path_keys([%{key: key} | rest], acc) do
-    extract_path_keys(rest, [key | acc])
-  end
-
-  defp extract_line_counts(%{nodes: nodes}) do
-    build_line_counts_map(nodes, %{})
-  end
-
-  defp build_line_counts_map([], acc), do: acc
-
-  defp build_line_counts_map([%{key: key, text: text} | rest], acc)
-       when is_binary(text) do
-    line_count = String.split(text, "\n") |> length()
-    build_line_counts_map(rest, Map.put(acc, key, line_count))
-  end
-
-  defp build_line_counts_map([%{nodes: nodes} | rest], acc) do
-    acc = build_line_counts_map(nodes, acc)
-    build_line_counts_map(rest, acc)
-  end
-
-  defp build_line_counts_map([_ | rest], acc) do
-    build_line_counts_map(rest, acc)
   end
 
   def update(conn, %{"id" => id, "grade" => grade_params}) do
@@ -188,7 +152,6 @@ defmodule InkfishWeb.Staff.GradeController do
       ])
 
     # Get line comments with context
-    _sub_data = Inkfish.Subs.read_sub_data(grade.sub_id)
     unpacked_path = Inkfish.Uploads.Upload.unpacked_path(grade.sub.upload)
 
     comments_with_context =
