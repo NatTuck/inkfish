@@ -53,6 +53,7 @@ defmodule Inkfish.Uploads.DataTest do
       in_tmp_dir("index", fn base ->
         File.write!(Path.join(base, "main.c"), "one\ntwo\nthree")
         File.write!(Path.join(base, ".hidden"), "x\n")
+        File.write!(Path.join(base, "empty.txt"), "")
         File.write!(Path.join(base, "big.txt"), String.duplicate("y", 40_000))
         File.write!(Path.join(base, "blob.bin"), <<1, 2, 0, 3>>)
         File.mkdir_p!(Path.join(base, "sub"))
@@ -66,6 +67,7 @@ defmodule Inkfish.Uploads.DataTest do
                    ".hidden",
                    "big.txt",
                    "blob.bin",
+                   "empty.txt",
                    "loop",
                    "main.c",
                    "sub",
@@ -76,6 +78,10 @@ defmodule Inkfish.Uploads.DataTest do
         assert index.line_counts["main.c"] == 3
         assert index.line_counts["sub/notes.txt"] == 2
 
+        # An empty file counts as one line: a far-line anchor on an empty
+        # file is rejected, which the old no-cap behavior allowed.
+        assert index.line_counts["empty.txt"] == 1
+
         assert index.line_counts["Ω_grading_extra.txt"] ==
                  Data.omega_line_count()
 
@@ -84,6 +90,11 @@ defmodule Inkfish.Uploads.DataTest do
         refute Map.has_key?(index.line_counts, "blob.bin")
         refute Map.has_key?(index.line_counts, "loop")
         refute Map.has_key?(index.line_counts, "sub")
+
+        # Links are listed but never resolved: the link itself can be
+        # named, a path *through* it cannot.
+        assert "loop" in index.paths
+        refute "loop/main.c" in index.paths
       end)
     end
 
@@ -126,6 +137,34 @@ defmodule Inkfish.Uploads.DataTest do
 
       Data.invalidate_index(upload)
       refute File.exists?(Data.index_path(upload))
+    end
+
+    test "a structurally valid but wrong-shaped cache is rebuilt" do
+      upload = %Upload{id: Ecto.UUID.generate()}
+      on_exit(fn -> File.rm_rf!(Upload.upload_dir(upload)) end)
+
+      File.mkdir_p!(Upload.upload_dir(upload))
+
+      File.write!(
+        Data.index_path(upload),
+        ~s({"paths": 5, "line_counts": []})
+      )
+
+      # Used to crash every comment create with ArgumentError/BadMapError
+      # and never self-heal, because the file "decoded fine".
+      assert Data.file_index(upload).paths == ["Ω_grading_extra.txt"]
+    end
+
+    test "a cache path that cannot be written leaves reads working" do
+      upload = %Upload{id: Ecto.UUID.generate()}
+      on_exit(fn -> File.rm_rf!(Upload.upload_dir(upload)) end)
+
+      # A directory squatting the cache path makes every rename fail;
+      # reads must still return the computed index instead of raising.
+      File.mkdir_p!(Data.index_path(upload))
+
+      assert Data.file_index(upload).paths == ["Ω_grading_extra.txt"]
+      assert Data.file_index(upload).paths == ["Ω_grading_extra.txt"]
     end
   end
 end

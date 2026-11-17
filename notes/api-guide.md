@@ -41,6 +41,10 @@
 machine written: their text starts and ends with 🤖 (for example
 `🤖 Style issue 🤖`). Comments typed by a human in the web UI are not marked.
 
+**Note**: `path` must name a real file or directory in the submission. Paths
+through symlinks (e.g. `www/index.js` where `www` is a link) are rejected:
+symlinks are never followed, so name the link's target instead.
+
 ## curl Examples with Responses
 
 ```bash

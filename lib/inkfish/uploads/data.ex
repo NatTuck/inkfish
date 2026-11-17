@@ -23,9 +23,10 @@ defmodule Inkfish.Uploads.Data do
   alias Inkfish.Uploads.Upload
 
   # The size cap from `set_mode/3`: only files at or under it ever got
-  # `:text` attached by `read_data/1`, so only they ever had a line count
-  # to validate against. Keeping the same cap preserves that validation
-  # behavior exactly.
+  # `:text` attached by `read_data/1`, so capping the index at the same
+  # size keeps validation identical for the common case. `file -ib` is
+  # not run here (see `add_index_count/4`); the two probes agree on
+  # ordinary source text and differ only on exotic content.
   @text_limit 32_768
 
   @index_name "files_index.json"
@@ -209,6 +210,13 @@ defmodule Inkfish.Uploads.Data do
   (`invalidate_index/1`). Uploads are immutable, so in the steady state
   this is one small file read, with no walk, no `file` forks, and no
   symlink risk, no matter how large the submission is.
+
+  Symlinks are listed as paths but never resolved: a comment may anchor
+  to the link's own name, but paths *through* a link are not in the
+  index, so grading scripts must name the real file. Anchors that used to
+  validate through a symlink are rejected with "path does not exist in
+  submission" -- the price of never following links, which a cycle would
+  otherwise exploit.
   """
   def file_index(%Upload{} = upload) do
     case read_index(upload) do
@@ -220,15 +228,38 @@ defmodule Inkfish.Uploads.Data do
   @doc """
   Drops the cached index. Called when a fresh tree is extracted into the
   upload's unpacked path, so the next read rebuilds against the new tree.
+
+  The removal is recursive but guarded: it only ever deletes a path
+  strictly inside the upload's own directory, never the directory itself.
   """
   def invalidate_index(%Upload{} = upload) do
-    _ = File.rm(index_path(upload))
+    path = index_path(upload)
+
+    if guarded_index_path?(upload, path) do
+      _ = File.rm_rf(path)
+    end
+
     :ok
   end
 
+  # The index path is built by joining a constant name onto the upload's
+  # directory, so this holds by construction; the check exists so the
+  # removal can never be pointed at anything else by a bad caller or a
+  # symlinked path component.
+  defp guarded_index_path?(upload, path) do
+    dir = upload |> Upload.upload_dir() |> Path.expand()
+    full = Path.expand(path)
+
+    full != dir and String.starts_with?(full, dir <> "/")
+  end
+
   defp read_index(upload) do
+    # The shape check matters: a structurally-valid but wrong-typed cache
+    # ("paths": 5) would crash every later `path in valid_paths` and
+    # `Map.get(valid_line_counts, ...)` call with no chance to self-heal.
     with {:ok, json} <- File.read(index_path(upload)),
-         {:ok, %{"paths" => paths, "line_counts" => counts}} <-
+         {:ok, %{"paths" => paths, "line_counts" => counts}}
+         when is_list(paths) and is_map(counts) <-
            Jason.decode(json) do
       {:ok, %{paths: paths, line_counts: counts}}
     else
@@ -239,11 +270,23 @@ defmodule Inkfish.Uploads.Data do
   defp compute_and_persist_index(upload) do
     index = compute_index(Upload.unpacked_path(upload))
 
-    # Temp file plus rename, so a concurrent reader never sees a partial
-    # JSON file; two writers produce the same content anyway.
+    # Best-effort persistence through a temp file plus rename (so a
+    # concurrent reader never sees a partial JSON file): the cache is an
+    # optimization, and a read-only or full disk must not fail an
+    # otherwise-valid request -- the next call just recomputes. A rename
+    # that loses to a directory squatting the cache path (or anything
+    # else) leaves this upload uncached, not wedged.
     tmp = "#{index_path(upload)}.#{System.unique_integer([:positive])}.tmp"
-    File.write!(tmp, Jason.encode!(index))
-    File.rename!(tmp, index_path(upload))
+
+    persisted =
+      case File.write(tmp, Jason.encode!(index)) do
+        :ok -> File.rename(tmp, index_path(upload)) == :ok
+        _ -> false
+      end
+
+    unless persisted do
+      _ = File.rm(tmp)
+    end
 
     index
   end
@@ -297,11 +340,19 @@ defmodule Inkfish.Uploads.Data do
   defp add_index_path({paths, counts}, ""), do: {paths, counts}
   defp add_index_path({paths, counts}, rel), do: {[rel | paths], counts}
 
-  # Line counts only for files the old text-walk would have produced one
-  # for: inside `set_mode/3`'s size cap, not dot-named, and text. The
-  # `file -ib` fork is replaced by a NUL-byte check so building the index
-  # forks no subprocesses; the two agree on every file a grader can
-  # meaningfully comment on.
+  # Line counts apply to ordinary files: inside `set_mode/3`'s size cap,
+  # not dot-named, and without NUL bytes. The NUL check stands in for the
+  # old `file -ib` fork so the index build spawns no subprocesses. Known
+  # divergences, all deliberate:
+  #
+  #   * an empty file counts as one line, so a far-line anchor on an
+  #     empty file is rejected -- the old walk applied no cap there;
+  #   * NUL-bearing text encodings (UTF-16 and friends) get no count, so
+  #     no line cap applies to them;
+  #   * a NUL-free binary gets a count, so a line cap now applies where
+  #     the old walk had none.
+  #
+  # None of these change which *paths* are valid, only line clamping.
   defp add_index_count(acc, _full, _rel, size) when size > @text_limit do
     acc
   end

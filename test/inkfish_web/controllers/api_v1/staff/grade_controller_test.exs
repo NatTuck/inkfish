@@ -46,6 +46,10 @@ defmodule InkfishWeb.ApiV1.Staff.GradeControllerTest do
       assert [%{"path" => "Ω_grading_extra.txt", "text" => "index note"}] =
                feedback_grade["line_comments"]
 
+      # With comments loaded the index also computes preview_score for
+      # unconfirmed grades, same as the detail endpoint.
+      assert feedback_grade["preview_score"] != nil
+
       # Find the confirmed number grade
       number_grade =
         Enum.find(response_data, &(&1["grade_column"]["kind"] == "number"))
