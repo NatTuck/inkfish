@@ -2,6 +2,7 @@ defmodule Inkfish.Uploads.Git do
   alias Inkfish.Sandbox.Archive
   alias Inkfish.Sandbox.TempFs
   alias Inkfish.Uploads
+  alias Inkfish.Uploads.Data
   alias Inkfish.Uploads.Upload
 
   # The staging directory the clone script copies its results into carries this
@@ -449,7 +450,11 @@ defmodule Inkfish.Uploads.Git do
              "size" => size
            }),
          :ok <- copy_tarball(tar, upload, stage),
-         :ok <- copy_checkout(dir, upload, stage) do
+         :ok <- copy_checkout(dir, upload, stage),
+         # The checkout just landed at the upload's unpacked path; any
+         # cached file index describes the tree that was there before it
+         # (or nothing), so drop it.
+         :ok <- Data.invalidate_index(upload) do
       {:ok, Upload.fetch_size(upload)}
     end
   end

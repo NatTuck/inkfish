@@ -164,16 +164,26 @@ defmodule Inkfish.LineComments do
 
     # Check if grade is confirmed
     with :ok <- check_grade_confirmed(grade_id) do
+      # The anchoring scopes come from the upload's cached file index -- one
+      # small cached read, not a fresh walk of the submission tree per
+      # comment (see Inkfish.Uploads.Data.file_index/1 and #154).
+      index =
+        if valid_paths == :auto or valid_line_counts == :auto do
+          lookup_file_index(grade_id)
+        else
+          nil
+        end
+
       valid_paths =
         if valid_paths == :auto do
-          lookup_valid_paths(grade_id)
+          index && index.paths
         else
           valid_paths
         end
 
       valid_line_counts =
         if valid_line_counts == :auto do
-          lookup_line_counts(grade_id)
+          index && index.line_counts
         else
           valid_line_counts
         end
@@ -196,42 +206,13 @@ defmodule Inkfish.LineComments do
     end
   end
 
-  defp lookup_valid_paths(grade_id) when is_integer(grade_id) do
+  defp lookup_file_index(grade_id) when is_integer(grade_id) do
     grade = Grades.get_grade!(grade_id)
     sub = Inkfish.Subs.get_sub!(grade.sub_id)
-    data = Inkfish.Subs.read_sub_data(sub)
-    extract_path_keys(data.files)
+    Inkfish.Uploads.Data.file_index(sub.upload)
   end
 
-  defp lookup_valid_paths(_), do: nil
-
-  defp lookup_line_counts(grade_id) when is_integer(grade_id) do
-    grade = Grades.get_grade!(grade_id)
-    sub = Inkfish.Subs.get_sub!(grade.sub_id)
-    Inkfish.Uploads.Data.extract_line_counts(sub.upload)
-  end
-
-  defp lookup_line_counts(_), do: nil
-
-  defp extract_path_keys(%{nodes: nodes}) do
-    extract_path_keys(nodes, [])
-  end
-
-  defp extract_path_keys(files) when is_list(files) do
-    extract_path_keys(files, [])
-  end
-
-  defp extract_path_keys([], acc), do: acc
-
-  defp extract_path_keys([%{key: key, nodes: nodes} | rest], acc) do
-    acc = [key | acc]
-    acc = extract_path_keys(nodes ++ rest, acc)
-    extract_path_keys(rest, acc)
-  end
-
-  defp extract_path_keys([%{key: key} | rest], acc) do
-    extract_path_keys(rest, [key | acc])
-  end
+  defp lookup_file_index(_), do: nil
 
   @doc """
   Updates a line_comment.
@@ -250,7 +231,8 @@ defmodule Inkfish.LineComments do
 
     # Check if grade is confirmed
     with :ok <- check_grade_confirmed(line_comment.grade_id) do
-      valid_line_counts = lookup_line_counts(line_comment.grade_id)
+      index = lookup_file_index(line_comment.grade_id)
+      valid_line_counts = index && index.line_counts
 
       result =
         line_comment

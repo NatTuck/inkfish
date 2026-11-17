@@ -508,6 +508,43 @@ defmodule Inkfish.GradesTest do
 
       assert length(grade.line_comments) == 1
     end
+
+    test "grade create completes on a submission with a symlink cycle" do
+      upload = insert(:upload)
+      unpacked = Inkfish.Uploads.Upload.unpacked_path(upload)
+      File.write!(Path.join(unpacked, "main.c"), "int main(void) {}\n")
+      File.ln_s!(".", Path.join(unpacked, "loop"))
+
+      sub = insert(:sub, upload: upload)
+      user = insert(:user)
+
+      gcol =
+        insert(:grade_column, %{assignment: sub.assignment, kind: "feedback"})
+
+      params = %{
+        "sub_id" => sub.id,
+        "grade_column_id" => gcol.id,
+        "line_comments" => [
+          %{
+            "path" => "main.c",
+            "line" => 1,
+            "points" => -5,
+            "text" => "valid path"
+          }
+        ]
+      }
+
+      # The old create path walked the submission tree to anchor comments
+      # and followed symlinks, so a cycle like the one above made the
+      # request recurse until the proxy timed out and the node ran out of
+      # memory (#154). Anchoring validates against the cached file index
+      # now, which never follows links.
+      assert {:ok, %Grade{} = grade} =
+               Grades.put_grade_with_comments(params, user)
+
+      assert length(grade.line_comments) == 1
+      assert Enum.at(grade.line_comments, 0).path == "main.c"
+    end
   end
 
   describe "grade_columns" do
